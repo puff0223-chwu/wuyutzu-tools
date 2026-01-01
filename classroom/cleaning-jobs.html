@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧹 打掃工作徵才系統 v3.3</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #c41e3a 0%, #8b0000 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+        .header .back-home {
+            position: absolute;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            text-decoration: none;
+            transition: opacity 0.3s;
+        }
+        .header h1 { font-size: 2em; margin-bottom: 5px; }
+        .header .version { font-size: 0.9em; opacity: 0.9; }
+        .tabs {
+            display: flex;
+            background: #f0f0f0;
+            flex-wrap: wrap;
+        }
+        .tab {
+            flex: 1;
+            min-width: 100px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9em;
+            border: none;
+            background: none;
+            transition: all 0.3s;
+        }
+        .tab:hover { background: #e0e0e0; }
+        .tab.active {
+            background: white;
+            color: #c41e3a;
+            border-bottom: 3px solid #c41e3a;
+        }
+        .content { padding: 25px; }
+        .system { display: none; }
+        .system.active { display: block; }
+        .section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        .section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #667eea;
+            font-size: 1.3em;
+        }
+        .btn {
+            background: linear-gradient(135deg, #c41e3a 0%, #8b0000 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: bold;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(196, 30, 58, 0.3);
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .btn-secondary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .btn-success { background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); }
+        .btn-danger { background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); }
+        .btn-small { padding: 8px 16px; font-size: 0.9em; }
+        .btn-large { padding: 15px 35px; font-size: 1.2em; }
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid;
+        }
+        .alert-info { background: #e3f2fd; border-color: #2196f3; color: #1565c0; }
+        .alert-success { background: #d4edda; border-color: #16a34a; color: #155724; }
+        .alert-warning { background: #fff3cd; border-color: #ffc107; color: #856404; }
+        .alert-danger { background: #fee; border-color: #dc2626; color: #991b1b; }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin: 8px 0;
+            font-size: 1em;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .resource-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #667eea;
+        }
+        .resource-item .priority {
+            background: #667eea;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        .resource-item .name { flex: 1; font-weight: bold; font-size: 1.1em; }
+        .resource-item .rate {
+            background: #e3f2fd;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            color: #1565c0;
+        }
+        .job-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        .job-card {
+            background: white;
+            padding: 18px;
+            border-radius: 12px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s;
+        }
+        .job-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .job-card .title {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .job-card .count {
+            color: #666;
+            font-size: 0.95em;
+            margin-bottom: 12px;
+        }
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-area:hover {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+        .student-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        .student-item {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid #e0e0e0;
+            font-size: 0.9em;
+        }
+        .lottery-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+            border: 2px solid #667eea;
+        }
+        .lottery-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        .participant-list {
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+        .participant-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 8px 0;
+            border-left: 4px solid #2196f3;
+        }
+        .participant-item.selected {
+            background: #d4edda;
+            border-left-color: #16a34a;
+        }
+        .participant-item.rejected {
+            background: #fee;
+            border-left-color: #dc2626;
+            opacity: 0.7;
+        }
+        .participant-name {
+            font-weight: bold;
+            font-size: 1.05em;
+        }
+        .participant-resource {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .participant-weight {
+            background: #667eea;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+            margin-right: 8px;
+        }
+        .participant-probability {
+            background: #16a34a;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.95em;
+        }
+        .probability-explanation {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 6px;
+            font-size: 0.9em;
+            color: #856404;
+        }
+        .lottery-result {
+            text-align: center;
+            padding: 30px;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #16a34a;
+            display: none;
+        }
+        .lottery-result.show {
+            display: block;
+            animation: zoomIn 0.5s ease-out;
+        }
+        @keyframes zoomIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #f0f;
+            position: absolute;
+            animation: confetti-fall 3s linear forwards;
+        }
+        @keyframes confetti-fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .result-table th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }
+        .result-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .result-table tr:hover { background: #f8f9fa; }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        .status-selected {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-rejected {
+            background: #fee;
+            color: #991b1b;
+        }
+        .status-random {
+            background: #cfe2ff;
+            color: #084298;
+        }
+        footer {
+            text-align: center;
+            padding: 20px;
+            border-top: 2px solid #f0f0f0;
+            color: #999;
+            font-size: 0.9em;
+        }
+        @media (max-width: 768px) {
+            .container { margin: 0; border-radius: 0; }
+            .header h1 { font-size: 1.5em; }
+            .tabs { flex-direction: column; }
+            .job-grid, .student-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="../index.html" class="back-home">← 返回首頁</a>
+            <h1>🧹 打掃工作徵才系統</h1>
+            <p class="version">v3.3 最終版 - 加權隨機機率模型</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('resources')">💎 資源設定</button>
+            <button class="tab" onclick="switchTab('jobs')">📋 打掃項目</button>
+            <button class="tab" onclick="switchTab('students')">👥 班級名單</button>
+            <button class="tab" onclick="switchTab('upload')">📤 上傳名單</button>
+            <button class="tab" onclick="switchTab('lottery')">🎰 徵選抽籤</button>
+            <button class="tab" onclick="switchTab('results')">🏆 完整結果</button>
+        </div>
+
+        <div class="content">
+            <!-- 資源設定 -->
+            <div id="tab-resources" class="system active">
+                <div class="section">
+                    <h3>💎 資源種類與權重設定</h3>
+                    <div class="alert alert-info">
+                        📌 <strong>加權隨機機率模型說明:</strong><br>
+                        • 投入的資源會轉換為「權重」<br>
+                        • 實際中選機率 = 個人權重 ÷ 所有參與者總權重<br>
+                        • 投入越多,權重越高,中選機率越大<br>
+                        • 符合數學定義,公平且準確!
+                    </div>
+
+                    <div id="resourceList"></div>
+
+                    <div style="margin-top: 20px;">
+                        <input type="text" id="newResourceName" placeholder="資源名稱 (例如:寶石)">
+                        <input type="number" id="newResourceRate" placeholder="每單位權重值 (例如:10)" min="0.1" step="0.1">
+                        <input type="number" id="newResourceUnit" placeholder="計算單位 (例如:1表示每1個, 30表示每30個)" min="1" value="1">
+                        <button class="btn btn-success" onclick="addResource()">➕ 新增資源</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 打掃項目 -->
+            <div id="tab-jobs" class="system">
+                <div class="section">
+                    <h3>📋 打掃項目管理</h3>
+                    <input type="text" id="jobName" placeholder="打掃項目名稱 (例如:擦窗戶)">
+                    <input type="number" id="jobCount" min="1" value="1" placeholder="需要人數">
+                    <button class="btn btn-success" onclick="addJob()">➕ 新增項目</button>
+                </div>
+
+                <div class="section">
+                    <h3>📋 目前打掃項目</h3>
+                    <div class="job-grid" id="jobList"></div>
+                </div>
+            </div>
+
+            <!-- 班級名單 -->
+            <div id="tab-students" class="system">
+                <div class="section">
+                    <h3>👥 全班學生名單</h3>
+                    <div class="alert alert-info">
+                        📌 請先上傳全班學生名單<br>
+                        用於最後統計未分配學生,並進行隨機分配剩餘職缺
+                    </div>
+
+                    <div style="margin:15px 0;">
+                        <button class="btn btn-secondary" onclick="document.getElementById('studentExcel').click()">📤 上傳班級名單Excel</button>
+                        <button class="btn btn-success" onclick="downloadStudentTemplate()">📥 下載範例</button>
+                        <button class="btn btn-danger" onclick="clearStudents()">🗑️ 清空名單</button>
+                        <input type="file" id="studentExcel" accept=".xlsx,.xls" style="display:none" onchange="importStudents(event)">
+                    </div>
+
+                    <div class="alert alert-warning" style="font-size:0.9em;">
+                        <strong>Excel 格式:</strong> 座號 | 姓名<br>
+                        範例: 1 | 小明
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>📋 目前名單 (<span id="studentCount">0</span> 人)</h3>
+                    <div class="student-grid" id="studentList"></div>
+                </div>
+            </div>
+
+            <!-- 上傳名單 -->
+            <div id="tab-upload" class="system">
+                <div class="section">
+                    <h3>📤 上傳本輪徵選名單</h3>
+                    
+                    <div class="alert alert-info">
+                        📥 <strong>Excel 格式要求:</strong><br>
+                        欄位: 座號 | 姓名 | 參與打掃項目 | 投入資源種類 | 資源投入數量 | 徵選輪次<br>
+                        <a href="#" onclick="downloadTemplate(); return false;" style="color:#c41e3a; font-weight:bold;">📥 點此下載範例檔案</a>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        ⚠️ <strong>重要規則:</strong><br>
+                        • 每次只能投入一種資源(混用將被拒絕)<br>
+                        • 已中選者無法參與後續輪次<br>
+                        • 未中選者資源仍會扣除
+                    </div>
+
+                    <div style="background:#e3f2fd; padding:15px; border-radius:10px; margin:15px 0;">
+                        <strong>📊 目前狀態:</strong><br>
+                        目前輪次: <span id="currentRound" style="color:#c41e3a; font-weight:bold; font-size:1.2em;">0</span> 輪<br>
+                        已分配人數: <span id="assignedCount" style="color:#16a34a; font-weight:bold;">0</span> 人<br>
+                        本輪參與: <span id="thisRoundCount" style="color:#2196f3; font-weight:bold;">0</span> 人
+                    </div>
+
+                    <div class="upload-area" onclick="document.getElementById('excelFile').click()">
+                        <div style="font-size:3em; margin-bottom:15px;">📁</div>
+                        <div style="font-size:1.3em; font-weight:bold; margin-bottom:10px;">
+                            點擊上傳第 <span id="nextRound">1</span> 輪徵選名單
+                        </div>
+                        <div style="color:#666; font-size:0.95em;">
+                            支援 .xlsx 和 .xls 格式
+                        </div>
+                    </div>
+                    <input type="file" id="excelFile" accept=".xlsx,.xls" style="display:none" onchange="uploadExcel(event)">
+
+                    <div id="uploadStatus"></div>
+                </div>
+            </div>
+
+            <!-- 徵選抽籤 -->
+            <div id="tab-lottery" class="system">
+                <div class="section">
+                    <h3>🎰 分項目進行徵選抽籤</h3>
+                    
+                    <div class="alert alert-info">
+                        🎲 <strong>加權隨機抽籤說明:</strong><br>
+                        • 系統使用「加權隨機」演算法<br>
+                        • 每人的權重 = 投入資源轉換的數值<br>
+                        • 實際中選機率 = 個人權重 ÷ 總權重<br>
+                        • 權重越高,中選機率越大<br>
+                        • 符合數學機率定義,公平準確!
+                    </div>
+
+                    <div id="lotteryArea"></div>
+                </div>
+            </div>
+
+            <!-- 完整結果 -->
+            <div id="tab-results" class="system">
+                <div class="section">
+                    <h3>🏆 完整徵選結果</h3>
+                    <div id="resultSummary"></div>
+                    
+                    <div id="randomAssignArea"></div>
+                    
+                    <div id="resultContent"></div>
+                    
+                    <div style="margin-top:20px;">
+                        <button class="btn btn-success" onclick="exportByJob()">📥 下載結果(依打掃項目)</button>
+                        <button class="btn btn-success" onclick="exportByStudent()">📥 下載結果(依學生統計)</button>
+                        <button class="btn btn-danger" onclick="resetAll()">🔄 重置所有資料</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>程式設計:巫魚子 © 2025 | v3.3 最終版</footer>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        // ========================================
+        // 全域變數
+        // ========================================
+        let resources = [
+            {name:'金幣', rate:1, unit:30, priority:1},
+            {name:'老師簽名卡', rate:20, unit:1, priority:2},
+            {name:'最強王牌', rate:50, unit:1, priority:3}
+        ];
+        
+        // ★ 預設打掃項目
+        let jobs = [
+            {id: 1, name: '[教室]地板天花板', count: 5},
+            {id: 2, name: '[教室]倒垃圾(含陽台地板)', count: 3},
+            {id: 3, name: '[教室]黑板教師桌', count: 2},
+            {id: 4, name: '[教室]書櫃電腦櫃圖書櫃', count: 4},
+            {id: 5, name: '[教室]擦門窗', count: 5},
+            {id: 6, name: '[教室]洗手台飲水機', count: 2},
+            {id: 7, name: '[教室]抬餐(含廚餘、清潔)', count: 3}
+        ];
+        
+        let students = [];
+        let currentRoundData = [];
+        let allResults = [];
+        let selectedStudents = new Set();
+        let currentRound = 0;
+
+        // ========================================
+        // 初始化
+        // ========================================
+        window.addEventListener('load', () => {
+            loadData();
+            updateAll();
+        });
+
+        function loadData() {
+            const saved = localStorage.getItem('cleaning_v33_data');
+            if(saved) {
+                const data = JSON.parse(saved);
+                resources = data.resources || resources;
+                jobs = data.jobs || jobs;
+                students = data.students || [];
+                allResults = data.results || [];
+                selectedStudents = new Set(data.selected || []);
+                currentRound = data.round || 0;
+            }
+        }
+
+        function saveData() {
+            const data = {
+                resources,
+                jobs,
+                students,
+                results: allResults,
+                selected: Array.from(selectedStudents),
+                round: currentRound
+            };
+            localStorage.setItem('cleaning_v33_data', JSON.stringify(data));
+        }
+
+        function updateAll() {
+            updateResourceList();
+            updateJobList();
+            updateStudentList();
+            updateStats();
+            updateResults();
+            generateLotteryArea();
+        }
+
+        function switchTab(name) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.system').forEach(s => s.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('tab-' + name).classList.add('active');
+            
+            if(name === 'lottery') {
+                generateLotteryArea();
+            }
+            if(name === 'results') {
+                updateResults();
+            }
+        }
+
+        // ========================================
+        // 核心功能: 計算權重
+        // ========================================
+        function calculateWeight(resourceName, amount) {
+            const res = resources.find(r => r.name === resourceName);
+            if(!res) return 0;
+            const weight = Math.floor(amount / res.unit) * res.rate;
+            return weight;
+        }
+
+        // ========================================
+        // 核心功能: 加權隨機抽取
+        // ========================================
+        function weightedRandomSelection(participants, count) {
+            if(participants.length === 0) return {winners: [], losers: []};
+            if(count <= 0) return {winners: [], losers: participants};
+            
+            const winners = [];
+            const pool = [...participants];
+            
+            for(let i = 0; i < count && pool.length > 0; i++) {
+                const totalWeight = pool.reduce((sum, p) => sum + p.weight, 0);
+                
+                if(totalWeight === 0) {
+                    const randomIndex = Math.floor(Math.random() * pool.length);
+                    winners.push(pool.splice(randomIndex, 1)[0]);
+                    continue;
+                }
+                
+                let random = Math.random() * totalWeight;
+                
+                for(let j = 0; j < pool.length; j++) {
+                    random -= pool[j].weight;
+                    if(random <= 0) {
+                        winners.push(pool.splice(j, 1)[0]);
+                        break;
+                    }
+                }
+            }
+            
+            return {winners, losers: pool};
+        }
+
+        // ========================================
+        // 資源管理
+        // ========================================
+        function updateResourceList() {
+            const list = document.getElementById('resourceList');
+            if(resources.length === 0) {
+                list.innerHTML = '<div style="padding:20px;text-align:center;color:#999">尚無資源設定</div>';
+                return;
+            }
+            list.innerHTML = resources.map((r, i) => `
+                <div class="resource-item">
+                    <div class="priority">${r.priority}</div>
+                    <div class="name">${r.name}</div>
+                    <div class="rate">每 ${r.unit} 個 → 權重 +${r.rate}</div>
+                    <div style="display:flex;gap:5px;">
+                        <button class="btn btn-small btn-secondary" onclick="moveResource(${i},'up')" ${i===0?'disabled':''}>↑</button>
+                        <button class="btn btn-small btn-secondary" onclick="moveResource(${i},'down')" ${i===resources.length-1?'disabled':''}>↓</button>
+                        <button class="btn btn-small btn-danger" onclick="deleteResource(${i})">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addResource() {
+            const name = document.getElementById('newResourceName').value.trim();
+            const rate = parseFloat(document.getElementById('newResourceRate').value);
+            const unit = parseInt(document.getElementById('newResourceUnit').value);
+            
+            if(!name) { alert('請輸入資源名稱'); return; }
+            if(!rate || rate <= 0) { alert('請輸入有效的權重值'); return; }
+            if(!unit || unit <= 0) { alert('請輸入有效的計算單位'); return; }
+            if(resources.some(r => r.name === name)) { alert('資源已存在'); return; }
+            
+            resources.push({name, rate, unit, priority: resources.length + 1});
+            document.getElementById('newResourceName').value = '';
+            document.getElementById('newResourceRate').value = '';
+            document.getElementById('newResourceUnit').value = '1';
+            saveData();
+            updateResourceList();
+        }
+
+        function moveResource(i, dir) {
+            if(dir === 'up' && i > 0) {
+                [resources[i], resources[i-1]] = [resources[i-1], resources[i]];
+            } else if(dir === 'down' && i < resources.length - 1) {
+                [resources[i], resources[i+1]] = [resources[i+1], resources[i]];
+            }
+            resources.forEach((r, idx) => r.priority = idx + 1);
+            saveData();
+            updateResourceList();
+        }
+
+        function deleteResource(i) {
+            if(confirm(`確定刪除「${resources[i].name}」?`)) {
+                resources.splice(i, 1);
+                resources.forEach((r, idx) => r.priority = idx + 1);
+                saveData();
+                updateResourceList();
+            }
+        }
+
+        // ========================================
+        // 打掃項目管理
+        // ========================================
+        function updateJobList() {
+            const list = document.getElementById('jobList');
+            if(jobs.length === 0) {
+                list.innerHTML = '<div style="padding:40px;text-align:center;color:#999">尚無打掃項目<br>請先新增項目</div>';
+                return;
+            }
+            list.innerHTML = jobs.map((j, i) => `
+                <div class="job-card">
+                    <div class="title">🧹 ${j.name}</div>
+                    <div class="count">需要 ${j.count} 人</div>
+                    <div style="font-size:0.9em;color:#666;margin-bottom:10px;">
+                        已分配: ${allResults.filter(r => r.job === j.name && r.status === 'selected').length} 人
+                    </div>
+                    <button class="btn btn-small btn-secondary" onclick="editJob(${i})">✏️ 編輯</button>
+                    <button class="btn btn-small btn-danger" onclick="deleteJob(${i})">🗑️ 刪除</button>
+                </div>
+            `).join('');
+        }
+
+        function addJob() {
+            const name = document.getElementById('jobName').value.trim();
+            const count = parseInt(document.getElementById('jobCount').value);
+            if(!name) { alert('請輸入項目名稱'); return; }
+            if(count < 1) { alert('人數至少1人'); return; }
+            jobs.push({id: Date.now(), name, count});
+            document.getElementById('jobName').value = '';
+            document.getElementById('jobCount').value = '1';
+            saveData();
+            updateAll();
+        }
+
+        function editJob(i) {
+            const newName = prompt('修改項目名稱:', jobs[i].name);
+            if(newName && newName.trim()) jobs[i].name = newName.trim();
+            const newCount = prompt('修改人數:', jobs[i].count);
+            if(newCount && parseInt(newCount) > 0) jobs[i].count = parseInt(newCount);
+            saveData();
+            updateAll();
+        }
+
+        function deleteJob(i) {
+            if(confirm(`確定刪除「${jobs[i].name}」?`)) {
+                jobs.splice(i, 1);
+                saveData();
+                updateAll();
+            }
+        }
+
+        // ========================================
+        // 班級名單管理
+        // ========================================
+        function updateStudentList() {
+            document.getElementById('studentCount').textContent = students.length;
+            const list = document.getElementById('studentList');
+            if(students.length === 0) {
+                list.innerHTML = '<div style="padding:40px;text-align:center;color:#999">尚未上傳班級名單</div>';
+                return;
+            }
+            list.innerHTML = students.map(s => `
+                <div class="student-item">${s.seat} ${s.name}</div>
+            `).join('');
+        }
+
+        function importStudents(e) {
+            const file = e.target.files[0];
+            if(!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                try {
+                    const data = new Uint8Array(ev.target.result);
+                    const wb = XLSX.read(data, {type: 'array'});
+                    const ws = wb.Sheets[wb.SheetNames[0]];
+                    const json = XLSX.utils.sheet_to_json(ws);
+                    
+                    students = json.map(row => ({
+                        seat: row['座號'],
+                        name: row['姓名']
+                    }));
+                    
+                    saveData();
+                    updateStudentList();
+                    alert(`✅ 成功匯入 ${students.length} 位學生!`);
+                } catch(err) {
+                    alert('❌ 檔案讀取失敗: ' + err.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function clearStudents() {
+            if(confirm('確定清空班級名單?')) {
+                students = [];
+                saveData();
+                updateStudentList();
+            }
+        }
+
+        function downloadStudentTemplate() {
+            const data = [['座號', '姓名']];
+            for(let i = 1; i <= 35; i++) {
+                data.push([i, `學生${i}號`]);
+            }
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            ws['!cols'] = [{wch:10}, {wch:15}];
+            XLSX.utils.book_append_sheet(wb, ws, '學生名單');
+            XLSX.writeFile(wb, '班級名單範例.xlsx');
+        }
+
+        // ========================================
+        // Excel 上傳與驗證
+        // ========================================
+        function uploadExcel(e) {
+            const file = e.target.files[0];
+            if(!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                try {
+                    const data = new Uint8Array(ev.target.result);
+                    const wb = XLSX.read(data, {type: 'array'});
+                    const ws = wb.Sheets[wb.SheetNames[0]];
+                    const json = XLSX.utils.sheet_to_json(ws);
+                    
+                    const required = ['座號', '姓名', '參與打掃項目', '投入資源種類', '資源投入數量', '徵選輪次'];
+                    if(json.length === 0) {
+                        alert('❌ Excel 檔案沒有資料!');
+                        return;
+                    }
+                    
+                    const first = json[0];
+                    const missing = required.filter(f => !(f in first));
+                    if(missing.length > 0) {
+                        alert(`❌ 缺少必要欄位: ${missing.join(', ')}\n\n請確認欄位名稱完全一致!`);
+                        return;
+                    }
+                    
+                    const validated = [];
+                    const errors = [];
+                    
+                    json.forEach((row, idx) => {
+                        const lineNum = idx + 2;
+                        
+                        if(selectedStudents.has(row['姓名'])) {
+                            errors.push(`第${lineNum}行: ${row['姓名']} 已經中選,無法參與`);
+                            return;
+                        }
+                        
+                        const resName = row['投入資源種類'];
+                        if(!resources.some(r => r.name === resName)) {
+                            errors.push(`第${lineNum}行: 資源種類「${resName}」不存在`);
+                            return;
+                        }
+                        
+                        const amount = parseFloat(row['資源投入數量']);
+                        if(isNaN(amount) || amount <= 0) {
+                            errors.push(`第${lineNum}行: 資源數量無效`);
+                            return;
+                        }
+                        
+                        const weight = calculateWeight(resName, amount);
+                        
+                        validated.push({
+                            seat: row['座號'],
+                            name: row['姓名'],
+                            job: row['參與打掃項目'],
+                            resource: resName,
+                            amount: amount,
+                            round: row['徵選輪次'],
+                            weight: weight
+                        });
+                    });
+                    
+                    if(errors.length > 0) {
+                        alert('❌ 資料驗證失敗:\n\n' + errors.join('\n'));
+                        return;
+                    }
+                    
+                    if(validated.length === 0) {
+                        alert('❌ 沒有有效的參與者!');
+                        return;
+                    }
+                    
+                    currentRoundData = validated;
+                    currentRound++;
+                    saveData();
+                    updateStats();
+                    
+                    document.getElementById('uploadStatus').innerHTML = `
+                        <div class="alert alert-success">
+                            ✅ <strong>第${currentRound}輪名單上傳成功!</strong><br>
+                            共 ${validated.length} 位學生參與本輪徵選<br>
+                            請前往「🎰 徵選抽籤」分頁進行抽籤
+                        </div>
+                    `;
+                    
+                    generateLotteryArea();
+                    
+                    setTimeout(() => {
+                        document.querySelectorAll('.tab')[4].click();
+                    }, 2000);
+                    
+                } catch(err) {
+                    alert('❌ 檔案讀取失敗: ' + err.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // ========================================
+        // 生成抽籤區域
+        // ========================================
+        function generateLotteryArea() {
+            const area = document.getElementById('lotteryArea');
+            
+            if(currentRoundData.length === 0) {
+                area.innerHTML = '<div class="alert alert-warning">⚠️ 尚未上傳本輪名單<br>請先到「📤 上傳名單」分頁上傳Excel檔案</div>';
+                return;
+            }
+            
+            const byJob = {};
+            currentRoundData.forEach(item => {
+                if(!byJob[item.job]) byJob[item.job] = [];
+                byJob[item.job].push(item);
+            });
+            
+            let html = '';
+            Object.keys(byJob).forEach(jobName => {
+                const participants = byJob[jobName];
+                const job = jobs.find(j => j.name === jobName);
+                if(!job) return;
+                
+                const needed = job.count;
+                const alreadyAssigned = allResults.filter(r => r.job === jobName && r.status === 'selected').length;
+                const remaining = needed - alreadyAssigned;
+                
+                if(remaining <= 0) {
+                    return;
+                }
+                
+                const totalWeight = participants.reduce((sum, p) => sum + p.weight, 0);
+                
+                html += `
+                    <div class="lottery-section" id="lottery-${jobName}">
+                        <div class="lottery-title">🧹 ${jobName}</div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+                            <div>
+                                需要: ${needed} 人 | 
+                                已分配: ${alreadyAssigned} 人 | 
+                                <span style="color:#c41e3a;font-weight:bold;">本次徵選: ${Math.min(remaining, participants.length)} 人</span>
+                            </div>
+                            <button class="btn btn-success btn-large" onclick="startLottery('${jobName}')">
+                                🎰 開始抽籤
+                            </button>
+                        </div>
+                        
+                        <div class="probability-explanation">
+                            📊 <strong>機率計算說明:</strong> 總權重 = ${totalWeight}<br>
+                            實際中選機率 = 個人權重 ÷ ${totalWeight} × 100%
+                        </div>
+                        
+                        <div class="participant-list" id="participants-${jobName}">
+                            ${participants.map(p => {
+                                const probability = totalWeight > 0 ? ((p.weight / totalWeight) * 100).toFixed(2) : 0;
+                                return `
+                                    <div class="participant-item" data-name="${p.name}">
+                                        <div>
+                                            <div class="participant-name">${p.seat} ${p.name}</div>
+                                            <div class="participant-resource">${p.resource} × ${p.amount}</div>
+                                        </div>
+                                        <div style="display:flex;align-items:center;gap:8px;">
+                                            <div class="participant-weight">權重: ${p.weight}</div>
+                                            <div class="participant-probability">${probability}%</div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                        
+                        <div class="lottery-result" id="result-${jobName}"></div>
+                    </div>
+                `;
+            });
+            
+            if(html === '') {
+                area.innerHTML = '<div class="alert alert-success">✅ 本輪所有項目都已滿額!</div>';
+            } else {
+                area.innerHTML = html;
+            }
+        }
+
+        // ========================================
+        // 核心功能: 開始抽籤
+        // ========================================
+        function startLottery(jobName) {
+            const job = jobs.find(j => j.name === jobName);
+            if(!job) return;
+            
+            const needed = job.count;
+            const alreadyAssigned = allResults.filter(r => r.job === jobName && r.status === 'selected').length;
+            const toSelect = needed - alreadyAssigned;
+            
+            const participants = currentRoundData.filter(p => p.job === jobName);
+            
+            if(participants.length === 0) return;
+            
+            event.target.disabled = true;
+            event.target.textContent = '抽籤中...';
+            
+            setTimeout(() => {
+                const result = weightedRandomSelection(participants, toSelect);
+                const winners = result.winners;
+                const losers = result.losers;
+                
+                winners.forEach(w => {
+                    selectedStudents.add(w.name);
+                    allResults.push({
+                        round: currentRound,
+                        job: jobName,
+                        seat: w.seat,
+                        name: w.name,
+                        resource: w.resource,
+                        amount: w.amount,
+                        weight: w.weight,
+                        status: 'selected'
+                    });
+                });
+                
+                losers.forEach(l => {
+                    allResults.push({
+                        round: currentRound,
+                        job: jobName,
+                        seat: l.seat,
+                        name: l.name,
+                        resource: l.resource,
+                        amount: l.amount,
+                        weight: l.weight,
+                        status: 'rejected'
+                    });
+                });
+                
+                saveData();
+                
+                winners.forEach(w => {
+                    const item = document.querySelector(`#participants-${jobName} .participant-item[data-name="${w.name}"]`);
+                    if(item) item.classList.add('selected');
+                });
+                
+                losers.forEach(l => {
+                    const item = document.querySelector(`#participants-${jobName} .participant-item[data-name="${l.name}"]`);
+                    if(item) item.classList.add('rejected');
+                });
+                
+                const resultDiv = document.getElementById(`result-${jobName}`);
+                resultDiv.innerHTML = `
+                    🎉 抽籤完成!<br>
+                    中選 ${winners.length} 人: ${winners.map(w => w.name).join(', ')}
+                `;
+                resultDiv.classList.add('show');
+                
+                createConfetti();
+                
+                updateStats();
+                updateResults();
+                
+                event.target.textContent = '✅ 抽籤完成';
+                
+            }, 1500);
+        }
+
+        // ========================================
+        // 灑花特效
+        // ========================================
+        function createConfetti() {
+            const colors = ['#f0f', '#0ff', '#ff0', '#0f0', '#f00', '#00f'];
+            for(let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * window.innerWidth + 'px';
+                    confetti.style.top = '-10px';
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    document.body.appendChild(confetti);
+                    
+                    setTimeout(() => confetti.remove(), 3000);
+                }, i * 30);
+            }
+        }
+
+        // ========================================
+        // 統計更新
+        // ========================================
+        function updateStats() {
+            document.getElementById('currentRound').textContent = currentRound;
+            document.getElementById('nextRound').textContent = currentRound + 1;
+            document.getElementById('assignedCount').textContent = selectedStudents.size;
+            document.getElementById('thisRoundCount').textContent = currentRoundData.length;
+        }
+
+        // ========================================
+        // 結果顯示與隨機分配
+        // ========================================
+        function updateResults() {
+            const summary = document.getElementById('resultSummary');
+            const content = document.getElementById('resultContent');
+            const randomArea = document.getElementById('randomAssignArea');
+            
+            if(allResults.length === 0) {
+                summary.innerHTML = '<div class="alert alert-warning">尚未進行任何徵選</div>';
+                content.innerHTML = '';
+                randomArea.innerHTML = '';
+                return;
+            }
+            
+            const selected = allResults.filter(r => r.status === 'selected').length;
+            const rejected = allResults.filter(r => r.status === 'rejected').length;
+            
+            summary.innerHTML = `
+                <div class="alert alert-success">
+                    📊 徵選進度<br>
+                    已完成輪次: ${currentRound} 輪 | 
+                    中選: ${selected} 人 | 
+                    未中選: ${rejected} 人
+                </div>
+            `;
+            
+            const totalNeeded = jobs.reduce((sum, j) => sum + j.count, 0);
+            const currentAssigned = allResults.filter(r => r.status === 'selected').length;
+            const remaining = totalNeeded - currentAssigned;
+            
+            if(remaining > 0 && students.length > 0) {
+                const unassignedStudents = students.filter(s => !selectedStudents.has(s.name));
+                
+                randomArea.innerHTML = `
+                    <div class="section">
+                        <h3>🎲 隨機分配剩餘職缺</h3>
+                        <div class="alert alert-info">
+                            📊 統計:<br>
+                            • 剩餘職缺: ${remaining} 個<br>
+                            • 未分配學生: ${unassignedStudents.length} 人<br>
+                            • 班級總人數: ${students.length} 人
+                        </div>
+                        ${remaining > 0 && unassignedStudents.length > 0 ? `
+                            <button class="btn btn-success btn-large" onclick="performRandomAssign()">
+                                🎲 執行隨機分配
+                            </button>
+                        ` : `
+                            <div class="alert alert-success">✅ 所有職缺已分配完成!</div>
+                        `}
+                    </div>
+                `;
+            } else {
+                randomArea.innerHTML = '';
+            }
+            
+            const byRound = {};
+            allResults.forEach(r => {
+                if(!byRound[r.round]) byRound[r.round] = {};
+                if(!byRound[r.round][r.job]) byRound[r.round][r.job] = [];
+                byRound[r.round][r.job].push(r);
+            });
+            
+            let html = '';
+            Object.keys(byRound).sort((a,b) => a - b).forEach(round => {
+                html += `<div class="section"><h3>第 ${round} 輪結果</h3>`;
+                
+                Object.keys(byRound[round]).forEach(jobName => {
+                    const list = byRound[round][jobName];
+                    const totalWeight = list.reduce((sum, r) => sum + (typeof r.weight === 'number' ? r.weight : 0), 0);
+                    
+                    html += `
+                        <div style="margin:15px 0;">
+                            <h4 style="color:#333;margin-bottom:10px;">🧹 ${jobName}</h4>
+                            <div style="background:#fff3cd;padding:8px;border-radius:6px;margin-bottom:10px;font-size:0.9em;">
+                                總權重: ${totalWeight} | 實際機率 = 個人權重 ÷ ${totalWeight} × 100%
+                            </div>
+                            <table class="result-table">
+                                <tr>
+                                    <th>座號</th>
+                                    <th>姓名</th>
+                                    <th>投入資源</th>
+                                    <th>數量</th>
+                                    <th>權重</th>
+                                    <th>實際機率</th>
+                                    <th>狀態</th>
+                                </tr>
+                                ${list.map(r => {
+                                    const probability = totalWeight > 0 && typeof r.weight === 'number' ? ((r.weight / totalWeight) * 100).toFixed(2) : '-';
+                                    return `
+                                        <tr>
+                                            <td>${r.seat}</td>
+                                            <td><strong>${r.name}</strong></td>
+                                            <td>${r.resource}</td>
+                                            <td>${r.amount}</td>
+                                            <td>${r.weight}</td>
+                                            <td><strong>${probability === '-' ? '-' : probability + '%'}</strong></td>
+                                            <td>
+                                                <span class="status-badge ${r.status === 'selected' ? 'status-selected' : 'status-rejected'}">
+                                                    ${r.status === 'selected' ? '✅ 中選' : '❌ 未中選'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </table>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+            });
+            
+            content.innerHTML = html;
+        }
+
+        // ========================================
+        // 隨機分配
+        // ========================================
+        function performRandomAssign() {
+            if(students.length === 0) {
+                alert('❌ 請先上傳班級名單!');
+                return;
+            }
+            
+            const unassignedStudents = students.filter(s => !selectedStudents.has(s.name));
+            
+            if(unassignedStudents.length === 0) {
+                alert('✅ 所有學生都已分配!');
+                return;
+            }
+            
+            let count = 0;
+            jobs.forEach(job => {
+                const current = allResults.filter(r => r.job === job.name && r.status === 'selected').length;
+                const needed = job.count - current;
+                
+                for(let i = 0; i < needed && unassignedStudents.length > 0; i++) {
+                    const idx = Math.floor(Math.random() * unassignedStudents.length);
+                    const student = unassignedStudents.splice(idx, 1)[0];
+                    
+                    selectedStudents.add(student.name);
+                    allResults.push({
+                        round: '隨機',
+                        job: job.name,
+                        seat: student.seat,
+                        name: student.name,
+                        resource: '-',
+                        amount: '-',
+                        weight: '-',
+                        status: 'selected'
+                    });
+                    count++;
+                }
+            });
+            
+            if(count > 0) {
+                saveData();
+                updateResults();
+                alert(`✅ 隨機分配完成! 共分配 ${count} 個職缺`);
+            } else {
+                alert('✅ 沒有剩餘職缺需要分配!');
+            }
+        }
+
+        // ========================================
+        // 匯出結果 (依打掃項目)
+        // ========================================
+        function exportByJob() {
+            if(allResults.length === 0) {
+                alert('❌ 尚無結果可匯出!');
+                return;
+            }
+            
+            // 只匯出中選者,按打掃項目分類
+            const data = [['中籤打掃項目', '座號', '姓名']];
+            
+            const selectedResults = allResults.filter(r => r.status === 'selected');
+            
+            // 按打掃項目分組
+            const byJob = {};
+            selectedResults.forEach(r => {
+                if(!byJob[r.job]) byJob[r.job] = [];
+                byJob[r.job].push(r);
+            });
+            
+            // 依照預設項目順序排列
+            jobs.forEach(job => {
+                if(byJob[job.name]) {
+                    byJob[job.name].forEach(r => {
+                        data.push([r.job, r.seat, r.name]);
+                    });
+                }
+            });
+            
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            ws['!cols'] = [{wch:30},{wch:10},{wch:15}];
+            XLSX.utils.book_append_sheet(wb, ws, '依打掃項目');
+            
+            const date = new Date().toISOString().split('T')[0];
+            XLSX.writeFile(wb, `打掃徵才結果_依項目_${date}.xlsx`);
+        }
+
+        // ========================================
+        // 匯出結果 (依學生統計)
+        // ========================================
+        function exportByStudent() {
+            if(allResults.length === 0) {
+                alert('❌ 尚無結果可匯出!');
+                return;
+            }
+            
+            // 統計每位學生的所有參與記錄
+            const data = [['座號', '姓名', '徵選輪次', '投入資源種類', '投入資源數量', '中籤與否']];
+            
+            // 按學生分組
+            const byStudent = {};
+            allResults.forEach(r => {
+                const key = r.name;
+                if(!byStudent[key]) byStudent[key] = [];
+                byStudent[key].push(r);
+            });
+            
+            // 按座號排序
+            const sortedStudents = Object.keys(byStudent).sort((a, b) => {
+                const seatA = byStudent[a][0].seat;
+                const seatB = byStudent[b][0].seat;
+                return seatA - seatB;
+            });
+            
+            sortedStudents.forEach(studentName => {
+                const records = byStudent[studentName];
+                records.forEach(r => {
+                    data.push([
+                        r.seat,
+                        r.name,
+                        r.round === '隨機' ? '隨機分配' : `第${r.round}輪`,
+                        r.resource,
+                        r.amount,
+                        r.status === 'selected' ? '中籤' : '未中籤'
+                    ]);
+                });
+            });
+            
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            ws['!cols'] = [{wch:10},{wch:15},{wch:15},{wch:18},{wch:18},{wch:12}];
+            XLSX.utils.book_append_sheet(wb, ws, '依學生統計');
+            
+            const date = new Date().toISOString().split('T')[0];
+            XLSX.writeFile(wb, `打掃徵才結果_依學生_${date}.xlsx`);
+        }
+
+        // ========================================
+        // 下載範例
+        // ========================================
+        function downloadTemplate() {
+            const data = [
+                ['座號', '姓名', '參與打掃項目', '投入資源種類', '資源投入數量', '徵選輪次'],
+                [1, '小明', '[教室]地板天花板', '金幣', 150, '第1輪'],
+                [2, '小華', '[教室]擦門窗', '老師簽名卡', 2, '第1輪'],
+                [3, '小美', '[教室]倒垃圾(含陽台地板)', '最強王牌', 1, '第1輪'],
+                [4, '小強', '[教室]黑板教師桌', '金幣', 90, '第1輪'],
+                [6, '小傑', '[教室]書櫃電腦櫃圖書櫃', '金幣', 60, '第2輪'],
+                [7, '小玲', '[教室]洗手台飲水機', '老師簽名卡', 1, '第2輪']
+            ];
+            
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            ws['!cols'] = [{wch:8},{wch:12},{wch:30},{wch:18},{wch:18},{wch:12}];
+            XLSX.utils.book_append_sheet(wb, ws, '徵選名單');
+            XLSX.writeFile(wb, '打掃徵選範例.xlsx');
+        }
+
+        // ========================================
+        // 重置
+        // ========================================
+        function resetAll() {
+            if(confirm('⚠️ 確定要重置所有資料嗎?\n\n這將清除所有徵選記錄,但保留資源、項目和班級名單。')) {
+                currentRoundData = [];
+                allResults = [];
+                selectedStudents.clear();
+                currentRound = 0;
+                saveData();
+                updateAll();
+                document.getElementById('uploadStatus').innerHTML = '';
+                alert('✅ 已重置!可以開始新的徵選。');
+            }
+        }
+    </script>
+</body>
+</html>
