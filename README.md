@@ -9,10 +9,14 @@ wuyutzu-tools/
 ├── index.html                    # 工具導覽首頁
 ├── christmas/                    # 聖誕節系列工具
 │   ├── lottery.html             # 交換禮物抽籤系統
-│   └── adjectives.html          # 禮物形容詞產生器
+│   ├── adjectives.html          # 禮物形容詞產生器
+│   ├── gift-exchange.html       # 聖誕禮物交換系統
+│   └── points.html              # 聖誕集點系統
 ├── classroom/                    # 班級管理工具
+│   ├── cleaning-jobs.html       # 打掃工作徵才系統 (v3.3)
 │   └── seating.html             # 座位安排系統
 └── gamification/                 # 遊戲化教學工具
+    ├── random-selector.html     # 隨機選人系統
     └── system.html              # 選人系統 + 陣亡詛咒系統
 ```
 
@@ -33,6 +37,15 @@ wuyutzu-tools/
 - 激發禮物描述創意
 
 ### 🏫 班級管理工具
+
+#### 🧹 打掃工作徵才系統
+- 加權隨機機率模型(數學正確)
+- 預設7個教室打掃項目
+- 多輪累積徵選機制
+- 雙格式匯出(依項目/依學生)
+- 自動隨機分配剩餘職缺
+- 顯示權重與實際中選機率
+- 支援金幣、簽名卡、王牌等資源
 
 #### 💺 座位安排系統
 - 自訂教室配置(行列數)
