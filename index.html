@@ -384,6 +384,12 @@
                 <div class="tool-name">座位安排系統</div>
                 <div class="tool-brief">智慧座位編排工具</div>
             </div>
+
+            <div class="tool-card" onclick="showModal('cleaning')">
+                <div class="tool-icon">🧹</div>
+                <div class="tool-name">打掃徵才系統</div>
+                <div class="tool-brief">資源競標分配工作</div>
+            </div>
         </div>
 
         <div class="category-title">🎮 遊戲化教學工具</div>
@@ -519,6 +525,45 @@
             <div class="modal-buttons">
                 <a href="classroom/seating.html" class="btn btn-primary">開始使用 →</a>
                 <button class="btn btn-secondary" onclick="closeModal('seating')">返回</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 彈出視窗 - 打掃徵才系統 -->
+    <div id="modal-cleaning" class="modal" onclick="closeModalOnBackdrop(event, 'cleaning')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal('cleaning')">×</button>
+            <div class="modal-header">
+                <div class="modal-icon">🧹</div>
+                <div class="modal-title">打掃工作徵才系統</div>
+                <div class="modal-subtitle">遊戲化打掃分配 - 資源競標機制</div>
+            </div>
+
+            <div class="modal-section">
+                <h3>✨ 主要功能</h3>
+                <ul>
+                    <li>老師可自訂資源種類與優先順序</li>
+                    <li>管理打掃項目與需要人數</li>
+                    <li>學生用資源競標打掃工作</li>
+                    <li>自動判定正取名單</li>
+                    <li>防止重複得標</li>
+                </ul>
+            </div>
+
+            <div class="modal-section">
+                <h3>📖 使用方式</h3>
+                <ul>
+                    <li>設定資源種類(如:金幣、簽名卡)</li>
+                    <li>新增打掃項目與人數需求</li>
+                    <li>學生填寫Google表單投標</li>
+                    <li>老師上傳Excel檔案</li>
+                    <li>系統自動判定並公告結果</li>
+                </ul>
+            </div>
+
+            <div class="modal-buttons">
+                <a href="classroom/cleaning-jobs.html" class="btn btn-primary">開始使用 →</a>
+                <button class="btn btn-secondary" onclick="closeModal('cleaning')">返回</button>
             </div>
         </div>
     </div>
