@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧰 巫魚子的教學工具箱</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 25px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 1000px;
+            width: 100%;
+            padding: 40px;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #f0f0f0;
+        }
+
+        h1 {
+            color: #c41e3a;
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1em;
+        }
+
+        .category-title {
+            color: #333;
+            font-size: 1.3em;
+            margin: 25px 0 15px 0;
+            padding-left: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .tool-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 25px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .tool-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+
+        .tool-icon {
+            font-size: 3em;
+            margin-bottom: 12px;
+        }
+
+        .tool-name {
+            color: #333;
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .tool-brief {
+            color: #888;
+            font-size: 0.85em;
+            line-height: 1.4;
+        }
+
+        /* 彈出視窗樣式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal.show {
+            display: flex;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 35px;
+            position: relative;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 2em;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.3s;
+            background: none;
+            border: none;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: #c41e3a;
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .modal-icon {
+            font-size: 4em;
+            margin-bottom: 10px;
+        }
+
+        .modal-title {
+            color: #333;
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .modal-subtitle {
+            color: #666;
+            font-size: 1em;
+        }
+
+        .modal-section {
+            margin-bottom: 25px;
+        }
+
+        .modal-section h3 {
+            color: #667eea;
+            font-size: 1.2em;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .modal-section ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .modal-section li {
+            color: #555;
+            margin-bottom: 10px;
+            padding-left: 25px;
+            position: relative;
+            line-height: 1.6;
+        }
+
+        .modal-section li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #2c5f2d;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .modal-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .btn {
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-size: 1.05em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            text-decoration: none;
+            display: block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #c41e3a 0%, #8b0000 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(196, 30, 58, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        footer {
+            text-align: center;
+            padding-top: 25px;
+            margin-top: 20px;
+            border-top: 2px solid #f0f0f0;
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        .footer-links {
+            margin-top: 12px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: #667eea;
+            text-decoration: none;
+            transition: color 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .footer-links a:hover {
+            color: #c41e3a;
+        }
+
+        .snowflake {
+            position: fixed;
+            top: -10px;
+            z-index: 999;
+            user-select: none;
+            cursor: default;
+            animation: snowfall linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes snowfall {
+            0% {
+                transform: translateY(0) rotate(0deg);
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 25px 20px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .tools-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 15px;
+            }
+
+            .tool-card {
+                padding: 20px 15px;
+            }
+
+            .tool-icon {
+                font-size: 2.5em;
+            }
+
+            .tool-name {
+                font-size: 1em;
+            }
+
+            .modal-content {
+                padding: 25px 20px;
+            }
+
+            .modal-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧰 巫魚子的教學工具箱</h1>
+            <p class="subtitle">讓教學更有趣的實用小工具集合</p>
+        </header>
+
+        <div class="category-title">🎄 聖誕節系列工具</div>
+        <div class="tools-grid">
+            <div class="tool-card" onclick="showModal('lottery')">
+                <div class="tool-icon">🎲</div>
+                <div class="tool-name">抽籤系統</div>
+                <div class="tool-brief">公平保密的抽籤工具</div>
+            </div>
+
+            <div class="tool-card" onclick="showModal('adjectives')">
+                <div class="tool-icon">✨</div>
+                <div class="tool-name">形容詞產生器</div>
+                <div class="tool-brief">禮物願望靈感幫手</div>
+            </div>
+        </div>
+
+        <div class="category-title">🏫 班級管理工具</div>
+        <div class="tools-grid">
+            <div class="tool-card" onclick="showModal('seating')">
+                <div class="tool-icon">💺</div>
+                <div class="tool-name">座位安排系統</div>
+                <div class="tool-brief">智慧座位編排工具</div>
+            </div>
+
+            <div class="tool-card" onclick="showModal('cleaning')">
+                <div class="tool-icon">🧹</div>
+                <div class="tool-name">打掃徵才系統</div>
+                <div class="tool-brief">資源競標分配工作</div>
+            </div>
+            
+            <div class="tool-card" onclick="showModal('goldenhits')">
+                <div class="tool-icon">🎤</div>
+                <div class="tool-name">金曲歌王</div>
+                <div class="tool-brief">音樂資料庫</div>
+            </div>
+        </div>
+
+        <div class="category-title">🎮 遊戲化教學工具</div>
+        <div class="tools-grid">
+            <div class="tool-card" onclick="showModal('selector')">
+                <div class="tool-icon">🎯</div>
+                <div class="tool-name">選人系統</div>
+                <div class="tool-brief">可調機率的抽籤工具</div>
+            </div>
+
+            <div class="tool-card" onclick="showModal('deathcurse')">
+                <div class="tool-icon">💀</div>
+                <div class="tool-name">陣亡詛咒系統</div>
+                <div class="tool-brief">角色陣亡懲罰抽取</div>
+            </div>
+        </div>
+
+        <footer>
+            <div>程式設計:巫魚子 <sup>©</sup> 2025</div>
+            <div class="footer-links">
+                <a href="https://sites.google.com/view/teacher-wuyutzu/%E9%A6%96%E9%A0%81?authuser=0" target="_blank">🌐 巫魚子網站</a>
+                <a href="https://www.youtube.com/@chwu0223" target="_blank">📺 YouTube 頻道</a>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 彈出視窗 - 抽籤系統 -->
+    <div id="modal-lottery" class="modal" onclick="closeModalOnBackdrop(event, 'lottery')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal('lottery')">×</button>
+            <div class="modal-header">
+                <div class="modal-icon">🎲</div>
+                <div class="modal-title">聖誕節交換禮物抽籤系統</div>
+                <div class="modal-subtitle">公平、保密、智慧的抽籤工具</div>
+            </div>
+
+            <div class="modal-section">
+                <h3>✨ 主要功能</h3>
+                <ul>
+                    <li>確保沒人抽到自己</li>
+                    <li>老師也能保有神秘感</li>
+                    <li>可下載配對清單備用</li>
+                    <li>查詢結果自動消失保密</li>
+                </ul>
+            </div>
+
+            <div class="modal-section">
+                <h3>📖 使用方式</h3>
+                <ul>
+                    <li>輸入所有參與者名單(包括老師)</li>
+                    <li>系統自動產生配對</li>
+                    <li>老師下載配對清單備份</li>
+                    <li>活動當天每人查詢送禮對象</li>
+                </ul>
+            </div>
+
+            <div class="modal-buttons">
+                <a href="christmas/lottery.html" class="btn btn-primary">開始使用 →</a>
+                <button class="btn btn-secondary" onclick="closeModal('lottery')">返回</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 彈出視窗 - 形容詞產生器 -->
+    <div id="modal-adjectives" class="modal" onclick="closeModalOnBackdrop(event, 'adjectives')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal('adjectives')">×</button>
+            <div class="modal-header">
+                <div class="modal-icon">✨</div>
+                <div class="modal-title">聖誕禮物形容詞產生器</div>
+                <div class="modal-subtitle">讓巫魚子大師幫你找靈感!</div>
+            </div>
+
+            <div class="modal-section">
+                <h3>✨ 主要功能</h3>
+                <ul>
+                    <li>收錄 160 個精選形容詞</li>
+                    <li>8 大類別自由選擇組合</li>
+                    <li>一鍵複製到 Google 表單</li>
+                    <li>激發禮物描述創意</li>
+                </ul>
+            </div>
+
+            <div class="modal-section">
+                <h3>📖 使用方式</h3>
+                <ul>
+                    <li>從 8 個類別中選擇 3 個</li>
+                    <li>系統從每個類別隨機抽一個形容詞</li>
+                    <li>點擊「複製形容詞」</li>
+                    <li>貼到 Google 表單即可</li>
+                </ul>
+            </div>
+
+            <div class="modal-buttons">
+                <a href="christmas/adjectives.html" class="btn btn-primary">開始使用 →</a>
+                <button class="btn btn-secondary" onclick="closeModal('adjectives')">返回</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 彈出視窗 - 座位安排系統 -->
+    <div id="modal-seating" class="modal" onclick="closeModalOnBackdrop(event, 'seating')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal('seating')">×</button>
+            <div class="modal-header">
+                <div class="modal-icon">💺</div>
+                <div class="modal-title">班級座位安排系統</div>
+                <div class="modal-subtitle">智慧化的座位編排工具</div>
+            </div>
+
+            <div class="modal-section">
+                <h3>✨ 主要功能</h3>
+                <ul>
+                    <li>自訂教室配置(行列數)</li>
+                    <li>匯入學生名單</li>
+                    <li>設定固定座位或關閉座位</li>
+                    <li>一鍵隨機分配座位</li>
+                    <li>下載座位表紀錄</li>
+                </ul>
+            </div>
+
+            <div class="modal-section">
+                <h3>📖 使用方式</h3>
+                <ul>
+                    <li>建立班級並設定教室格局</li>
+                    <li>新增學生名單</li>
+                    <li>標記特殊座位(固定/關閉)</li>
+                    <li>隨機分配或手動調整</li>
+                    <li>匯出座位表供使用</li>
+                </ul>
+            </div>
+
+            <div class="modal-buttons">
+                <a href="classroom/seating.html" class="btn btn-primary">開始使用 →</a>
+                <button class="btn btn-secondary" onclick="closeModal('seating')">返回</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 彈出視窗 - 打掃徵才系統 -->
+    <div id="modal-cleaning" class="modal" onclick="closeModalOnBackdrop(event, 'cleaning')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal('cleaning')">×</button>
+            <div class="modal-header">
+                <div class="modal-icon">🧹</div>
+                <div class="modal-title">打掃工作徵才系統</div>
+                <div class="modal-subtitle">遊戲化打掃分配 - 資源競標機制</div>
+            </div>
+
+            <div class="modal-section">
+                <h3>✨ 主要功能</h3>
+                <ul>
+                    <li>老師可自訂資源種類與優先順序</li>
+                    <li>管理打掃項目與需要人數</li>
+                    <li>學生用資源競標打掃工作</li>
+                    <li>自動判定正取名單</li>
+                    <li>防止重複得標</li>
+                </ul>
+            </div>
+
+            <div class="modal-section">
+                <h3>📖 使用方式</h3>
+                <ul>
+                    <li>設定資源種類(如:金幣、簽名卡)</li>
+                    <li>新增打掃項目與人數需求</li>
+                    <li>學生填寫Google表單投標</li>
+                    <li>老師上傳Excel檔案</li>
+                    <li>系統自動判定並公告結果</li>
+                </ul>
+            </div>
+
+            <div class="modal-buttons">
+                <a href="classroom/cleaning-jobs.html" class="btn btn-primary">開始使用 →</a>
+                <button class="btn btn-secondary" onclick="closeModal('cleaning')">返回</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 彈出視窗 - 金曲歌王 -->
+    <div id="modal-goldenhits" class="modal" onclick="closeModalOnBackdrop(event, 'goldenhits')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal('goldenhits')">×</button>
+            <div class="modal-header">
+                <div class="modal-icon">🎤</div>
+                <div class="modal-title">金曲歌王</div>
+                <div class="modal-subtitle">音樂資料庫 - 自我覺察學習</div>
+            </div>
+
+            <div class="modal-section">
+                <h3>✨ 主要功能</h3>
+                <ul>
+                    <li>精選45位經典歌手</li>
+                    <li>涵蓋三個音樂年代</li>
+                    <li>90首代表歌曲清單</li>
+                    <li>音樂風格分類</li>
+                    <li>適合投影展示</li>
+                </ul>
+            </div>
+
+            <div class="modal-section">
+                <h3>📖 使用方式</h3>
+                <ul>
+                    <li>投影給學生參考歌單</li>
+                    <li>學生選擇喜歡的歌手/歌曲</li>
+                    <li>搭配學習單進行自我覺察</li>
+                    <li>收集資料進行心理分析</li>
+                    <li>作為導師評語參考依據</li>
+                </ul>
+            </div>
+
+            <div class="modal-buttons">
+                <a href="classroom/golden-hits.html" class="btn btn-primary">開始使用 →</a>
+                <button class="btn btn-secondary" onclick="closeModal('goldenhits')">返回</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 彈出視窗 - 選人系統 -->
+    <div id="modal-selector" class="modal" onclick="closeModalOnBackdrop(event, 'selector')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal('selector')">×</button>
+            <div class="modal-header">
+                <div class="modal-icon">🎯</div>
+                <div class="modal-title">巫魚子大師選人系統</div>
+                <div class="modal-subtitle">可調整機率的智慧抽籤工具</div>
+            </div>
+
+            <div class="modal-section">
+                <h3>✨ 主要功能</h3>
+                <ul>
+                    <li>設定班級人數(1-50人)</li>
+                    <li>8種抽籤方式可調整機率</li>
+                    <li>機率總和自動驗證</li>
+                    <li>保留最近10次抽籤記錄</li>
+                    <li>多樣化抽籤模式</li>
+                </ul>
+            </div>
+
+            <div class="modal-section">
+                <h3>📖 使用方式</h3>
+                <ul>
+                    <li>輸入班級人數</li>
+                    <li>調整各種抽籤方式的機率</li>
+                    <li>系統會根據機率隨機選擇方式</li>
+                    <li>顯示抽中的學生座號</li>
+                    <li>查看歷史記錄</li>
+                </ul>
+            </div>
+
+            <div class="modal-buttons">
+                <a href="gamification/system.html" class="btn btn-primary">開始使用 →</a>
+                <button class="btn btn-secondary" onclick="closeModal('selector')">返回</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 彈出視窗 - 陣亡詛咒系統 -->
+    <div id="modal-deathcurse" class="modal" onclick="closeModalOnBackdrop(event, 'deathcurse')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal('deathcurse')">×</button>
+            <div class="modal-header">
+                <div class="modal-icon">💀</div>
+                <div class="modal-title">陣亡詛咒系統</div>
+                <div class="modal-subtitle">遊戲化教學的懲罰機制</div>
+            </div>
+
+            <div class="modal-section">
+                <h3>✨ 主要功能</h3>
+                <ul>
+                    <li>當英雄血量歸零時觸發</li>
+                    <li>9種不同類型的詛咒</li>
+                    <li>等機率隨機抽取</li>
+                    <li>包含幸運復活機制</li>
+                    <li>記錄陣亡歷史</li>
+                </ul>
+            </div>
+
+            <div class="modal-section">
+                <h3>📖 詛咒類型</h3>
+                <ul>
+                    <li>服務類: 擔任小志工</li>
+                    <li>體驗類: 無手機日、健康鞋</li>
+                    <li>學習類: 默寫元素週期表</li>
+                    <li>懲罰類: -500 XP</li>
+                    <li>幸運類: 免費復活奇蹟</li>
+                </ul>
+            </div>
+
+            <div class="modal-buttons">
+                <a href="gamification/system.html" class="btn btn-primary">開始使用 →</a>
+                <button class="btn btn-secondary" onclick="closeModal('deathcurse')">返回</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 顯示彈出視窗
+        function showModal(toolId) {
+            const modal = document.getElementById('modal-' + toolId);
+            if (modal) {
+                modal.classList.add('show');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        // 關閉彈出視窗
+        function closeModal(toolId) {
+            const modal = document.getElementById('modal-' + toolId);
+            if (modal) {
+                modal.classList.remove('show');
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        // 點擊背景關閉
+        function closeModalOnBackdrop(event, toolId) {
+            if (event.target.classList.contains('modal')) {
+                closeModal(toolId);
+            }
+        }
+
+        // ESC 鍵關閉彈出視窗
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                document.querySelectorAll('.modal.show').forEach(modal => {
+                    const toolId = modal.id.replace('modal-', '');
+                    closeModal(toolId);
+                });
+            }
+        });
+
+        // 雪花效果
+        function createSnowflakes() {
+            const snowflakes = ['❄️', '❅', '❆'];
+            for (let i = 0; i < 20; i++) {
+                setTimeout(() => {
+                    const snowflake = document.createElement('div');
+                    snowflake.className = 'snowflake';
+                    snowflake.textContent = snowflakes[Math.floor(Math.random() * snowflakes.length)];
+                    snowflake.style.left = Math.random() * 100 + '%';
+                    snowflake.style.animationDuration = (Math.random() * 3 + 5) + 's';
+                    snowflake.style.opacity = Math.random() * 0.6 + 0.2;
+                    snowflake.style.fontSize = (Math.random() * 10 + 15) + 'px';
+                    document.body.appendChild(snowflake);
+
+                    setTimeout(() => {
+                        snowflake.remove();
+                    }, 8000);
+                }, i * 200);
+            }
+        }
+
+        // 頁面載入完成後啟動雪花
+        window.addEventListener('load', () => {
+            createSnowflakes();
+            setInterval(createSnowflakes, 10000);
+        });
+    </script>
+</body>
+</html>
