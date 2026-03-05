@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 戳戳樂遊戲</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        /* 返回首頁 */
+        .back-home {
+            display: inline-block;
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+            font-size: 0.95em;
+            margin-bottom: 12px;
+            padding: 6px 14px;
+            border: 1.5px solid rgba(255,255,255,0.5);
+            border-radius: 20px;
+            transition: all 0.2s;
+        }
+        .back-home:hover {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        /* 標題 */
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        .header .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        /* 主要區域 */
+        .main-content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+            animation: fadeIn 1s ease-out;
+        }
+        
+        /* 控制面板 */
+        .control-panel {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            height: fit-content;
+        }
+        
+        .panel-section {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .panel-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        
+        .panel-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* 上傳圖片 */
+        .upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f8f9ff;
+        }
+        
+        .upload-area:hover {
+            background: #eef1ff;
+            border-color: #5568d3;
+        }
+        
+        .upload-area.has-image {
+            border-style: solid;
+            border-color: #4caf50;
+            background: #e8f5e9;
+        }
+        
+        .upload-icon {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        #imageInput {
+            display: none;
+        }
+        
+        .preview-image {
+            max-width: 100%;
+            max-height: 150px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        /* 獎品設定 */
+        .prize-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .prize-item {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+            align-items: center;
+        }
+        
+        .prize-item input[type="text"] {
+            flex: 1;
+            padding: 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95em;
+        }
+        
+        .prize-item input[type="number"] {
+            width: 60px;
+            padding: 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95em;
+        }
+        
+        .prize-item button {
+            background: #f44336;
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        
+        .prize-item button:hover {
+            background: #d32f2f;
+            transform: scale(1.1);
+        }
+        
+        .add-prize-btn {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        
+        .add-prize-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        /* 控制按鈕 */
+        .control-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 10px;
+        }
+        
+        .control-btn:last-child {
+            margin-bottom: 0;
+        }
+        
+        .btn-start {
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+            color: white;
+        }
+        
+        .btn-start:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(76, 175, 80, 0.4);
+        }
+        
+        .btn-end {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            color: white;
+        }
+        
+        .btn-end:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 152, 0, 0.4);
+        }
+        
+        .btn-reset {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+            color: white;
+        }
+        
+        .btn-reset:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(244, 67, 54, 0.4);
+        }
+        
+        .btn-disabled {
+            opacity: 0.5;
+            cursor: not-allowed !important;
+        }
+        
+        .btn-disabled:hover {
+            transform: none !important;
+            box-shadow: none !important;
+        }
+        
+        /* 遊戲區域 */
+        .game-area {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        
+        .game-status {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 1.2em;
+        }
+        
+        .game-status-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        
+        /* 戳戳樂格子 */
+        .poke-board {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            aspect-ratio: 1;
+        }
+        
+        .background-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 15px;
+            z-index: 0;
+        }
+        
+        .grid-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(6, 1fr);
+            gap: 3px;
+            padding: 3px;
+            z-index: 1;
+        }
+        
+        .grid-cell {
+            background: rgba(102, 126, 234, 0.7);
+            backdrop-filter: blur(5px);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .grid-cell:hover:not(.poked) {
+            background: rgba(102, 126, 234, 0.9);
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+        
+        .grid-cell.poked {
+            background: rgba(180, 180, 180, 0.85);
+            cursor: not-allowed;
+            color: #333;
+        }
+        
+        .grid-cell.poked.winner {
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            color: #333;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+        
+        .grid-cell.poked .grid-cell-number {
+            opacity: 0.5;
+        }
+        
+        .grid-cell-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+            padding: 5px;
+        }
+        
+        .grid-cell-student {
+            font-size: 0.6em;
+            font-weight: bold;
+            margin-bottom: 3px;
+            opacity: 0.8;
+        }
+        
+        .grid-cell.winner .grid-cell-student {
+            opacity: 1;
+            color: #8b6914;
+        }
+        
+        .grid-cell-prize {
+            font-size: 0.8em;
+            font-weight: bold;
+            text-align: center;
+            line-height: 1.2;
+            word-break: break-all;
+        }
+        
+        .grid-cell.winner .grid-cell-prize {
+            color: #8b6914;
+            font-size: 0.85em;
+        }
+        
+        .grid-cell-number {
+            font-size: 0.5em;
+            position: absolute;
+            top: 5px;
+            left: 8px;
+            opacity: 0.7;
+        }
+        
+        /* 彈窗 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            animation: slideIn 0.3s ease-out;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        
+        .modal-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .modal-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1.2em;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .modal-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .modal-btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .modal-btn-primary:hover {
+            background: #5568d3;
+        }
+        
+        .modal-btn-secondary {
+            background: #e0e0e0;
+            color: #666;
+        }
+        
+        .modal-btn-secondary:hover {
+            background: #d0d0d0;
+        }
+        
+        /* 結果彈窗 */
+        .result-prize {
+            font-size: 2em;
+            color: #667eea;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9ff;
+            border-radius: 12px;
+        }
+        
+        .result-student {
+            font-size: 1.2em;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        /* 中獎名單 */
+        .winners-list {
+            max-height: 500px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+        
+        .winner-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            background: #f8f9ff;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .winner-student {
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .winner-prize {
+            color: #666;
+        }
+        
+        .download-btn {
+            width: 100%;
+            padding: 15px;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s;
+        }
+        
+        .download-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+        
+        /* 動畫 */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* 響應式設計 */
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .control-panel {
+                order: 2;
+            }
+            
+            .game-area {
+                order: 1;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .poke-board {
+                max-width: 100%;
+            }
+            
+            .grid-cell {
+                font-size: 1.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 標題 -->
+        <div class="header">
+            <a class="back-home" href="../index.html">← 返回工具箱首頁</a>
+            <h1>🎯 戳戳樂遊戲</h1>
+            <div class="subtitle">6x6 格子 · 隨機獎品 · 即時開獎</div>
+        </div>
+        
+        <div class="main-content">
+            <!-- 控制面板 -->
+            <div class="control-panel">
+                <!-- 上傳圖片 -->
+                <div class="panel-section">
+                    <div class="panel-title">📸 背景圖片</div>
+                    <div class="upload-area" id="uploadArea" onclick="document.getElementById('imageInput').click()">
+                        <div class="upload-icon">🖼️</div>
+                        <div>點擊上傳圖片</div>
+                        <div style="font-size: 0.9em; color: #999; margin-top: 5px;">支援 JPG, PNG</div>
+                    </div>
+                    <input type="file" id="imageInput" accept="image/*">
+                    <img id="previewImage" class="preview-image" style="display: none;">
+                </div>
+                
+                <!-- 獎品設定 -->
+                <div class="panel-section">
+                    <div class="panel-title">🎁 獎品設定</div>
+                    <div class="prize-list" id="prizeList">
+                        <!-- 獎品項目會動態加入 -->
+                    </div>
+                    <button class="add-prize-btn" onclick="addPrize()">+ 新增獎品</button>
+                    <div style="margin-top: 10px; font-size: 0.9em; color: #999;">
+                        不足格數自動填入「銘謝惠顧」
+                    </div>
+                </div>
+                
+                <!-- 控制按鈕 -->
+                <div class="panel-section">
+                    <div class="panel-title">🎮 遊戲控制</div>
+                    <button class="control-btn btn-start" id="startBtn" onclick="startGame()">🎲 開始遊戲</button>
+                    <button class="control-btn btn-end btn-disabled" id="endBtn" onclick="endGame()">⏹️ 結束遊戲</button>
+                    <button class="control-btn btn-reset" onclick="resetGame()">🔄 清除重置</button>
+                </div>
+            </div>
+            
+            <!-- 遊戲區域 -->
+            <div class="game-area">
+                <div class="game-status" id="gameStatus">
+                    <div class="game-status-icon">🎯</div>
+                    <div>請上傳背景圖片並設定獎品</div>
+                    <div>然後點擊「開始遊戲」</div>
+                </div>
+                
+                <div class="poke-board" id="pokeBoard" style="display: none;">
+                    <img id="backgroundImage" class="background-image">
+                    <div class="grid-container" id="gridContainer">
+                        <!-- 36個格子會動態生成 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 座號輸入彈窗 -->
+    <div class="modal" id="studentModal">
+        <div class="modal-content">
+            <div class="modal-icon">👤</div>
+            <div class="modal-title">請輸入班級座號</div>
+            <input type="text" class="modal-input" id="studentId" placeholder="例如: 10501" maxlength="5">
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-secondary" onclick="closeStudentModal()">取消</button>
+                <button class="modal-btn modal-btn-primary" onclick="confirmStudent()">確認</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 開獎結果彈窗 -->
+    <div class="modal" id="resultModal">
+        <div class="modal-content">
+            <div class="modal-icon" id="resultIcon">🎉</div>
+            <div class="modal-title" id="resultTitle">恭喜中獎!</div>
+            <div class="result-prize" id="resultPrize">iPad</div>
+            <div class="result-student" id="resultStudent">座號: 10501</div>
+            <button class="modal-btn modal-btn-primary" onclick="closeResultModal()">關閉</button>
+        </div>
+    </div>
+    
+    <!-- 中獎名單彈窗 -->
+    <div class="modal" id="winnersModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-icon">📋</div>
+            <div class="modal-title">中獎名單</div>
+            <div class="winners-list" id="winnersList">
+                <!-- 中獎名單會動態加入 -->
+            </div>
+            <button class="download-btn" onclick="downloadWinners()">📥 下載 Excel</button>
+            <button class="modal-btn modal-btn-secondary" onclick="closeWinnersModal()" style="margin-top: 10px; width: 100%;">關閉</button>
+        </div>
+    </div>
+    
+    <!-- 音效 -->
+
+    <script>
+        // 全域變數
+        let backgroundImageSrc = null;
+        let prizes = [];
+        let gameStarted = false;
+        let gridData = []; // 36格的獎品資料
+        let pokedCells = new Set(); // 已戳過的格子
+        let winners = []; // 中獎記錄
+        let currentCell = null; // 當前點擊的格子
+        
+        // 初始化
+        window.onload = function() {
+            // 預設新增3個獎品欄位
+            addPrize();
+            addPrize();
+            addPrize();
+            
+            // 圖片上傳
+            document.getElementById('imageInput').addEventListener('change', handleImageUpload);
+        };
+        
+        // 處理圖片上傳
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    backgroundImageSrc = event.target.result;
+                    const uploadArea = document.getElementById('uploadArea');
+                    const previewImage = document.getElementById('previewImage');
+                    
+                    uploadArea.classList.add('has-image');
+                    uploadArea.innerHTML = '<div class="upload-icon">✓</div><div>圖片已上傳</div><div style="font-size: 0.9em; color: #4caf50; margin-top: 5px;">點擊可重新上傳</div>';
+                    previewImage.src = backgroundImageSrc;
+                    previewImage.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        // 新增獎品欄位
+        function addPrize() {
+            const prizeList = document.getElementById('prizeList');
+            const prizeItem = document.createElement('div');
+            prizeItem.className = 'prize-item';
+            prizeItem.innerHTML = `
+                <input type="text" placeholder="獎品名稱" class="prize-name">
+                <input type="number" placeholder="數量" min="1" max="36" value="1" class="prize-count">
+                <button onclick="this.parentElement.remove()" title="刪除">🗑️</button>
+            `;
+            prizeList.appendChild(prizeItem);
+        }
+        
+        // 收集獎品資料
+        function collectPrizes() {
+            const prizeItems = document.querySelectorAll('.prize-item');
+            prizes = [];
+            let totalCount = 0;
+            
+            prizeItems.forEach(item => {
+                const name = item.querySelector('.prize-name').value.trim();
+                let count = parseInt(item.querySelector('.prize-count').value) || 0;
+                
+                // 確保數量至少為1
+                if (count < 1) count = 1;
+                if (count > 36) count = 36;
+                
+                if (name && count > 0) {
+                    prizes.push({ name, count });
+                    totalCount += count;
+                }
+            });
+            
+            // 如果總數超過36,截斷
+            if (totalCount > 36) {
+                alert('獎品總數超過36格!將自動調整。');
+                let adjusted = [];
+                let remaining = 36;
+                for (let prize of prizes) {
+                    if (remaining <= 0) break;
+                    const count = Math.min(prize.count, remaining);
+                    adjusted.push({ name: prize.name, count: count });
+                    remaining -= count;
+                }
+                prizes = adjusted;
+                totalCount = 36;
+            }
+            
+            // 補足銘謝惠顧
+            if (totalCount < 36) {
+                prizes.push({ name: '銘謝惠顧', count: 36 - totalCount });
+            }
+            
+            return prizes;
+        }
+        
+        // 開始遊戲
+        function startGame() {
+            // 檢查圖片
+            if (!backgroundImageSrc) {
+                alert('請先上傳背景圖片!');
+                return;
+            }
+            
+            // 收集獎品
+            collectPrizes();
+            
+            if (prizes.length === 0) {
+                alert('請至少設定一個獎品!');
+                return;
+            }
+            
+            // 隨機分配獎品到36格
+            gridData = [];
+            prizes.forEach(prize => {
+                for (let i = 0; i < prize.count; i++) {
+                    gridData.push(prize.name);
+                }
+            });
+            
+            // 洗牌
+            for (let i = gridData.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [gridData[i], gridData[j]] = [gridData[j], gridData[i]];
+            }
+            
+            // 初始化遊戲狀態
+            gameStarted = true;
+            pokedCells = new Set();
+            winners = [];
+            
+            // 更新UI
+            document.getElementById('gameStatus').style.display = 'none';
+            document.getElementById('pokeBoard').style.display = 'block';
+            document.getElementById('backgroundImage').src = backgroundImageSrc;
+            document.getElementById('startBtn').classList.add('btn-disabled');
+            document.getElementById('endBtn').classList.remove('btn-disabled');
+            
+            // 生成格子
+            generateGrid();
+        }
+        
+        // 生成36個格子
+        function generateGrid() {
+            console.log('=== generateGrid 被呼叫 ===');
+            const gridContainer = document.getElementById('gridContainer');
+            gridContainer.innerHTML = '';
+            
+            for (let i = 0; i < 36; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell';
+                
+                // 明確設定 data-index 屬性
+                cell.setAttribute('data-index', i);
+                
+                cell.innerHTML = `
+                    <span class="grid-cell-number">${i + 1}</span>
+                    <span>?</span>
+                `;
+                
+                // 使用箭頭函數確保 i 的值被正確捕獲
+                cell.onclick = function() {
+                    pokeCell(i);
+                };
+                
+                gridContainer.appendChild(cell);
+            }
+            
+            console.log('已生成 36 個格子');
+            console.log('第一個格子 data-index:', document.querySelector('.grid-cell')?.dataset.index);
+            console.log('所有格子數量:', document.querySelectorAll('.grid-cell').length);
+        }
+        
+        // 戳格子
+        function pokeCell(index) {
+            console.log('=== pokeCell 被呼叫 ===');
+            console.log('點擊的格子編號:', index);
+            console.log('遊戲已開始?', gameStarted);
+            console.log('已戳過?', pokedCells.has(index));
+            
+            if (!gameStarted || pokedCells.has(index)) {
+                console.log('條件不符,取消操作');
+                return;
+            }
+            
+            currentCell = index;
+            console.log('設定 currentCell:', currentCell);
+            
+            document.getElementById('studentModal').classList.add('show');
+            document.getElementById('studentId').value = '';
+            document.getElementById('studentId').focus();
+            console.log('座號輸入彈窗已顯示');
+        }
+        
+        // 關閉座號輸入彈窗
+        function closeStudentModal() {
+            document.getElementById('studentModal').classList.remove('show');
+            currentCell = null;
+        }
+        
+        // 確認座號
+        function confirmStudent() {
+            const studentId = document.getElementById('studentId').value.trim();
+            
+            console.log('=== confirmStudent 被呼叫 ===');
+            console.log('輸入的座號:', studentId);
+            console.log('currentCell:', currentCell);
+            console.log('gameStarted:', gameStarted);
+            
+            if (!studentId || studentId.length !== 5) {
+                alert('請輸入5碼座號!');
+                console.log('座號格式錯誤');
+                return;
+            }
+            
+            if (!/^\d+$/.test(studentId)) {
+                alert('座號必須是數字!');
+                console.log('座號不是數字');
+                return;
+            }
+            
+            console.log('座號驗證通過');
+            
+            // 重要: 先儲存 currentCell,因為 closeStudentModal 會清空它
+            const cellIndex = currentCell;
+            console.log('儲存的格子編號:', cellIndex);
+            
+            // 關閉彈窗
+            document.getElementById('studentModal').classList.remove('show');
+            console.log('彈窗已關閉');
+            
+            // 清空 currentCell
+            currentCell = null;
+            
+            console.log('準備揭曉獎品');
+            revealPrize(cellIndex, studentId);
+        }
+        
+        // 揭曉獎品
+        function revealPrize(index, studentId) {
+            console.log('=== revealPrize 被呼叫 ===');
+            console.log('格子編號:', index);
+            console.log('學生座號:', studentId);
+            console.log('獎品資料:', gridData[index]);
+            
+            // 重要:確保 index 是數字
+            index = parseInt(index);
+            console.log('轉換後的格子編號:', index);
+            
+            const cell = document.querySelector(`.grid-cell[data-index="${index}"]`);
+            console.log('querySelector 選擇器:', `.grid-cell[data-index="${index}"]`);
+            console.log('找到的格子元素:', cell);
+            
+            if (!cell) {
+                console.error('錯誤: 找不到格子元素!');
+                console.error('嘗試用其他方式查找...');
+                
+                // 嘗試查找所有格子
+                const allCells = document.querySelectorAll('.grid-cell');
+                console.log('所有格子數量:', allCells.length);
+                console.log('第一個格子的 data-index:', allCells[0]?.dataset.index);
+                
+                alert('系統錯誤:找不到格子元素!請檢查Console。');
+                return;
+            }
+            
+            const prize = gridData[index];
+            const isWinner = (prize !== '銘謝惠顧');
+            console.log('獎品:', prize);
+            console.log('是否中獎:', isWinner);
+            
+            // 標記已戳
+            pokedCells.add(index);
+            cell.classList.add('poked');
+            
+            // 如果中獎,加上 winner class
+            if (isWinner) {
+                cell.classList.add('winner');
+            }
+            
+            console.log('已標記為已戳' + (isWinner ? ' (中獎)' : ' (未中獎)'));
+            
+            // 更新格子顯示內容 - 座號在上,獎品在下
+            cell.innerHTML = `
+                <span class="grid-cell-number">${index + 1}</span>
+                <div class="grid-cell-content">
+                    <div class="grid-cell-student">${studentId}</div>
+                    <div class="grid-cell-prize">${prize}</div>
+                </div>
+            `;
+            console.log('格子內容已更新');
+            
+            // 記錄中獎
+            winners.push({
+                studentId: studentId,
+                prize: prize,
+                cellNumber: index + 1
+            });
+            console.log('已記錄到中獎名單');
+            
+            // 播放音效 - 使用Web Audio API生成簡單音效
+            console.log('準備播放音效');
+            playPokeSound(isWinner);
+            
+            // 延遲顯示結果彈窗,讓使用者先看到格子翻開
+            console.log('準備顯示結果彈窗 (延遲300ms)');
+            setTimeout(() => {
+                console.log('顯示結果彈窗');
+                // 顯示結果彈窗
+                const resultIcon = document.getElementById('resultIcon');
+                const resultTitle = document.getElementById('resultTitle');
+                const resultPrize = document.getElementById('resultPrize');
+                const resultStudent = document.getElementById('resultStudent');
+                
+                if (!isWinner) {
+                    resultIcon.textContent = '😢';
+                    resultTitle.textContent = '銘謝惠顧';
+                } else {
+                    resultIcon.textContent = '🎉';
+                    resultTitle.textContent = '恭喜中獎!';
+                }
+                
+                resultPrize.textContent = prize;
+                resultStudent.textContent = `座號: ${studentId}`;
+                
+                document.getElementById('resultModal').classList.add('show');
+                console.log('結果彈窗已顯示');
+            }, 300);
+        }
+        
+        // 播放戳選音效
+        function playPokeSound(isWin) {
+            console.log('=== playPokeSound 被呼叫 ===');
+            console.log('是否中獎:', isWin);
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                if (isWin) {
+                    // 中獎音效 - 上升音階
+                    oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.2);
+                    console.log('播放中獎音效 (上升)');
+                } else {
+                    // 銘謝惠顧音效 - 下降音階
+                    oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.2);
+                    console.log('播放銘謝惠顧音效 (下降)');
+                }
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+                console.log('音效播放完成');
+            } catch (e) {
+                console.error('音效播放失敗:', e);
+            }
+        }
+        
+        // 關閉結果彈窗
+        function closeResultModal() {
+            document.getElementById('resultModal').classList.remove('show');
+        }
+        
+        // 結束遊戲
+        function endGame() {
+            if (!gameStarted) return;
+            
+            // 顯示中獎名單
+            const winnersList = document.getElementById('winnersList');
+            winnersList.innerHTML = '';
+            
+            if (winners.length === 0) {
+                winnersList.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">尚無人中獎</div>';
+            } else {
+                winners.forEach(winner => {
+                    const item = document.createElement('div');
+                    item.className = 'winner-item';
+                    item.innerHTML = `
+                        <div>
+                            <span class="winner-student">座號 ${winner.studentId}</span>
+                            <span style="margin: 0 10px; color: #ccc;">|</span>
+                            <span style="font-size: 0.9em; color: #999;">第${winner.cellNumber}格</span>
+                        </div>
+                        <div class="winner-prize">${winner.prize}</div>
+                    `;
+                    winnersList.appendChild(item);
+                });
+            }
+            
+            document.getElementById('winnersModal').classList.add('show');
+        }
+        
+        // 關閉中獎名單彈窗
+        function closeWinnersModal() {
+            document.getElementById('winnersModal').classList.remove('show');
+        }
+        
+        // 下載Excel
+        function downloadWinners() {
+            if (winners.length === 0) {
+                alert('尚無中獎記錄!');
+                return;
+            }
+            
+            // 準備資料
+            const data = [
+                ['座號', '獎品', '格子編號']
+            ];
+            
+            winners.forEach(winner => {
+                data.push([
+                    winner.studentId,
+                    winner.prize,
+                    winner.cellNumber
+                ]);
+            });
+            
+            // 建立工作簿
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            
+            // 設定欄寬
+            ws['!cols'] = [
+                { wch: 15 },
+                { wch: 20 },
+                { wch: 15 }
+            ];
+            
+            XLSX.utils.book_append_sheet(wb, ws, '中獎名單');
+            
+            // 下載
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+            XLSX.writeFile(wb, `戳戳樂中獎名單_${timestamp}.xlsx`);
+        }
+        
+        // 重置遊戲
+        function resetGame() {
+            if (confirm('確定要清除重置嗎？所有設定和記錄都會消失！')) {
+                // 重置所有狀態
+                backgroundImageSrc = null;
+                prizes = [];
+                gameStarted = false;
+                gridData = [];
+                pokedCells = new Set();
+                winners = [];
+                currentCell = null;
+                
+                // 重置UI
+                document.getElementById('uploadArea').className = 'upload-area';
+                document.getElementById('uploadArea').innerHTML = `
+                    <div class="upload-icon">🖼️</div>
+                    <div>點擊上傳圖片</div>
+                    <div style="font-size: 0.9em; color: #999; margin-top: 5px;">支援 JPG, PNG</div>
+                `;
+                document.getElementById('previewImage').style.display = 'none';
+                document.getElementById('prizeList').innerHTML = '';
+                document.getElementById('gameStatus').style.display = 'block';
+                document.getElementById('pokeBoard').style.display = 'none';
+                document.getElementById('startBtn').classList.remove('btn-disabled');
+                document.getElementById('endBtn').classList.add('btn-disabled');
+                document.getElementById('imageInput').value = '';
+                
+                // 重新加入預設獎品欄位
+                addPrize();
+                addPrize();
+                addPrize();
+            }
+        }
+        
+        // 鍵盤事件
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const studentModal = document.getElementById('studentModal');
+                if (studentModal.classList.contains('show')) {
+                    confirmStudent();
+                }
+            }
+            if (e.key === 'Escape') {
+                closeStudentModal();
+                closeResultModal();
+                closeWinnersModal();
+            }
+        });
+    </script>
+</body>
+</html>
