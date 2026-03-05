@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>巫魚子詩籤 — 求一籤，得一語</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;900&family=Noto+Sans+TC:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --crimson: #8B1A1A;
+    --deep-red: #6B0F0F;
+    --gold: #C9A84C;
+    --gold-light: #E8C97A;
+    --gold-dark: #9A7A2E;
+    --paper: #F5EDD8;
+    --paper-dark: #E8D9B8;
+    --ink: #2A1A0E;
+    --smoke: rgba(255,255,255,0.06);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background-color: #1A0808;
+    background-image:
+      radial-gradient(ellipse at 50% 0%, rgba(139,26,26,0.4) 0%, transparent 60%),
+      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23C9A84C' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Noto Serif TC', serif;
+    padding: 20px;
+    overflow-x: hidden;
+  }
+
+  /* LANTERNS */
+  .lanterns {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    display: flex;
+    justify-content: space-around;
+    padding: 0 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .lantern {
+    width: 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: sway 4s ease-in-out infinite;
+  }
+  .lantern:nth-child(2) { animation-delay: -1.3s; }
+  .lantern:nth-child(3) { animation-delay: -2.6s; }
+  .lantern:nth-child(4) { animation-delay: -0.7s; }
+  .lantern:nth-child(5) { animation-delay: -3.1s; }
+  @keyframes sway {
+    0%,100% { transform: rotate(-4deg); }
+    50% { transform: rotate(4deg); }
+  }
+  .lantern-string { width: 1px; height: 40px; background: var(--gold-dark); }
+  .lantern-top { width: 20px; height: 6px; background: var(--gold); border-radius: 2px; }
+  .lantern-body {
+    width: 28px; height: 50px;
+    background: radial-gradient(ellipse at 40% 30%, #FF6B35, #CC2200);
+    border-radius: 40%;
+    box-shadow: 0 0 12px rgba(255,100,50,0.6), inset 0 0 8px rgba(255,200,100,0.3);
+    position: relative;
+    overflow: hidden;
+  }
+  .lantern-body::after {
+    content: '';
+    position: absolute;
+    top: 10%; left: 15%; width: 30%; height: 60%;
+    background: rgba(255,220,150,0.25);
+    border-radius: 50%;
+  }
+  .lantern-bottom { width: 20px; height: 6px; background: var(--gold); border-radius: 2px; }
+  .lantern-tail { width: 1px; height: 20px; background: var(--gold-dark); }
+
+  /* SCREENS */
+  .screen {
+    display: none;
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 480px;
+  }
+  .screen.active { display: flex; flex-direction: column; align-items: center; }
+
+  /* ===== SCREEN 1: ENTRY ===== */
+  #screen-entry {
+    text-align: center;
+    gap: 0;
+  }
+
+  .title-block {
+    margin-bottom: 32px;
+  }
+  .title-main {
+    font-size: 2.6rem;
+    font-weight: 900;
+    color: var(--gold);
+    text-shadow: 0 0 20px rgba(201,168,76,0.5), 0 2px 4px rgba(0,0,0,0.8);
+    letter-spacing: 0.15em;
+    line-height: 1.2;
+    writing-mode: horizontal-tb;
+  }
+  .title-sub {
+    font-size: 0.85rem;
+    color: rgba(201,168,76,0.6);
+    letter-spacing: 0.4em;
+    margin-top: 8px;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 300;
+  }
+
+  .divider {
+    width: 200px;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--gold-dark), transparent);
+    margin: 20px auto;
+    position: relative;
+  }
+  .divider::before {
+    content: '◆';
+    position: absolute;
+    top: -9px; left: 50%;
+    transform: translateX(-50%);
+    color: var(--gold);
+    font-size: 0.7rem;
+  }
+
+  .entry-box {
+    background: linear-gradient(160deg, rgba(139,26,26,0.3), rgba(42,10,10,0.6));
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 4px;
+    padding: 36px 32px;
+    width: 100%;
+    position: relative;
+  }
+  .entry-box::before, .entry-box::after {
+    content: '✦';
+    position: absolute;
+    color: var(--gold-dark);
+    font-size: 0.7rem;
+  }
+  .entry-box::before { top: 10px; left: 14px; }
+  .entry-box::after { bottom: 10px; right: 14px; }
+
+  .entry-prompt {
+    color: rgba(245,237,216,0.8);
+    font-size: 1rem;
+    margin-bottom: 24px;
+    letter-spacing: 0.1em;
+    line-height: 1.8;
+  }
+
+  .name-input {
+    width: 100%;
+    padding: 14px 18px;
+    background: rgba(245,237,216,0.08);
+    border: 1px solid rgba(201,168,76,0.4);
+    border-radius: 2px;
+    color: var(--paper);
+    font-family: 'Noto Serif TC', serif;
+    font-size: 1.3rem;
+    text-align: center;
+    letter-spacing: 0.2em;
+    outline: none;
+    transition: all 0.3s;
+    margin-bottom: 24px;
+  }
+  .name-input::placeholder { color: rgba(245,237,216,0.3); font-size: 1rem; }
+  .name-input:focus {
+    border-color: var(--gold);
+    background: rgba(245,237,216,0.12);
+    box-shadow: 0 0 12px rgba(201,168,76,0.2);
+  }
+
+  .btn-draw {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--crimson), var(--deep-red));
+    border: 1px solid var(--gold-dark);
+    color: var(--gold-light);
+    font-family: 'Noto Serif TC', serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.3em;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+    border-radius: 2px;
+  }
+  .btn-draw:hover {
+    background: linear-gradient(135deg, #A02020, #7A1515);
+    box-shadow: 0 0 20px rgba(139,26,26,0.6);
+    color: var(--gold);
+  }
+  .btn-draw:active { transform: scale(0.98); }
+  .btn-draw::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -60%;
+    width: 30%; height: 200%;
+    background: rgba(255,255,255,0.08);
+    transform: skewX(-20deg);
+    transition: left 0.5s;
+  }
+  .btn-draw:hover::before { left: 130%; }
+
+  /* ===== SCREEN 2: LOADING ===== */
+  #screen-loading {
+    align-items: center;
+    text-align: center;
+    gap: 20px;
+    padding: 40px 20px;
+  }
+
+  .loading-title {
+    font-size: 1.5rem;
+    color: var(--gold);
+    letter-spacing: 0.2em;
+    font-weight: 600;
+    line-height: 2;
+    text-align: center;
+    text-shadow: 0 0 15px rgba(201,168,76,0.4);
+    animation: pulse-text 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse-text {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  /* SHAKER ANIMATION */
+  .shaker-container {
+    position: relative;
+    width: 120px;
+    height: 180px;
+    margin: 10px auto;
+  }
+
+  .shaker {
+    position: absolute;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 130px;
+    animation: shake 0.5s ease-in-out infinite;
+    transform-origin: bottom center;
+  }
+  @keyframes shake {
+    0%   { transform: translateX(-50%) rotate(0deg); }
+    15%  { transform: translateX(-50%) rotate(-18deg); }
+    30%  { transform: translateX(-50%) rotate(14deg); }
+    45%  { transform: translateX(-50%) rotate(-12deg); }
+    60%  { transform: translateX(-50%) rotate(10deg); }
+    75%  { transform: translateX(-50%) rotate(-6deg); }
+    100% { transform: translateX(-50%) rotate(0deg); }
+  }
+
+  .stick-fly {
+    position: absolute;
+    width: 6px;
+    height: 40px;
+    background: linear-gradient(to bottom, var(--gold), #8B6914);
+    border-radius: 3px 3px 1px 1px;
+    opacity: 0;
+    animation: fly-out 0.5s ease-in-out infinite;
+  }
+  .stick-fly:nth-child(1) { animation-delay: 0s; left: 30px; }
+  .stick-fly:nth-child(2) { animation-delay: 0.1s; left: 50px; }
+  .stick-fly:nth-child(3) { animation-delay: 0.2s; left: 70px; }
+  @keyframes fly-out {
+    0%   { opacity: 0; transform: translateY(0) rotate(0deg); }
+    20%  { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-80px) rotate(30deg); }
+  }
+
+  .loading-dots {
+    display: flex; gap: 8px; justify-content: center;
+  }
+  .dot {
+    width: 6px; height: 6px;
+    background: var(--gold-dark);
+    border-radius: 50%;
+    animation: blink 1.2s ease-in-out infinite;
+  }
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink {
+    0%,80%,100% { opacity: 0.2; transform: scale(0.8); }
+    40% { opacity: 1; transform: scale(1.2); }
+  }
+
+  /* ===== SCREEN 3: RESULT ===== */
+  #screen-result {
+    align-items: center;
+    gap: 0;
+    animation: fadeInUp 0.8s ease forwards;
+    max-width: 480px;
+    width: 100%;
+    padding: 10px 0;
+  }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-header {
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  .result-name {
+    font-size: 0.9rem;
+    color: rgba(201,168,76,0.7);
+    letter-spacing: 0.4em;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 300;
+  }
+  .result-name span {
+    color: var(--gold);
+    font-family: 'Noto Serif TC', serif;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  /* THE FORTUNE SLIP — vertical, compact */
+  .fortune-slip {
+    width: 200px;
+    background: linear-gradient(180deg, var(--paper-dark) 0%, var(--paper) 12%, var(--paper) 88%, var(--paper-dark) 100%);
+    border-left: 3px solid var(--gold);
+    border-right: 3px solid var(--gold);
+    box-shadow:
+      0 0 30px rgba(201,168,76,0.3),
+      inset 2px 0 8px rgba(0,0,0,0.06),
+      inset -2px 0 8px rgba(0,0,0,0.06);
+    padding: 14px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    animation: unroll 0.8s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  }
+  @keyframes unroll {
+    from { transform: scaleY(0.1); opacity: 0; transform-origin: top center; }
+    to { transform: scaleY(1); opacity: 1; }
+  }
+
+  .slip-top-bar {
+    width: 100%;
+    background: var(--crimson);
+    padding: 6px 4px;
+    text-align: center;
+    position: relative;
+  }
+  .slip-top-bar::before, .slip-top-bar::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 4px;
+    background: var(--gold-dark);
+  }
+  .slip-top-bar::before { left: 0; }
+  .slip-top-bar::after { right: 0; }
+
+  .slip-title {
+    color: var(--gold-light);
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    writing-mode: horizontal-tb;
+  }
+
+  .slip-number {
+    font-size: 0.65rem;
+    color: var(--crimson);
+    letter-spacing: 0.25em;
+    font-family: 'Noto Sans TC', sans-serif;
+  }
+
+  .slip-grade {
+    background: var(--crimson);
+    color: var(--gold-light);
+    font-size: 0.75rem;
+    letter-spacing: 0.25em;
+    padding: 2px 10px;
+    border: 1px solid var(--gold-dark);
+  }
+
+  .slip-verse {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-size: 1.25rem;
+    color: var(--ink);
+    line-height: 1.8;
+    letter-spacing: 0.15em;
+    font-weight: 600;
+    text-align: center;
+    max-height: 220px;
+    overflow: visible;
+  }
+
+  .slip-divider {
+    width: 60%;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--gold-dark), transparent);
+  }
+
+  .slip-source {
+    font-size: 0.62rem;
+    color: rgba(42,26,14,0.5);
+    letter-spacing: 0.15em;
+    text-align: center;
+    font-family: 'Noto Sans TC', sans-serif;
+    border-top: 1px solid rgba(42,26,14,0.15);
+    padding-top: 6px;
+    width: 100%;
+  }
+
+  .encouragement-block {
+    width: 200px;
+    background: linear-gradient(160deg, rgba(139,26,26,0.25), rgba(26,8,8,0.5));
+    border: 1px solid rgba(201,168,76,0.25);
+    border-top: none;
+    padding: 14px 16px;
+  }
+  .encouragement-label {
+    font-size: 0.65rem;
+    color: var(--gold-dark);
+    letter-spacing: 0.35em;
+    margin-bottom: 8px;
+    text-align: center;
+    font-family: 'Noto Sans TC', sans-serif;
+  }
+  .encouragement-text {
+    color: rgba(245,237,216,0.85);
+    font-size: 0.8rem;
+    line-height: 1.8;
+    letter-spacing: 0.06em;
+    text-align: justify;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 300;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    width: 200px;
+    margin-top: 12px;
+  }
+  .btn-next, .btn-again {
+    flex: 1;
+    padding: 11px 6px;
+    font-family: 'Noto Serif TC', serif;
+    font-size: 0.82rem;
+    letter-spacing: 0.2em;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.3s;
+    font-weight: 600;
+  }
+  .btn-next {
+    background: linear-gradient(135deg, var(--crimson), var(--deep-red));
+    border: 1px solid var(--gold-dark);
+    color: var(--gold-light);
+  }
+  .btn-next:hover {
+    box-shadow: 0 0 16px rgba(139,26,26,0.5);
+    color: var(--gold);
+  }
+  .btn-again {
+    background: transparent;
+    border: 1px solid rgba(201,168,76,0.3);
+    color: rgba(201,168,76,0.6);
+  }
+  .btn-again:hover {
+    border-color: var(--gold-dark);
+    color: var(--gold);
+    background: rgba(201,168,76,0.05);
+  }
+
+  /* SMOKE PARTICLES */
+  .smoke { position: fixed; pointer-events: none; z-index: 1; }
+  .smoke-particle {
+    position: absolute;
+    width: 4px; height: 4px;
+    background: rgba(255,220,180,0.15);
+    border-radius: 50%;
+    animation: rise linear infinite;
+  }
+  @keyframes rise {
+    0%   { transform: translateY(0) translateX(0) scale(1); opacity: 0.4; }
+    100% { transform: translateY(-200px) translateX(var(--drift)) scale(3); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LANTERNS -->
+<div class="lanterns">
+  <div class="lantern"><div class="lantern-string"></div><div class="lantern-top"></div><div class="lantern-body"></div><div class="lantern-bottom"></div><div class="lantern-tail"></div></div>
+  <div class="lantern"><div class="lantern-string"></div><div class="lantern-top"></div><div class="lantern-body"></div><div class="lantern-bottom"></div><div class="lantern-tail"></div></div>
+  <div class="lantern"><div class="lantern-string"></div><div class="lantern-top"></div><div class="lantern-body"></div><div class="lantern-bottom"></div><div class="lantern-tail"></div></div>
+  <div class="lantern"><div class="lantern-string"></div><div class="lantern-top"></div><div class="lantern-body"></div><div class="lantern-bottom"></div><div class="lantern-tail"></div></div>
+  <div class="lantern"><div class="lantern-string"></div><div class="lantern-top"></div><div class="lantern-body"></div><div class="lantern-bottom"></div><div class="lantern-tail"></div></div>
+</div>
+
+<!-- SMOKE -->
+<div class="smoke" id="smoke"></div>
+
+<!-- SCREEN 1: ENTRY -->
+<div class="screen active" id="screen-entry">
+  <div class="title-block">
+    <div class="title-main">巫魚子文青學院</div>
+    <div class="title-sub">求一籤，得一語，勉勵前行</div>
+  </div>
+  <div class="divider"></div>
+  <div class="entry-box">
+    <div class="entry-prompt">
+      靜心片刻<br>
+      請輸入您的姓名，誠心一求
+    </div>
+    <input class="name-input" id="name-input" type="text" placeholder="請輸入姓名" maxlength="10" />
+    <button class="btn-draw" id="btn-draw" onclick="startDraw()">誠 心 求 籤</button>
+  </div>
+</div>
+
+<!-- SCREEN 2: LOADING -->
+<div class="screen" id="screen-loading">
+  <div class="loading-title">
+    巫魚子大師感應中<br>Loading 中
+  </div>
+
+  <!-- SHAKER SVG -->
+  <div class="shaker-container">
+    <div class="stick-fly"></div>
+    <div class="stick-fly"></div>
+    <div class="stick-fly"></div>
+    <svg class="shaker" viewBox="0 0 80 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Cylinder body -->
+      <ellipse cx="40" cy="20" rx="30" ry="10" fill="#6B2A00" stroke="#C9A84C" stroke-width="1.5"/>
+      <rect x="10" y="20" width="60" height="90" fill="url(#woodGrad)" />
+      <ellipse cx="40" cy="110" rx="30" ry="10" fill="#4A1A00" stroke="#C9A84C" stroke-width="1.5"/>
+      <!-- Wood grain lines -->
+      <line x1="20" y1="25" x2="20" y2="105" stroke="rgba(0,0,0,0.15)" stroke-width="0.5"/>
+      <line x1="32" y1="22" x2="32" y2="108" stroke="rgba(0,0,0,0.1)" stroke-width="0.5"/>
+      <line x1="48" y1="22" x2="48" y2="108" stroke="rgba(0,0,0,0.1)" stroke-width="0.5"/>
+      <line x1="60" y1="25" x2="60" y2="105" stroke="rgba(0,0,0,0.15)" stroke-width="0.5"/>
+      <!-- Gold bands -->
+      <rect x="10" y="30" width="60" height="5" fill="url(#goldBand)" opacity="0.8"/>
+      <rect x="10" y="95" width="60" height="5" fill="url(#goldBand)" opacity="0.8"/>
+      <!-- Chinese character -->
+      <text x="40" y="75" text-anchor="middle" font-family="serif" font-size="22" fill="#C9A84C" opacity="0.9">籤</text>
+      <!-- Sticks inside top -->
+      <rect x="32" y="5" width="4" height="22" fill="#C9A84C" rx="2"/>
+      <rect x="40" y="3" width="4" height="24" fill="#E8C97A" rx="2"/>
+      <rect x="48" y="5" width="4" height="22" fill="#C9A84C" rx="2"/>
+      <defs>
+        <linearGradient id="woodGrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#7A3500"/>
+          <stop offset="30%" stop-color="#9B4800"/>
+          <stop offset="70%" stop-color="#8A3E00"/>
+          <stop offset="100%" stop-color="#6B2A00"/>
+        </linearGradient>
+        <linearGradient id="goldBand" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#9A7A2E"/>
+          <stop offset="50%" stop-color="#E8C97A"/>
+          <stop offset="100%" stop-color="#9A7A2E"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  </div>
+
+  <div class="loading-dots">
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+  </div>
+</div>
+
+<!-- SCREEN 3: RESULT -->
+<div class="screen" id="screen-result">
+  <div class="result-header">
+    <div class="result-name" id="result-name-display">◆ <span></span> ◆ 所求之籤</div>
+  </div>
+
+  <div class="fortune-slip" id="fortune-slip">
+    <div class="slip-top-bar">
+      <div class="slip-title">巫魚子文青學院</div>
+    </div>
+    <div class="slip-number" id="slip-number">第 一 籤</div>
+    <div class="slip-grade" id="slip-grade">上上籤</div>
+    <div class="slip-verse" id="slip-verse">千里之行，始於足下</div>
+    <div class="slip-divider"></div>
+    <div class="slip-source" id="slip-source">── 老子《道德經》</div>
+  </div>
+
+  <div class="encouragement-block">
+    <div class="encouragement-label">✦ 巫魚子解說 ✦</div>
+    <div class="encouragement-text" id="encouragement-text">每一段遠大的旅程，都從你現在踏出的這一步開始。不要因為終點遙遠而氣餒，你每天的努力都是真實存在的前進。</div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn-again" onclick="drawAgain()">換一支籤</button>
+    <button class="btn-next" onclick="nextStudent()">下一位同學</button>
+  </div>
+</div>
+
+<script>
+const FORTUNES = [
+  // ═══ 類別一：中文現代文學（三毛、張愛玲、余光中、龍應台等）× 12 ═══
+  {
+    number: "第 一 籤", grade: "上上籤",
+    verse: "不在乎天長地久，只在乎曾經擁有",
+    source: "── 三毛《夢裡花落知多少》",
+    encouragement: "三毛告訴我們，珍貴的不是結果，而是你全力投入的過程。你此刻認真學習的每一分鐘，都是屬於你的珍貴擁有。"
+  },
+  {
+    number: "第 二 籤", grade: "上籤",
+    verse: "你可以不聰明，但你不可以不誠實",
+    source: "── 龍應台《親愛的安德烈》",
+    encouragement: "誠實也包括對自己誠實。誠實地面對自己的不足，才能找到真正進步的方向，這本身就是一種勇氣。"
+  },
+  {
+    number: "第 三 籤", grade: "上上籤",
+    verse: "如果你給我的，和你給別人的一樣，那我就不要了",
+    source: "── 張愛玲",
+    encouragement: "你是獨一無二的存在。你的努力、你的個性、你看世界的方式，都是別人無法複製的。請相信自己的獨特價值。"
+  },
+  {
+    number: "第 四 籤", grade: "上上籤",
+    verse: "流浪是件很辛苦的事，但有些事不去做就永遠不知道",
+    source: "── 三毛",
+    encouragement: "嘗試和冒險才能讓人真正成長。你現在面對的挑戰，正是讓你比昨天更強大的機會，不要因為怕失敗而停步。"
+  },
+  {
+    number: "第 五 籤", grade: "上上籤",
+    verse: "一個人先要認識自己，才能認識世界",
+    source: "── 楊絳",
+    encouragement: "楊絳一生溫柔而堅定。了解自己的長處與弱點，並不是自我否定，而是讓你能夠更清楚地知道往哪個方向用力。"
+  },
+  {
+    number: "第 六 籤", grade: "上籤",
+    verse: "不要問我從哪裡來，我的故鄉在遠方",
+    source: "── 三毛《橄欖樹》",
+    encouragement: "你正走在一段屬於自己的旅程上。現在或許還不知道終點在哪，但只要保持前進，你終將找到屬於自己的遠方。"
+  },
+  {
+    number: "第 七 籤", grade: "上上籤",
+    verse: "你不是真的去改變世界，而是讓世界知道你的存在",
+    source: "── 簡媜《水問》",
+    encouragement: "讓你的努力讓人看見，讓你的認真留下痕跡。每一次的認真付出，都是你向世界宣告自己存在的方式。"
+  },
+  {
+    number: "第 八 籤", grade: "上上籤",
+    verse: "最好的時光，永遠是當下",
+    source: "── 林清玄",
+    encouragement: "不要等「狀況更好」才開始認真，此刻正是最好的時機。全心投入眼前的事，這就是林清玄所說的當下的圓滿。"
+  },
+  {
+    number: "第 九 籤", grade: "上籤",
+    verse: "懶惰是很奇怪的東西，它使你以為那是安逸，是休息，是福氣；但實際上它所給你的是無聊，是倦怠，是消沉",
+    source: "── 羅蘭",
+    encouragement: "與其等待靈感或動力，不如先動起來。行動本身會帶來動力，你只需要踏出第一步，其餘的自然跟上。"
+  },
+  {
+    number: "第 十 籤", grade: "上上籤",
+    verse: "我用殘損的手掌，摸索這廣大的土地",
+    source: "── 戴望舒《我用殘損的手掌》",
+    encouragement: "就算感覺自己還不夠完美，依然可以勇敢地去探索與嘗試。不完美的你，同樣有探索世界的資格。"
+  },
+  {
+    number: "第 十一 籤", grade: "上上籤",
+    verse: "凡事都有代價，快樂的代價是痛苦",
+    source: "── 張愛玲《傾城之戀》",
+    encouragement: "現在學習的辛苦，正是未來你能夠輕鬆展翅的代價。真正的快樂，從來都不是白來的。"
+  },
+  {
+    number: "第 十二 籤", grade: "上籤",
+    verse: "你的心是曠野，而不是籠中",
+    source: "── 紀伯倫《先知》",
+    encouragement: "你擁有無限的可能性，任何困境都只是暫時的圍籬，而不是你的終點。相信自己的潛力，讓那份廣闊流動起來。"
+  },
+
+  // ═══ 類別二：中文古典文學（論語、道德經、唐宋詩詞等）× 12 ═══
+  {
+    number: "第 十三 籤", grade: "上上籤",
+    verse: "千里之行，始於足下",
+    source: "── 老子《道德經》",
+    encouragement: "每一段遠大的旅程，都從你現在踏出的這一步開始。不要因為終點遙遠而氣餒，你每天的努力都是真實存在的前進。"
+  },
+  {
+    number: "第 十四 籤", grade: "上上籤",
+    verse: "學而不思則罔，思而不學則殆",
+    source: "── 孔子《論語》",
+    encouragement: "孔子兩千年前說的話至今依然準確。讀書要配合思考，思考要有知識支撐，兩者並行，才能真正成長。"
+  },
+  {
+    number: "第 十五 籤", grade: "上籤",
+    verse: "人生到處知何似，應似飛鴻踏雪泥",
+    source: "── 蘇軾《和子由澠池懷舊》",
+    encouragement: "蘇軾即便歷經苦難也能豁達以對。你在課業上的每一次磨練，都是你生命雪地上獨特的足跡，值得記取。"
+  },
+  {
+    number: "第 十六 籤", grade: "上上籤",
+    verse: "天生我材必有用",
+    source: "── 李白《將進酒》",
+    encouragement: "李白的自信不是憑空而來，而是建立在對自己獨特才能的相信上。你也有屬於你的天賦，現在正是發掘它的時候。"
+  },
+  {
+    number: "第 十七 籤", grade: "上籤",
+    verse: "會當凌絕頂，一覽眾山小",
+    source: "── 杜甫《望岳》",
+    encouragement: "爬到山頂的人，看到的風景與山腳的人截然不同。你每一次的努力，都是往頂峰更近一步，視野也隨之開闊。"
+  },
+  {
+    number: "第 十八 籤", grade: "上上籤",
+    verse: "知之者不如好之者，好之者不如樂之者",
+    source: "── 孔子《論語》",
+    encouragement: "找到你真心喜愛的事情，學習就不再是負擔。試著去尋找學習中讓你感到有趣的地方，讓熱情帶著你前進。"
+  },
+  {
+    number: "第 十九 籤", grade: "上籤",
+    verse: "不積跬步，無以至千里；不積小流，無以成江海",
+    source: "── 荀子《勸學》",
+    encouragement: "荀子說的就是積累的力量。你每一天做的小事，每一次的複習，每一個認真的當下，都是成就未來的磚石。"
+  },
+  {
+    number: "第 二十 籤", grade: "上上籤",
+    verse: "山重水複疑無路，柳暗花明又一村",
+    source: "── 陸游《遊山西村》",
+    encouragement: "遇到瓶頸不代表走到了盡頭，也許轉個彎就是新的出口。困境是提醒你換個角度思考的訊號，不是失敗的宣判。"
+  },
+  {
+    number: "第 二十一 籤", grade: "上籤",
+    verse: "老驥伏櫪，志在千里",
+    source: "── 曹操《步出夏門行》",
+    encouragement: "無論你現在感覺多麼疲倦，那份想要進步的心不要熄滅。志向是讓你繼續前行最深層的力量。"
+  },
+  {
+    number: "第 二十二 籤", grade: "上上籤",
+    verse: "寶劍鋒從磨礪出，梅花香自苦寒來",
+    source: "── 古諺",
+    encouragement: "最珍貴的東西，都是歷經磨練才得來的。你現在承受的壓力與考驗，正是讓你更加閃亮的過程。"
+  },
+  {
+    number: "第 二十三 籤", grade: "上籤",
+    verse: "問渠那得清如許，為有源頭活水來",
+    source: "── 朱熹《觀書有感》",
+    encouragement: "持續學習、不斷輸入新知識，才能讓思維保持清澈與活躍。知識的活水，要靠你每天去汲取。"
+  },
+  {
+    number: "第 二十四 籤", grade: "上上籤",
+    verse: "生命的意義在創造宇宙繼起之生命",
+    source: "── 孫文",
+    encouragement: "你的成長與進步，不只是為了自己，更是為了將來能夠影響和幫助更多的人。帶著這份使命感，繼續前行。"
+  },
+
+  // ═══ 類別三：宮崎駿吉卜力動畫 × 10 ═══
+  {
+    number: "第 二十五 籤", grade: "上上籤",
+    verse: "只要活著，就會有好事發生",
+    source: "── 宮崎駿《神隱少女》",
+    encouragement: "千尋在最黑暗的時刻也沒有放棄，最終找回了自己和家人。你現在的堅持，也終將迎來屬於你的那個好事。"
+  },
+  {
+    number: "第 二十六 籤", grade: "上籤",
+    verse: "不管你曾經被傷害得有多深，總會有一個人的出現，讓你原諒之前生活對你所有的刁難",
+    source: "── 宮崎駿《魔法公主》",
+    encouragement: "受傷是成長的一部分，而不是終點。繼續保持開放的心，生命中的溫柔與善意，正在路上朝你走來。"
+  },
+  {
+    number: "第 二十七 籤", grade: "上上籤",
+    verse: "用澄淨的心去看待事情，說不定就能找到解除咒語的方法",
+    source: "── 宮崎駿《魔法公主》",
+    encouragement: "面對困境，先讓自己的心靜下來。很多時候答案已經存在，只是你的焦慮遮蔽了它。清心才能看清路。"
+  },
+  {
+    number: "第 二十八 籤", grade: "上上籤",
+    verse: "世界那麼大，人生那麼長，總會有這麼一個人，讓你想要溫柔的對待",
+    source: "── 宮崎駿《霍爾的移動城堡》",
+    encouragement: "在追求進步的路上，也要記得對身邊的人溫柔，對自己溫柔。溫柔不是軟弱，而是最深刻的一種力量。"
+  },
+  {
+    number: "第 二十九 籤", grade: "上籤",
+    verse: "帶上信仰，去尋找屬於你自己的國吧，哪怕傾盡一生",
+    source: "── 宮崎駿《風之谷》",
+    encouragement: "你有自己心中的理想國。為了那個方向前進，就算路途遙遠也值得。信仰是你走下去最深的根。"
+  },
+  {
+    number: "第 三十 籤", grade: "上上籤",
+    verse: "創作不是一種邏輯式的思考，是腦蓋被打開了",
+    source: "── 宮崎駿（紀錄片《與夢前行》）",
+    encouragement: "有時候最好的想法，不是用力想出來的，而是放開自己之後自然湧現的。給自己一點放鬆的空間，靈感自然到來。"
+  },
+  {
+    number: "第 三十一 籤", grade: "上上籤",
+    verse: "一切都很值得，不做就什麼都沒有了",
+    source: "── 宮崎駿（紀錄片《與夢前行》）",
+    encouragement: "宮崎駿八十幾歲仍然不停創作，因為對他來說，做就是一切。你也有你的「做」，那就是現在認真學習的這件事。"
+  },
+  {
+    number: "第 三十二 籤", grade: "上籤",
+    verse: "你想活出怎樣的人生？",
+    source: "── 宮崎駿《蒼鷺與少年》片名",
+    encouragement: "這個問題沒有標準答案，但你此刻的選擇都是在回答它。認真對待每一天，就是在認真回答這個問題。"
+  },
+  {
+    number: "第 三十三 籤", grade: "上上籤",
+    verse: "生命就是一列開往終點的列車，路途上會有很多站，很難有人可以自始至終陪著走完",
+    source: "── 宮崎駿《千與千尋》創作感言",
+    encouragement: "每一個在你生命中出現的人，都有其意義。珍惜現在同行的人，感謝那些已經下車的人，繼續走向你的前方。"
+  },
+  {
+    number: "第 三十四 籤", grade: "上籤",
+    verse: "『沒辦法、不管了』並不是消極的字眼，是人生的訣竅",
+    source: "── 宮崎駿（晚年訪談）",
+    encouragement: "不是所有事都需要用力抓住。有時候放手，是為了讓雙手空出來，接住真正重要的東西。"
+  },
+
+  // ═══ 類別四：日本動漫（進擊的巨人、鬼滅之刃、海賊王等）× 12 ═══
+  {
+    number: "第 三十五 籤", grade: "上上籤",
+    verse: "不去戰鬥，就贏不了",
+    source: "── 米卡莎《進擊的巨人》",
+    encouragement: "面對考試、面對挑戰，猶豫和退縮只會讓機會消失。踏出去，勝負才有可能，不踏出去，就已經輸了。"
+  },
+  {
+    number: "第 三十六 籤", grade: "上上籤",
+    verse: "我們每一個人，從出生那一刻開始，就是自由的",
+    source: "── 艾連《進擊的巨人》",
+    encouragement: "你的人生是你的，沒有人能替你決定你的未來。帶著這份自由，勇敢地去選擇你想走的路。"
+  },
+  {
+    number: "第 三十七 籤", grade: "上籤",
+    verse: "到頭來我們被允許做的，只是堅信那個選擇，儘量不留下後悔而已",
+    source: "── 里維兵長《進擊的巨人》",
+    encouragement: "沒有人能保證每個選擇都是對的，但全力以赴之後的結果，無論如何你都可以接受。盡力，然後放下。"
+  },
+  {
+    number: "第 三十八 籤", grade: "上上籤",
+    verse: "什麼都無法捨棄的人，絕對沒有能力改變任何事物",
+    source: "── 艾爾文團長《進擊的巨人》",
+    encouragement: "有時候進步需要你放掉一些事情，例如舒適、懶散、或者舊有的思維方式。放手，才能抓住新的可能。"
+  },
+  {
+    number: "第 三十九 籤", grade: "上上籤",
+    verse: "不想輸需要理由嗎？",
+    source: "── 日向翔陽《排球少年》",
+    encouragement: "想要變強、想要進步、想要贏，這些都不需要理由。那份純粹的鬥志，本身就是最強大的動力。"
+  },
+  {
+    number: "第 四十 籤", grade: "上籤",
+    verse: "去追趕自己心中理想的人，超越自己不認可的人，我想所謂的成長，就是不斷重複這些吧",
+    source: "── 渚老師《暗殺教室》",
+    encouragement: "成長不是一蹴可幾的事，而是每天一點點的追趕與超越。今天的你，只要比昨天的你更好一點點就夠了。"
+  },
+  {
+    number: "第 四十一 籤", grade: "上上籤",
+    verse: "就算是落魄人，只要拼命努力，也許能超越精英",
+    source: "── 《排球少年》",
+    encouragement: "天賦是起跑點，但努力才決定終點。那些看似比你厲害的人，未必擋得住一個拚了命的你。"
+  },
+  {
+    number: "第 四十二 籤", grade: "上籤",
+    verse: "有空想著怎麼死得光彩，不如華麗地活到最後吧",
+    source: "── 坂田銀時《銀魂》",
+    encouragement: "不要把精力花在擔心結果上，把它花在如何精彩地過好每一天上。認真活著，本身就是一種光彩。"
+  },
+  {
+    number: "第 四十三 籤", grade: "上上籤",
+    verse: "人什麼時候才會死？是被世人所遺忘的時候",
+    source: "── Dr.西爾爾克《海賊王》",
+    encouragement: "只要你用心做過的事、影響過的人都還記得，你就存在著。認真對待每一次學習，讓自己值得被記住。"
+  },
+  {
+    number: "第 四十四 籤", grade: "上上籤",
+    verse: "有時候，有缺陷的東西比完美的東西更美麗",
+    source: "── 《鋼之鍊金術師》",
+    encouragement: "不需要成為完美的人，才有資格進步。帶著你的缺陷繼續努力，那份努力的痕跡，才是最真實的美。"
+  },
+  {
+    number: "第 四十五 籤", grade: "上上籤",
+    verse: "炎柱的心，永遠不會熄滅",
+    source: "── 煉獄杏壽郎《鬼滅之刃》",
+    encouragement: "即使遇到了比自己強大許多的對手，心中那團火也不能熄滅。你的努力與熱情，是任何人都奪不走的。"
+  },
+  {
+    number: "第 四十六 籤", grade: "上籤",
+    verse: "以為自己一直在直線前進，不知不覺中已經滿身泥濘。但是，只要一心一意地奔跑，總有一天泥巴也會乾掉落下吧",
+    source: "── 《花牌情緣》",
+    encouragement: "過程中的挫折和困難不是你的汙點，是你全力奔跑的證明。繼續跑，終點時你會是最乾淨的那個。"
+  },
+
+  // ═══ 類別五：勵志自我成長暢銷書 × 10 ═══
+  {
+    number: "第 四十七 籤", grade: "上上籤",
+    verse: "任何沒有用心的努力，都只是看起來很努力",
+    source: "── 《你所謂的努力，只是在感動自己》",
+    encouragement: "努力的質比量重要。問問自己，這次的投入是否真的用了心？有意識地學習，才能讓每一分鐘都真正有效。"
+  },
+  {
+    number: "第 四十八 籤", grade: "上籤",
+    verse: "我從未見過有人不經長期密集練習就發展出超凡能力",
+    source: "── 安德斯・艾瑞克森《刻意練習》",
+    encouragement: "天才不是天生的，是練出來的。你現在的每一次練習，都是在鋪出未來那條通往卓越的路。"
+  },
+  {
+    number: "第 四十九 籤", grade: "上上籤",
+    verse: "你不必浪費時間去找出你對什麼事充滿熱情，只管全心投入你想做、正在做的事情",
+    source: "── 《一人公司》",
+    encouragement: "等靈感、等熱情，不如先動起來。全心投入眼前的事，熱情會在你行動的過程中悄悄出現。"
+  },
+  {
+    number: "第 五十 籤", grade: "上上籤",
+    verse: "自律給你自由",
+    source: "── 喬科・威林克《極度自律》",
+    encouragement: "自律不是懲罰自己，而是為了讓未來的自己有更多選擇的自由。今天的克制，換來的是明天的可能。"
+  },
+  {
+    number: "第 五十一 籤", grade: "上籤",
+    verse: "既然滿足不了所有人，不如成為最喜歡自己的人",
+    source: "── 岸見一郎、古賀史健《被討厭的勇氣》（阿德勒心理學延伸）",
+    encouragement: "你不需要讓所有人滿意，你只需要讓自己踏實。做好自己，認可自己，這就是最重要的事。"
+  },
+  {
+    number: "第 五十二 籤", grade: "上上籤",
+    verse: "快樂，其實是減法",
+    source: "── 樂融《享受吧！30個更幸福的「減法生活」提案》",
+    encouragement: "不是擁有更多才能快樂，而是少一點焦慮、少一點比較、少一點自我苛責，你自然就會輕盈。"
+  },
+  {
+    number: "第 五十三 籤", grade: "上籤",
+    verse: "只工作、不上班的自主人生，從設計你自己開始",
+    source: "── 約翰・米德爾頓（John Middleton）《只工作、不上班的自主人生》",
+    encouragement: "未來的路由你設計，而設計的基礎就是現在累積的每一個能力。今天的你，是在幫未來的你打地基。"
+  },
+  {
+    number: "第 五十四 籤", grade: "上上籤",
+    verse: "與其期望遇到貴人，不如讓自己成為夠強的人",
+    source: "── 吳若權《你值得幸福》",
+    encouragement: "機遇是可遇不可求的，但能力是可以積累的。把時間花在讓自己更強大上，貴人自然出現。"
+  },
+  {
+    number: "第 五十五 籤", grade: "上上籤",
+    verse: "生命中最大的寶藏就是你自己",
+    source: "── 吳若權《生命中最大的寶藏就是你自己》",
+    encouragement: "不管外在環境如何，你本身就是最有價值的資源。好好開發自己、了解自己，這是最划算的投資。"
+  },
+  {
+    number: "第 五十六 籤", grade: "上籤",
+    verse: "先把問題定義清楚，解決方案就在其中",
+    source: "── 《看得見的高效思考》",
+    encouragement: "遇到難題時，先放慢腳步弄清楚問題的本質。很多時候，問題想清楚了，答案自然浮現。"
+  },
+
+  // ═══ 類別六：心理與哲學（阿德勒、佛洛姆、卡繆等）× 10 ═══
+  {
+    number: "第 五十七 籤", grade: "上上籤",
+    verse: "所有的煩惱，都是人際關係的煩惱",
+    source: "── 阿德勒（岸見一郎《被討厭的勇氣》）",
+    encouragement: "阿德勒說，你可以選擇不被別人的眼光所束縛。專注在你能控制的事情上，讓自己先變好，其餘的自然跟上。"
+  },
+  {
+    number: "第 五十八 籤", grade: "上籤",
+    verse: "重要的不是你被給予了什麼，而是你如何使用被給予的東西",
+    source: "── 阿德勒心理學",
+    encouragement: "你出生的環境、你擁有的資源，都不是限制，而是起點。決定你走多遠的，是你如何使用這一切。"
+  },
+  {
+    number: "第 五十九 籤", grade: "上上籤",
+    verse: "愛是一種主動的力量，是人類衝破牢獄之牆的能量",
+    source: "── 佛洛姆《愛的藝術》",
+    encouragement: "不論是對學習的熱愛、對夢想的追求、還是對身邊人的關懷，愛都是讓你突破限制的核心力量。"
+  },
+  {
+    number: "第 六十 籤", grade: "上上籤",
+    verse: "人是被判定為自由的",
+    source: "── 沙特《存在與虛無》",
+    encouragement: "自由意味著責任，你的每一個選擇都在塑造你是誰。這不是負擔，而是你擁有的最珍貴的力量。"
+  },
+  {
+    number: "第 六十一 籤", grade: "上籤",
+    verse: "在荒誕中找到意義，本身就是一種反叛",
+    source: "── 卡繆《薛西弗斯神話》",
+    encouragement: "即使事情感覺毫無意義，繼續做下去本身就是一種勇氣。薛西弗斯推著石頭，但我們可以想像他是快樂的。"
+  },
+  {
+    number: "第 六十二 籤", grade: "上上籤",
+    verse: "改變自己是最難的，也是最值得做的事",
+    source: "── 卡爾・榮格（Carl Jung）《心理類型》核心概念",
+    encouragement: "你願意嘗試改變、願意挑戰自己的舒適圈，這本身就已經很了不起了。繼續這條路，你會成為更好的版本。"
+  },
+  {
+    number: "第 六十三 籤", grade: "上籤",
+    verse: "人不管活到哪個年齡，永遠都是那個年齡段的初學者",
+    source: "── 安琪拉・達克沃斯（Angela Duckworth）《恆毅力》",
+    encouragement: "不管你現在幾年級，你都是在這個階段的初學者，這不丟臉，這是成長的本質。允許自己不懂，然後去學。"
+  },
+  {
+    number: "第 六十四 籤", grade: "上上籤",
+    verse: "真正的自信，不是從不懷疑自己，而是即使懷疑，仍然繼續前進",
+    source: "── 心理成長類暢銷書",
+    encouragement: "自我懷疑是很正常的，連最厲害的人都有這種感覺。真正重要的是，在懷疑中仍然選擇繼續走下去。"
+  },
+  {
+    number: "第 六十五 籤", grade: "上上籤",
+    verse: "成長就是接受自己的有限，並在有限中找到無限的可能",
+    source: "── 尼采（Friedrich Nietzsche）《悲劇的誕生》精神延伸",
+    encouragement: "沒有人是全能的，承認自己的界限不是失敗，而是智慧的開始。在你的界限裡，找到你最獨特的那道光。"
+  },
+  {
+    number: "第 六十六 籤", grade: "上籤",
+    verse: "喜悅只存在活著的那一瞬間",
+    source: "── 一行禪師（Thich Nhat Hanh）《正念的奇蹟》",
+    encouragement: "不要只活在對未來的期待或對過去的回憶裡。此刻，你正在學習、正在成長，這就是值得感受的喜悅。"
+  },
+
+  // ═══ 類別七：台灣電影與國片 × 8 ═══
+  {
+    number: "第 六十七 籤", grade: "上上籤",
+    verse: "人生就像一盒巧克力，你永遠不知道下一顆是什麼口味",
+    source: "── 甘太太台詞，羅勃・辛密克斯執導《阿甘正傳》（Forrest Gump，1994）",
+    encouragement: "未知不是恐懼的來源，而是期待的來源。不管下一顆是苦是甜，都是你人生故事的一部分，都值得嘗嘗。"
+  },
+  {
+    number: "第 六十八 籤", grade: "上籤",
+    verse: "不是因為看到希望才堅持，而是因為堅持才能看到希望",
+    source: "── 切斯特頓（G.K. Chesterton）《正統》思想延伸，廣泛流傳勵志格言",
+    encouragement: "不要等有希望了才開始努力，先努力，希望自然從行動中長出來。堅持本身就是希望的種子。"
+  },
+  {
+    number: "第 六十九 籤", grade: "上上籤",
+    verse: "我在這裡，我一直都在",
+    source: "── 台灣電影《海角七號》（魏德聖導演，2008）精神台詞",
+    encouragement: "在你追求目標的過程中，有很多人默默支持著你。你不是一個人在努力，那份陪伴，一直都在。"
+  },
+  {
+    number: "第 七十 籤", grade: "上籤",
+    verse: "每個人都有自己的節奏，不必用別人的速度來衡量自己",
+    source: "── 台灣電影《練習曲》（陳懷恩導演，2007）精神：有些事現在不做，一輩子都不會做",
+    encouragement: "有些人快，有些人慢，但最終到達終點的方式各有不同。找到屬於你的節奏，不用急，不用比，穩穩走。"
+  },
+  {
+    number: "第 七十一 籤", grade: "上上籤",
+    verse: "青春就是用來浪費的，但最好浪費在值得的事情上",
+    source: "── 九把刀《那些年，我們一起追的女孩》（小說暨電影，2011）",
+    encouragement: "青春有限，把它投入在讓你成長的事情上。你現在認真學習的每一天，都是最值得的「浪費」。"
+  },
+  {
+    number: "第 七十二 籤", grade: "上籤",
+    verse: "失敗了，再站起來就好",
+    source: "── 台灣棒球名言，呼應《KANO》（馬志翔導演，2014）精神",
+    encouragement: "跌倒不可怕，可怕的是躺著不起來。失敗只是一個過程，站起來的那一刻，才是真正的你。"
+  },
+  {
+    number: "第 七十三 籤", grade: "上上籤",
+    verse: "我們一起走過的路，都是青春最好的見證",
+    source: "── 陳玉珊執導《我的少女時代》（2015）精神台詞",
+    encouragement: "你和同學們一起奮鬥的這段時光，是日後最珍貴的記憶。珍惜現在，用力燃燒，將來你會感謝此刻的自己。"
+  },
+  {
+    number: "第 七十四 籤", grade: "上籤",
+    verse: "夢想不是靠想的，是靠做出來的",
+    source: "── 廣泛流傳台灣創業精神格言，亦見於詹宏志《城市觀察》等書",
+    encouragement: "空想一萬次，不如行動一次。把對未來的期待，轉化成今天認真坐在書桌前的那個動作。"
+  },
+
+  // ═══ 類別八：科學與知識名人名言 × 8 ═══
+  {
+    number: "第 七十五 籤", grade: "上上籤",
+    verse: "想像力比知識更重要，知識是有限的，而想像力概括世界上的一切",
+    source: "── 愛因斯坦",
+    encouragement: "學習知識是基礎，但不要忘了保持好奇心和想像力。那些天馬行空的念頭，也許正是未來某個偉大想法的種子。"
+  },
+  {
+    number: "第 七十六 籤", grade: "上籤",
+    verse: "只要培養得當，任何孩子都可能成為天才",
+    source: "── 安德斯・艾瑞克森《刻意練習》",
+    encouragement: "沒有人一出生就是天才，但每個人都有成為更好自己的潛力。這個潛力，正在等你用努力去喚醒它。"
+  },
+  {
+    number: "第 七十七 籤", grade: "上上籤",
+    verse: "在科學上，沒有一條通向成功的大道，只有崎嶇的小路",
+    source: "── 馬克思",
+    encouragement: "學習沒有捷徑，但每一條曲折的路都有它的風景。慢慢走，仔細看，你會在路上發現別人錯過的東西。"
+  },
+  {
+    number: "第 七十八 籤", grade: "上籤",
+    verse: "如果我看得更遠，那是因為我站在巨人的肩膀上",
+    source: "── 牛頓",
+    encouragement: "你學習的每一個知識，都是前人留下的肩膀。站上去，然後去看你自己能望見的那片遠方。"
+  },
+  {
+    number: "第 七十九 籤", grade: "上上籤",
+    verse: "失敗是成功之母，唯有不斷地失敗，才能換來最後的成功",
+    source: "── 愛迪生",
+    encouragement: "愛迪生失敗了一千次才找到燈絲。你的每一次失敗，都是在排除錯誤答案，離正確的那個更近一點。"
+  },
+  {
+    number: "第 八十 籤", grade: "上上籤",
+    verse: "我沒有特別的天賦，我只是充滿好奇",
+    source: "── 愛因斯坦",
+    encouragement: "好奇心是所有學習最原始的動力。保持對世界的好奇，對知識的渴望，這比任何聰明才智都更珍貴。"
+  },
+  {
+    number: "第 八十一 籤", grade: "上籤",
+    verse: "困難是人生最好的老師",
+    source: "── 威廉・詹姆斯（William James）美國心理學之父，實用主義核心精神",
+    encouragement: "那些讓你感到困難的題目，那些讓你百思不得其解的概念，正是你成長最快的地方。擁抱困難，它是你的老師。"
+  },
+  {
+    number: "第 八十二 籤", grade: "上上籤",
+    verse: "一次只做一件事，把它做到極致",
+    source: "── 賈伯斯（Steve Jobs）",
+    encouragement: "分心是進步最大的敵人。現在，把全部的注意力放在眼前這件事上，一件事做好，勝過十件事做爛。"
+  },
+
+  // ═══ 類別九：台灣教育現場名句與教師智慧 × 8 ═══
+  {
+    number: "第 八十三 籤", grade: "上上籤",
+    verse: "教育不是注滿一桶水，而是點燃一把火",
+    source: "── 葉慈（W.B. Yeats）",
+    encouragement: "真正的學習不是死記硬背，而是讓你心裡那把對知識渴望的火燃起來。找到讓你著迷的那個點，讓它燃燒。"
+  },
+  {
+    number: "第 八十四 籤", grade: "上籤",
+    verse: "每一個孩子都是一個等待被打開的禮物盒",
+    source: "── 拉賓德拉納特・泰戈爾（Tagore）教育哲學精神",
+    encouragement: "你也是一個尚未完全打開的禮物盒，裡面藏著你自己都還不知道的才能與可能。繼續探索，繼續打開。"
+  },
+  {
+    number: "第 八十五 籤", grade: "上上籤",
+    verse: "學習是一輩子的事，不要只為了考試而讀書",
+    source: "── 孔子《論語・學而》：學而不思則罔，思而不學則殆（教育精神延伸）",
+    encouragement: "考試會結束，但學習不會。今天你培養的好奇心和思考習慣，將是你終身受益的寶貴財富。"
+  },
+  {
+    number: "第 八十六 籤", grade: "上籤",
+    verse: "被老師記住的學生，不是最聰明的，而是最認真的",
+    source: "── 教育心理學研究共識，亦呼應卡羅・德威克（Carol Dweck）《心態致勝》成長心態",
+    encouragement: "認真的態度，比天分更讓人印象深刻。你今天的認真，不只是在學習知識，也是在培養一輩子受用的品格。"
+  },
+  {
+    number: "第 八十七 籤", grade: "上上籤",
+    verse: "問問題的人，永遠比不問問題的人學得更多",
+    source: "── 愛因斯坦（Albert Einstein）：重要的是不要停止提問（The important thing is not to stop questioning）",
+    encouragement: "不懂就問，是最聰明的學習策略。不要怕被笑，提問的勇氣，是進步最快的捷徑。"
+  },
+  {
+    number: "第 八十八 籤", grade: "上籤",
+    verse: "每一次考試，都是一次了解自己的機會",
+    source: "── 約翰・杜威（John Dewey）《民主與教育》：測驗應是了解學習，而非評判學習者",
+    encouragement: "把考試當成測量自己的工具，而不是評判自己的裁判。每次考試後，你更清楚自己的方向。"
+  },
+  {
+    number: "第 八十九 籤", grade: "上上籤",
+    verse: "學生最怕的不是難題，而是放棄",
+    source: "── 溫斯頓・邱吉爾（Churchill）：永遠不要，永遠不要，永遠不要放棄（Never give up精神）",
+    encouragement: "再難的題目，只要你不放棄，就有解開的那一天。放棄是唯一一種真正讓你輸的選擇。"
+  },
+  {
+    number: "第 九十 籤", grade: "上籤",
+    verse: "好老師打開學生的門，但進去的是學生自己",
+    source: "── 紀伯倫（Kahlil Gibran）《先知》〈論教導〉：老師若真是智慧，不強迫學生進入他的智慧殿堂",
+    encouragement: "老師可以引路，但路要靠你自己走。你的成就是你的，你的成長也是你的。主動踏進那扇門吧。"
+  },
+
+  // ═══ 類別十：跨領域混搭（佛學、西方名言、台灣俗諺等）× 10 ═══
+  {
+    number: "第 九十一 籤", grade: "上上籤",
+    verse: "人之所以痛苦，在於追求錯誤的東西",
+    source: "── 佛學禪語",
+    encouragement: "有時候我們的焦慮，來自於追求的東西並不是真正想要的。靜下來問問自己：我真正想要的是什麼？"
+  },
+  {
+    number: "第 九十二 籤", grade: "上籤",
+    verse: "除非你自願放棄，否則你永遠不會被打敗",
+    source: "── 哈佛家訓",
+    encouragement: "你還沒到終點，就還沒輸。只要心裡的那把火沒熄，任何看似的失敗都只是路途中的一個彎道。"
+  },
+  {
+    number: "第 九十三 籤", grade: "上上籤",
+    verse: "以人為鏡，可以正己",
+    source: "── 唐・魏徵",
+    encouragement: "從身邊的人身上學習，無論是榜樣還是警惕，都是成長的養分。保持謙遜，處處都是你的老師。"
+  },
+  {
+    number: "第 九十四 籤", grade: "上上籤",
+    verse: "在意未來的離別，而捨棄當時的幸福，也許是件浪費的事",
+    source: "── 《Relife 重返17歲》",
+    encouragement: "不要因為害怕失去，就不敢全力投入。此刻的全力以赴，才是對這段時光最好的珍惜。"
+  },
+  {
+    number: "第 九十五 籤", grade: "上籤",
+    verse: "就算有點邋遢，活出自己的風格也遠比什麼都好",
+    source: "── 坂田銀時，空知英秋《銀魂》漫畫（2004）",
+    encouragement: "你不需要完美才能開始。帶著你現在的樣子，用你自己的方式去努力，這份真實比任何完美都有力量。"
+  },
+  {
+    number: "第 九十六 籤", grade: "上上籤",
+    verse: "路是自己走出來的，不是別人給的",
+    source: "── 台灣閩南語諺語：家己的路，家己行（路要自己走，別人代替不了）",
+    encouragement: "沒有人能替你走你的路，但只要你願意走，路就在腳下。一步一步，踏踏實實，你的路就這樣長出來了。"
+  },
+  {
+    number: "第 九十七 籤", grade: "上籤",
+    verse: "被一個人深深地愛著將給你力量；深深地愛著一個人將給你勇氣",
+    source: "── 宮崎駿《霍爾的移動城堡》引老子《道德經》",
+    encouragement: "你被家人、朋友深深愛著，那是你的力量。你也深深愛著自己的夢想，那是你的勇氣。帶著這兩樣東西前行。"
+  },
+  {
+    number: "第 九十八 籤", grade: "上上籤",
+    verse: "人是為了救贖自己而活著嗎，確實如此呢",
+    source: "── 織田作之助《文豪野犬》",
+    encouragement: "每個人都有自己需要面對和超越的困境。你現在的努力，就是你正在救贖自己，讓自己成為更好的版本。"
+  },
+  {
+    number: "第 九十九 籤", grade: "上上籤",
+    verse: "不積跬步，無以至千里；不積小流，無以成江海",
+    source: "── 荀子《勸學》（再引）",
+    encouragement: "偉大的成就，都是由無數個小小的「今天做了一點」堆疊而成的。今天這一點，明天那一點，你的江海在路上了。"
+  },
+  {
+    number: "第 一百 籤", grade: "上上籤",
+    verse: "你的心是曠野，而不是籠中",
+    source: "── 紀伯倫《先知》",
+    encouragement: "恭喜你抽到第一百籤！這不是巧合，是巫魚子大師特別選中你。你的心是無邊曠野，任何夢想都裝得下。帶著這份廣闊，大步前進吧！"
+  }
+];
+
+let currentName = "";
+let usedIndices = {};
+
+function startDraw() {
+  const name = document.getElementById("name-input").value.trim();
+  if (!name) {
+    document.getElementById("name-input").focus();
+    document.getElementById("name-input").style.borderColor = "rgba(255,80,80,0.6)";
+    setTimeout(() => { document.getElementById("name-input").style.borderColor = "rgba(201,168,76,0.4)"; }, 1000);
+    return;
+  }
+  currentName = name;
+  showScreen("screen-loading");
+  setTimeout(() => showFortune(name), 2800);
+}
+
+function showFortune(name) {
+  if (!usedIndices[name]) usedIndices[name] = [];
+  
+  let available = FORTUNES.map((_, i) => i).filter(i => !usedIndices[name].includes(i));
+  if (available.length === 0) {
+    usedIndices[name] = [];
+    available = FORTUNES.map((_, i) => i);
+  }
+
+  const idx = available[Math.floor(Math.random() * available.length)];
+  usedIndices[name].push(idx);
+  const f = FORTUNES[idx];
+
+  document.querySelector("#result-name-display span").textContent = name;
+  document.getElementById("slip-number").textContent = f.number;
+  document.getElementById("slip-grade").textContent = f.grade;
+  document.getElementById("slip-verse").textContent = f.verse;
+  document.getElementById("slip-source").textContent = f.source;
+  document.getElementById("encouragement-text").textContent = f.encouragement;
+
+  showScreen("screen-result");
+}
+
+function drawAgain() {
+  showScreen("screen-loading");
+  setTimeout(() => showFortune(currentName), 2800);
+}
+
+function nextStudent() {
+  currentName = "";
+  document.getElementById("name-input").value = "";
+  showScreen("screen-entry");
+  setTimeout(() => document.getElementById("name-input").focus(), 300);
+}
+
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+// SMOKE PARTICLES
+const smokeEl = document.getElementById("smoke");
+for (let i = 0; i < 12; i++) {
+  const p = document.createElement("div");
+  p.className = "smoke-particle";
+  p.style.left = (20 + Math.random() * 60) + "vw";
+  p.style.bottom = (10 + Math.random() * 30) + "vh";
+  p.style.setProperty("--drift", (Math.random() * 40 - 20) + "px");
+  p.style.animationDuration = (4 + Math.random() * 6) + "s";
+  p.style.animationDelay = (Math.random() * 6) + "s";
+  smokeEl.appendChild(p);
+}
+
+// Enter key support
+document.getElementById("name-input").addEventListener("keydown", e => {
+  if (e.key === "Enter") startDraw();
+});
+</script>
+</body>
+</html>
