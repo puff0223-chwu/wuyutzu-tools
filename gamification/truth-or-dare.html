@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎲 真心話大冒險</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+    :root {
+      --truth: #4f46e5;
+      --truth-dark: #3730a3;
+      --dare: #dc2626;
+      --dare-dark: #991b1b;
+      --bg: #0f0f1a;
+      --card: #1a1a2e;
+      --text: #f1f5f9;
+      --sub: #94a3b8;
+      --gold: #fbbf24;
+      --radius: 18px;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'Noto Sans TC','Microsoft JhengHei',sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; overflow-x: hidden;
+    }
+    #canvas-bg {
+      position:fixed; inset:0;
+      pointer-events:none; z-index:0; opacity:0.35;
+    }
+    .screen {
+      position:relative; z-index:1;
+      display:none; min-height:100vh;
+      padding:24px 20px;
+      flex-direction:column; align-items:center; justify-content:center;
+    }
+    .screen.active { display:flex; }
+
+    /* ===== 首頁 ===== */
+    #screen-home { text-align:center; gap:0; }
+    .home-eyebrow {
+      font-size:0.85rem; color:var(--sub);
+      letter-spacing:0.4em; margin-bottom:20px;
+    }
+    /* 標題：真心話 大冒險 全部同樣大小 */
+    .home-main {
+      font-size: clamp(2.6rem, 9vw, 4.2rem);
+      font-weight:900; line-height:1.1;
+      margin-bottom:12px;
+      display:flex; flex-direction:column; align-items:center; gap:0;
+    }
+    .home-main .row1 { display:flex; gap:0.08em; }
+    .home-main .row2 { display:flex; gap:0.08em; }
+    .t { color:var(--truth); }
+    .d { color:var(--dare); }
+    .home-sub { color:var(--sub); font-size:0.95rem; margin-bottom:52px; }
+
+    /* 返回按鈕 */
+    .back-btn {
+      align-self:flex-start;
+      background:none; border:1.5px solid rgba(255,255,255,0.2);
+      color:var(--sub); font-family:inherit;
+      padding:6px 16px; border-radius:20px;
+      cursor:pointer; font-size:0.85rem; margin-bottom:32px;
+      transition:all 0.2s; text-decoration:none; display:inline-block;
+    }
+    .back-btn:hover { border-color:rgba(255,255,255,0.5); color:white; }
+
+    /* 返回工具箱（首頁用） */
+    .home-back {
+      position:absolute; top:20px; left:20px;
+    }
+
+    /* 選擇卡 */
+    .choice-grid {
+      display:grid; grid-template-columns:1fr 1fr;
+      gap:20px; width:100%; max-width:520px;
+    }
+    .choice-btn {
+      border:none; cursor:pointer; border-radius:var(--radius);
+      padding:36px 20px; font-family:inherit;
+      transition:transform 0.18s, box-shadow 0.18s;
+      position:relative; overflow:hidden;
+    }
+    .choice-btn::before {
+      content:''; position:absolute; inset:0;
+      opacity:0; transition:opacity 0.2s;
+      background:rgba(255,255,255,0.08);
+    }
+    .choice-btn:hover::before { opacity:1; }
+    .choice-btn:hover { transform:translateY(-4px); box-shadow:0 16px 40px rgba(0,0,0,0.5); }
+    .btn-truth { background:linear-gradient(145deg,#4f46e5,#3730a3); }
+    .btn-dare  { background:linear-gradient(145deg,#dc2626,#991b1b); }
+    .choice-icon  { font-size:3rem; margin-bottom:14px; display:block; }
+    .choice-label { font-size:1.5rem; font-weight:900; color:white; display:block; }
+    .choice-desc  { font-size:0.8rem; color:rgba(255,255,255,0.6); display:block; margin-top:8px; }
+
+    /* ===== 通用內頁版頭 ===== */
+    .section-head { text-align:center; margin-bottom:28px; width:100%; }
+    .section-badge {
+      display:inline-block; background:var(--truth);
+      color:white; font-size:0.78rem;
+      padding:4px 14px; border-radius:20px;
+      letter-spacing:0.15em; margin-bottom:12px;
+    }
+    .section-badge.dare-badge { background:var(--dare); }
+    .section-title { font-size:1.6rem; font-weight:900; margin-bottom:6px; }
+    .section-desc  { color:var(--sub); font-size:0.88rem; }
+
+    /* ===== 真心話 ===== */
+    #screen-truth { gap:0; justify-content:flex-start; padding-top:40px; }
+    .cat-grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+      gap:12px; width:100%; max-width:640px; margin-bottom:28px;
+    }
+    .cat-btn {
+      background:var(--card); border:2px solid transparent;
+      border-radius:14px; padding:18px 12px;
+      text-align:center; cursor:pointer;
+      font-family:inherit; color:var(--text); transition:all 0.18s;
+    }
+    .cat-btn:hover { border-color:var(--truth); background:rgba(79,70,229,0.15); }
+    .cat-btn.selected { border-color:var(--truth); background:rgba(79,70,229,0.25); }
+    .cat-icon  { font-size:1.8rem; display:block; margin-bottom:8px; }
+    .cat-name  { font-size:0.9rem; font-weight:700; }
+    .cat-count { font-size:0.75rem; color:var(--sub); margin-top:4px; }
+
+    .draw-btn {
+      background:linear-gradient(135deg,var(--truth),var(--truth-dark));
+      color:white; border:none;
+      padding:16px 48px; border-radius:50px;
+      font-size:1.1rem; font-weight:900;
+      font-family:inherit; cursor:pointer; transition:all 0.2s;
+      letter-spacing:0.1em;
+    }
+    .draw-btn:hover { opacity:0.88; transform:translateY(-2px); box-shadow:0 8px 24px rgba(79,70,229,0.4); }
+    .draw-btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; box-shadow:none; }
+    .draw-btn.dare-draw { background:linear-gradient(135deg,var(--dare),var(--dare-dark)); }
+    .draw-btn.dare-draw:hover { box-shadow:0 8px 24px rgba(220,38,38,0.4); }
+
+    .question-card {
+      display:none; width:100%; max-width:520px;
+      background:linear-gradient(145deg,#1e1e35,#16162a);
+      border:2px solid rgba(79,70,229,0.4);
+      border-radius:24px; padding:36px 32px;
+      text-align:center; margin-top:24px;
+      animation:cardIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .question-card.show { display:block; }
+    @keyframes cardIn {
+      from { transform:scale(0.85) translateY(20px); opacity:0; }
+      to   { transform:scale(1) translateY(0); opacity:1; }
+    }
+    .q-category-tag {
+      display:inline-block; font-size:0.75rem; letter-spacing:0.15em;
+      color:rgba(255,255,255,0.5); background:rgba(255,255,255,0.08);
+      padding:4px 12px; border-radius:12px; margin-bottom:20px;
+    }
+    .q-text {
+      font-size:clamp(1.1rem,3vw,1.4rem); font-weight:700;
+      line-height:1.7; color:white; margin-bottom:28px;
+    }
+    .q-again-btn {
+      background:none; border:1.5px solid rgba(255,255,255,0.25);
+      color:var(--sub); font-family:inherit;
+      padding:8px 24px; border-radius:20px;
+      cursor:pointer; font-size:0.85rem; transition:all 0.2s;
+    }
+    .q-again-btn:hover { border-color:rgba(255,255,255,0.6); color:white; }
+
+    /* ===== 大冒險 ===== */
+    #screen-dare { gap:0; justify-content:flex-start; padding-top:40px; }
+
+    .slots-wrapper { width:100%; max-width:560px; margin:0 auto 24px; }
+    .slots-row {
+      display:grid; grid-template-columns:1fr 1fr 1fr;
+      gap:12px; margin-bottom:12px;
+    }
+    .slot-col { text-align:center; }
+    .slot-label { font-size:0.75rem; letter-spacing:0.15em; color:var(--sub); margin-bottom:8px; }
+    .slot-window {
+      background:#0a0a15;
+      border:2px solid rgba(255,255,255,0.12);
+      border-radius:14px; height:88px;
+      overflow:hidden; position:relative;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .slot-window.locked { border-color:var(--gold); box-shadow:0 0 16px rgba(251,191,36,0.3); }
+    .slot-value {
+      font-size:clamp(0.82rem,2.2vw,1rem);
+      font-weight:700; color:white;
+      line-height:1.3; text-align:center; padding:6px;
+      transition:opacity 0.1s;
+    }
+    .slot-value.flash { opacity:0.2; }
+
+    .dare-result-card {
+      display:none; width:100%; max-width:520px;
+      background:linear-gradient(145deg,#2a1010,#1a0a0a);
+      border:2px solid rgba(220,38,38,0.45);
+      border-radius:24px; padding:32px 28px;
+      text-align:center; margin:0 auto 20px;
+      animation:cardIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .dare-result-card.show { display:block; }
+    .dare-result-label {
+      font-size:0.75rem; letter-spacing:0.2em;
+      color:rgba(255,255,255,0.4); margin-bottom:14px;
+    }
+    .dare-result-text {
+      font-size:clamp(1.1rem,3.5vw,1.5rem);
+      font-weight:900; color:white; line-height:1.6;
+    }
+    .dare-result-text .hl { color:var(--dare); }
+
+    .prob-hint {
+      text-align:center; font-size:0.75rem;
+      color:rgba(255,255,255,0.3); margin-bottom:20px;
+    }
+
+    @media(max-width:480px){
+      .choice-grid { gap:14px; }
+      .choice-btn { padding:28px 14px; }
+      .choice-icon { font-size:2.4rem; }
+      .choice-label { font-size:1.25rem; }
+      .cat-grid { grid-template-columns:repeat(3,1fr); }
+    }
+  </style>
+</head>
+<body>
+<canvas id="canvas-bg"></canvas>
+
+<!-- ===== 首頁 ===== -->
+<div class="screen active" id="screen-home">
+  <a class="back-btn home-back" href="../index.html">← 返回工具箱</a>
+  <p class="home-eyebrow">巫魚子班級遊戲</p>
+  <div class="home-main">
+    <div class="row1">
+      <span class="t">真</span><span class="t">心</span><span class="t">話</span>
+    </div>
+    <div class="row2">
+      <span class="d">大</span><span class="d">冒</span><span class="d">險</span>
+    </div>
+  </div>
+  <p class="home-sub">選擇你的挑戰方式</p>
+  <div class="choice-grid">
+    <button class="choice-btn btn-truth" onclick="goTo('truth')">
+      <span class="choice-icon">💬</span>
+      <span class="choice-label">真心話</span>
+      <span class="choice-desc">按主題抽題，說出真心想法</span>
+    </button>
+    <button class="choice-btn btn-dare" onclick="goTo('dare')">
+      <span class="choice-icon">🎰</span>
+      <span class="choice-label">大冒險</span>
+      <span class="choice-desc">拉霸決定你的命運</span>
+    </button>
+  </div>
+</div>
+
+<!-- ===== 真心話 ===== -->
+<div class="screen" id="screen-truth">
+  <button class="back-btn" onclick="goTo('home')">← 返回</button>
+  <div class="section-head">
+    <span class="section-badge">💬 真心話</span>
+    <h2 class="section-title">選擇問題類別</h2>
+    <p class="section-desc">選一個主題，抽出問題後說出你的真心想法！</p>
+  </div>
+  <div class="cat-grid" id="cat-grid"></div>
+  <button class="draw-btn" id="truth-draw-btn" onclick="drawTruth()" disabled>抽 出 問 題</button>
+  <div class="question-card" id="question-card">
+    <div class="q-category-tag" id="q-cat-tag"></div>
+    <div class="q-text" id="q-text"></div>
+    <button class="q-again-btn" onclick="drawTruth()">🔀 再抽一題</button>
+  </div>
+</div>
+
+<!-- ===== 大冒險 ===== -->
+<div class="screen" id="screen-dare">
+  <button class="back-btn" onclick="goTo('home')">← 返回</button>
+  <div class="section-head">
+    <span class="section-badge dare-badge">🎰 大冒險</span>
+    <h2 class="section-title">命運拉霸機</h2>
+    <p class="section-desc">按下拉霸，看看你的挑戰任務！</p>
+  </div>
+  <div class="prob-hint">對象機率：自己 60%・自覓同學 20%・隨機同學 10%・老師 10%</div>
+  <div class="slots-wrapper">
+    <div class="slots-row">
+      <div class="slot-col">
+        <div class="slot-label">🎯 對象</div>
+        <div class="slot-window" id="slot-0"><div class="slot-value" id="sv-0">？</div></div>
+      </div>
+      <div class="slot-col">
+        <div class="slot-label">⚡ 挑戰類型</div>
+        <div class="slot-window" id="slot-1"><div class="slot-value" id="sv-1">？</div></div>
+      </div>
+      <div class="slot-col">
+        <div class="slot-label">🎪 任務</div>
+        <div class="slot-window" id="slot-2"><div class="slot-value" id="sv-2">？</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="dare-result-card" id="dare-result">
+    <div class="dare-result-label">🎲 你的大冒險任務是⋯⋯</div>
+    <div class="dare-result-text" id="dare-result-text"></div>
+  </div>
+  <button class="draw-btn dare-draw" id="dare-btn" onclick="spinDare()">🎰 開始拉霸！</button>
+</div>
+
+<script>
+// ── 粒子背景 ──
+const cv = document.getElementById('canvas-bg');
+const cx = cv.getContext('2d');
+let pts = [];
+function resizeCv(){ cv.width=innerWidth; cv.height=innerHeight; }
+resizeCv(); addEventListener('resize',resizeCv);
+for(let i=0;i<60;i++) pts.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*2+0.5,dx:(Math.random()-.5)*.4,dy:(Math.random()-.5)*.4,a:Math.random()*.5+0.1});
+(function tick(){cx.clearRect(0,0,cv.width,cv.height);pts.forEach(p=>{cx.beginPath();cx.arc(p.x,p.y,p.r,0,Math.PI*2);cx.fillStyle=`rgba(150,130,255,${p.a})`;cx.fill();p.x+=p.dx;p.y+=p.dy;if(p.x<0||p.x>cv.width)p.dx*=-1;if(p.y<0||p.y>cv.height)p.dy*=-1;});requestAnimationFrame(tick);})();
+
+// ── 畫面切換 ──
+function goTo(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  if(id==='truth') renderCats();
+  if(id==='dare') resetDare();
+}
+
+// ══════════════════════════════════════
+//  真心話題庫（全開放式問法）
+// ══════════════════════════════════════
+const TRUTH = {
+  '🌏 社會議題': [
+    '如果你是縣市長，你會把第一筆預算花在哪裡？說說你的理由。',
+    '你覺得現在的高中生面對什麼社會壓力是大人沒有意識到的？',
+    '說一件你曾經在新聞上看到、讓你非常憤怒或難過的事，以及你為什麼有那樣的感受。',
+    '環保和生活便利之間，你如何在日常中做取捨？舉一個真實的例子。',
+    '你覺得學校教育有哪一件事讓你覺得不合理？你希望怎麼改變它？',
+    '如果可以讓台灣改掉一個集體習慣，你選什麼？為什麼是這個？',
+    '你有沒有曾經為了一件事改變過自己的立場或想法？是什麼事讓你改變的？',
+    '你覺得你們這一代和上一代最大的不同是什麼？這個不同是好事還是壞事？',
+    '說說一件你覺得「大家都知道有問題，但沒有人去改變」的社會現象。',
+    '如果你能替還不能投票的同齡人傳遞一個訴求給政府，你會說什麼？',
+  ],
+  '💕 友情與人際': [
+    '說說你覺得什麼樣的朋友關係讓你感覺最舒服，最重要的條件是什麼？',
+    '你有沒有曾經因為某件事和一個本來很好的朋友漸行漸遠？說說那個過程。',
+    '你覺得你在別人眼中是什麼樣的朋友？和你自認為的有落差嗎？',
+    '說說一次你想道歉但最後沒說出口的經驗，以及當時你為什麼猶豫了。',
+    '你有沒有曾經幫朋友保守秘密，但那個秘密讓你壓力很大？你是怎麼處理的？',
+    '你最不能接受朋友做什麼事？是有什麼原因讓你對這件事特別在意嗎？',
+    '說說你交朋友的風格——你是那種會主動靠近的人，還是等別人來找你的人？',
+    '你有沒有曾經覺得某段友誼很不對等，一直是你在付出？你後來怎麼面對的？',
+    '說一個至今讓你印象最深刻、朋友幫助你或你幫助朋友的故事。',
+    '你覺得現代人的友誼和以前比起來有什麼不同？你比較喜歡哪種交友方式？',
+  ],
+  '💘 戀愛觀': [
+    '說說你心中「理想的戀人」是什麼樣子，最重要的三個特質是什麼？為什麼是這三個？',
+    '你覺得主動告白是一件勇敢的事，還是應該先觀察確定再說？說說你的理由。',
+    '你能接受在高中階段談戀愛嗎？你覺得戀愛對學生來說是加分還是減分？',
+    '如果喜歡一個人但對方對你沒感覺，你會怎麼做？說說你會如何面對這個狀況。',
+    '你能接受另一半和前任還是好朋友嗎？說說你的想法，以及你這樣認為的原因。',
+    '你覺得「告白失敗後還能繼續當朋友」這件事可能發生嗎？你有相關經驗嗎？',
+    '說說你從身邊的大人或電影裡，看到什麼樣的感情讓你覺得「我不想要這樣」。',
+    '你覺得戀愛中最容易讓關係出問題的原因是什麼？說說你的觀察。',
+    '異地戀你可以接受嗎？說說你覺得維持一段遠距離關係，最難的是什麼。',
+    '你有沒有曾經喜歡一個人但沒有採取任何行動？說說是什麼讓你最後選擇沉默。',
+  ],
+  '🎮 興趣愛好': [
+    '說說你最近最沉迷的事是什麼，它讓你著迷的原因是什麼？',
+    '你有沒有一個「看起來不像你會喜歡的東西」但你其實非常喜歡？說說它吸引你的地方。',
+    '如果可以把某個愛好發展成職業，你選什麼？說說你覺得這件事實不實際。',
+    '說說你有什麼才能是身邊人幾乎不知道的，以及你為什麼沒有讓大家知道。',
+    '你有沒有一個「明知道浪費時間但停不下來」的習慣？說說它的魔力在哪。',
+    '如果突然有一個月的假，完全自由，你打算怎麼安排？說說你的理想版本。',
+    '說說最近讓你印象最深的一首歌、一部影集或一本書，以及它打動你的地方。',
+    '你有沒有某個一直想學但一直沒去學的技能？是什麼原因讓你遲遲沒有開始？',
+    '說說你的手機使用習慣——你最常在手機上做什麼？那件事讓你感覺如何？',
+    '你有沒有一個從小堅持到現在的興趣或習慣？說說它在你生命中扮演什麼角色。',
+  ],
+  '🧠 自我探索': [
+    '說說你覺得自己最大的優點，以及這個優點在什麼情況下曾經真正幫助過你。',
+    '說說你最大的缺點，以及你有沒有曾經因為這個缺點付出過什麼代價。',
+    '你有沒有做過一件讓現在的自己覺得「那時候我怎麼這樣」的事？說說那是什麼。',
+    '你覺得你在別人面前展現出來的自己，和一個人獨處時的自己，有什麼不同？',
+    '說說你最近讓自己感到驕傲的一件事，不管大小，以及為什麼它對你有意義。',
+    '你最常對自己說什麼樣的負面話語？你覺得這些話從哪裡來的？',
+    '你有沒有一個「說出來會很丟臉，但其實很在意」的心願或願望？說說它是什麼。',
+    '說說你在最低落的時候，通常是什麼讓你慢慢恢復過來的？',
+    '你覺得你和一年前的自己相比，最大的改變是什麼？這個改變是你主動選擇的嗎？',
+    '如果可以改變自己一個特質，你選什麼？改變之後你覺得你的生活會有什麼不同？',
+  ],
+  '🔮 未來與夢想': [
+    '說說你現在對未來最有把握的一件事，以及讓你有把握的原因是什麼。',
+    '你有沒有一個「感覺很不切實際但心裡一直想著」的夢想？說說你為什麼沒放棄它。',
+    '如果錢不是問題，你最想做的職業是什麼？說說是什麼讓你對這件事有熱情。',
+    '你覺得高中這段時間，對你未來的人生會有多大的影響？說說你的看法。',
+    '說說你對「成功」的定義是什麼，以及你認為達到那個成功最大的障礙是什麼。',
+    '你想出國讀書或生活嗎？說說你的理由——是什麼吸引你，或什麼讓你不想去。',
+    '你希望十年後的自己是什麼樣子？說說你現在的行動有沒有在朝那個方向走。',
+    '說說你覺得你人生中最可能後悔的決定，以及現在的你有沒有辦法做什麼。',
+    '你對「婚姻」或「家庭」這件事有什麼樣的想像？說說你心中理想的樣子。',
+    '如果可以給五年後的自己寫一封信，你最想提醒自己哪一件事？說說原因。',
+  ],
+  '😂 搞笑日常': [
+    '說說你最尷尬的一次公開出糗，以及那個當下你腦子裡在想什麼。',
+    '你最誇張的一次臨時抱佛腳或趕作業的經驗是什麼？結果如何？',
+    '說說你有沒有曾經說謊被戳穿的經驗，以及你是怎麼硬撐過去的。',
+    '說說你最奇葩的一個夢，以及如果那個夢成真你覺得會怎樣。',
+    '你有沒有某樣東西或某種情況讓你有莫名的恐懼或噁心感？說說那是什麼。',
+    '說說你小時候最天真或最離奇的想法，以及你現在回頭看覺得如何。',
+    '你有沒有曾經因為誤會或聽錯而發生的搞笑事件？說說過程。',
+    '說說你曾經在考試或報告中寫了一個完全錯誤但當時覺得「絕對沒問題」的答案。',
+    '說說你最近一次笑到停不下來是因為什麼，以及你覺得它為什麼這麼好笑。',
+    '你有沒有因為太緊張而說了超級蠢的話？說說那個場景和你事後的感受。',
+  ],
+};
+
+// ── 類別渲染 ──
+let selectedCat = null;
+let usedIdx = {};
+function renderCats(){
+  const g = document.getElementById('cat-grid');
+  g.innerHTML='';
+  Object.keys(TRUTH).forEach(cat=>{
+    const b=document.createElement('button');
+    b.className='cat-btn'+(selectedCat===cat?' selected':'');
+    b.innerHTML=`<span class="cat-icon">${cat.split(' ')[0]}</span><span class="cat-name">${cat.split(' ').slice(1).join(' ')}</span><span class="cat-count">${TRUTH[cat].length} 題</span>`;
+    b.onclick=()=>selectCat(cat,b);
+    g.appendChild(b);
+  });
+  document.getElementById('truth-draw-btn').disabled=!selectedCat;
+}
+function selectCat(cat,btn){
+  selectedCat=cat;
+  document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  document.getElementById('truth-draw-btn').disabled=false;
+  document.getElementById('question-card').classList.remove('show');
+}
+function drawTruth(){
+  if(!selectedCat) return;
+  const qs=TRUTH[selectedCat];
+  if(!usedIdx[selectedCat]) usedIdx[selectedCat]=[];
+  let pool=qs.map((_,i)=>i).filter(i=>!usedIdx[selectedCat].includes(i));
+  if(!pool.length){ usedIdx[selectedCat]=[]; pool=qs.map((_,i)=>i); }
+  const idx=pool[Math.floor(Math.random()*pool.length)];
+  usedIdx[selectedCat].push(idx);
+  document.getElementById('q-cat-tag').textContent=selectedCat;
+  document.getElementById('q-text').textContent=qs[idx];
+  const card=document.getElementById('question-card');
+  card.classList.remove('show');
+  void card.offsetWidth;
+  card.classList.add('show');
+}
+
+// ══════════════════════════════════════
+//  大冒險——預先設計好的完整情境
+//  結構：{ target, type, task, sentence }
+//  sentence 是完整顯示給學生的指令
+// ══════════════════════════════════════
+
+// 「自己」類任務（60%）
+const DARE_SELF = [
+  { type:'肢體挑戰', task:'用屁股在空中寫自己的名字', sentence:'用你的屁股在空中把自己的名字「寫」出來，一邊寫一邊唸出筆畫！' },
+  { type:'表演挑戰', task:'模仿老師說話', sentence:'模仿一位老師說話的語氣和口頭禪，說一句上課常說的話，讓大家猜是誰！' },
+  { type:'表演挑戰', task:'表演突然被嚇到', sentence:'假裝被一個「看不見的東西」嚇到，全程表情和聲音要到位，持續5秒！' },
+  { type:'歌唱挑戰', task:'用最大聲唱一句歌', sentence:'用你最大的音量，唱出一首歌的第一句歌詞（自選），唱完才算過關！' },
+  { type:'肢體挑戰', task:'做最帥最美的pose', sentence:'擺出你認為最帥氣或最優雅的pose，維持5秒，讓全場評分！' },
+  { type:'語言挑戰', task:'用繞口令說台詞', sentence:'用繞口令的方式說「我今天心情很好，我愛我的同學」三次，不能卡頓！' },
+  { type:'表演挑戰', task:'表演便秘的樣子', sentence:'原地表演「上廁所很久出不來」的樣子，臉部表情要完全投入，持續8秒！' },
+  { type:'肢體挑戰', task:'跳卡通跳', sentence:'原地跳起來，跳躍時雙腿分開、雙手比YA，同時大喊「耶！」三次！' },
+  { type:'語言挑戰', task:'用英文自我介紹30秒', sentence:'用英文做一段30秒的自我介紹，要包含名字、興趣、和一個秘密！' },
+  { type:'表演挑戰', task:'模仿動物叫10秒', sentence:'選一種動物，模仿牠的叫聲和動作，持續10秒，讓大家猜是什麼動物！' },
+  { type:'歌唱挑戰', task:'用哼唱讓人猜歌名', sentence:'用「嗯嗯嗯」哼出一首歌的旋律，讓其他人猜，猜到才算過關！' },
+  { type:'肢體挑戰', task:'用非慣用手寫自己名字', sentence:'用非慣用手在空中把自己的名字「寫」出來，寫完給大家看你的傑作！' },
+];
+
+// 「自覓同學」類任務（20%）
+const DARE_FIND = [
+  { type:'互動挑戰', task:'對自選同學深深鞠躬', sentence:'自己選一位同學，走到他/她面前，深深鞠躬90度，說一句「感謝你的存在」！' },
+  { type:'互動挑戰', task:'幫自選同學說三個優點', sentence:'自己選一位同學，在大家面前說出三個你真心覺得他/她很棒的地方！' },
+  { type:'互動挑戰', task:'對自選同學獻上空氣花束', sentence:'自己選一位同學，用最誇張的動作獻上一束「空氣花束」，要附上感謝詞！' },
+  { type:'互動挑戰', task:'學自選同學走路', sentence:'觀察一位你選的同學走路的樣子，然後模仿他/她走一圈給大家看！' },
+  { type:'互動挑戰', task:'對自選同學做鬼臉', sentence:'選一位同學，走到他/她面前，做出你認為最搞笑的鬼臉，對視5秒！' },
+  { type:'互動挑戰', task:'幫自選同學拍三下肩膀', sentence:'選一位同學，走到他/她身後，輕輕拍三下肩膀，說「辛苦了，你做得很好！」' },
+];
+
+// 「隨機同學」類任務（10%）
+const DARE_RANDOM = [
+  { type:'隨機互動', task:'讓隨機同學猜你手勢', sentence:'由老師（或旁邊的人）隨機指定一位同學，你用手勢比出一個動作讓他/她猜！' },
+  { type:'隨機互動', task:'和隨機同學剪刀石頭布', sentence:'由老師（或旁邊的人）隨機點一位同學，和他/她玩三局剪刀石頭布，輸的人做一個表演！' },
+  { type:'隨機互動', task:'對隨機同學說悄悄話', sentence:'由老師（或旁邊的人）隨機點一位同學，你靠近他/她耳邊說一句鼓勵的話，只有他/她能聽到！' },
+  { type:'隨機互動', task:'和隨機同學一起跳舞10秒', sentence:'由老師（或旁邊的人）隨機點一位同學，兩人一起即興跳舞10秒，動作要同步！' },
+];
+
+// 「老師」類任務（10%）
+const DARE_TEACHER = [
+  { type:'師生挑戰', task:'對老師說一句「老師辛苦了」', sentence:'走到老師面前，深深鞠躬，誠心誠意說出「老師，你真的很辛苦，謝謝你！」' },
+  { type:'師生挑戰', task:'請老師說一個冷笑話', sentence:'禮貌地請老師說一個冷笑話，聽完之後不管好不好笑，全班要配合大笑！' },
+  { type:'師生挑戰', task:'對老師做一個100分的敬禮', sentence:'用你覺得最標準的方式向老師敬禮，老師打分數，低於80分要再來一次！' },
+  { type:'師生挑戰', task:'請老師示範一個「青春舞蹈動作」', sentence:'禮貌地請老師示範一個他/她覺得很帥的舞蹈動作，全班跟著學！' },
+];
+
+// 拉霸顯示用的暫時內容（滾動時顯示）
+const SLOT_TEMPS = [
+  ['自己','同學','老師','同學','自己'],
+  ['表演','互動','語言','歌唱','肢體'],
+  ['挑戰中','抽取中','決定中','載入中','隨機中'],
+];
+
+let dareResult = null;
+let isSpinning = false;
+
+function weightedPick(){
+  const r = Math.random()*100;
+  if(r < 60) return { group:'self',   label:'自己' };
+  if(r < 80) return { group:'find',   label:'自覓同學' };
+  if(r < 90) return { group:'random', label:'隨機同學' };
+  return           { group:'teacher', label:'老師' };
+}
+function pickDare(group){
+  const map = { self:DARE_SELF, find:DARE_FIND, random:DARE_RANDOM, teacher:DARE_TEACHER };
+  const arr = map[group];
+  return arr[Math.floor(Math.random()*arr.length)];
+}
+
+function resetDare(){
+  for(let i=0;i<3;i++) document.getElementById('sv-'+i).textContent='？';
+  ['slot-0','slot-1','slot-2'].forEach(id=>document.getElementById(id).classList.remove('locked'));
+  document.getElementById('dare-result').classList.remove('show');
+  document.getElementById('dare-btn').textContent='🎰 開始拉霸！';
+  document.getElementById('dare-btn').onclick = spinDare;
+  isSpinning=false; dareResult=null;
+}
+
+function spinDare(){
+  if(isSpinning) return;
+  isSpinning=true;
+  document.getElementById('dare-result').classList.remove('show');
+  document.getElementById('dare-btn').disabled=true;
+  document.getElementById('dare-btn').textContent='⏳ 轉動中…';
+
+  // 決定結果
+  const picked = weightedPick();
+  const dare   = pickDare(picked.group);
+  dareResult   = { target:picked.label, type:dare.type, task:dare.task, sentence:dare.sentence };
+
+  // 滾動動畫
+  let ticks = [0,0,0];
+  const ivs = SLOT_TEMPS.map((temps,i)=>{
+    return setInterval(()=>{
+      document.getElementById('sv-'+i).textContent = temps[ticks[i]%temps.length];
+      ticks[i]++;
+    },120);
+  });
+
+  const stops = [900,1700,2500];
+  const finals = [picked.label, dare.type, dare.task];
+  stops.forEach((t,i)=>{
+    setTimeout(()=>{
+      clearInterval(ivs[i]);
+      const el = document.getElementById('sv-'+i);
+      el.textContent = finals[i];
+      document.getElementById('slot-'+i).classList.add('locked');
+      if(i===2) setTimeout(showDareResult, 250);
+    },t);
+  });
+}
+
+function showDareResult(){
+  const r = dareResult;
+  document.getElementById('dare-result-text').innerHTML =
+    `對象：<span class="hl">【${r.target}】</span><br><br>${r.sentence}`;
+  document.getElementById('dare-result').classList.add('show');
+  document.getElementById('dare-btn').disabled=false;
+  document.getElementById('dare-btn').textContent='🔄 再拉一次';
+  document.getElementById('dare-btn').onclick = ()=>{ resetDare(); setTimeout(spinDare,100); };
+  isSpinning=false;
+}
+
+renderCats();
+</script>
+</body>
+</html>
