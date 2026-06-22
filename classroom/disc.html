@@ -728,17 +728,7 @@ function submitToForm(sid, scores, primary, secondary) {
       }
     }
 
-    let url = FORM_ACTION + '?';
-    ENTRIES.forEach((entry, i) => {
-      url += `${entry}=${encodeURIComponent(vals[i]!==undefined?vals[i]:'')}&`;
-    });
-
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.src = url.replace('formResponse','formResponse');
-    document.body.appendChild(iframe);
-
-    // 改用 fetch no-cors 送出（更穩定）
+    // fetch no-cors 送出（POST，不會跳頁，不會截斷）
     fetch(FORM_ACTION, {
       method: 'POST',
       mode: 'no-cors',
