@@ -179,6 +179,11 @@
         <div class="tool-name">詩籤系統</div>
         <div class="tool-brief">108支文青詩籤，抽籤得到人生智慧</div>
       </div>
+      <div class="tool-card" onclick="openModal('disc')">
+        <div class="tool-icon">🧠</div>
+        <div class="tool-name">DISC 人格測驗</div>
+        <div class="tool-brief">探索行為風格，10題快速版或20題完整版</div>
+      </div>
     </div>
   </div>
 
@@ -319,6 +324,24 @@
       <li>✅ 搖晃動畫，沉浸式抽籤體驗</li>
     </ul>
     <a class="btn-start" href="classroom/poetry_fortune.html" target="_blank">開始使用 →</a>
+  </div>
+</div>
+
+<!-- DISC 人格測驗 -->
+<div class="modal-overlay" id="modal-disc" onclick="closeOnBg(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('disc')">✕</button>
+    <div class="modal-icon">🧠</div>
+    <div class="modal-title">DISC 人格類型測驗</div>
+    <div class="modal-sub">行為風格探索 · 導師評語參考</div>
+    <ul class="modal-features">
+      <li>✅ 快速版 10 題（約3分鐘）／完整版 20 題（約8分鐘）</li>
+      <li>✅ 四維度分析：D支配・I影響・S穩定・C謹慎</li>
+      <li>✅ 每題選「最像我」與「最不像我」，結果更準確</li>
+      <li>✅ 作答完輸入座號，自動產生結果卡片</li>
+      <li>✅ 資料同步送出，供導師撰寫評語參考</li>
+    </ul>
+    <a class="btn-start" href="classroom/disc.html" target="_blank">開始測驗 →</a>
   </div>
 </div>
 
