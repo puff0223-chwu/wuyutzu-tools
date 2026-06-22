@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧠 DISC 人格類型測驗</title>
+<style>
+:root {
+  --d:#e53e3e; --d-light:#fff5f5; --d-border:#fc8181;
+  --i:#d69e2e; --i-light:#fffff0; --i-border:#f6e05e;
+  --s:#38a169; --s-light:#f0fff4; --s-border:#68d391;
+  --c:#3182ce; --c-light:#ebf8ff; --c-border:#63b3ed;
+  --gray:#718096; --bg:#f7fafc; --white:#fff;
+  --shadow:0 4px 20px rgba(0,0,0,0.08); --radius:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Microsoft JhengHei',Arial,sans-serif;background:var(--bg);color:#2d3748;min-height:100vh;}
+
+/* ===== 封面 ===== */
+#screen-intro{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a202c 0%,#2d3748 100%);padding:40px 20px;text-align:center;}
+.intro-badge{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);font-size:0.8rem;letter-spacing:0.2em;padding:6px 16px;border-radius:20px;margin-bottom:24px;display:inline-block;}
+.intro-title{font-size:clamp(2rem,6vw,3.2rem);font-weight:900;color:#fff;margin-bottom:12px;line-height:1.2;}
+.intro-subtitle{color:rgba(255,255,255,0.6);font-size:1rem;margin-bottom:36px;line-height:1.6;}
+.disc-types-preview{display:flex;gap:12px;margin-bottom:36px;flex-wrap:wrap;justify-content:center;}
+.type-chip{padding:10px 18px;border-radius:50px;font-weight:700;font-size:0.9rem;display:flex;align-items:center;gap:8px;}
+.chip-d{background:var(--d);color:#fff;} .chip-i{background:var(--i);color:#fff;}
+.chip-s{background:var(--s);color:#fff;} .chip-c{background:var(--c);color:#fff;}
+.intro-note{color:rgba(255,255,255,0.45);font-size:0.82rem;margin-bottom:36px;line-height:1.7;max-width:440px;}
+
+/* 版本選擇 */
+.version-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;max-width:480px;}
+.version-btn{background:rgba(255,255,255,0.08);border:2px solid rgba(255,255,255,0.15);border-radius:16px;padding:24px 16px;cursor:pointer;font-family:inherit;color:#fff;text-align:center;transition:all 0.2s;}
+.version-btn:hover{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.4);transform:translateY(-3px);}
+.version-btn .v-icon{font-size:2rem;margin-bottom:10px;display:block;}
+.version-btn .v-name{font-size:1.15rem;font-weight:900;margin-bottom:6px;}
+.version-btn .v-count{font-size:0.82rem;opacity:0.6;margin-bottom:4px;}
+.version-btn .v-time{font-size:0.78rem;opacity:0.5;}
+.version-btn.full{border-color:rgba(102,126,234,0.6);background:rgba(102,126,234,0.15);}
+.version-btn.full:hover{background:rgba(102,126,234,0.25);}
+
+/* ===== 測驗頁 ===== */
+#screen-test{display:none;min-height:100vh;}
+.test-header{position:sticky;top:0;z-index:100;background:#fff;border-bottom:1px solid #e2e8f0;padding:14px 20px;}
+.progress-info{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.progress-label{font-size:0.82rem;color:var(--gray);font-weight:600;}
+.progress-num{font-size:0.82rem;color:#4a5568;font-weight:700;}
+.progress-bar-bg{height:6px;background:#e2e8f0;border-radius:6px;overflow:hidden;}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,#667eea,#764ba2);border-radius:6px;transition:width 0.4s ease;}
+.test-body{max-width:640px;margin:0 auto;padding:28px 16px 100px;}
+.q-number{font-size:0.78rem;color:var(--gray);letter-spacing:0.15em;margin-bottom:10px;}
+.q-text{font-size:1.15rem;font-weight:700;color:#1a202c;line-height:1.6;margin-bottom:16px;}
+
+/* 操作說明 */
+.q-guide{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+.guide-chip{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;font-size:0.82rem;font-weight:700;}
+.guide-most{background:#d4edda;color:#155724;border:2px solid #28a745;}
+.guide-least{background:#f8d7da;color:#721c24;border:2px solid #dc3545;}
+
+/* 選項 */
+.options-list{display:flex;flex-direction:column;gap:12px;}
+.option-row{background:#fff;border:2px solid #e2e8f0;border-radius:14px;padding:14px 14px;transition:all 0.15s;}
+.option-row.has-most{border-color:#28a745;background:#f0fff4;}
+.option-row.has-least{border-color:#dc3545;background:#fff5f5;}
+.option-row.has-both-most{border-color:#28a745;background:#f0fff4;}
+
+.option-text{font-size:0.95rem;color:#2d3748;line-height:1.55;margin-bottom:12px;}
+
+/* 按鈕區 - 更明顯的UI */
+.opt-btns{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.opt-btn{
+  padding:8px 6px; border-radius:8px; border:2px solid;
+  font-size:0.68rem; font-weight:800; cursor:pointer;
+  font-family:inherit; transition:all 0.15s;
+  display:flex; align-items:center; justify-content:center; gap:4px;
+  letter-spacing:0.02em;
+}
+/* 最像我 - 預設態 */
+.opt-btn-most{
+  background:#f0fff4; border-color:#28a745; color:#28a745;
+}
+.opt-btn-most:hover{background:#28a745;color:#fff;transform:translateY(-1px);}
+/* 最像我 - 選中態 */
+.opt-btn-most.active{
+  background:#28a745; border-color:#28a745; color:#fff;
+  box-shadow:0 4px 12px rgba(40,167,69,0.4);
+  transform:translateY(-1px);
+}
+/* 最不像我 - 預設態 */
+.opt-btn-least{
+  background:#fff5f5; border-color:#dc3545; color:#dc3545;
+}
+.opt-btn-least:hover{background:#dc3545;color:#fff;transform:translateY(-1px);}
+/* 最不像我 - 選中態 */
+.opt-btn-least.active{
+  background:#dc3545; border-color:#dc3545; color:#fff;
+  box-shadow:0 4px 12px rgba(220,53,69,0.4);
+  transform:translateY(-1px);
+}
+/* 灰掉（已被另一題選走） */
+.opt-btn.disabled-btn{
+  opacity:0.3; cursor:not-allowed; transform:none !important;
+}
+
+.nav-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e2e8f0;padding:12px 16px;display:flex;gap:10px;justify-content:center;}
+.nav-btn{flex:1;max-width:180px;padding:13px;border-radius:10px;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:inherit;border:none;transition:all 0.15s;}
+.nav-prev{background:#edf2f7;color:#4a5568;}
+.nav-prev:hover{background:#e2e8f0;}
+.nav-next{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;}
+.nav-next:hover{opacity:0.88;}
+.nav-next:disabled{opacity:0.35;cursor:not-allowed;}
+
+/* ===== 座號輸入頁 ===== */
+#screen-id{display:none;min-height:100vh;background:linear-gradient(135deg,#1a202c,#2d3748);align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:40px 20px;}
+.id-card{background:#fff;border-radius:20px;padding:36px 28px;max-width:380px;width:100%;}
+.id-icon{font-size:3rem;margin-bottom:16px;}
+.id-title{font-size:1.4rem;font-weight:900;color:#1a202c;margin-bottom:8px;}
+.id-desc{font-size:0.88rem;color:var(--gray);margin-bottom:24px;line-height:1.6;}
+.id-input{
+  width:100%;padding:14px 16px;font-size:1.1rem;font-weight:700;
+  border:2.5px solid #e2e8f0;border-radius:12px;font-family:inherit;
+  text-align:center;letter-spacing:0.1em;outline:none;
+  transition:border-color 0.2s;margin-bottom:8px;
+}
+.id-input:focus{border-color:#667eea;}
+.id-hint{font-size:0.78rem;color:var(--gray);margin-bottom:20px;}
+.id-submit{
+  width:100%;padding:15px;background:linear-gradient(135deg,#667eea,#764ba2);
+  color:#fff;border:none;border-radius:12px;font-size:1.05rem;font-weight:700;
+  cursor:pointer;font-family:inherit;transition:all 0.2s;
+}
+.id-submit:hover{opacity:0.88;transform:translateY(-1px);}
+.id-error{color:#dc3545;font-size:0.82rem;margin-top:8px;display:none;}
+
+/* ===== 結果頁 ===== */
+#screen-result{display:none;padding:0 0 60px;background:var(--bg);}
+.result-hero{background:linear-gradient(135deg,#1a202c,#2d3748);padding:48px 20px 36px;text-align:center;color:#fff;}
+.result-hero-label{font-size:0.75rem;letter-spacing:0.25em;color:rgba(255,255,255,0.4);margin-bottom:12px;}
+.result-animal{font-size:4rem;margin-bottom:10px;}
+.result-main-type{font-size:clamp(1.8rem,6vw,3rem);font-weight:900;margin-bottom:6px;}
+.result-main-sub{font-size:0.95rem;color:rgba(255,255,255,0.55);}
+
+.result-body{max-width:640px;margin:0 auto;padding:20px 16px;}
+.card{background:#fff;border-radius:var(--radius);padding:22px;margin-bottom:14px;box-shadow:var(--shadow);}
+.card-title{font-size:0.75rem;letter-spacing:0.15em;color:var(--gray);font-weight:700;margin-bottom:14px;}
+
+/* 長條圖 */
+.chart-bars{display:flex;flex-direction:column;gap:12px;}
+.bar-row{display:flex;align-items:center;gap:10px;}
+.bar-label{width:52px;font-size:0.8rem;font-weight:700;text-align:right;flex-shrink:0;}
+.bar-track{flex:1;height:28px;background:#f7fafc;border-radius:8px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:8px;transition:width 0.8s cubic-bezier(0.34,1.4,0.64,1);display:flex;align-items:center;justify-content:flex-end;padding-right:10px;}
+.bar-fill span{font-size:0.75rem;font-weight:700;color:#fff;}
+.bar-d{background:linear-gradient(90deg,#fc8181,var(--d));}
+.bar-i{background:linear-gradient(90deg,#f6e05e,var(--i));}
+.bar-s{background:linear-gradient(90deg,#68d391,var(--s));}
+.bar-c{background:linear-gradient(90deg,#63b3ed,var(--c));}
+.bar-score{width:30px;font-size:0.8rem;font-weight:700;color:#4a5568;flex-shrink:0;}
+
+/* 主次類型 */
+.type-summary{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.type-box{border-radius:12px;padding:16px;text-align:center;}
+.type-box-label{font-size:0.7rem;letter-spacing:0.15em;font-weight:700;margin-bottom:8px;opacity:0.65;}
+.type-box-name{font-size:1.25rem;font-weight:900;}
+.type-box-en{font-size:0.72rem;margin-top:4px;opacity:0.65;}
+
+/* 特質 */
+.trait-desc{font-size:0.93rem;line-height:1.8;color:#4a5568;margin-bottom:16px;}
+.trait-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.trait-item{background:var(--bg);border-radius:10px;padding:12px 14px;}
+.trait-item .ti-label{font-size:0.68rem;color:var(--gray);margin-bottom:4px;}
+.trait-item .ti-val{font-size:0.88rem;font-weight:600;color:#2d3748;}
+
+/* 職業標籤 */
+.career-tags{display:flex;flex-wrap:wrap;gap:8px;}
+.career-tag{padding:6px 14px;border-radius:20px;font-size:0.82rem;font-weight:600;}
+
+/* 相處建議 */
+.cowork-list{display:flex;flex-direction:column;gap:12px;}
+.cowork-row{display:flex;gap:12px;align-items:flex-start;}
+.cowork-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:7px;}
+.cowork-text{font-size:0.9rem;color:#4a5568;line-height:1.6;}
+
+/* 分享卡片 */
+.share-card{border-radius:20px;padding:28px;text-align:center;background:linear-gradient(135deg,#1a202c,#2d3748);color:#fff;margin-bottom:14px;}
+.share-card-top{font-size:0.72rem;letter-spacing:0.2em;color:rgba(255,255,255,0.35);margin-bottom:14px;}
+.share-card-animal{font-size:3.2rem;margin-bottom:10px;}
+.share-card-type{font-size:1.8rem;font-weight:900;margin-bottom:4px;}
+.share-card-sub{font-size:0.85rem;color:rgba(255,255,255,0.55);margin-bottom:6px;}
+.share-card-id{font-size:0.78rem;color:rgba(255,255,255,0.35);margin-bottom:20px;}
+.share-card-bars{display:flex;justify-content:center;gap:20px;}
+.share-bar-col{text-align:center;}
+.share-bar-track{width:22px;height:80px;background:rgba(255,255,255,0.1);border-radius:10px;margin:0 auto 6px;overflow:hidden;display:flex;align-items:flex-end;}
+.share-bar-fill{width:100%;border-radius:10px;transition:height 0.8s cubic-bezier(0.34,1.4,0.64,1);}
+.share-bar-label{font-size:0.8rem;font-weight:700;}
+
+/* 送出狀態 */
+.submit-status{text-align:center;padding:12px;border-radius:10px;font-size:0.85rem;font-weight:600;margin-bottom:14px;display:none;}
+.submit-ok{background:#d4edda;color:#155724;}
+.submit-fail{background:#f8d7da;color:#721c24;}
+
+.retry-btn{display:block;width:100%;padding:14px;background:#edf2f7;color:#4a5568;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all 0.15s;}
+.retry-btn:hover{background:#e2e8f0;}
+
+@media(max-width:480px){
+  .version-grid{grid-template-columns:1fr 1fr;}
+  .trait-grid{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- 封面 -->
+<div id="screen-intro">
+  <span class="intro-badge">🧠 DISC 人格類型測驗</span>
+  <h1 class="intro-title">探索你的<br>行為風格密碼</h1>
+  <p class="intro-subtitle">透過情境描述，找出你最自然的溝通與行動方式<br>了解自己，也讀懂身邊的人</p>
+  <div class="disc-types-preview">
+    <div class="type-chip chip-d">🐯 D 支配型</div>
+    <div class="type-chip chip-i">🦚 I 影響型</div>
+    <div class="type-chip chip-s">🐨 S 穩定型</div>
+    <div class="type-chip chip-c">🦉 C 謹慎型</div>
+  </div>
+  <p class="intro-note">每題請從 4 個描述中，選出「最像我」與「最不像我」各一個<br>請憑第一直覺作答，沒有對錯之分</p>
+  <div class="version-grid">
+    <button class="version-btn" onclick="startTest(10)">
+      <span class="v-icon">🚀</span>
+      <div class="v-name">快速版</div>
+      <div class="v-count">10 題</div>
+      <div class="v-time">約 3 分鐘</div>
+    </button>
+    <button class="version-btn full" onclick="startTest(20)">
+      <span class="v-icon">🔍</span>
+      <div class="v-name">完整版</div>
+      <div class="v-count">20 題</div>
+      <div class="v-time">約 8 分鐘</div>
+    </button>
+  </div>
+</div>
+
+<!-- 測驗頁 -->
+<div id="screen-test">
+  <div class="test-header">
+    <div class="progress-info">
+      <span class="progress-label">作答進度</span>
+      <span class="progress-num" id="prog-num">第 1 題</span>
+    </div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-bar" style="width:5%"></div></div>
+  </div>
+  <div class="test-body">
+    <div class="q-number" id="q-num-label">第 1 題</div>
+    <div class="q-text" id="q-text"></div>
+    <div class="q-guide">
+      <span class="guide-chip guide-most">✅ 最像我：選一個</span>
+      <span class="guide-chip guide-least">❌ 最不像我：選一個</span>
+    </div>
+    <div class="options-list" id="options-list"></div>
+  </div>
+  <div class="nav-bar">
+    <button class="nav-btn nav-prev" id="btn-prev" onclick="prevQ()">← 上一題</button>
+    <button class="nav-btn nav-next" id="btn-next" onclick="nextQ()" disabled>下一題 →</button>
+  </div>
+</div>
+
+<!-- 座號輸入頁 -->
+<div id="screen-id" style="display:none;min-height:100vh;background:linear-gradient(135deg,#1a202c,#2d3748);display:none;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:40px 20px;">
+  <div class="id-card">
+    <div class="id-icon">🎓</div>
+    <div class="id-title">測驗完成！</div>
+    <div class="id-desc">請輸入你的班級座號<br>系統會幫你產生專屬的結果卡片<br><small style="color:#999">（資料將同步提供給導師參考）</small></div>
+    <input class="id-input" id="student-id" type="text" placeholder="例：20901" maxlength="10" />
+    <div class="id-hint">格式：年級＋班級＋座號，例如 20901 = 2年9班01號</div>
+    <div class="id-error" id="id-error">⚠️ 請輸入班級座號後再繼續</div>
+    <button class="id-submit" onclick="generateResult()">產生我的結果卡片 →</button>
+  </div>
+</div>
+
+<!-- 結果頁 -->
+<div id="screen-result">
+  <div class="result-hero">
+    <div class="result-hero-label">YOUR DISC PROFILE</div>
+    <div class="result-animal" id="r-animal"></div>
+    <div class="result-main-type" id="r-main-type"></div>
+    <div class="result-main-sub" id="r-main-sub"></div>
+  </div>
+  <div class="result-body">
+
+    <div class="submit-status submit-ok" id="status-ok">✅ 資料已成功送出給導師！</div>
+    <div class="submit-status submit-fail" id="status-fail">⚠️ 資料傳送失敗，請截圖後告知老師</div>
+
+    <div class="card">
+      <div class="card-title">📊 四維度分數</div>
+      <div class="chart-bars">
+        <div class="bar-row"><div class="bar-label" style="color:var(--d)">D 支配</div><div class="bar-track"><div class="bar-fill bar-d" id="bar-d" style="width:0%"><span id="bar-d-pct"></span></div></div><div class="bar-score" id="score-d"></div></div>
+        <div class="bar-row"><div class="bar-label" style="color:var(--i)">I 影響</div><div class="bar-track"><div class="bar-fill bar-i" id="bar-i" style="width:0%"><span id="bar-i-pct"></span></div></div><div class="bar-score" id="score-i"></div></div>
+        <div class="bar-row"><div class="bar-label" style="color:var(--s)">S 穩定</div><div class="bar-track"><div class="bar-fill bar-s" id="bar-s" style="width:0%"><span id="bar-s-pct"></span></div></div><div class="bar-score" id="score-s"></div></div>
+        <div class="bar-row"><div class="bar-label" style="color:var(--c)">C 謹慎</div><div class="bar-track"><div class="bar-fill bar-c" id="bar-c" style="width:0%"><span id="bar-c-pct"></span></div></div><div class="bar-score" id="score-c"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🏅 主要類型與次要類型</div>
+      <div class="type-summary">
+        <div class="type-box" id="primary-box">
+          <div class="type-box-label">主要類型</div>
+          <div class="type-box-name" id="primary-name"></div>
+          <div class="type-box-en" id="primary-en"></div>
+        </div>
+        <div class="type-box" id="secondary-box">
+          <div class="type-box-label">次要類型</div>
+          <div class="type-box-name" id="secondary-name"></div>
+          <div class="type-box-en" id="secondary-en"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" id="trait-title">✨ 核心特質</div>
+      <p class="trait-desc" id="trait-desc"></p>
+      <div class="trait-grid" id="trait-grid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💼 適合的職業方向</div>
+      <div class="career-tags" id="career-tags"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🤝 與不同類型相處的建議</div>
+      <div class="cowork-list" id="cowork-list"></div>
+    </div>
+
+    <!-- 截圖卡片 -->
+    <div class="share-card">
+      <div class="share-card-top">DISC 人格類型測驗結果</div>
+      <div class="share-card-animal" id="sc-animal"></div>
+      <div class="share-card-type" id="sc-type"></div>
+      <div class="share-card-sub" id="sc-sub"></div>
+      <div class="share-card-id" id="sc-id"></div>
+      <div class="share-card-bars" id="sc-bars"></div>
+    </div>
+
+    <button class="retry-btn" onclick="retryTest()">🔄 重新測驗</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+//  Google 表單設定
+// ══════════════════════════════════════
+const FORM_ACTION = 'https://docs.google.com/forms/d/e/1FAIpQLSfZ4x0BDndYhnaH7BHoqFbu6DaBv3NoahmDqlJqocmegpJelg/formResponse';
+
+// 欄位 entry ID — 依表單順序對應
+// 測驗版本、班級座號、D、I、S、C、主要、次要、Q1最像～Q20最不像
+const ENTRY = {
+  version:  'entry.1913152972',
+  id:       'entry.1913152972', // 先占位，下面會從表單抓真實值
+};
+
+// 實際上我們用 prefill URL 方式送出（iframe trick）
+// 需要知道每個欄位的 entry.XXXXXXX
+// 從表單 HTML 原始碼推算，依序為：
+// 我們直接用欄位順序來定義
+const ENTRIES = [
+  'entry.649906666',  // 0: 測驗版本
+  'entry.1927594191', // 1: 班級座號
+  'entry.1901998993', // 2: D分數
+  'entry.587152156',  // 3: I分數
+  'entry.82994362',   // 4: S分數
+  'entry.196012945',  // 5: C分數
+  'entry.42259725',   // 6: 主要類型
+  'entry.1126576774', // 7: 次要類型
+  'entry.1918649410', // 8:  Q1最像我
+  'entry.2086389887', // 9:  Q1最不像我
+  'entry.1618635729', // 10: Q2最像我
+  'entry.251676514',  // 11: Q2最不像我
+  'entry.1223697264', // 12: Q3最像我
+  'entry.394182008',  // 13: Q3最不像我
+  'entry.1059093540', // 14: Q4最像我
+  'entry.1467981733', // 15: Q4最不像我
+  'entry.536957614',  // 16: Q5最像我
+  'entry.1817103689', // 17: Q5最不像我
+  'entry.1828194340', // 18: Q6最像我
+  'entry.1977730114', // 19: Q6最不像我
+  'entry.1210278063', // 20: Q7最像我
+  'entry.367241810',  // 21: Q7最不像我
+  'entry.238887087',  // 22: Q8最像我
+  'entry.2076520854', // 23: Q8最不像我
+  'entry.728690351',  // 24: Q9最像我
+  'entry.1724054511', // 25: Q9最不像我
+  'entry.1553395602', // 26: Q10最像我
+  'entry.1557162496', // 27: Q10最不像我
+  'entry.1877689735', // 28: Q11最像我
+  'entry.2005816217', // 29: Q11最不像我
+  'entry.732263580',  // 30: Q12最像我
+  'entry.1617029478', // 31: Q12最不像我
+  'entry.144083909',  // 32: Q13最像我
+  'entry.861099716',  // 33: Q13最不像我
+  'entry.1153969683', // 34: Q14最像我
+  'entry.1125005321', // 35: Q14最不像我
+  'entry.609810759',  // 36: Q15最像我
+  'entry.1400470066', // 37: Q15最不像我
+  'entry.436493710',  // 38: Q16最像我
+  'entry.864832265',  // 39: Q16最不像我
+  'entry.1206017256', // 40: Q17最像我
+  'entry.448810354',  // 41: Q17最不像我
+  'entry.1873621090', // 42: Q18最像我
+  'entry.1428309594', // 43: Q18最不像我
+  'entry.1811183613', // 44: Q19最像我
+  'entry.819611519',  // 45: Q19最不像我
+  'entry.1993209926', // 46: Q20最像我
+  'entry.1578250018', // 47: Q20最不像我
+];
+
+// ══════════════════════════════════════
+//  題庫（20題）
+// ══════════════════════════════════════
+const ALL_QUESTIONS = [
+  { text:'在一個新的團隊專案剛開始時，你通常會：', opts:[
+    {text:'直接提出自己的想法，主動爭取主導角色',dim:'D'},
+    {text:'熱情地認識每位成員，讓氣氛活絡起來',dim:'I'},
+    {text:'認真聆聽每個人的意見，確保大家都有發言',dim:'S'},
+    {text:'仔細收集資訊，在充分了解目標後再提出計畫',dim:'C'},
+  ]},
+  { text:'當你面臨一個必須快速做決定的情況，你會：', opts:[
+    {text:'憑直覺果斷決定，相信自己的判斷',dim:'D'},
+    {text:'快速詢問幾個信任的朋友，再做決定',dim:'I'},
+    {text:'考慮決定對所有相關人的影響後再行動',dim:'S'},
+    {text:'蒐集更多資料，確保做出正確選擇',dim:'C'},
+  ]},
+  { text:'描述你在人際互動中最自然的狀態：', opts:[
+    {text:'直接表達意見，說話簡短有力',dim:'D'},
+    {text:'健談開朗，很容易跟陌生人聊起來',dim:'I'},
+    {text:'溫和親切，讓人感覺很安心可靠',dim:'S'},
+    {text:'較為謹慎，需要更多了解才會開放自己',dim:'C'},
+  ]},
+  { text:'面對工作中的挑戰或困難時，你傾向於：', opts:[
+    {text:'把它視為一種競爭，想辦法突破並贏得勝利',dim:'D'},
+    {text:'對外求援，相信一定有人可以一起解決',dim:'I'},
+    {text:'耐心地一步步克服，不輕易放棄',dim:'S'},
+    {text:'深入分析問題根源，找出最有效的解法',dim:'C'},
+  ]},
+  { text:'你最享受哪種工作環境？', opts:[
+    {text:'競爭激烈、充滿挑戰、能展現領導力的環境',dim:'D'},
+    {text:'充滿活力、可以創意發揮、和人頻繁互動的環境',dim:'I'},
+    {text:'穩定和諧、團隊合作、有清楚分工的環境',dim:'S'},
+    {text:'有條有理、重視品質、能精確執行的環境',dim:'C'},
+  ]},
+  { text:'當你的意見與他人發生衝突時，你通常會：', opts:[
+    {text:'堅持己見，直接說明對方哪裡錯了',dim:'D'},
+    {text:'嘗試說服對方，用熱情的方式讓對方認同',dim:'I'},
+    {text:'尋求中間點，避免讓衝突傷害到關係',dim:'S'},
+    {text:'引用數據與邏輯，理性地證明自己的立場',dim:'C'},
+  ]},
+  { text:'關於你對「成功」的定義，最接近的是：', opts:[
+    {text:'達成明確的目標，成為領域中的頂尖',dim:'D'},
+    {text:'獲得他人的認同與喜愛，留下美好的影響',dim:'I'},
+    {text:'與身邊的人建立長期穩定且有意義的關係',dim:'S'},
+    {text:'把事情做到最精確、最完美的境界',dim:'C'},
+  ]},
+  { text:'你在接到一個新任務時，第一步通常是：', opts:[
+    {text:'立刻評估有哪些資源可用，然後開始行動',dim:'D'},
+    {text:'想想這件事可以怎麼做得有趣又有創意',dim:'I'},
+    {text:'先確認團隊每個人的角色和責任',dim:'S'},
+    {text:'把任務拆解，制定詳細的執行步驟',dim:'C'},
+  ]},
+  { text:'你最容易因為哪種狀況感到沮喪或不滿？', opts:[
+    {text:'被規定要按照別人的方式做事，無法自主決定',dim:'D'},
+    {text:'必須獨自完成工作，缺乏互動與合作',dim:'I'},
+    {text:'團隊氣氛緊張，有人互相衝突或不和睦',dim:'S'},
+    {text:'工作粗糙、缺乏標準，讓人無所適從',dim:'C'},
+  ]},
+  { text:'別人通常如何形容你？', opts:[
+    {text:'果斷、有衝勁、說到做到',dim:'D'},
+    {text:'熱情、有感染力、讓人開心',dim:'I'},
+    {text:'可靠、溫和、願意聆聽',dim:'S'},
+    {text:'細心、嚴謹、做事有條理',dim:'C'},
+  ]},
+  { text:'在規劃一次旅行時，你的方式最接近：', opts:[
+    {text:'快速決定目的地，行程靠自己當下決定',dim:'D'},
+    {text:'廣邀朋友同行，重視一起旅行的歡樂',dim:'I'},
+    {text:'配合大家的需求，讓每個人都滿意',dim:'S'},
+    {text:'列出詳細行程、查好各景點評分和開放時間',dim:'C'},
+  ]},
+  { text:'你在一個會議中，最常扮演的角色是：', opts:[
+    {text:'拍板定案的人，給出明確方向',dim:'D'},
+    {text:'帶動氣氛的人，讓討論不冷場',dim:'I'},
+    {text:'確保每個人意見被聽到的協調者',dim:'S'},
+    {text:'提出數據與細節，確保討論紮實有據的人',dim:'C'},
+  ]},
+  { text:'你對於「改變」的態度通常是：', opts:[
+    {text:'積極推動改變，覺得停滯不前很無聊',dim:'D'},
+    {text:'對新事物充滿好奇，很容易接受並嘗試',dim:'I'},
+    {text:'傾向在穩定中求進步，不喜歡突然的大變動',dim:'S'},
+    {text:'需要充分理解改變的原因與計畫，才能接受',dim:'C'},
+  ]},
+  { text:'做一個重要決定時，你最在乎的是：', opts:[
+    {text:'能不能快速達到想要的結果',dim:'D'},
+    {text:'這個決定有沒有獲得大家的支持與認可',dim:'I'},
+    {text:'是否對身邊重要的人沒有不好的影響',dim:'S'},
+    {text:'是否有足夠的資料支撐這個選擇',dim:'C'},
+  ]},
+  { text:'你在學習新技能時，傾向於：', opts:[
+    {text:'直接上手，邊做邊學，快速掌握重點',dim:'D'},
+    {text:'找一個老師或夥伴一起學，互相激勵',dim:'I'},
+    {text:'有系統地按部就班學習，不急不躁',dim:'S'},
+    {text:'先把相關資料都研究清楚，再開始練習',dim:'C'},
+  ]},
+  { text:'當你的朋友遭遇困難時，你最可能：', opts:[
+    {text:'直接給出建議，告訴他該怎麼做',dim:'D'},
+    {text:'陪他說說笑笑，讓他心情好起來',dim:'I'},
+    {text:'耐心傾聽，陪伴他度過低潮',dim:'S'},
+    {text:'幫他分析問題，找出解決方法',dim:'C'},
+  ]},
+  { text:'在一個競爭性很強的場合，你的狀態是：', opts:[
+    {text:'鬥志高昂，把競爭當作激勵自己的動力',dim:'D'},
+    {text:'享受其中，希望過程中大家都能玩得開心',dim:'I'},
+    {text:'穩紮穩打，保持平常心盡力就好',dim:'S'},
+    {text:'充分準備，把每個細節都做到最好',dim:'C'},
+  ]},
+  { text:'描述你最理想的工作節奏：', opts:[
+    {text:'快節奏、多變化、隨時有新挑戰',dim:'D'},
+    {text:'靈活自由、有創意空間、可以和很多人互動',dim:'I'},
+    {text:'穩定規律、有明確的角色與責任',dim:'S'},
+    {text:'嚴謹細緻、有清楚的標準流程可以依循',dim:'C'},
+  ]},
+  { text:'你比較希望用哪種方式被肯定？', opts:[
+    {text:'讓我看到具體的成果與達成的目標',dim:'D'},
+    {text:'當眾給予讚美與肯定，讓大家知道我的貢獻',dim:'I'},
+    {text:'真誠地表達感謝，讓我感受到我被重視',dim:'S'},
+    {text:'具體指出我哪裡做得好，給予精準的回饋',dim:'C'},
+  ]},
+  { text:'休閒時，你最享受的活動是：', opts:[
+    {text:'挑戰性高的活動，如攀岩、競技遊戲、辯論',dim:'D'},
+    {text:'社交型活動，如聚會、演唱會、戶外派對',dim:'I'},
+    {text:'輕鬆舒適的活動，如烹飪、健行、陪家人',dim:'S'},
+    {text:'深度型活動，如閱讀、解謎、鑽研一個主題',dim:'C'},
+  ]},
+];
+
+// 快速版：挑10題（每個維度各2-3題，保留鑑別度高的）
+const QUICK_INDICES = [0,1,2,4,5,6,8,9,13,16];
+
+// 類型資料
+const TYPE_DATA = {
+  D:{name:'D 支配型',en:'Dominance',animal:'🐯',color:'var(--d)',light:'var(--d-light)',border:'var(--d-border)',
+    desc:'你是天生的領導者！目標明確、行動迅速、果斷自信是你的核心特質。你喜歡掌控局勢、接受挑戰，並以結果為導向。在逆境中越挫越勇，重視效率，厭惡拖延。',
+    traits:[{label:'核心動力',val:'掌控感與成就感'},{label:'最大優勢',val:'決斷力、執行力'},{label:'壓力下表現',val:'直接、甚至強勢'},{label:'需要注意',val:'傾聽他人感受'}],
+    careers:['企業主管','創業家','業務主管','政治人物','運動員','律師','軍警人員','工程師主管'],
+    cowork:[{type:'I 影響型',tip:'給予發揮創意的空間，欣賞他們活絡氣氛的能力，不要過度批評細節不夠嚴謹。',color:'var(--i)'},{type:'S 穩定型',tip:'放慢腳步，讓他們有時間思考；真心感謝他們的付出，而非只看結果。',color:'var(--s)'},{type:'C 謹慎型',tip:'給他們時間做研究，尊重對細節的堅持，不要催促倉促決策。',color:'var(--c)'}]},
+  I:{name:'I 影響型',en:'Influence',animal:'🦚',color:'var(--i)',light:'var(--i-light)',border:'var(--i-border)',
+    desc:'你是充滿魅力的社交家！熱情洋溢、善於溝通、天生具有感染力。你喜歡和人建立連結，用樂觀與活力鼓舞身邊的人，有豐富的創意，是團隊中不可或缺的活力來源。',
+    traits:[{label:'核心動力',val:'認同感與影響力'},{label:'最大優勢',val:'溝通力、感染力'},{label:'壓力下表現',val:'情緒化、失焦'},{label:'需要注意',val:'落實承諾、注重細節'}],
+    careers:['行銷公關','藝術創作','教師講師','演員主持人','業務代表','活動企劃','社群經營','顧問教練'],
+    cowork:[{type:'D 支配型',tip:'理解他們追求效率的需求，學習在對話中更直接清晰，不要讓閒聊佔用太多時間。',color:'var(--d)'},{type:'S 穩定型',tip:'放慢步調，建立信任後再推進；他們需要穩定感，不要輕易改變計畫。',color:'var(--s)'},{type:'C 謹慎型',tip:'準備具體數據支持你的想法；他們重視邏輯，需要以理服人。',color:'var(--c)'}]},
+  S:{name:'S 穩定型',en:'Steadiness',animal:'🐨',color:'var(--s)',light:'var(--s-light)',border:'var(--s-border)',
+    desc:'你是團隊最重要的磐石！耐心、可靠、富有同理心，讓你成為大家最值得信賴的夥伴。你重視人際關係，善於傾聽，致力於維護團隊的和諧與凝聚力。',
+    traits:[{label:'核心動力',val:'安全感與歸屬感'},{label:'最大優勢',val:'同理心、穩定性'},{label:'壓力下表現',val:'退縮、壓抑情緒'},{label:'需要注意',val:'學習表達自身需求'}],
+    careers:['護理師','社工師','人資專員','輔導老師','行政管理','客服人員','幼教老師','心理師'],
+    cowork:[{type:'D 支配型',tip:'理解他們的直接並非惡意；學習不把強勢當作人身攻擊，適時提出自己的意見。',color:'var(--d)'},{type:'I 影響型',tip:'欣賞他們帶來的歡樂；提醒他們注意細節與落實，用溫和的方式協助聚焦。',color:'var(--i)'},{type:'C 謹慎型',tip:'尊重他們需要獨立思考的空間；保持耐心，不要期待立刻得到回應。',color:'var(--c)'}]},
+  C:{name:'C 謹慎型',en:'Conscientiousness',animal:'🦉',color:'var(--c)',light:'var(--c-light)',border:'var(--c-border)',
+    desc:'你是精準嚴謹的分析家！注重細節、追求完美、邏輯清晰。你思慮周全，不輕易做決定，但一旦決定就執行得非常徹底，是確保團隊品質的最後防線。',
+    traits:[{label:'核心動力',val:'準確性與品質感'},{label:'最大優勢',val:'分析力、嚴謹度'},{label:'壓力下表現',val:'批評他人、鑽牛角尖'},{label:'需要注意',val:'彈性與接受不完美'}],
+    careers:['工程師','會計師','科學研究員','資料分析師','醫師藥師','品管人員','法律專業','程式設計師'],
+    cowork:[{type:'D 支配型',tip:'提供清晰數據讓他們快速理解立場；接受他們的速度感，學習在不完美中前進。',color:'var(--d)'},{type:'I 影響型',tip:'欣賞他們的熱情與創意；在輕鬆氣氛中分享分析，不要顯得過於冷淡或批判。',color:'var(--i)'},{type:'S 穩定型',tip:'珍惜他們的耐心聆聽，也嘗試多表達情感，不只是邏輯。',color:'var(--s)'}]},
+};
+
+// ══════════════════════════════════════
+//  狀態
+// ══════════════════════════════════════
+let testMode = 20; // 10 或 20
+let activeQIndices = [];
+let currentQ = 0;
+let answers = []; // [{most:optionIndex, least:optionIndex}, ...]
+let finalScores = {};
+
+function startTest(mode) {
+  testMode = mode;
+  activeQIndices = mode === 10 ? QUICK_INDICES : ALL_QUESTIONS.map((_,i)=>i);
+  answers = activeQIndices.map(() => ({most:null, least:null}));
+  currentQ = 0;
+  document.getElementById('screen-intro').style.display = 'none';
+  document.getElementById('screen-test').style.display = 'block';
+  renderQ();
+}
+
+function renderQ() {
+  const qi = activeQIndices[currentQ];
+  const q = ALL_QUESTIONS[qi];
+  const ans = answers[currentQ];
+  const total = activeQIndices.length;
+
+  document.getElementById('q-num-label').textContent = `第 ${currentQ+1} 題`;
+  document.getElementById('q-text').textContent = q.text;
+  document.getElementById('prog-num').textContent = `第 ${currentQ+1} 題 / 共 ${total} 題`;
+  document.getElementById('prog-bar').style.width = `${((currentQ+1)/total)*100}%`;
+
+  const list = document.getElementById('options-list');
+  list.innerHTML = '';
+  q.opts.forEach((opt, i) => {
+    const isMost  = ans.most  === i;
+    const isLeast = ans.least === i;
+    const row = document.createElement('div');
+    row.className = 'option-row' + (isMost?' has-most':'') + (isLeast?' has-least':'');
+
+    const text = document.createElement('div');
+    text.className = 'option-text';
+    text.textContent = opt.text;
+
+    // 最像我按鈕
+    const btnM = document.createElement('button');
+    btnM.className = 'opt-btn opt-btn-most' + (isMost?' active':'') + (isLeast?' disabled-btn':'');
+    btnM.innerHTML = '✅ 最像我';
+    btnM.onclick = () => { if(isLeast) return; selectMost(i); };
+
+    // 最不像我按鈕
+    const btnL = document.createElement('button');
+    btnL.className = 'opt-btn opt-btn-least' + (isLeast?' active':'') + (isMost?' disabled-btn':'');
+    btnL.innerHTML = '❌ 最不像我';
+    btnL.onclick = () => { if(isMost) return; selectLeast(i); };
+
+    const btns = document.createElement('div');
+    btns.className = 'opt-btns';
+    btns.appendChild(btnM);
+    btns.appendChild(btnL);
+
+    row.appendChild(text);
+    row.appendChild(btns);
+    list.appendChild(row);
+  });
+
+  document.getElementById('btn-prev').style.visibility = currentQ===0?'hidden':'visible';
+  const done = ans.most!==null && ans.least!==null;
+  const btnNext = document.getElementById('btn-next');
+  btnNext.disabled = !done;
+  btnNext.textContent = currentQ===activeQIndices.length-1 ? '完成測驗 →' : '下一題 →';
+}
+
+function selectMost(i) {
+  if(answers[currentQ].least===i) return;
+  answers[currentQ].most = answers[currentQ].most===i ? null : i;
+  renderQ();
+}
+function selectLeast(i) {
+  if(answers[currentQ].most===i) return;
+  answers[currentQ].least = answers[currentQ].least===i ? null : i;
+  renderQ();
+}
+function nextQ() {
+  if(currentQ < activeQIndices.length-1){ currentQ++; renderQ(); window.scrollTo(0,0); }
+  else { goToIdScreen(); }
+}
+function prevQ() {
+  if(currentQ>0){ currentQ--; renderQ(); window.scrollTo(0,0); }
+}
+
+// ══════════════════════════════════════
+//  座號輸入頁
+// ══════════════════════════════════════
+function goToIdScreen() {
+  document.getElementById('screen-test').style.display = 'none';
+  const s = document.getElementById('screen-id');
+  s.style.display = 'flex';
+  window.scrollTo(0,0);
+}
+
+function generateResult() {
+  const sid = document.getElementById('student-id').value.trim();
+  if(!sid) {
+    document.getElementById('id-error').style.display = 'block';
+    return;
+  }
+  document.getElementById('id-error').style.display = 'none';
+  document.getElementById('screen-id').style.display = 'none';
+  calcAndShow(sid);
+}
+
+// ══════════════════════════════════════
+//  計分
+// ══════════════════════════════════════
+function calcAndShow(sid) {
+  const scores = {D:0,I:0,S:0,C:0};
+  answers.forEach((ans, ci) => {
+    const qi = activeQIndices[ci];
+    const opts = ALL_QUESTIONS[qi].opts;
+    if(ans.most  !== null) scores[opts[ans.most].dim]  += 2;
+    if(ans.least !== null) scores[opts[ans.least].dim] -= 1;
+  });
+  Object.keys(scores).forEach(k=>{ if(scores[k]<0) scores[k]=0; });
+  finalScores = scores;
+
+  const sorted = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+  const primary   = sorted[0][0];
+  const secondary = sorted[1][0];
+
+  showResult(sid, scores, primary, secondary);
+  submitToForm(sid, scores, primary, secondary);
+}
+
+// ══════════════════════════════════════
+//  送表單（iframe 方式，不會跳頁）
+// ══════════════════════════════════════
+function submitToForm(sid, scores, primary, secondary) {
+  try {
+    const dimLabel = {D:'D 支配型',I:'I 影響型',S:'S 穩定型',C:'C 謹慎型'};
+    const optLabel = (qi, oi) => ALL_QUESTIONS[qi].opts[oi] ? `[${ALL_QUESTIONS[qi].opts[oi].dim}] ${ALL_QUESTIONS[qi].opts[oi].text}` : '未作答';
+
+    // 建立 data 物件，依 ENTRIES 順序對應
+    const vals = [
+      testMode===10?'快速版（10題）':'完整版（20題）', // 0
+      sid,          // 1
+      scores.D,     // 2
+      scores.I,     // 3
+      scores.S,     // 4
+      scores.C,     // 5
+      dimLabel[primary],   // 6
+      dimLabel[secondary], // 7
+    ];
+
+    // Q1~Q20 最像我 & 最不像我
+    for(let q=0; q<20; q++) {
+      const ci = activeQIndices.indexOf(q);
+      if(ci !== -1 && answers[ci]) {
+        vals.push(answers[ci].most  !== null ? optLabel(q, answers[ci].most)  : '未作答');
+        vals.push(answers[ci].least !== null ? optLabel(q, answers[ci].least) : '未作答');
+      } else {
+        vals.push('未作答');
+        vals.push('未作答');
+      }
+    }
+
+    let url = FORM_ACTION + '?';
+    ENTRIES.forEach((entry, i) => {
+      url += `${entry}=${encodeURIComponent(vals[i]!==undefined?vals[i]:'')}&`;
+    });
+
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = url.replace('formResponse','formResponse');
+    document.body.appendChild(iframe);
+
+    // 改用 fetch no-cors 送出（更穩定）
+    fetch(FORM_ACTION, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: ENTRIES.map((e,i) => `${e}=${encodeURIComponent(vals[i]!==undefined?vals[i]:'')}`).join('&')
+    }).then(() => {
+      document.getElementById('status-ok').style.display = 'block';
+    }).catch(() => {
+      document.getElementById('status-fail').style.display = 'block';
+    });
+
+  } catch(e) {
+    document.getElementById('status-fail').style.display = 'block';
+  }
+}
+
+// ══════════════════════════════════════
+//  顯示結果
+// ══════════════════════════════════════
+function showResult(sid, scores, primary, secondary) {
+  document.getElementById('screen-result').style.display = 'block';
+  window.scrollTo(0,0);
+
+  const pData = TYPE_DATA[primary];
+  const sData = TYPE_DATA[secondary];
+  const total = Object.values(scores).reduce((a,b)=>a+b,0)||1;
+
+  document.getElementById('r-animal').textContent = pData.animal;
+  document.getElementById('r-main-type').textContent = pData.name;
+  document.getElementById('r-main-sub').textContent = pData.en + ' — 主要人格類型';
+
+  ['d','i','s','c'].forEach(k=>{
+    const K = k.toUpperCase();
+    const pct = Math.round((scores[K]/total)*100);
+    setTimeout(()=>{
+      document.getElementById('bar-'+k).style.width = pct+'%';
+      document.getElementById('bar-'+k+'-pct').textContent = pct+'%';
+    },300);
+    document.getElementById('score-'+k).textContent = scores[K]+'分';
+  });
+
+  const pb = document.getElementById('primary-box');
+  pb.style.background = pData.light; pb.style.border = '2px solid '+pData.border;
+  document.getElementById('primary-name').textContent = pData.name;
+  document.getElementById('primary-name').style.color = pData.color;
+  document.getElementById('primary-en').textContent = pData.en;
+
+  const sb = document.getElementById('secondary-box');
+  sb.style.background = sData.light; sb.style.border = '2px solid '+sData.border;
+  document.getElementById('secondary-name').textContent = sData.name;
+  document.getElementById('secondary-name').style.color = sData.color;
+  document.getElementById('secondary-en').textContent = sData.en;
+
+  document.getElementById('trait-title').textContent = pData.animal+' '+pData.name+'的核心特質';
+  document.getElementById('trait-desc').textContent = pData.desc;
+  const tg = document.getElementById('trait-grid'); tg.innerHTML='';
+  pData.traits.forEach(t=>{
+    const d=document.createElement('div'); d.className='trait-item';
+    d.innerHTML=`<div class="ti-label">${t.label}</div><div class="ti-val">${t.val}</div>`;
+    tg.appendChild(d);
+  });
+
+  const ct = document.getElementById('career-tags'); ct.innerHTML='';
+  pData.careers.forEach(c=>{
+    const tag=document.createElement('span'); tag.className='career-tag';
+    tag.style.background=pData.light; tag.style.color=pData.color; tag.style.border='1px solid '+pData.border;
+    tag.textContent=c; ct.appendChild(tag);
+  });
+
+  const cl = document.getElementById('cowork-list'); cl.innerHTML='';
+  pData.cowork.forEach(cw=>{
+    const row=document.createElement('div'); row.className='cowork-row';
+    row.innerHTML=`<div class="cowork-dot" style="background:${cw.color}"></div><div class="cowork-text"><strong style="color:${cw.color}">${cw.type}</strong>：${cw.tip}</div>`;
+    cl.appendChild(row);
+  });
+
+  // 截圖卡片
+  document.getElementById('sc-animal').textContent = pData.animal;
+  document.getElementById('sc-type').textContent = pData.name;
+  document.getElementById('sc-sub').textContent = pData.en;
+  document.getElementById('sc-id').textContent = '班級座號：'+sid + '　版本：'+(testMode===10?'快速版':'完整版');
+  const scBars = document.getElementById('sc-bars'); scBars.innerHTML='';
+  const barColors={D:'#e53e3e',I:'#d69e2e',S:'#38a169',C:'#3182ce'};
+  ['D','I','S','C'].forEach(k=>{
+    const pct=Math.round((scores[k]/total)*100);
+    const col=document.createElement('div'); col.className='share-bar-col';
+    col.innerHTML=`<div class="share-bar-track"><div class="share-bar-fill" style="background:${barColors[k]};height:${pct}%"></div></div><div class="share-bar-label" style="color:${barColors[k]}">${k}</div>`;
+    scBars.appendChild(col);
+  });
+}
+
+function retryTest() {
+  currentQ=0; answers=[]; finalScores={};
+  document.getElementById('screen-result').style.display='none';
+  document.getElementById('student-id').value='';
+  ['status-ok','status-fail'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('screen-intro').style.display='flex';
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>
