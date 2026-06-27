@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧩 貝爾賓團隊角色測驗</title>
+<style>
+:root {
+  --imp:#2563eb; --imp-l:#eff6ff;
+  --sha:#dc2626; --sha-l:#fef2f2;
+  --cf: #16a34a; --cf-l:#f0fdf4;
+  --co: #7c3aed; --co-l:#f5f3ff;
+  --tw: #0891b2; --tw-l:#ecfeff;
+  --ri: #d97706; --ri-l:#fffbeb;
+  --pl: #db2777; --pl-l:#fdf2f8;
+  --me: #475569; --me-l:#f8fafc;
+  --sp: #059669; --sp-l:#ecfdf5;
+  --bg:#f8fafc; --white:#fff;
+  --gray:#64748b; --dark:#0f172a;
+  --shadow:0 4px 20px rgba(0,0,0,0.08);
+  --radius:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Microsoft JhengHei',Arial,sans-serif;background:var(--bg);color:var(--dark);min-height:100vh;}
+
+#screen-intro{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);padding:40px 20px;text-align:center;}
+.intro-badge{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);font-size:0.8rem;letter-spacing:0.2em;padding:6px 16px;border-radius:20px;margin-bottom:24px;display:inline-block;}
+.intro-title{font-size:clamp(2rem,6vw,3rem);font-weight:900;color:#fff;margin-bottom:12px;line-height:1.2;}
+.intro-subtitle{color:rgba(255,255,255,0.6);font-size:1rem;margin-bottom:36px;line-height:1.7;max-width:500px;}
+.category-preview{display:flex;gap:16px;margin-bottom:36px;flex-wrap:wrap;justify-content:center;}
+.cat-chip{padding:10px 20px;border-radius:50px;font-weight:700;font-size:0.88rem;display:flex;align-items:center;gap:8px;}
+.cat-action{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;}
+.cat-people{background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;}
+.cat-think{background:linear-gradient(135deg,#db2777,#be185d);color:#fff;}
+.intro-note{color:rgba(255,255,255,0.4);font-size:0.82rem;margin-bottom:36px;line-height:1.7;max-width:440px;}
+.start-btn{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;padding:18px 56px;border-radius:50px;font-size:1.1rem;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 8px 32px rgba(102,126,234,0.4);transition:all 0.2s;}
+.start-btn:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(102,126,234,0.5);}
+
+#screen-test{display:none;min-height:100vh;}
+.test-header{position:sticky;top:0;z-index:100;background:#fff;border-bottom:1px solid #e2e8f0;padding:14px 20px;}
+.progress-info{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.progress-label{font-size:0.82rem;color:var(--gray);font-weight:600;}
+.progress-num{font-size:0.82rem;color:#334155;font-weight:700;}
+.progress-bar-bg{height:6px;background:#e2e8f0;border-radius:6px;overflow:hidden;}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,#667eea,#764ba2);border-radius:6px;transition:width 0.4s ease;}
+.test-body{max-width:680px;margin:0 auto;padding:28px 16px 100px;}
+.q-number{font-size:0.78rem;color:var(--gray);letter-spacing:0.15em;margin-bottom:10px;}
+.q-scene{background:linear-gradient(135deg,#667eea15,#764ba215);border-left:4px solid #667eea;border-radius:0 10px 10px 0;padding:14px 16px;margin-bottom:20px;}
+.q-scene-label{font-size:0.72rem;color:#667eea;font-weight:700;letter-spacing:0.1em;margin-bottom:6px;}
+.q-text{font-size:1.05rem;font-weight:700;color:var(--dark);line-height:1.6;}
+.q-instruction{font-size:0.82rem;color:var(--gray);margin-bottom:18px;}
+.options-list{display:flex;flex-direction:column;gap:10px;}
+.option-row{background:#fff;border:2px solid #e2e8f0;border-radius:12px;padding:14px 16px;cursor:pointer;transition:all 0.15s;display:flex;align-items:flex-start;gap:12px;}
+.option-row:hover{border-color:#667eea;background:#f8f7ff;transform:translateX(2px);}
+.option-row.selected{border-color:#667eea;background:#f0f0ff;box-shadow:0 2px 12px rgba(102,126,234,0.2);}
+.option-radio{width:22px;height:22px;border-radius:50%;border:2.5px solid #cbd5e1;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+.option-row.selected .option-radio{border-color:#667eea;background:#667eea;}
+.option-radio::after{content:'';width:8px;height:8px;border-radius:50%;background:#fff;opacity:0;transition:opacity 0.15s;}
+.option-row.selected .option-radio::after{opacity:1;}
+.option-text{font-size:0.92rem;color:#334155;line-height:1.55;flex:1;}
+.nav-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e2e8f0;padding:12px 16px;display:flex;gap:10px;justify-content:center;}
+.nav-btn{flex:1;max-width:180px;padding:13px;border-radius:10px;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:inherit;border:none;transition:all 0.15s;}
+.nav-prev{background:#edf2f7;color:#4a5568;}
+.nav-prev:hover{background:#e2e8f0;}
+.nav-next{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;}
+.nav-next:hover{opacity:0.88;}
+.nav-next:disabled{opacity:0.35;cursor:not-allowed;}
+
+#screen-id{display:none;min-height:100vh;background:linear-gradient(135deg,#0f172a,#1e293b);align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:40px 20px;}
+.id-card{background:#fff;border-radius:20px;padding:36px 28px;max-width:380px;width:100%;}
+.id-icon{font-size:3rem;margin-bottom:16px;}
+.id-title{font-size:1.4rem;font-weight:900;color:var(--dark);margin-bottom:8px;}
+.id-desc{font-size:0.88rem;color:var(--gray);margin-bottom:24px;line-height:1.6;}
+.id-input{width:100%;padding:14px 16px;font-size:1.1rem;font-weight:700;border:2.5px solid #e2e8f0;border-radius:12px;font-family:inherit;text-align:center;letter-spacing:0.1em;outline:none;transition:border-color 0.2s;margin-bottom:8px;}
+.id-input:focus{border-color:#667eea;}
+.id-hint{font-size:0.78rem;color:var(--gray);margin-bottom:20px;}
+.id-submit{width:100%;padding:15px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:12px;font-size:1.05rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all 0.2s;}
+.id-submit:hover{opacity:0.88;transform:translateY(-1px);}
+.id-error{color:#dc2626;font-size:0.82rem;margin-top:8px;display:none;}
+
+#screen-result{display:none;padding:0 0 60px;background:var(--bg);}
+.result-hero{background:linear-gradient(135deg,#0f172a,#1e293b);padding:52px 20px 40px;text-align:center;color:#fff;}
+.result-hero-label{font-size:0.75rem;letter-spacing:0.25em;color:rgba(255,255,255,0.4);margin-bottom:14px;}
+.result-role-icon{font-size:4rem;margin-bottom:12px;}
+.result-main-name{font-size:clamp(1.8rem,6vw,2.8rem);font-weight:900;margin-bottom:6px;}
+.result-category-badge{display:inline-block;padding:4px 16px;border-radius:20px;font-size:0.82rem;font-weight:700;margin-bottom:10px;}
+.result-tagline{font-size:0.95rem;color:rgba(255,255,255,0.55);max-width:400px;margin:0 auto;}
+.result-body{max-width:640px;margin:0 auto;padding:20px 16px;}
+.card{background:#fff;border-radius:var(--radius);padding:22px;margin-bottom:14px;box-shadow:var(--shadow);}
+.card-title{font-size:0.75rem;letter-spacing:0.15em;color:var(--gray);font-weight:700;margin-bottom:16px;}
+
+.score-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.score-item{border-radius:10px;padding:12px;text-align:center;}
+.score-item .s-icon{font-size:1.6rem;margin-bottom:6px;}
+.score-item .s-name{font-size:0.72rem;font-weight:700;margin-bottom:4px;}
+.score-item .s-bar{height:6px;border-radius:3px;background:#e2e8f0;margin-bottom:4px;overflow:hidden;}
+.score-item .s-bar-fill{height:100%;border-radius:3px;transition:width 0.8s cubic-bezier(0.34,1.4,0.64,1);}
+.score-item .s-val{font-size:0.8rem;font-weight:700;}
+
+.roles-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.role-mini-card{border-radius:12px;padding:14px;text-align:center;}
+.role-mini-label{font-size:0.68rem;font-weight:700;opacity:0.6;letter-spacing:0.1em;margin-bottom:8px;}
+.role-mini-icon{font-size:1.8rem;margin-bottom:6px;}
+.role-mini-name{font-size:0.88rem;font-weight:900;}
+
+.trait-desc{font-size:0.93rem;line-height:1.8;color:#475569;margin-bottom:16px;}
+.trait-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.trait-item{background:var(--bg);border-radius:10px;padding:12px 14px;}
+.trait-item .ti-l{font-size:0.68rem;color:var(--gray);margin-bottom:4px;}
+.trait-item .ti-v{font-size:0.88rem;font-weight:600;color:var(--dark);}
+
+/* 次角色補充區塊 */
+.combo-card{border-radius:12px;padding:16px 18px;margin-top:14px;border:1.5px solid;}
+.combo-card-label{font-size:0.72rem;font-weight:700;letter-spacing:0.1em;margin-bottom:8px;opacity:0.7;}
+.combo-card-title{font-size:1rem;font-weight:900;margin-bottom:8px;}
+.combo-card-desc{font-size:0.9rem;line-height:1.7;}
+
+.contrib-list{display:flex;flex-direction:column;gap:10px;}
+.contrib-item{display:flex;gap:12px;align-items:flex-start;}
+.contrib-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:7px;}
+.contrib-text{font-size:0.9rem;color:#475569;line-height:1.6;}
+
+.blind-list{display:flex;flex-direction:column;gap:10px;}
+.blind-item{background:#fff7ed;border-left:3px solid #f59e0b;border-radius:0 10px 10px 0;padding:10px 14px;font-size:0.88rem;color:#92400e;line-height:1.6;}
+
+.collab-list{display:flex;flex-direction:column;gap:12px;}
+.collab-row{display:flex;gap:12px;align-items:flex-start;}
+.collab-badge{font-size:1.2rem;flex-shrink:0;width:32px;text-align:center;}
+.collab-text{font-size:0.9rem;color:#475569;line-height:1.6;}
+
+.share-card{border-radius:20px;padding:28px;text-align:center;background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;margin-bottom:14px;}
+.sc-top{font-size:0.7rem;letter-spacing:0.2em;color:rgba(255,255,255,0.3);margin-bottom:14px;}
+.sc-icon{font-size:3rem;margin-bottom:10px;}
+.sc-name{font-size:1.8rem;font-weight:900;margin-bottom:4px;}
+.sc-cat{font-size:0.82rem;color:rgba(255,255,255,0.5);margin-bottom:4px;}
+.sc-id{font-size:0.75rem;color:rgba(255,255,255,0.3);margin-bottom:20px;}
+.sc-roles{display:flex;justify-content:center;gap:12px;}
+.sc-role-col{text-align:center;}
+.sc-role-icon{font-size:1.4rem;display:block;margin-bottom:4px;}
+.sc-role-name{font-size:0.68rem;font-weight:700;}
+
+.retry-btn{display:block;width:100%;padding:14px;background:#edf2f7;color:#4a5568;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all 0.15s;}
+.retry-btn:hover{background:#e2e8f0;}
+</style>
+</head>
+<body>
+
+<div id="screen-intro">
+  <span class="intro-badge">🧩 貝爾賓團隊角色測驗</span>
+  <h1 class="intro-title">你在團隊中<br>扮演什麼角色？</h1>
+  <p class="intro-subtitle">每個人在團隊中都有天生擅長的角色。這個測驗幫你找出你的風格——不是說誰比較好，而是認識自己、了解怎麼和別人合作。</p>
+  <div class="category-preview">
+    <div class="cat-chip cat-action">⚙️ 行動導向型</div>
+    <div class="cat-chip cat-people">🤝 人際導向型</div>
+    <div class="cat-chip cat-think">💡 謀略導向型</div>
+  </div>
+  <p class="intro-note">共 18 題情境選擇，每題從 9 個描述中選出「最像你」的一個<br>請憑第一直覺作答，沒有對錯，約需 8 分鐘</p>
+  <button class="start-btn" onclick="startTest()">開始測驗 →</button>
+</div>
+
+<div id="screen-test">
+  <div class="test-header">
+    <div class="progress-info">
+      <span class="progress-label">作答進度</span>
+      <span class="progress-num" id="prog-num">第 1 題 / 共 18 題</span>
+    </div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-bar" style="width:5.5%"></div></div>
+  </div>
+  <div class="test-body">
+    <div class="q-number" id="q-num-label">第 1 題</div>
+    <div class="q-scene">
+      <div class="q-scene-label">📋 情境</div>
+      <div class="q-text" id="q-text"></div>
+    </div>
+    <p class="q-instruction">選出最符合你平時的那一個：</p>
+    <div class="options-list" id="options-list"></div>
+  </div>
+  <div class="nav-bar">
+    <button class="nav-btn nav-prev" id="btn-prev" onclick="prevQ()">← 上一題</button>
+    <button class="nav-btn nav-next" id="btn-next" onclick="nextQ()" disabled>下一題 →</button>
+  </div>
+</div>
+
+<div id="screen-id">
+  <div class="id-card">
+    <div class="id-icon">🎓</div>
+    <div class="id-title">測驗完成！</div>
+    <div class="id-desc">請輸入你的班級座號<br>系統將產生你的專屬角色卡片</div>
+    <input class="id-input" id="student-id" type="text" placeholder="例：20901" maxlength="10"/>
+    <div class="id-hint">格式：年級＋班級＋座號，例如 20901 = 2年9班01號</div>
+    <div class="id-error" id="id-error">⚠️ 請輸入班級座號後再繼續</div>
+    <button class="id-submit" onclick="generateResult()">產生我的角色卡片 →</button>
+  </div>
+</div>
+
+<div id="screen-result">
+  <div class="result-hero">
+    <div class="result-hero-label">YOUR BELBIN TEAM ROLE</div>
+    <div class="result-role-icon" id="r-icon"></div>
+    <div class="result-main-name" id="r-name"></div>
+    <div class="result-category-badge" id="r-cat-badge"></div>
+    <div class="result-tagline" id="r-tagline"></div>
+  </div>
+  <div class="result-body">
+
+    <div class="card">
+      <div class="card-title">📊 九大角色分數</div>
+      <div class="score-grid" id="score-grid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🏅 你的角色組合</div>
+      <div class="roles-row" id="roles-row"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" id="trait-title">✨ 主要角色特質</div>
+      <p class="trait-desc" id="trait-desc"></p>
+      <div class="trait-grid" id="trait-grid"></div>
+      <!-- 次要角色補充說明 -->
+      <div id="combo-section"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💪 你在團隊中的貢獻</div>
+      <div class="contrib-list" id="contrib-list"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⚠️ 需要注意的盲點</div>
+      <div class="blind-list" id="blind-list"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🤝 如何與其他類型合作</div>
+      <div class="collab-list" id="collab-list"></div>
+    </div>
+
+    <div class="share-card">
+      <div class="sc-top">貝爾賓團隊角色測驗結果</div>
+      <div class="sc-icon" id="sc-icon"></div>
+      <div class="sc-name" id="sc-name"></div>
+      <div class="sc-cat" id="sc-cat"></div>
+      <div class="sc-id" id="sc-id"></div>
+      <div class="sc-roles" id="sc-roles"></div>
+    </div>
+
+    <button class="retry-btn" onclick="retryTest()">🔄 重新測驗</button>
+  </div>
+</div>
+
+<script>
+const FORM_ACTION = 'https://docs.google.com/forms/d/e/1FAIpQLSd8ZUNyW9ejbCVqQHoRAqM9IYODg7UkQZtN4dvryugz_L3MhA/formResponse';
+const ENTRIES = [
+  'entry.1379616357','entry.2055065507','entry.1249280006','entry.1661961483',
+  'entry.1604798189','entry.494734467','entry.249089792','entry.2038046238',
+  'entry.1668017777','entry.1298879041','entry.287559335','entry.1061034094',
+  'entry.1738167010','entry.1309380795','entry.1888318312','entry.1594728775',
+  'entry.1838420819','entry.196756239','entry.1064830487','entry.1969789406',
+  'entry.1125321391','entry.1635969810','entry.1438926747','entry.1670857260',
+  'entry.1879677007','entry.10495112','entry.1272388292','entry.1823991308',
+  'entry.331579234','entry.2118211246','entry.2031146955',
+];
+
+// ══════════════════════════════════════
+//  九大角色定義
+// ══════════════════════════════════════
+const ROLES = {
+  IMP:{ name:'執行者', en:'Implementer', icon:'🔨', color:'var(--imp)', light:'var(--imp-l)', cat:'行動導向型', catColor:'#2563eb',
+    tagline:'說到做到，把計畫變成真實行動的可靠夥伴',
+    desc:'你是讓事情真正被完成的人。當大家討論得熱火朝天，你已經開始想怎麼把它一步步做出來了。你重視承諾、有條有理，別人交給你的事，你一定會想辦法做到。你不是最搶鏡的那個人，但沒有你，很多好點子就只是空談。',
+    traits:[{l:'核心動力',v:'責任感與秩序感'},{l:'最大優勢',v:'執行力、可靠度'},{l:'壓力下表現',v:'可能過於保守'},{l:'需要注意',v:'保持對新方法的開放'}],
+    contribs:['把大家討論出來的方向整理成可以執行的步驟','有條不紊地把任務做完，不半途而廢','在混亂中提供穩定感，讓別人知道有你在就放心','對承諾的事一定跟進，不讓隊友擔心'],
+    blinds:['面對突然改變計畫，可能需要比別人更多時間適應','有時太執著於原本的方式，錯過更好的新做法','在整體節奏上可能不夠快，讓急性子的隊友著急'],
+    collabs:['與推進者（SH）合作：讓他負責加速，你負責把速度轉換成真正的成果','與創新者（PL）合作：欣賞他的奇思妙想，然後幫他把想法變成可以實際執行的計畫','與完成者（CF）合作：你們天生搭檔，你推進節奏，他確保品質，合作起來幾乎無懈可擊'] },
+  SHA:{ name:'推進者', en:'Shaper', icon:'⚡', color:'var(--sha)', light:'var(--sha-l)', cat:'行動導向型', catColor:'#2563eb',
+    tagline:'挑戰限制、讓團隊動起來的行動引擎',
+    desc:'你是讓一切開始移動的那股力量。當大家還在猶豫、討論、等待，你已經決定開始了。你不怕挑戰，也不怕說出讓人不舒服的真話，因為你知道停在原地才是真正的問題。你的直接和衝勁有時讓人受不了，但往往就是你讓整件事得以繼續前進。',
+    traits:[{l:'核心動力',v:'突破與挑戰'},{l:'最大優勢',v:'行動力、推進力'},{l:'壓力下表現',v:'容易衝過頭'},{l:'需要注意',v:'顧及隊友感受'}],
+    contribs:['在整個組開始拖拉時，第一個跳出來說「我們開始吧」','不怕指出問題，讓大家正視那個大家都不想說的困難','在關鍵時刻帶動節奏，讓事情不會一直卡在原地','對結果有強烈的責任感，不接受「反正這樣就好了」'],
+    blinds:['說話直接，有時讓隊友覺得被批評或被壓迫','在急著前進的過程中，可能沒有充分聽隊友的聲音','有時衝動做了決定，事後才發現沒考慮到重要細節'],
+    collabs:['與協調者（CO）合作：讓他幫你整合大家的意見，你負責讓討論的結果真的被執行','與凝聚者（TW）合作：你衝鋒，他照顧好隊友的情緒，兩人配合能讓團隊又快又穩','與審議者（ME）合作：在你急著前進前，讓他幫你快速確認方向是對的'] },
+  CF:{ name:'完成者', en:'Completer Finisher', icon:'✅', color:'var(--cf)', light:'var(--cf-l)', cat:'行動導向型', catColor:'#2563eb',
+    tagline:'讓每件事都真正做好、不留遺漏的品質守護者',
+    desc:'你是讓成果真正「完整」的人。別人可能交出去就好了，但你就是會再多看一眼、再確認一次、再調整一個細節。你不是龜毛，你只是知道那些被忽略的小地方，往往才是讓一件事真正出色的關鍵。你的存在讓整組的輸出水準提高了一個檔次。',
+    traits:[{l:'核心動力',v:'完整性與高品質'},{l:'最大優勢',v:'細心、盡責、高標準'},{l:'壓力下表現',v:'容易過度擔憂細節'},{l:'需要注意',v:'學會適度放手'}],
+    contribs:['在交出作業或報告前，最後再仔細確認一遍','發現並修正別人容易漏掉的小錯誤','讓整組的成果有一個穩定的高品質水準','對自己負責的部分有強烈的責任感，不隨便帶過'],
+    blinds:['有時太在意細節，花了很多時間在別人看不出差異的地方','到了截止日期還是覺得「還差一點點」，可能影響整體進度','不太容易把任務放手給別人，因為覺得自己做比較放心'],
+    collabs:['與執行者（IMP）合作：你們是天生搭檔，他負責推進節奏，你確保每一步都有達到水準','與推進者（SH）合作：在他衝太快之後幫他補上細節，讓好的衝勁不因為粗心而功虧一簣','與創新者（PL）合作：你的細心能讓他天馬行空的想法落地成真正能用的東西'] },
+  CO:{ name:'協調者', en:'Coordinator', icon:'🎯', color:'var(--co)', light:'var(--co-l)', cat:'人際導向型', catColor:'#7c3aed',
+    tagline:'讓每個人都能發揮所長的天生整合者',
+    desc:'你天生懂得讀懂一群人。誰擅長什麼、誰現在需要什麼、誰的聲音還沒被聽到——你幾乎不用特別想就能感覺到。你擅長引導討論讓大家達成共識，把對的任務交給對的人，而且你真正的成就感來自看到整個組一起成功，而不是自己特別出風頭。',
+    traits:[{l:'核心動力',v:'整合與共識'},{l:'最大優勢',v:'引導力、傾聽力'},{l:'壓力下表現',v:'有時過度依賴他人'},{l:'需要注意',v:'有時需要更果斷表態'}],
+    contribs:['確保每個人都清楚自己負責什麼，避免組內混亂','讓比較安靜的同學也有機會說出自己的想法','把討論聚焦在重點上，不讓大家漫無目的地兜圈子','在意見分歧時，幫助大家找到彼此都能接受的方向'],
+    blinds:['有時被誤解為在「管別人」，其實只是想讓大家分工更清楚','在需要一個人拍板的時候，可能太想照顧到各方意見而猶豫','當組員能力或意願差距很大時，整合起來特別消耗能量'],
+    collabs:['與推進者（SH）合作：你整合方向，他帶動執行，組合起來讓整個組又有方向又有動力','與創新者（PL）合作：幫他把創意引入討論，讓好想法不被淹沒，也不讓他偏離整體目標','與專家師（SP）合作：確保他的專業在對的時機被拿出來用，而不是默默埋在角落'] },
+  TW:{ name:'凝聚者', en:'Teamworker', icon:'🌟', color:'var(--tw)', light:'var(--tw-l)', cat:'人際導向型', catColor:'#7c3aed',
+    tagline:'讓團隊感覺像一家人的溫暖黏著劑',
+    desc:'你是讓大家真正想在一起合作的那個人。你很容易察覺到誰今天狀態不好、誰和另一個人之間氣氛有點怪、誰說著「沒事」但其實有事。你不是最主動發言的人，但你讓每個人都覺得自己被接受、被需要，而這件事比任何人想像的都更重要。',
+    traits:[{l:'核心動力',v:'和諧與歸屬感'},{l:'最大優勢',v:'同理心、人際敏感度'},{l:'壓力下表現',v:'難以做讓人不開心的決定'},{l:'需要注意',v:'有時要勇敢說出真心話'}],
+    contribs:['察覺組內緊張氣氛並在惡化之前化解','讓每個人都感到被重視，不讓任何人有被邊緣的感覺','在壓力大的時候說一句話或做一個小動作，讓氣氛緩和下來','讓整個組感覺更像「我們」而不是一群各自行事的人'],
+    blinds:['在需要直接說出問題的時候，可能因為怕傷感情而拖延','面對「讓某人做得不好的任務」這類困難決定時，往往找不到開口的方式','如果同時在意很多人的感受，可能會感到特別疲憊'],
+    collabs:['與推進者（SH）合作：他衝，你照顧好隊友的心理狀態，讓整組又敢衝又不失凝聚力','與完成者（CF）合作：在他對品質太緊繃時幫他放鬆一下，讓氣氛不要太沉重','與審議者（ME）合作：在他提出批評讓大家沉默的時候，幫他接住現場，讓評估變成建設性的討論'] },
+  RI:{ name:'外交者', en:'Resource Investigator', icon:'🔍', color:'var(--ri)', light:'var(--ri-l)', cat:'人際導向型', catColor:'#7c3aed',
+    tagline:'為團隊帶來新可能與新連結的探索者',
+    desc:'你天生是一個對什麼都好奇的人。別人說的一個名字、看到的一篇文章、一個陌生的工具——你總是比別人更快想到「這個或許能用！」然後真的去試。你的人緣好，喜歡接觸新的人和新的事，讓整個組在面對未知問題時，不會只能靠自己悶頭想。',
+    traits:[{l:'核心動力',v:'探索與連結'},{l:'最大優勢',v:'好奇心、人際開拓力'},{l:'壓力下表現',v:'熱情容易退退'},{l:'需要注意',v:'確保帶回來的東西有跟進'}],
+    contribs:['主動去找資料、問老師、查案例，帶給組員沒想到的素材','對外建立連結，讓組裡有更多可以運用的資源','在討論剛開始時帶動熱情，讓大家覺得「這件事很有意思」','把組內的想法連結到外面更大的世界'],
+    blinds:['初期熱情很高，但進入執行細節後可能比較難持續','有時帶回太多「可以參考的東西」，讓組員不知道該怎麼選','答應下來的事情有時需要別人提醒，才確保真的完成'],
+    collabs:['與執行者（IMP）合作：你負責找到資源和靈感，他負責把這些東西落實成真正的行動','與完成者（CF）合作：讓他確保你帶回來承諾的事情都有確實完成，不留尾巴','與協調者（CO）合作：讓他幫你把找到的外部資源整合進組內的討論，讓大家都知道怎麼用'] },
+  PL:{ name:'創新者', en:'Plant', icon:'💡', color:'var(--pl)', light:'var(--pl-l)', cat:'謀略導向型', catColor:'#db2777',
+    tagline:'在別人想不到出路時提出全新可能的創意者',
+    desc:'你的腦袋裡有一套別人沒有的頻道。當大家都在討論「按照一般做法怎麼做」，你可能已經在想「如果完全不用這個框架呢？」你的點子有時聽起來天馬行空，但往往就是這些突破框架的想法，在組員卡關的時候開了一條新路。',
+    traits:[{l:'核心動力',v:'創意與突破'},{l:'最大優勢',v:'創造力、解決複雜問題'},{l:'壓力下表現',v:'可能忽略可行性'},{l:'需要注意',v:'確保想法能被理解和執行'}],
+    contribs:['在整組卡關想不出辦法的時候，提出一個沒人想到的切入點','帶動整組保持開放和好奇，不讓思考被早早侷限住','解決那些「照一般方法解不掉」的問題','讓報告或成品有真正讓人眼睛一亮的亮點'],
+    blinds:['想法很多，但有時沒有想清楚「這個做法實際上要怎麼執行」','對別人不理解或批評自己的想法，可能感到特別受挫','在討論中可能太專注在自己的想法，沒有聽到其他人的聲音'],
+    collabs:['與執行者（IMP）合作：你負責提出想法，他負責把想法變成可以一步步做到的計畫','與審議者（ME）合作：讓他幫你評估哪些想法最值得認真去做，避免在不可行的方向上浪費時間','與協調者（CO）合作：讓他幫你把創意帶進整組的討論，讓點子不只停在你的腦袋裡'] },
+  ME:{ name:'審議者', en:'Monitor Evaluator', icon:'📊', color:'var(--me)', light:'var(--me-l)', cat:'謀略導向型', catColor:'#db2777',
+    tagline:'在大家衝動前踩下剎車、確保方向正確的冷靜分析者',
+    desc:'你是那個在大家說「好好好我們就這樣做！」之前，先冷靜問一句「等等，這樣做有沒有問題？」的人。你不是潑冷水，你只是知道衝動決定往往在後來要付出更大的代價。你的判斷準確，能讓整組在對的事情上花力氣，不在錯的方向上白費功夫。',
+    traits:[{l:'核心動力',v:'準確性與正確判斷'},{l:'最大優勢',v:'邏輯分析、客觀評估'},{l:'壓力下表現',v:'可能讓人覺得太悲觀'},{l:'需要注意',v:'適時表達肯定與鼓勵'}],
+    contribs:['在做重大決定前，幫整組看清楚各個選項的優缺點','發現計畫裡可能被忽略的漏洞或風險','在大家都熱情高漲時提供理智的視角，讓決定更穩妥','幫助整組把力氣花在真正重要的地方，而不是被表面吸引力帶跑'],
+    blinds:['提出批評的時候，有時讓人感覺「這個人是不是都在否定別人」','自己不太容易表現出對人的鼓勵，讓隊友不確定你是否認可他們','在需要快速決定的情況下，分析太多反而讓進度卡住'],
+    collabs:['與創新者（PL）合作：用你的分析能力幫他篩選想法，找出真正值得認真做的方向','與推進者（SH）合作：在他衝太快之前幫他做一次快速評估，避免方向錯誤','與外交者（RI）合作：幫他評估帶回來的資源和機會，確保投入是值得的'] },
+  SP:{ name:'專家師', en:'Specialist', icon:'🎓', color:'var(--sp)', light:'var(--sp-l)', cat:'謀略導向型', catColor:'#db2777',
+    tagline:'提供其他人無法給出的深度知識的領域達人',
+    desc:'你有一塊特別鑽研過的領域，而且你願意在裡面繼續深挖。不管是某個科目、某個興趣、某種技能——只要跟你熟悉的領域有關，你能提供的東西是其他人提供不了的。你不是樣樣都想表現，但在你擅長的那塊，你的存在讓整組的實力直接跳了一個等級。',
+    traits:[{l:'核心動力',v:'專業精進與深度貢獻'},{l:'最大優勢',v:'深度知識、高自律'},{l:'壓力下表現',v:'可能只專注自己的部分'},{l:'需要注意',v:'多關心整組的整體狀況'}],
+    contribs:['在遇到需要特定知識的問題時，提供準確的答案和判斷','讓整組在關鍵的專業細節上不會出現低級錯誤','在自己擅長的部分展現高度的自律和投入','幫助整組把某個重要的環節做到真正的高水準'],
+    blinds:['在自己的領域外，參與感可能相對低，讓隊友不確定你的狀態','有時用了比較專業的方式說明，讓不熟悉的人聽不太懂','組內整體的大局觀可能不是你最關注的事情'],
+    collabs:['與協調者（CO）合作：讓他確保你的專業知識能在對的時機被引用，不被冷落也不被過度濫用','與外交者（RI）合作：讓他幫你連結更多和你專業相關的外部資源，讓你的知識更有用武之地','與審議者（ME）合作：你們都追求準確，一起合作能讓整組的分析和判斷有最強的知識基礎'] },
+};
+
+const ROLE_KEYS = ['IMP','SHA','CF','CO','TW','RI','PL','ME','SP'];
+
+// ══════════════════════════════════════
+//  次要角色補充說明（方案B）
+//  格式：COMBO[主角色][次角色] = { title, desc }
+// ══════════════════════════════════════
+const COMBO = {
+  IMP:{
+    SHA:{ title:'務實的衝勁執行者', desc:'你不只是把計畫一步步做完，你還帶著一股「我們可以更快」的衝勁。在該出手的時候你不會猶豫，但你的行動都有明確的目標和步驟，不是盲目衝刺。這讓你在需要既快速又可靠的任務上特別出色。' },
+    CF:{ title:'精準嚴謹的落實者', desc:'你做事的標準高，而且你做到了真的就是做到了——不是差不多，是真的完整。你比一般執行者更在意品質，不會為了趕進度而馬虎。你的輸出讓人放心，因為大家都知道你不會讓粗心的東西流出去。' },
+    CO:{ title:'有整合意識的執行者', desc:'你不只是低頭做事，你還會抬頭確認整組的狀態是否順暢。你在執行自己的任務時，同時留意組員有沒有卡住，讓整個分工系統更有默契，而不是各自孤立地完成自己的部分。' },
+    TW:{ title:'暖心可靠的落實者', desc:'你讓人放心不只是因為你會做完，而是因為你在過程中也照顧到了大家的感受。你的執行不冷漠，讓隊友覺得整個組是一起在完成這件事，而不是各自在趕自己的進度。' },
+    RI:{ title:'積極連結的執行者', desc:'你執行力強，而且你會主動去找需要的資源來讓任務做得更好，而不是只用手頭有的東西將就。這讓你面對新問題時比一般執行者更有彈性，不會卡在「沒有這個就做不下去」的困境。' },
+    PL:{ title:'帶有創意眼光的執行者', desc:'你不只是照著計畫做，你還會在執行過程中想「這個部分可不可以做得更好」。你的執行有時帶著一點創意微調，讓最後的成果比一開始設定的更好，而不是只是完成了「需要完成的事」。' },
+    ME:{ title:'謹慎評估的執行者', desc:'你在動手之前，會比一般執行者多想一步：「這樣做有沒有問題？」你不是拖拉，你是在確認方向對了再出發。這讓你的執行失誤率很低，做的事情很少需要返工。' },
+    SP:{ title:'深度專注的執行者', desc:'你在自己熟悉的領域裡執行起來特別有把握，而且做得特別紮實。你不是什麼都做，但你做的那塊，幾乎讓人挑不出毛病。這種深度專注的執行力是很稀有的特質。' },
+  },
+  SHA:{
+    IMP:{ title:'雷厲風行的行動者', desc:'你有衝勁，而且你真的會動手把事情做完，而不只是說說。你不是那種嘴巴催別人但自己沒動作的人——你催的同時自己也在全力執行。這讓你的推進不是空口號，是真正有產出的前進。' },
+    CF:{ title:'要求到位的推進者', desc:'你不只要快，你還要好。你不滿足於「趕完了就好」，而是在衝刺的同時還要確保品質過得去。這讓你的效率和你的高標準形成一種少見的組合——很多人是快但粗，你不是。' },
+    CO:{ title:'整合視野的推進者', desc:'你在推進事情的同時，也在確認方向是整個組都認可的。你不是一個人衝，你在加速的同時還會回頭確認大家跟上了、方向是對的。這讓你的推進不只是你一個人的事，而是整組的共同行動。' },
+    TW:{ title:'有溫度的推進者', desc:'你推進事情的方式不冰冷——你在施加壓力的同時，也關心隊友有沒有被壓垮。你知道怎麼在「我們要繼續」和「我也知道你很累」之間找到平衡，讓整組在你的帶動下前進，而不是被你推著走。' },
+    RI:{ title:'積極開路的推進者', desc:'你推動事情前進，而且你會主動去找可以加速的資源，不等別人給你。你喜歡連結和探索，讓整組在推進的過程中不缺少材料和支援，而是一邊衝一邊開出新路。' },
+    PL:{ title:'有創意的推進者', desc:'你在推動事情前進的同時，不放棄尋找更好的做法。你不是只想完成，你想要完成得漂亮。這讓你的行動不只是「有做」，而是帶著創意在尋找更好的可能。' },
+    ME:{ title:'精算後才出手的推進者', desc:'你雖然有衝勁，但你的行動是有根據的。在你決定「就這樣做」之前，你會快速確認這個方向說得通。這讓你比一般推進者更少走冤枉路，衝對方向的概率更高。' },
+    SP:{ title:'有底氣的推進者', desc:'你的衝勁背後有深度的知識作為支撐。你不是盲衝，你是有把握地前進。這讓你的行動更有說服力，也讓隊友更願意跟著你，因為他們知道你清楚自己在做什麼。' },
+  },
+  CF:{
+    IMP:{ title:'可靠而嚴謹的完成者', desc:'你不只做完，你做完了還會再看一遍確認沒問題。你的執行力和你的高標準同時在線，讓整組在交出成果之前有一道真正有效的品質關卡，而不是形式上的確認。' },
+    SHA:{ title:'有衝勁的品質堅守者', desc:'你有一股「這樣不夠好，要再做」的堅持，而且你不會因為時間壓力就輕易妥協。你的高標準不是慢吞吞的，你在追求品質的同時也有推進的動力，讓你不只是挑剔，而是能真的做到更好。' },
+    CO:{ title:'有整合意識的品質守護者', desc:'你在確保品質的同時，也關心整組的整體狀態。你不是只盯著自己的部分，你還會留意其他人的成果有沒有對齊，讓整組交出去的東西有一個統一的高水準，而不是各部分參差不齊。' },
+    TW:{ title:'體貼而認真的完成者', desc:'你追求高品質，但你的方式不讓人感到壓迫。你在發現問題的時候，不是用批評的語氣說出來，而是以一種讓隊友也想一起把它做好的方式表達。這讓你成為品質的推動者，而不只是挑剔者。' },
+    RI:{ title:'主動補足缺口的完成者', desc:'你在確認品質的過程中，如果發現缺少什麼，你會主動去找。你不是指出問題就停下來，你會想辦法把缺少的部分補上。這讓你的品質把關不只是找問題，而是真正讓成果更完整。' },
+    PL:{ title:'有品味的完成者', desc:'你對品質的要求，不只是「沒有錯誤」，而是「讓這件事可以更好」。你在確認細節的同時，偶爾也會想到一個讓整體更亮眼的做法。這讓你的收尾不只是檢查，而是在最後階段還能提升一個層次。' },
+    ME:{ title:'客觀嚴謹的完成者', desc:'你的高標準有清楚的理性依據。你知道哪裡要在意、哪裡可以接受，讓你的品質堅持不是任性，而是有依據的判斷。這讓你的評估更有說服力，也更有效率。' },
+    SP:{ title:'專業而嚴謹的完成者', desc:'你的品質標準，建立在你對某個領域的深度了解上。你知道什麼叫做「真正做好」，因為你清楚這個領域的高標準是什麼。這讓你的把關不只是看感覺，而是有真正的專業支撐。' },
+  },
+  CO:{
+    IMP:{ title:'務實的整合推手', desc:'你不只協調出共識，你還會把共識落實成可以行動的步驟。你不讓討論停在抽象的「大家都同意了」，你把它變成「誰負責什麼、什麼時候完成」。這讓你的協調有真實的成果，而不只是一個愉快的過程。' },
+    SHA:{ title:'有魄力的整合者', desc:'你協調大家的同時，也有能力在關鍵時刻直接拍板、推動進展。你不會讓討論一直拖，你在確認方向之後，能果斷讓事情動起來。這讓你的引導有一種推進感，而不只是維持良好秩序。' },
+    CF:{ title:'注重品質的整合者', desc:'你在整合大家的意見時，也在留意最終的成果是否達到應有的水準。你不只是讓大家都有共識，你還確保這個共識產出的東西是對的、是夠好的。這讓你的協調有品質上的保障。' },
+    TW:{ title:'溫暖有力的整合者', desc:'你整合大家不只靠邏輯，也靠你讓每個人感到被理解、被重視的方式。你的引導有一種讓人放鬆的溫度，大家在你的帶動下更願意說出真正的想法，讓共識更真實而不是表面的附和。' },
+    RI:{ title:'開放視野的整合者', desc:'你在整合大家的意見時，也喜歡帶進外面的新東西作為參考。你不只整合現有的聲音，你還幫整組看到更多的可能性，讓討論不只是在組內轉圈，而是有更廣的視野。' },
+    PL:{ title:'有創意的整合者', desc:'你在引導討論的同時，也會在適當的時機帶入一個讓大家「咦，這個角度我沒想到」的觀點。你不只是讓大家到達共識，你讓共識的過程也變得更有啟發性。' },
+    ME:{ title:'理性嚴謹的整合者', desc:'你在整合意見之前，會先確認哪些意見是有根據的、哪些可能需要再驗證。你讓組內的共識是建立在清楚的分析上，而不是被最有說服力的人的語氣決定。' },
+    SP:{ title:'有深度的整合者', desc:'你在整合大家的意見時，能在涉及你熟悉領域的部分提供清楚的判斷依據，讓討論不是各說各話，而是有知識支撐的收斂。這讓你的協調更有底氣，也更有說服力。' },
+  },
+  TW:{
+    IMP:{ title:'行動力強的凝聚者', desc:'你照顧大家情緒的同時，也能確保事情繼續往前走。你不會因為在意大家的感受而讓進度停滯——你找到了一種讓大家感到被照顧，同時也讓任務繼續推進的方式。這讓你成為既溫暖又有效率的存在。' },
+    SHA:{ title:'有擔當的凝聚者', desc:'你在照顧組內氣氛的同時，也敢在必要的時候站出來說該說的話。你不是只顧著讓大家感覺好，你知道有時候說出一個讓人不舒服的真話，才是真正對大家好的事情。' },
+    CF:{ title:'細心的凝聚者', desc:'你對人際關係的細膩觀察，也體現在你對任務的認真上。你不只照顧人，你也照顧成果——確保大家一起努力做出來的東西是真正值得驕傲的。這讓你成為在情感和品質上都讓人放心的存在。' },
+    CO:{ title:'善於引導的凝聚者', desc:'你在維持組內溫暖氣氛的同時，也能自然地引導大家把情感轉化成有共識的行動方向。你讓大家感覺良好，同時也讓大家在這個良好的狀態下一起決定好下一步要怎麼做。' },
+    RI:{ title:'活絡開朗的凝聚者', desc:'你的溫暖和你對新事物的熱情結合在一起，讓你能讓組內的氣氛既溫馨又充滿活力。你不只讓大家感覺被照顧，你還讓大家對一起做的事情感到興奮，而不只是應付。' },
+    PL:{ title:'有想像力的凝聚者', desc:'你在照顧大家的同時，也偶爾帶入一個讓大家感到有趣的新視角。你讓組內的氣氛不只是平靜，還帶著一點活潑的創意色彩，讓凝聚不只是不衝突，而是一種真正有共鳴的合作感。' },
+    ME:{ title:'清醒的凝聚者', desc:'你在照顧大家情緒的同時，也保持一份清醒的觀察——哪些人際問題是真的需要處理的，哪些只是暫時的情緒波動。這讓你的介入更精準，不過度消耗自己，也讓整組更有效率地回到狀態。' },
+    SP:{ title:'有底蘊的凝聚者', desc:'你的溫暖和你在某個領域的深度結合在一起，讓你在維繫組內關係的同時，也能在關鍵時刻提供真正有幫助的知識或判斷。你讓大家感到被照顧，也讓大家感到被你的專業所支撐。' },
+  },
+  RI:{
+    IMP:{ title:'積極落實的探索者', desc:'你帶回來的資源和靈感，你自己也會跟著動手做。你不只是一個「找到好東西就丟出來」的人，你還會參與把它真正用進去的過程。這讓你比一般外交者更有始有終，帶出來的東西不會變成沒人跟進的空殼。' },
+    SHA:{ title:'有衝勁的連結者', desc:'你不只連結資源，你還會推動整組去用它。你在帶進新東西的同時，也在說「我們快來試試看！」這讓你的探索不只是展示，而是真的帶動了行動，讓新的可能性有機會變成真實的成果。' },
+    CF:{ title:'認真的探索者', desc:'你在找資源和建立連結的同時，也比一般人更在意帶回來的東西是不是真的夠好、夠準確。你的探索不是隨手抓幾個看起來不錯的東西，而是真的想確認這些資源是有品質的。' },
+    CO:{ title:'善於整合的探索者', desc:'你在帶進外部資源的同時，也知道怎麼讓整組把它用起來。你不只找到東西，你還幫大家看清楚「這個東西，我們可以怎麼用？」讓探索和使用之間的距離縮短。' },
+    TW:{ title:'有溫度的連結者', desc:'你建立連結的方式讓人感到自然和舒服，而不是功利。你不是為了「拿到資源」才去交朋友，你真的對人感興趣，讓你建立的關係更長遠、更真實，帶回來的東西也更可靠。' },
+    PL:{ title:'充滿靈感的探索者', desc:'你帶回來的東西常常能激發意想不到的新想法。你不只是資源的搬運工，你還是靈感的催化劑。你找到的資料或案例，往往讓整組說「哇，這個方向我完全沒想到」。' },
+    ME:{ title:'有判斷力的探索者', desc:'你帶回來的資源，你自己已經過濾過一遍了。你不是看到什麼就帶什麼，你知道哪些是真正有用的、哪些只是看起來不錯。這讓整組不需要再花太多時間篩選，可以直接聚焦在真正有價值的部分。' },
+    SP:{ title:'有深度的連結者', desc:'你建立的連結不只是表面的人際網絡，你還能把外部的資源和你自己在某個領域的深度理解結合起來。這讓你帶回來的東西有更強的應用價值，而不只是「有一個可以參考的例子」。' },
+  },
+  PL:{
+    IMP:{ title:'能落地的創意者', desc:'你的想法不只停留在腦袋裡，你也會去想怎麼讓它真的發生。你比一般創新者更有執行意識，在提出一個新點子的同時，你已經在想「好，那第一步是什麼？」這讓你的創意有更高的機率真正被實現。' },
+    SHA:{ title:'有衝勁的創意者', desc:'你提出想法之後，不等別人反應，你就開始推動它往前走了。你的創意不是說出來等待，而是說出來之後馬上開始嘗試。這讓你比一般創新者更積極，讓想法有機會在懷疑還沒累積之前就開始動了。' },
+    CF:{ title:'注重細節的創意者', desc:'你提出的想法，你自己也會認真去想「這樣做有沒有什麼問題？」你不是拋出一個點子就走，你還會想到讓它更完善的細節。這讓你的創意比較少是「聽起來很好但根本做不到」那種類型。' },
+    CO:{ title:'有整合意識的創意者', desc:'你提出想法的方式，讓大家覺得這是整組一起的方向，而不是你個人的偏好。你知道怎麼讓創意被大家接受，而不是只有你自己在興奮。這讓你的點子更容易真正被整組採用。' },
+    TW:{ title:'體貼的創意者', desc:'你在提出新想法的同時，也關心大家能不能接受。你不是把創意強加給別人，你會想到哪種說法、哪種切入讓大家更容易理解和接受你的想法。這讓你的創意不只是你的，而是整組的。' },
+    RI:{ title:'開放連結的創意者', desc:'你的想法常常來自於你接觸到的各種新事物——一篇文章、一個案例、一個陌生的概念。你的創意不是關門思考，而是開放地把外面的世界帶進來，讓組內的思考框架不斷被打開。' },
+    ME:{ title:'有邏輯的創意者', desc:'你的創意不只靠感覺，你也會在提出之前想一想「這樣做是說得通的嗎？」你的點子雖然打破框架，但有一定的邏輯支撐，讓你比較容易說服那些需要理由才能接受的隊友。' },
+    SP:{ title:'有底蘊的創意者', desc:'你的創意建立在你對某個領域的深度了解上。你不是隨便亂想，你是在你懂得最深的地方，看到了別人看不到的突破口。這讓你的想法不只是天馬行空，而是有知識支撐的洞見。' },
+  },
+  ME:{
+    IMP:{ title:'行動力強的分析者', desc:'你分析完之後，會自己動手去做。你不是那種分析很強但執行靠別人的類型——你看清楚方向之後，會切實地把它做出來。這讓你比一般審議者更有產出感，不只是說「這樣比較好」，而是真的把它做到「比較好」的狀態。' },
+    SHA:{ title:'有行動力的分析者', desc:'你分析的目的是讓整組行動得更有把握，而不是讓大家停在分析裡。你在確認方向是對的之後，就會積極推動整組往前走，不讓理性評估變成另一種形式的拖延。' },
+    CF:{ title:'極度嚴謹的分析者', desc:'你不只分析整體方向，你還在意每個細節是否說得通。你的評估是全面的，不會因為大方向對了就放過小地方的問題。這讓你的把關非常紮實，讓整組的判斷幾乎找不到漏洞。' },
+    CO:{ title:'有整合感的分析者', desc:'你在評估選項時，也會把不同人的角度納入考量。你不只看哪個選項「邏輯上更好」，你也看哪個選項對整組來說更可行、更能讓大家買單。這讓你的評估更務實，而不是只在理論上正確。' },
+    TW:{ title:'溫柔的分析者', desc:'你的客觀評估不會讓人感到被否定或打擊。你知道怎麼說出問題，但不讓它傷到隊友的積極性。你的批評有一種讓人願意繼續努力的溫度，而不是讓人覺得「反正怎麼做都不夠好」。' },
+    RI:{ title:'廣泛參照的分析者', desc:'你在做評估的時候，會主動去找更多的參照資料，確保你的判斷不是只基於現有的有限資訊。你的分析有更大的視野，讓整組在做決定時不只是在自己的泡泡裡比較，而是有外部的對照基準。' },
+    PL:{ title:'有彈性的分析者', desc:'你在嚴謹評估的同時，也保持對非傳統解法的開放。你不會只評估「按照通常做法的可行性」，你也會認真考慮那些看起來很奇怪但可能有用的選項。這讓你的分析更完整，不會漏掉真正的突破機會。' },
+    SP:{ title:'深度嚴謹的分析者', desc:'你的評估建立在你對某個領域的深度理解上。你不是對每個領域都泛泛地給出判斷，你在自己熟悉的地方能提供真正有深度的分析。這讓你的評估在關鍵領域上特別可信。' },
+  },
+  SP:{
+    IMP:{ title:'積極執行的專家', desc:'你不只提供知識，你還會動手去把它用出來。你是那種「我知道怎麼做，然後我真的去做」的類型，讓你的專業不是停在口頭建議，而是真的出現在最終的成果裡。' },
+    SHA:{ title:'有推進力的專家', desc:'你在自己熟悉的領域有充分的把握，這讓你能果斷地說出「我們應該這樣做，現在就開始」。你的衝勁有知識作為底氣，讓你的推進不只是熱情，而是一種有底蘊的自信。' },
+    CF:{ title:'極度嚴謹的專家', desc:'你在自己的專業領域追求的是最高標準，而不是「夠用就好」。你的知識深度加上你對品質的堅持，讓你的輸出幾乎讓人找不到可以挑剔的地方。這是一種少見而珍貴的組合。' },
+    CO:{ title:'懂得分享的專家', desc:'你的專業知識不是藏著掖著，你知道怎麼讓它變成整組都能使用的資源。你擅長引導大家理解你的知識，讓你的深度不只是你自己的武器，而是整組的共同資產。' },
+    TW:{ title:'體貼的專家', desc:'你在提供專業知識的同時，也在意別人能不能理解、有沒有感到被支持。你不是一個高冷的知識提供者，而是一個讓隊友在你的知識裡感到溫暖和被幫助的存在。' },
+    RI:{ title:'持續探索的專家', desc:'你的專業不是停在已知的範圍，你在繼續深挖的同時，也主動去接觸更多新的資訊和案例。這讓你的知識庫一直在更新，不會成為只用老知識的固執專家，而是一個不斷成長的領域達人。' },
+    PL:{ title:'有創意的專家', desc:'你在你的專業領域裡，不只是知道「一般怎麼做」，你還會想到「可不可以有更好的做法？」你的深度知識加上你對突破的好奇，讓你在自己的領域裡也能持續帶來讓人眼睛一亮的新想法。' },
+    ME:{ title:'嚴格自我要求的專家', desc:'你用高標準要求自己的知識品質——你不只是「大概知道」，你要「確認自己真的清楚」。你在提供判斷之前會自我審視，讓你說出口的東西特別可信，因為大家知道你不會隨便說。' },
+  },
+};
+
+// ══════════════════════════════════════
+//  18 題題庫（高中生情境版）
+// ══════════════════════════════════════
+const QUESTIONS = [
+  { text:'分組報告剛分好組，大家第一次聚在一起。你最自然的第一個動作是什麼？',
+    opts:[
+      {r:'IMP', t:'馬上把討論的結果整理起來，列出誰負責什麼'},
+      {r:'SHA', t:'主動說「我們今天要把方向定好，來開始吧」'},
+      {r:'CF',  t:'確認這次報告的要求每個細節都搞清楚了'},
+      {r:'CO',  t:'先了解每個組員的強項，再想怎麼分工'},
+      {r:'TW',  t:'帶動大家互相認識，讓第一次討論不那麼尷尬'},
+      {r:'RI',  t:'說「我去找找看有沒有類似主題的好資料，待會分享給大家」'},
+      {r:'PL',  t:'想想有沒有比一般做法更有亮點、更有創意的切入方式'},
+      {r:'ME',  t:'評估這次主題可以怎麼做、哪個方向比較值得'},
+      {r:'SP',  t:'說明我在某個相關領域有一些了解，可以負責那個部分'},
+    ]},
+  { text:'分組報告距離交件只剩兩天，進度卻才完成一半。你最可能的反應是什麼？',
+    opts:[
+      {r:'IMP', t:'馬上列出剩餘的工作，分配好每個人接下來要做什麼'},
+      {r:'SHA', t:'直接說「我們現在必須加快了，大家能多做多少就多做多少」'},
+      {r:'CF',  t:'先確認已完成的部分有沒有問題，再想怎麼補上剩下的'},
+      {r:'CO',  t:'重新分配任務，把最重要的部分交給最有把握的人'},
+      {r:'TW',  t:'先鼓勵大家，讓緊繃的氣氛鬆一點，再討論怎麼繼續'},
+      {r:'RI',  t:'去找看看有沒有快速查到答案的資源或方法，讓進度加速'},
+      {r:'PL',  t:'想想有沒有更有效率的做法，說不定可以省掉某些重複的步驟'},
+      {r:'ME',  t:'冷靜評估哪些部分來不及就先放，哪些是一定要完成的'},
+      {r:'SP',  t:'集中火力把我最熟悉的那部分做得最好，讓整體不失分'},
+    ]},
+  { text:'班會或分組討論時，你通常扮演的角色最像哪個描述？',
+    opts:[
+      {r:'IMP', t:'負責記錄討論結果，會後把行動事項整理清楚'},
+      {r:'SHA', t:'讓討論不要失焦，在大家繞圈子的時候說「我們回到重點」'},
+      {r:'CF',  t:'提出容易被忽略的細節，確認大家都有想到那個部分'},
+      {r:'CO',  t:'引導每個人都有機會說話，讓比較安靜的人也被聽到'},
+      {r:'TW',  t:'觀察氣氛，在討論變得緊繃時說幾句讓大家緩和一下'},
+      {r:'RI',  t:'分享我之前看到的相關例子或資料，讓討論有更多參考'},
+      {r:'PL',  t:'提出一個大家沒有想到的切入點，讓討論方向更有意思'},
+      {r:'ME',  t:'指出哪個方案邏輯上有問題，或哪個做法可能行不通'},
+      {r:'SP',  t:'在涉及我比較熟悉的領域時，提供清楚的說明'},
+    ]},
+  { text:'在你看來，一個合作起來很舒服的小組，最重要的條件是什麼？',
+    opts:[
+      {r:'IMP', t:'每個人都知道自己負責什麼，事情能有條不紊地完成'},
+      {r:'SHA', t:'大家有共同的衝勁，不會一直拖拉或互相推卸'},
+      {r:'CF',  t:'交出去的東西是真的做好，而不是應付了事'},
+      {r:'CO',  t:'每個人的強項都被用到，工作分配是對的'},
+      {r:'TW',  t:'大家相處起來舒服，不會因為分工或意見不同就鬧不愉快'},
+      {r:'RI',  t:'有辦法找到需要的資源，不會卡在「不知道從哪裡找」'},
+      {r:'PL',  t:'不是只用老套的方式，有人敢提出不一樣的想法'},
+      {r:'ME',  t:'做決定之前有人幫忙想清楚，不衝動行事'},
+      {r:'SP',  t:'在需要特定知識的地方，有人真的懂，不只是靠感覺做決定'},
+    ]},
+  { text:'老師出了一個你們班從來沒碰過的新型態任務，沒有範例可以參考。你的第一個反應是什麼？',
+    opts:[
+      {r:'IMP', t:'把這個任務拆解成小步驟，想辦法一步一步完成'},
+      {r:'SHA', t:'直接開始試，邊做邊調整，不過度想太多'},
+      {r:'CF',  t:'先仔細把題目和要求看清楚，確保方向沒有誤解'},
+      {r:'CO',  t:'和組員商量，看大家對這個任務有什麼不同的理解'},
+      {r:'TW',  t:'先確認大家對這個任務的感受，有沒有人特別焦慮'},
+      {r:'RI',  t:'去找找看有沒有類似概念的資料或做法可以參考'},
+      {r:'PL',  t:'反而覺得有趣，開始想「如果完全用不一樣的方式做呢？」'},
+      {r:'ME',  t:'先評估這個任務的核心要求是什麼，想清楚再動手'},
+      {r:'SP',  t:'看看這個任務有哪些部分跟我熟悉的領域有關，先從那裡著手'},
+    ]},
+  { text:'組內兩個成員因為意見不同而氣氛很僵，你通常會怎麼做？',
+    opts:[
+      {r:'IMP', t:'把話題帶回任務本身，讓大家繼續專注在要完成的事'},
+      {r:'SHA', t:'直接說出問題在哪，推動大家快速做出決定，不讓事情繼續拖'},
+      {r:'CF',  t:'確認這個分歧有沒有影響到任務的品質或進度'},
+      {r:'CO',  t:'分別聽兩方的想法，然後試著幫他們找到共同點'},
+      {r:'TW',  t:'先讓大家知道「有不同意見很正常」，幫氣氛緩和下來再繼續討論'},
+      {r:'RI',  t:'找找看有沒有外部的資料可以幫助判斷哪個方向比較有根據'},
+      {r:'PL',  t:'想想有沒有第三種做法，讓兩方都不需要完全讓步'},
+      {r:'ME',  t:'客觀分析兩個意見各自的優缺點，提供比較有依據的判斷'},
+      {r:'SP',  t:'如果爭議跟我熟悉的領域有關，提出我的判斷；不然通常讓他們自己解決'},
+    ]},
+  { text:'在決定「這次要用什麼方式呈現報告」的時候，你最在意的是什麼？',
+    opts:[
+      {r:'IMP', t:'確認我們選的方式，每個步驟都可以被確實執行'},
+      {r:'SHA', t:'夠不夠有衝擊力，能不能讓台下的人印象深刻'},
+      {r:'CF',  t:'每個細節都有確認到，不會在台上出現低級失誤'},
+      {r:'CO',  t:'大家都能接受、都有參與，不是只有一個人說了算'},
+      {r:'TW',  t:'大家做起來感覺不會太痛苦，流程是大家都能配合的'},
+      {r:'RI',  t:'有沒有其他班或其他場合用過的有趣方式可以借鑑'},
+      {r:'PL',  t:'夠不夠有創意，讓整個呈現方式跟別組不一樣'},
+      {r:'ME',  t:'這個方式有沒有道理，對這個主題來說真的是適合的嗎'},
+      {r:'SP',  t:'我們選的方式在專業上是不是正確的，有沒有違反什麼重要原則'},
+    ]},
+  { text:'這學期你最投入、最享受的一類任務是哪種？',
+    opts:[
+      {r:'IMP', t:'清楚知道要做什麼，然後一步步把它完成的任務'},
+      {r:'SHA', t:'有挑戰性、需要突破的任務，越困難越有動力'},
+      {r:'CF',  t:'需要認真細心、確保每個地方都做對的任務'},
+      {r:'CO',  t:'需要和很多人協調合作、整合不同意見的任務'},
+      {r:'TW',  t:'需要照顧到每個人的感受，讓大家一起順利完成的任務'},
+      {r:'RI',  t:'需要主動去找資料、認識新事物、建立新連結的任務'},
+      {r:'PL',  t:'沒有標準答案、可以自由發揮創意、想出不同解法的任務'},
+      {r:'ME',  t:'需要深入分析、做出有根據的判斷的任務'},
+      {r:'SP',  t:'跟我特別感興趣的領域有關、可以深入研究的任務'},
+    ]},
+  { text:'你比較常聽到別人說你哪一類的話？',
+    opts:[
+      {r:'IMP', t:'「交給你我就放心了，你說到做到」'},
+      {r:'SHA', t:'「你在的時候大家都會被帶動，效率明顯提升」'},
+      {r:'CF',  t:'「你做的東西真的很細心，幾乎找不到錯誤」'},
+      {r:'CO',  t:'「你很會讓大家好好說話，開會在你這裡就是順」'},
+      {r:'TW',  t:'「跟你在同一組感覺很安心，你都會照顧到大家」'},
+      {r:'RI',  t:'「你好像什麼資料都找得到，人脈也很廣」'},
+      {r:'PL',  t:'「你的想法都很特別，常常讓人覺得『這個角度我沒想到』」'},
+      {r:'ME',  t:'「你分析很冷靜，讓大家在做決定前想清楚很多事」'},
+      {r:'SP',  t:'「你在這塊真的很專業，有你在就不怕出問題」'},
+    ]},
+  { text:'考試或比賽快到了，壓力很大，你這時候通常是什麼狀態？',
+    opts:[
+      {r:'IMP', t:'整理出複習計畫，按照順序一步步把它做完，讓自己安心'},
+      {r:'SHA', t:'壓力越大越有鬥志，反而比平時更有衝勁'},
+      {r:'CF',  t:'擔心有什麼沒複習到，會再重頭確認一遍有沒有漏掉什麼'},
+      {r:'CO',  t:'確認組員或同學的狀態，有沒有人需要我幫忙或需要調整分工'},
+      {r:'TW',  t:'注意到大家都很緊張，想說幾句話或做什麼讓氣氛輕鬆一點'},
+      {r:'RI',  t:'去問問其他人有沒有好的備考方法或補充資料'},
+      {r:'PL',  t:'反而在想有沒有更有效率的方式準備，不只照一般的方式複習'},
+      {r:'ME',  t:'保持冷靜，評估還剩多少時間、有哪些東西最重要，優先做那些'},
+      {r:'SP',  t:'集中在自己最有把握的領域，把那塊做到最好'},
+    ]},
+  { text:'如果要說你最想改善自己的一個地方，你覺得是什麼？',
+    opts:[
+      {r:'IMP', t:'面對臨時改計畫，我有時適應得比別人慢'},
+      {r:'SHA', t:'我說話太直，有時會讓別人覺得不舒服'},
+      {r:'CF',  t:'我有時花太多時間在細節，影響整體進度'},
+      {r:'CO',  t:'我有時太想顧到所有人，結果自己反而沒有明確立場'},
+      {r:'TW',  t:'在衝突中我很難說出讓人不高興的真話，但那往往是必要的'},
+      {r:'RI',  t:'我開始做一件事很熱情，但持續到最後有時比較難'},
+      {r:'PL',  t:'我有時太沉浸在自己的想法，沒有顧到別人的感受'},
+      {r:'ME',  t:'我分析太多，有時讓大家覺得我在潑冷水，而不是在幫忙'},
+      {r:'SP',  t:'在自己擅長的領域外，我有時參與感不夠，讓隊友不確定我的狀態'},
+    ]},
+  { text:'上課老師說「這個問題沒有標準答案，大家自由發揮」，你的反應最像哪個？',
+    opts:[
+      {r:'IMP', t:'先想清楚可以從哪些方向做，列出幾個可以具體執行的選項'},
+      {r:'SHA', t:'快速決定一個方向就開始做，在過程中再調整'},
+      {r:'CF',  t:'先仔細思考每個方向的優缺點，再選出最穩妥的'},
+      {r:'CO',  t:'問問周圍的同學怎麼想，整合大家的想法再決定'},
+      {r:'TW',  t:'看看有沒有人不確定怎麼做，陪他們一起想'},
+      {r:'RI',  t:'先去查查看有沒有類似的題目有人做過，帶進來參考'},
+      {r:'PL',  t:'最喜歡這種題目，馬上開始想各種不一樣的切入方式'},
+      {r:'ME',  t:'把題目重新定義清楚，確認「自由發揮」的範圍在哪裡再開始'},
+      {r:'SP',  t:'找看看這個問題有沒有跟我熟悉的領域有關的角度'},
+    ]},
+  { text:'哪一種狀態最讓你覺得「這次合作真的很有成就感」？',
+    opts:[
+      {r:'IMP', t:'任務順利完成，每個步驟都有確實被執行'},
+      {r:'SHA', t:'整個組突破了困難，做到了一開始覺得很難的事'},
+      {r:'CF',  t:'最終的成果品質很高，讓人覺得我們認真做了'},
+      {r:'CO',  t:'每個組員都發揮了自己的強項，大家一起完成'},
+      {r:'TW',  t:'整個過程大家相處融洽，沒有人覺得被冷落或不被理解'},
+      {r:'RI',  t:'因為我找到的資料或連結，讓成果變得更豐富'},
+      {r:'PL',  t:'我的某個想法被採用了，而且真的讓成果變得更好'},
+      {r:'ME',  t:'我的分析幫助整組做出了比較好的決定，少走彎路'},
+      {r:'SP',  t:'我的專業知識在這次任務中真的有發揮到，而不是被忽略'},
+    ]},
+  { text:'在班級活動的籌備過程中，你最自然的參與方式是什麼？',
+    opts:[
+      {r:'IMP', t:'幫忙把計畫整理成具體的執行清單，確認每個細節都有人負責'},
+      {r:'SHA', t:'推動討論趕快進入正題，不讓大家在枝微末節上浪費太多時間'},
+      {r:'CF',  t:'仔細校對海報、流程表之類的成品，確認沒有錯誤'},
+      {r:'CO',  t:'確保每個同學都有參與到，工作分配是平衡的'},
+      {r:'TW',  t:'照顧到那些比較沒說話機會的同學，讓他們也有參與感'},
+      {r:'RI',  t:'主動上網查資料，或去問其他班辦過類似活動的心得'},
+      {r:'PL',  t:'提出和往年不同的創意做法，讓這次活動有新的亮點'},
+      {r:'ME',  t:'提醒大家有哪些可能的問題或風險，讓計畫更周全'},
+      {r:'SP',  t:'負責我最熟悉的那個部分，把它做得最好'},
+    ]},
+  { text:'如果要描述你平常做事的風格，最接近你的說法是哪個？',
+    opts:[
+      {r:'IMP', t:'有計畫、可靠、說做就做，承諾的事一定完成'},
+      {r:'SHA', t:'積極主動、有衝勁，不怕挑戰和直接面對問題'},
+      {r:'CF',  t:'謹慎細心，對品質有要求，不接受應付了事'},
+      {r:'CO',  t:'善於引導，喜歡讓每個人都能貢獻，重視整合'},
+      {r:'TW',  t:'溫和體貼，重視關係，讓大家在舒服的狀態下合作'},
+      {r:'RI',  t:'開放好奇，喜歡接觸新事物，擅長對外建立連結'},
+      {r:'PL',  t:'獨立思考，有時天馬行空，習慣用不同角度看事情'},
+      {r:'ME',  t:'邏輯清晰，客觀冷靜，喜歡想清楚再行動'},
+      {r:'SP',  t:'專注深入，對自己有興趣的領域特別願意花時間鑽研'},
+    ]},
+  { text:'同學最可能來找你幫什麼忙？',
+    opts:[
+      {r:'IMP', t:'「你幫我整理一下這件事要怎麼做、分幾步驟」'},
+      {r:'SHA', t:'「我需要有人幫我推一把，不然我一直在拖」'},
+      {r:'CF',  t:'「你幫我看看這份東西有沒有問題」'},
+      {r:'CO',  t:'「我們組員意見不合，你能不能來幫我們談一下」'},
+      {r:'TW',  t:'「我最近和某人有點不愉快，你能不能幫我想想怎麼辦」'},
+      {r:'RI',  t:'「你認不認識什麼人或知道什麼資料可以幫到我」'},
+      {r:'PL',  t:'「我想不到好方法了，你有沒有什麼奇怪但說不定有用的點子」'},
+      {r:'ME',  t:'「你幫我分析一下這個方案有沒有問題」'},
+      {r:'SP',  t:'「這個問題跟你比較熟的領域有關，你覺得應該怎麼做」'},
+    ]},
+  { text:'在一個長期相處的班級中，你覺得你對大家最重要的貢獻是什麼？',
+    opts:[
+      {r:'IMP', t:'讓班上的事情能確實被完成，不會只有計畫沒有行動'},
+      {r:'SHA', t:'在大家停滯不前的時候，帶動大家繼續往前'},
+      {r:'CF',  t:'確保班級對外的成果（表演、競賽、報告）都有一定的品質'},
+      {r:'CO',  t:'讓班上的分工更清楚，確保每個人都能發揮所長'},
+      {r:'TW',  t:'讓班級的感情好，讓大家在相處上沒有太多的隔閡或心結'},
+      {r:'RI',  t:'不斷為班上帶進新的資訊、想法和人脈'},
+      {r:'PL',  t:'在班上遇到沒人想到出路的問題時，提出新的解法'},
+      {r:'ME',  t:'讓班上做重要決定時，有人幫忙確認方向是對的'},
+      {r:'SP',  t:'在需要特定知識或技術的時候，讓班上有靠山'},
+    ]},
+  { text:'放假時你最享受哪種類型的活動？',
+    opts:[
+      {r:'IMP', t:'有固定計畫的活動，例如按照行程玩的旅遊，或者完成一個設定好的目標'},
+      {r:'SHA', t:'挑戰型的活動，例如競技、解謎、極限運動，越有挑戰越有趣'},
+      {r:'CF',  t:'需要認真投入的活動，例如手作、烘焙、模型，在細節中得到滿足'},
+      {r:'CO',  t:'和一群朋友一起規劃、一起決定去哪、做什麼的活動'},
+      {r:'TW',  t:'和好朋友深度聊天、陪伴彼此，不一定要做什麼大事'},
+      {r:'RI',  t:'去沒去過的地方、認識新的人、嘗試新的事物'},
+      {r:'PL',  t:'自由創作的活動，例如畫畫、寫故事、想各種有趣的計畫'},
+      {r:'ME',  t:'閱讀、看紀錄片、鑽研一個想搞清楚的主題'},
+      {r:'SP',  t:'深入學習或練習我特別有興趣的技能或知識領域'},
+    ]},
+];
+
+// ══════════════════════════════════════
+//  狀態
+// ══════════════════════════════════════
+let currentQ = 0;
+let answers = new Array(18).fill(null);
+
+function startTest() {
+  document.getElementById('screen-intro').style.display = 'none';
+  document.getElementById('screen-test').style.display = 'block';
+  renderQ();
+}
+
+function renderQ() {
+  const q = QUESTIONS[currentQ];
+  document.getElementById('q-num-label').textContent = `第 ${currentQ+1} 題`;
+  document.getElementById('q-text').textContent = q.text;
+  document.getElementById('prog-num').textContent = `第 ${currentQ+1} 題 / 共 18 題`;
+  document.getElementById('prog-bar').style.width = `${((currentQ+1)/18)*100}%`;
+
+  const list = document.getElementById('options-list');
+  list.innerHTML = '';
+  const shuffled = [...q.opts].sort(() => Math.random() - 0.5);
+  shuffled.forEach(opt => {
+    const row = document.createElement('div');
+    row.className = 'option-row' + (answers[currentQ] === opt.r ? ' selected' : '');
+    row.onclick = () => selectOption(opt.r);
+    const radio = document.createElement('div');
+    radio.className = 'option-radio';
+    const text = document.createElement('div');
+    text.className = 'option-text';
+    text.textContent = opt.t;
+    row.appendChild(radio);
+    row.appendChild(text);
+    list.appendChild(row);
+  });
+
+  document.getElementById('btn-prev').style.visibility = currentQ===0?'hidden':'visible';
+  const btnNext = document.getElementById('btn-next');
+  btnNext.disabled = answers[currentQ] === null;
+  btnNext.textContent = currentQ===17 ? '完成測驗 →' : '下一題 →';
+}
+
+function selectOption(roleKey) {
+  answers[currentQ] = roleKey;
+  renderQ();
+}
+function nextQ() {
+  if(currentQ < 17){ currentQ++; renderQ(); window.scrollTo(0,0); }
+  else { goToIdScreen(); }
+}
+function prevQ() {
+  if(currentQ > 0){ currentQ--; renderQ(); window.scrollTo(0,0); }
+}
+function goToIdScreen() {
+  document.getElementById('screen-test').style.display = 'none';
+  const s = document.getElementById('screen-id');
+  s.style.display = 'flex';
+  window.scrollTo(0,0);
+}
+function generateResult() {
+  const sid = document.getElementById('student-id').value.trim();
+  if(!sid){ document.getElementById('id-error').style.display='block'; return; }
+  document.getElementById('id-error').style.display='none';
+  document.getElementById('screen-id').style.display='none';
+  calcAndShow(sid);
+}
+
+// ══════════════════════════════════════
+//  計分
+// ══════════════════════════════════════
+function calcAndShow(sid) {
+  const scores = {IMP:0,SHA:0,CF:0,CO:0,TW:0,RI:0,PL:0,ME:0,SP:0};
+  answers.forEach(r => { if(r) scores[r]++; });
+  const sorted = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+  const p = sorted[0][0];
+  const s = sorted[1][0];
+  const t = sorted[2][0];
+  showResult(sid, scores, p, s, t);
+  submitToForm(sid, scores, p, s, t);
+}
+
+function submitToForm(sid, scores, p, s, t) {
+  try {
+    const rn = k => ROLES[k].name;
+    const vals = [
+      sid, rn(p), rn(s), rn(t),
+      scores.IMP, scores.SHA, scores.CF, scores.CO,
+      scores.TW, scores.RI, scores.PL, scores.ME, scores.SP,
+    ];
+    answers.forEach(r => vals.push(r ? `[${r}] ${ROLES[r].name}` : '未作答'));
+    fetch(FORM_ACTION, {
+      method:'POST', mode:'no-cors',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body: ENTRIES.map((e,i) => `${e}=${encodeURIComponent(vals[i]!==undefined?vals[i]:'')}`).join('&')
+    });
+  } catch(e){}
+}
+
+// ══════════════════════════════════════
+//  顯示結果
+// ══════════════════════════════════════
+function showResult(sid, scores, p, s, t) {
+  document.getElementById('screen-result').style.display='block';
+  window.scrollTo(0,0);
+  const pData = ROLES[p];
+  const sData = ROLES[s];
+  const tData = ROLES[t];
+
+  document.getElementById('r-icon').textContent = pData.icon;
+  document.getElementById('r-name').textContent = pData.name;
+  const catBadge = document.getElementById('r-cat-badge');
+  catBadge.textContent = pData.cat;
+  catBadge.style.background = pData.catColor+'33';
+  catBadge.style.color = pData.catColor;
+  document.getElementById('r-tagline').textContent = pData.tagline;
+
+  const maxScore = Math.max(...Object.values(scores)) || 1;
+  const sg = document.getElementById('score-grid');
+  sg.innerHTML = '';
+  ROLE_KEYS.forEach(k => {
+    const d = ROLES[k];
+    const barPct = Math.round((scores[k]/maxScore)*100);
+    const item = document.createElement('div');
+    item.className = 'score-item';
+    item.style.background = k===p ? d.light : '#f8fafc';
+    item.innerHTML = `
+      <div class="s-icon">${d.icon}</div>
+      <div class="s-name" style="color:${d.color}">${d.name}</div>
+      <div class="s-bar"><div class="s-bar-fill" style="background:${d.color};width:0%" data-w="${barPct}"></div></div>
+      <div class="s-val" style="color:${d.color}">${scores[k]}分</div>
+    `;
+    sg.appendChild(item);
+  });
+  setTimeout(() => {
+    sg.querySelectorAll('.s-bar-fill').forEach(el => { el.style.width = el.dataset.w + '%'; });
+  }, 300);
+
+  // 主次角色卡
+  const rr = document.getElementById('roles-row');
+  rr.innerHTML = '';
+  [[p,'主要角色'],[s,'次要角色一'],[t,'次要角色二']].forEach(([k,label]) => {
+    const d = ROLES[k];
+    const card = document.createElement('div');
+    card.className = 'role-mini-card';
+    card.style.background = d.light;
+    card.style.border = `1.5px solid ${d.color}44`;
+    card.innerHTML = `
+      <div class="role-mini-label" style="color:${d.color}">${label}</div>
+      <div class="role-mini-icon">${d.icon}</div>
+      <div class="role-mini-name" style="color:${d.color}">${d.name}</div>
+    `;
+    rr.appendChild(card);
+  });
+
+  // 主角色特質
+  document.getElementById('trait-title').textContent = pData.icon+' '+pData.name+'的特質';
+  document.getElementById('trait-desc').textContent = pData.desc;
+  const tg = document.getElementById('trait-grid'); tg.innerHTML='';
+  pData.traits.forEach(tr => {
+    const d=document.createElement('div'); d.className='trait-item';
+    d.innerHTML=`<div class="ti-l">${tr.l}</div><div class="ti-v">${tr.v}</div>`;
+    tg.appendChild(d);
+  });
+
+  // 方案B：次要角色組合補充說明
+  const comboSection = document.getElementById('combo-section');
+  comboSection.innerHTML = '';
+  // 次要角色一
+  if(COMBO[p] && COMBO[p][s]) {
+    const c = COMBO[p][s];
+    const sD = ROLES[s];
+    const div = document.createElement('div');
+    div.className = 'combo-card';
+    div.style.background = sD.light;
+    div.style.borderColor = sD.color+'66';
+    div.style.marginTop = '16px';
+    div.innerHTML = `
+      <div class="combo-card-label" style="color:${sD.color}">✦ 因為你的次要角色是「${sD.name} ${sD.icon}」</div>
+      <div class="combo-card-title" style="color:${sD.color}">${c.title}</div>
+      <div class="combo-card-desc">${c.desc}</div>
+    `;
+    comboSection.appendChild(div);
+  }
+  // 次要角色二（較淡的補充）
+  if(COMBO[p] && COMBO[p][t]) {
+    const c = COMBO[p][t];
+    const tD = ROLES[t];
+    const div = document.createElement('div');
+    div.className = 'combo-card';
+    div.style.background = '#f8fafc';
+    div.style.borderColor = tD.color+'44';
+    div.style.marginTop = '10px';
+    div.innerHTML = `
+      <div class="combo-card-label" style="color:${tD.color}">✦ 你也有「${tD.name} ${tD.icon}」的影子</div>
+      <div class="combo-card-title" style="color:${tD.color}">${c.title}</div>
+      <div class="combo-card-desc" style="font-size:0.86rem;color:#64748b">${c.desc}</div>
+    `;
+    comboSection.appendChild(div);
+  }
+
+  // 貢獻
+  const cl = document.getElementById('contrib-list'); cl.innerHTML='';
+  pData.contribs.forEach(c => {
+    const row=document.createElement('div'); row.className='contrib-item';
+    row.innerHTML=`<div class="contrib-dot" style="background:${pData.color}"></div><div class="contrib-text">${c}</div>`;
+    cl.appendChild(row);
+  });
+
+  // 盲點
+  const bl = document.getElementById('blind-list'); bl.innerHTML='';
+  pData.blinds.forEach(b => {
+    const item=document.createElement('div'); item.className='blind-item';
+    item.textContent=b; bl.appendChild(item);
+  });
+
+  // 合作
+  const collab = document.getElementById('collab-list'); collab.innerHTML='';
+  pData.collabs.forEach(c => {
+    const row=document.createElement('div'); row.className='collab-row';
+    const match = c.match(/（([A-Z]+)）/);
+    const icon = (match && ROLES[match[1]]) ? ROLES[match[1]].icon : '🤝';
+    row.innerHTML=`<div class="collab-badge">${icon}</div><div class="collab-text">${c}</div>`;
+    collab.appendChild(row);
+  });
+
+  // 截圖卡片
+  document.getElementById('sc-icon').textContent = pData.icon;
+  document.getElementById('sc-name').textContent = pData.name;
+  document.getElementById('sc-cat').textContent = pData.cat+' · '+pData.en;
+  document.getElementById('sc-id').textContent = '班級座號：'+sid;
+  const scRoles = document.getElementById('sc-roles'); scRoles.innerHTML='';
+  [[p,'主要'],[s,'次要1'],[t,'次要2']].forEach(([k,label]) => {
+    const col=document.createElement('div'); col.className='sc-role-col';
+    col.innerHTML=`<span class="sc-role-icon">${ROLES[k].icon}</span><div class="sc-role-name" style="color:${ROLES[k].color}">${ROLES[k].name}</div>`;
+    scRoles.appendChild(col);
+  });
+}
+
+function retryTest() {
+  currentQ=0; answers=new Array(18).fill(null);
+  document.getElementById('screen-result').style.display='none';
+  document.getElementById('student-id').value='';
+  document.getElementById('screen-intro').style.display='flex';
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>
