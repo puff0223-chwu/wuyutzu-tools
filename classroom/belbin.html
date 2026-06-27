@@ -741,7 +741,14 @@ function submitToForm(sid, scores, p, s, t) {
       scores.IMP, scores.SHA, scores.CF, scores.CO,
       scores.TW, scores.RI, scores.PL, scores.ME, scores.SP,
     ];
-    answers.forEach(r => vals.push(r ? `[${r}] ${ROLES[r].name}` : '未作答'));
+    answers.forEach((r, i) => {
+      if(r) {
+        const opt = QUESTIONS[i].opts.find(o => o.r === r);
+        vals.push(`[${ROLES[r].name}] ${opt ? opt.t : ''}`);
+      } else {
+        vals.push('未作答');
+      }
+    });
     fetch(FORM_ACTION, {
       method:'POST', mode:'no-cors',
       headers:{'Content-Type':'application/x-www-form-urlencoded'},
