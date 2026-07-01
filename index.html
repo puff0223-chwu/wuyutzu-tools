@@ -40,6 +40,15 @@
       border-radius: 10px;
       display: inline-block;
     }
+    .sub-title {
+      color: rgba(255,255,255,0.75);
+      font-size: 0.88em;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      margin: 18px 0 10px 4px;
+      padding-left: 10px;
+      border-left: 3px solid rgba(255,255,255,0.35);
+    }
 
     /* Tool grid */
     .tool-grid {
@@ -139,9 +148,53 @@
   </div>
 
   <!-- 🎄 聖誕節系列 -->
+  <!-- ===== 導師班工具 ===== -->
   <div class="section">
-    <div class="section-title">🎄 聖誕節系列</div>
+    <div class="section-title">🏫 導師班工具</div>
+
+    <!-- 子分類：班級行政 -->
+    <div class="sub-title">📋 班級行政</div>
     <div class="tool-grid">
+      <div class="tool-card" onclick="openModal('seating')">
+        <div class="tool-icon">💺</div>
+        <div class="tool-name">座位安排系統</div>
+        <div class="tool-brief">智慧排座，支援固定座位與隨機分配</div>
+      </div>
+      <div class="tool-card" onclick="openModal('cleaning')">
+        <div class="tool-icon">🧹</div>
+        <div class="tool-name">打掃徵才系統</div>
+        <div class="tool-brief">機率抽籤競標打掃工作，多輪徵選</div>
+      </div>
+    </div>
+
+    <!-- 子分類：認識學生 -->
+    <div class="sub-title">🧠 認識學生</div>
+    <div class="tool-grid">
+      <div class="tool-card" onclick="openModal('disc')">
+        <div class="tool-icon">🧠</div>
+        <div class="tool-name">DISC 人格測驗</div>
+        <div class="tool-brief">探索行為風格，10題快速版或20題完整版</div>
+      </div>
+      <div class="tool-card" onclick="openModal('belbin')">
+        <div class="tool-icon">🧩</div>
+        <div class="tool-name">貝爾賓團隊角色</div>
+        <div class="tool-brief">18題找出你在團隊中的天生角色定位</div>
+      </div>
+    </div>
+
+    <!-- 子分類：班級氣氛 -->
+    <div class="sub-title">🎉 班級氣氛</div>
+    <div class="tool-grid">
+      <div class="tool-card" onclick="openModal('goldenhits')">
+        <div class="tool-icon">🎤</div>
+        <div class="tool-name">金曲歌王</div>
+        <div class="tool-brief">音樂資料庫，45位歌手，自我覺察學習</div>
+      </div>
+      <div class="tool-card" onclick="openModal('fortune')">
+        <div class="tool-icon">🏮</div>
+        <div class="tool-name">詩籤系統</div>
+        <div class="tool-brief">108支文青詩籤，抽籤得到人生智慧</div>
+      </div>
       <div class="tool-card" onclick="openModal('lottery')">
         <div class="tool-icon">🎲</div>
         <div class="tool-name">聖誕抽籤系統</div>
@@ -155,46 +208,9 @@
     </div>
   </div>
 
-  <!-- 🏫 班級管理 -->
+  <!-- ===== 化學課堂工具 ===== -->
   <div class="section">
-    <div class="section-title">🏫 班級管理工具</div>
-    <div class="tool-grid">
-      <div class="tool-card" onclick="openModal('seating')">
-        <div class="tool-icon">💺</div>
-        <div class="tool-name">座位安排系統</div>
-        <div class="tool-brief">智慧排座，支援固定座位與隨機分配</div>
-      </div>
-      <div class="tool-card" onclick="openModal('cleaning')">
-        <div class="tool-icon">🧹</div>
-        <div class="tool-name">打掃徵才系統</div>
-        <div class="tool-brief">機率抽籤競標打掃工作，多輪徵選</div>
-      </div>
-      <div class="tool-card" onclick="openModal('goldenhits')">
-        <div class="tool-icon">🎤</div>
-        <div class="tool-name">金曲歌王</div>
-        <div class="tool-brief">音樂資料庫，45位歌手，自我覺察學習</div>
-      </div>
-      <div class="tool-card" onclick="openModal('fortune')">
-        <div class="tool-icon">🏮</div>
-        <div class="tool-name">詩籤系統</div>
-        <div class="tool-brief">108支文青詩籤，抽籤得到人生智慧</div>
-      </div>
-      <div class="tool-card" onclick="openModal('disc')">
-        <div class="tool-icon">🧠</div>
-        <div class="tool-name">DISC 人格測驗</div>
-        <div class="tool-brief">探索行為風格，10題快速版或20題完整版</div>
-      </div>
-      <div class="tool-card" onclick="openModal('belbin')">
-        <div class="tool-icon">🧩</div>
-        <div class="tool-name">貝爾賓團隊角色</div>
-        <div class="tool-brief">18題找出你在團隊中的天生角色定位</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 🎮 遊戲化教學 -->
-  <div class="section">
-    <div class="section-title">🎮 遊戲化教學</div>
+    <div class="section-title">⚗️ 化學課堂工具</div>
     <div class="tool-grid">
       <div class="tool-card" onclick="openModal('gamification')">
         <div class="tool-icon">🎯</div>
@@ -207,7 +223,7 @@
         <div class="tool-brief">角色血量歸零時隨機抽取懲罰</div>
       </div>
       <div class="tool-card" onclick="openModal('poke')">
-        <div class="tool-icon">🎯</div>
+        <div class="tool-icon">🎁</div>
         <div class="tool-name">戳戳樂</div>
         <div class="tool-brief">6×6格子，隨機獎品，即時開獎音效</div>
       </div>
@@ -215,6 +231,18 @@
         <div class="tool-icon">🎲</div>
         <div class="tool-name">真心話大冒險</div>
         <div class="tool-brief">真心話開放式提問・大冒險拉霸機</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 遊戲設計思考（選修課） ===== -->
+  <div class="section">
+    <div class="section-title">🎮 遊戲設計思考</div>
+    <div class="tool-grid">
+      <div class="tool-card" onclick="openModal('bartle')">
+        <div class="tool-icon">🃏</div>
+        <div class="tool-name">巴圖玩家類型</div>
+        <div class="tool-brief">♦♠♥♣ 四種玩家風格，12題精簡或30題完整版</div>
       </div>
     </div>
   </div>
@@ -366,6 +394,24 @@
       <li>✅ 資料同步送出，供導師撰寫評語參考</li>
     </ul>
     <a class="btn-start" href="classroom/belbin.html" target="_blank">開始測驗 →</a>
+  </div>
+</div>
+
+<!-- 巴圖玩家類型 -->
+<div class="modal-overlay" id="modal-bartle" onclick="closeOnBg(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('bartle')">✕</button>
+    <div class="modal-icon">🃏</div>
+    <div class="modal-title">巴圖玩家類型測驗</div>
+    <div class="modal-sub">遊戲設計思考 · 玩家心理探索</div>
+    <ul class="modal-features">
+      <li>✅ 精簡版 12 題（約2分鐘）／完整版 30 題（約6分鐘）</li>
+      <li>✅ 四種玩家類型：♦成就型・♠探索型・♥社交型・♣殺手型</li>
+      <li>✅ 每題二選一，操作簡單直覺</li>
+      <li>✅ 結果含四維度分數、座標軸位置圖、與其他類型的關係</li>
+      <li>✅ 理論來源：Richard Bartle（1996）</li>
+    </ul>
+    <a class="btn-start" href="classroom/bartle.html" target="_blank">開始測驗 →</a>
   </div>
 </div>
 
