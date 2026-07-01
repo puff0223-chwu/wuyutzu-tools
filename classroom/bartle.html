@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎮 巴圖玩家類型測驗</title>
+<style>
+:root {
+  --a:#d97706; --a-l:#fffbeb; --a-border:#fde68a;
+  --e:#2563eb; --e-l:#eff6ff; --e-border:#93c5fd;
+  --s:#16a34a; --s-l:#f0fdf4; --s-border:#86efac;
+  --k:#dc2626; --k-l:#fef2f2; --k-border:#fca5a5;
+  --bg:#f8fafc; --dark:#0f172a; --gray:#64748b;
+  --shadow:0 4px 20px rgba(0,0,0,0.08); --radius:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Microsoft JhengHei',Arial,sans-serif;background:var(--bg);color:var(--dark);min-height:100vh;}
+
+/* ===== 封面 ===== */
+#screen-intro{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#0f172a 0%,#1e293b 50%,#0f172a 100%);padding:40px 20px;text-align:center;}
+.intro-badge{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);font-size:0.8rem;letter-spacing:0.2em;padding:6px 16px;border-radius:20px;margin-bottom:24px;display:inline-block;}
+.intro-title{font-size:clamp(2rem,6vw,3rem);font-weight:900;color:#fff;margin-bottom:12px;line-height:1.2;}
+.intro-subtitle{color:rgba(255,255,255,0.6);font-size:0.95rem;margin-bottom:32px;line-height:1.8;max-width:480px;}
+.types-preview{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:32px;max-width:400px;width:100%;}
+.type-chip{padding:12px 16px;border-radius:12px;text-align:center;}
+.type-chip .tc-icon{font-size:1.6rem;margin-bottom:4px;}
+.type-chip .tc-name{font-size:0.85rem;font-weight:700;}
+.type-chip .tc-en-small{font-size:0.68rem;opacity:0.6;margin-top:2px;}
+.tc-a{background:rgba(217,119,6,0.2);border:1px solid rgba(217,119,6,0.4);color:#fbbf24;}
+.tc-e{background:rgba(37,99,235,0.2);border:1px solid rgba(37,99,235,0.4);color:#60a5fa;}
+.tc-s{background:rgba(22,163,74,0.2);border:1px solid rgba(22,163,74,0.4);color:#4ade80;}
+.tc-k{background:rgba(220,38,38,0.2);border:1px solid rgba(220,38,38,0.4);color:#f87171;}
+.intro-note{color:rgba(255,255,255,0.4);font-size:0.82rem;margin-bottom:20px;line-height:1.7;max-width:420px;}
+.source-note{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px 18px;margin-bottom:28px;max-width:420px;width:100%;text-align:left;}
+.source-title{font-size:0.72rem;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:0.1em;margin-bottom:6px;}
+.source-text{font-size:0.75rem;color:rgba(255,255,255,0.35);line-height:1.8;}
+
+/* 版本選擇 */
+.version-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%;max-width:420px;}
+.version-btn{background:rgba(255,255,255,0.07);border:2px solid rgba(255,255,255,0.12);border-radius:16px;padding:22px 16px;cursor:pointer;font-family:inherit;color:#fff;text-align:center;transition:all 0.2s;}
+.version-btn:hover{background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.3);transform:translateY(-2px);}
+.version-btn .v-icon{font-size:2rem;margin-bottom:10px;display:block;}
+.version-btn .v-name{font-size:1.1rem;font-weight:900;margin-bottom:4px;}
+.version-btn .v-count{font-size:0.82rem;opacity:0.55;margin-bottom:2px;}
+.version-btn .v-note{font-size:0.75rem;opacity:0.4;}
+.version-btn.full{border-color:rgba(102,126,234,0.5);background:rgba(102,126,234,0.12);}
+.version-btn.full:hover{background:rgba(102,126,234,0.22);}
+
+/* ===== 測驗頁 ===== */
+#screen-test{display:none;min-height:100vh;background:var(--bg);}
+.test-header{position:sticky;top:0;z-index:100;background:#fff;border-bottom:1px solid #e2e8f0;padding:14px 20px;}
+.progress-info{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.progress-label{font-size:0.82rem;color:var(--gray);font-weight:600;}
+.progress-num{font-size:0.82rem;color:#334155;font-weight:700;}
+.progress-bar-bg{height:6px;background:#e2e8f0;border-radius:6px;overflow:hidden;}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,#f59e0b,#ef4444,#3b82f6,#22c55e);border-radius:6px;transition:width 0.4s ease;}
+
+.test-body{max-width:640px;margin:0 auto;padding:32px 16px 120px;}
+.q-num{font-size:0.75rem;color:var(--gray);letter-spacing:0.15em;font-weight:600;margin-bottom:12px;}
+.q-text{font-size:1.1rem;font-weight:700;color:var(--dark);line-height:1.6;margin-bottom:28px;padding:18px 20px;background:#fff;border-radius:12px;box-shadow:var(--shadow);border-left:4px solid #667eea;}
+.q-instruction{font-size:0.82rem;color:var(--gray);margin-bottom:16px;text-align:center;}
+
+/* 二選一大按鈕 */
+.choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.choice-btn{
+  background:#fff;border:2.5px solid #e2e8f0;border-radius:16px;
+  padding:22px 16px;cursor:pointer;font-family:inherit;
+  text-align:center;transition:all 0.18s;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  min-height:120px;justify-content:center;
+}
+.choice-btn:hover{border-color:#667eea;background:#f8f7ff;transform:translateY(-2px);box-shadow:0 6px 20px rgba(102,126,234,0.15);}
+.choice-btn.selected-a{border-color:var(--a);background:var(--a-l);box-shadow:0 4px 16px rgba(217,119,6,0.2);transform:translateY(-2px);}
+.choice-btn.selected-b{border-color:var(--e);background:var(--e-l);box-shadow:0 4px 16px rgba(37,99,235,0.15);transform:translateY(-2px);}
+/* 動態選中顏色由JS設定 */
+.choice-btn.selected{transform:translateY(-2px);}
+.choice-label{font-size:0.7rem;font-weight:700;letter-spacing:0.15em;opacity:0.5;margin-bottom:2px;}
+.choice-text{font-size:0.92rem;line-height:1.55;color:#334155;font-weight:500;}
+.choice-check{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;opacity:0;transition:opacity 0.15s;flex-shrink:0;}
+.choice-btn.selected .choice-check{opacity:1;}
+
+.nav-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e2e8f0;padding:12px 16px;display:flex;gap:10px;justify-content:center;align-items:center;}
+.nav-btn{flex:1;max-width:180px;padding:13px;border-radius:10px;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:inherit;border:none;transition:all 0.15s;}
+.nav-prev{background:#edf2f7;color:#4a5568;}
+.nav-prev:hover{background:#e2e8f0;}
+.nav-next{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;}
+.nav-next:hover{opacity:0.88;}
+.nav-next:disabled{opacity:0.35;cursor:not-allowed;}
+
+/* ===== 結果頁 ===== */
+#screen-result{display:none;padding:0 0 60px;background:var(--bg);}
+.result-hero{padding:52px 20px 40px;text-align:center;color:#fff;position:relative;overflow:hidden;}
+.result-hero-label{font-size:0.75rem;letter-spacing:0.25em;color:rgba(255,255,255,0.45);margin-bottom:14px;}
+.result-suit{font-size:5rem;margin-bottom:10px;line-height:1;filter:drop-shadow(0 4px 16px rgba(0,0,0,0.3));}
+.result-type-name{font-size:clamp(2rem,7vw,3.2rem);font-weight:900;margin-bottom:6px;}
+.result-type-en{font-size:1rem;opacity:0.6;margin-bottom:12px;}
+.result-tagline{font-size:0.95rem;opacity:0.75;max-width:380px;margin:0 auto;line-height:1.7;}
+
+.result-body{max-width:640px;margin:0 auto;padding:20px 16px;}
+.card{background:#fff;border-radius:var(--radius);padding:22px;margin-bottom:14px;box-shadow:var(--shadow);}
+.card-title{font-size:0.75rem;letter-spacing:0.15em;color:var(--gray);font-weight:700;margin-bottom:16px;}
+
+/* 四維度分數 */
+.score-bars{display:flex;flex-direction:column;gap:14px;}
+.score-row{display:flex;align-items:center;gap:12px;}
+.score-suit{font-size:1.4rem;width:32px;text-align:center;flex-shrink:0;}
+.score-label{width:56px;font-size:0.82rem;font-weight:700;flex-shrink:0;}
+.score-track{flex:1;height:32px;background:#f1f5f9;border-radius:8px;overflow:hidden;}
+.score-fill{height:100%;border-radius:8px;display:flex;align-items:center;padding-left:12px;transition:width 0.9s cubic-bezier(0.34,1.4,0.64,1);}
+.score-fill span{font-size:0.8rem;font-weight:700;color:#fff;white-space:nowrap;}
+.score-num{width:44px;font-size:0.85rem;font-weight:700;text-align:right;flex-shrink:0;}
+
+/* 座標圖 */
+.radar-wrap{display:flex;justify-content:center;padding:8px 0;}
+.axis-chart{position:relative;width:240px;height:240px;}
+.axis-chart svg{width:100%;height:100%;}
+.axis-label{position:absolute;font-size:0.75rem;font-weight:700;}
+.axis-label.top-left{top:4px;left:4px;}
+.axis-label.top-right{top:4px;right:4px;}
+.axis-label.bot-left{bottom:4px;left:4px;}
+.axis-label.bot-right{bottom:4px;right:4px;}
+.axis-subtitle{display:flex;justify-content:space-between;font-size:0.7rem;color:var(--gray);margin-top:4px;padding:0 4px;}
+
+/* 特質說明 */
+.type-desc{font-size:0.93rem;line-height:1.8;color:#475569;margin-bottom:16px;}
+.trait-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.trait-item{background:var(--bg);border-radius:10px;padding:12px 14px;}
+.trait-item .ti-l{font-size:0.68rem;color:var(--gray);margin-bottom:4px;}
+.trait-item .ti-v{font-size:0.88rem;font-weight:600;color:var(--dark);}
+
+/* 四種類型關係 */
+.relation-list{display:flex;flex-direction:column;gap:12px;}
+.relation-row{display:flex;gap:12px;align-items:flex-start;}
+.relation-suit{font-size:1.4rem;flex-shrink:0;width:32px;text-align:center;}
+.relation-text{font-size:0.9rem;color:#475569;line-height:1.6;}
+
+/* 在班級合作中 */
+.class-list{display:flex;flex-direction:column;gap:10px;}
+.class-item{display:flex;gap:12px;align-items:flex-start;}
+.class-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:7px;}
+.class-text{font-size:0.9rem;color:#475569;line-height:1.6;}
+
+/* 截圖卡片 */
+.share-card{border-radius:20px;padding:28px;text-align:center;color:#fff;margin-bottom:14px;}
+.sc-top{font-size:0.7rem;letter-spacing:0.2em;color:rgba(255,255,255,0.35);margin-bottom:12px;}
+.sc-suit{font-size:3.2rem;margin-bottom:8px;}
+.sc-name{font-size:2rem;font-weight:900;margin-bottom:4px;}
+.sc-en{font-size:0.85rem;opacity:0.55;margin-bottom:16px;}
+.sc-scores{display:flex;justify-content:center;gap:20px;}
+.sc-score-col{text-align:center;}
+.sc-score-suit{font-size:1.2rem;display:block;margin-bottom:4px;}
+.sc-score-pct{font-size:1rem;font-weight:700;}
+.sc-score-name{font-size:0.65rem;opacity:0.55;}
+
+.retry-btn{display:block;width:100%;padding:14px;background:#edf2f7;color:#4a5568;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px;}
+.retry-btn:hover{background:#e2e8f0;}
+
+@media(max-width:480px){
+  .choice-grid{grid-template-columns:1fr 1fr;}
+  .trait-grid{grid-template-columns:1fr 1fr;}
+  .types-preview{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== 封面 ===== -->
+<div id="screen-intro">
+  <span class="intro-badge">🎮 巴圖玩家類型測驗</span>
+  <h1 class="intro-title">你是哪種<br>遊戲玩家？</h1>
+  <p class="intro-subtitle">Richard Bartle 的玩家類型理論認為，玩家在遊戲中的行為反映了他們最深層的動力與偏好。這個測驗幫你找出你的玩家類型。</p>
+  <div class="types-preview">
+    <div class="type-chip tc-a"><div class="tc-icon">♦</div><div class="tc-name">成就型</div><div class="tc-en-small">Achiever</div></div>
+    <div class="type-chip tc-e"><div class="tc-icon">♠</div><div class="tc-name">探索型</div><div class="tc-en-small">Explorer</div></div>
+    <div class="type-chip tc-s"><div class="tc-icon">♥</div><div class="tc-name">社交型</div><div class="tc-en-small">Socializer</div></div>
+    <div class="type-chip tc-k"><div class="tc-icon">♣</div><div class="tc-name">殺手型</div><div class="tc-en-small">Killer</div></div>
+  </div>
+  <p class="intro-note">每題從兩個選項中選出「比較像你的那一個」<br>憑直覺作答，沒有對錯之分</p>
+  <div class="source-note">
+    <div class="source-title">📖 理論來源</div>
+    <div class="source-text">本測驗依據 Richard Bartle（1996）論文<br>《Hearts, Clubs, Diamonds, Spades: Players Who Suit MUDs》<br>原始測驗由 Erwin Andreasen & Brandon Downey（2000）設計<br>本版本以現代遊戲情境重新改編，供教育用途使用</div>
+  </div>
+  <div class="version-grid">
+    <button class="version-btn" onclick="startTest(12)">
+      <span class="v-icon">⚡</span>
+      <div class="v-name">精簡版</div>
+      <div class="v-count">12 題</div>
+      <div class="v-note">約 2 分鐘</div>
+    </button>
+    <button class="version-btn full" onclick="startTest(30)">
+      <span class="v-icon">🔍</span>
+      <div class="v-name">完整版</div>
+      <div class="v-count">30 題</div>
+      <div class="v-note">約 6 分鐘</div>
+    </button>
+  </div>
+</div>
+
+<!-- ===== 測驗頁 ===== -->
+<div id="screen-test">
+  <div class="test-header">
+    <div class="progress-info">
+      <span class="progress-label">作答進度</span>
+      <span class="progress-num" id="prog-num">第 1 題</span>
+    </div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-bar" style="width:3%"></div></div>
+  </div>
+  <div class="test-body">
+    <div class="q-num" id="q-num-label">第 1 題</div>
+    <div class="q-text" id="q-text"></div>
+    <p class="q-instruction">選出比較像你的那一個：</p>
+    <div class="choice-grid" id="choice-grid"></div>
+  </div>
+  <div class="nav-bar">
+    <button class="nav-btn nav-prev" id="btn-prev" onclick="prevQ()">← 上一題</button>
+    <button class="nav-btn nav-next" id="btn-next" onclick="nextQ()" disabled>下一題 →</button>
+  </div>
+</div>
+
+<!-- ===== 結果頁 ===== -->
+<div id="screen-result">
+  <div class="result-hero" id="result-hero">
+    <div class="result-hero-label">YOUR BARTLE TYPE</div>
+    <div class="result-suit" id="r-suit"></div>
+    <div class="result-type-name" id="r-name"></div>
+    <div class="result-type-en" id="r-en"></div>
+    <div class="result-tagline" id="r-tagline"></div>
+  </div>
+  <div class="result-body">
+
+    <div class="card">
+      <div class="card-title">📊 四種類型分數</div>
+      <div class="score-bars" id="score-bars"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🗺️ 你在座標軸上的位置</div>
+      <div class="radar-wrap">
+        <div>
+          <div class="axis-chart">
+            <svg id="axis-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+              <!-- 背景格線 -->
+              <line x1="100" y1="10" x2="100" y2="190" stroke="#e2e8f0" stroke-width="1.5"/>
+              <line x1="10" y1="100" x2="190" y2="100" stroke="#e2e8f0" stroke-width="1.5"/>
+              <rect x="10" y="10" width="180" height="180" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+              <!-- 四象限淡色 -->
+              <rect x="10" y="10" width="90" height="90" fill="rgba(217,119,6,0.05)" rx="2"/>
+              <rect x="100" y="10" width="90" height="90" fill="rgba(220,38,38,0.05)" rx="2"/>
+              <rect x="10" y="100" width="90" height="90" fill="rgba(37,99,235,0.05)" rx="2"/>
+              <rect x="100" y="100" width="90" height="90" fill="rgba(22,163,74,0.05)" rx="2"/>
+              <!-- 角落標籤 -->
+              <text x="14" y="22" font-size="9" fill="rgba(217,119,6,0.8)" font-weight="700">♦ 成就者</text>
+              <text x="186" y="22" font-size="9" fill="rgba(220,38,38,0.8)" font-weight="700" text-anchor="end">競爭者 ♣</text>
+              <text x="14" y="196" font-size="9" fill="rgba(37,99,235,0.8)" font-weight="700">♠ 探索者</text>
+              <text x="186" y="196" font-size="9" fill="rgba(22,163,74,0.8)" font-weight="700" text-anchor="end">社交者 ♥</text>
+              <!-- 玩家位置點 -->
+              <circle id="axis-dot" cx="100" cy="100" r="10" fill="#667eea" opacity="0.9"/>
+              <circle id="axis-dot-ring" cx="100" cy="100" r="14" fill="none" stroke="#667eea" stroke-width="2" opacity="0.4"/>
+            </svg>
+          </div>
+          <div class="axis-subtitle">
+            <span>← 世界導向</span>
+            <span>玩家導向 →</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" id="trait-title">✨ 你的玩家特質</div>
+      <p class="type-desc" id="type-desc"></p>
+      <div class="trait-grid" id="trait-grid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🃏 與其他類型的關係</div>
+      <div class="relation-list" id="relation-list"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🏫 這個類型在班級合作中的表現</div>
+      <div class="class-list" id="class-list"></div>
+    </div>
+
+    <div class="share-card" id="share-card">
+      <div class="sc-top">巴圖玩家類型測驗結果</div>
+      <div class="sc-suit" id="sc-suit"></div>
+      <div class="sc-name" id="sc-name"></div>
+      <div class="sc-en" id="sc-en"></div>
+      <div class="sc-scores" id="sc-scores"></div>
+    </div>
+
+    <button class="retry-btn" onclick="retryTest()">🔄 重新測驗</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+//  四種類型定義
+// ══════════════════════════════════════
+const TYPES = {
+  A:{ name:'成就型', en:'Achiever', suit:'♦', color:'var(--a)', light:'var(--a-l)', border:'var(--a-border)', heroGrad:'linear-gradient(135deg,#92400e,#d97706)',
+    tagline:'用成就和紀錄證明自己，目標就是讓每個數字都往上爬',
+    desc:'你在遊戲中最享受的是「達到目標」的那一刻。不管是升級、解成就、收集齊全、排行榜名次，讓你看到進度的那些數字，就是你最大的動力來源。你不只玩遊戲，你在完成遊戲——把它能給你的東西全部拿到手。',
+    traits:[{l:'最大動力',v:'完成目標、提升數值'},{l:'遊戲中最享受',v:'升級、解成就、收集'},{l:'讓你繼續玩的理由',v:'還有目標沒達成'},{l:'你最在意的',v:'進度與具體成果'}],
+    relations:[
+      {suit:'♠',name:'探索型',text:'你們有時候會有點格格不入——你專注在效率完成目標，他們喜歡到處亂逛研究細節。但探索型往往知道最快速完成任務的隱藏方法，合作起來能讓你的達成效率大幅提升。'},
+      {suit:'♥',name:'社交型',text:'社交型是你最好的「啦啦隊」，他們很享受看你完成成就、讚美你的努力。你則給了他們一個一起努力的目標，讓社交不只是閒聊，而是有共同方向的互動。'},
+      {suit:'♣',name:'殺手型',text:'你們都想贏，但動機不同——你贏是為了達成目標和紀錄，他們贏是為了讓別人輸。有時候會有摩擦，但殺手型的存在也讓你更有動力把自己推到極限。'},
+    ],
+    classTraits:['在小組中通常是最認真跟進進度、確認任務是否完成的人','對成績和結果非常在意，目標明確、執行力強','容易成為帶動整組往前的引擎，因為他們不能接受「差不多就好」','有時需要提醒自己，過程和關係也很重要，不只是結果'],
+  },
+  E:{ name:'探索型', en:'Explorer', suit:'♠', color:'var(--e)', light:'var(--e-l)', border:'var(--e-border)', heroGrad:'linear-gradient(135deg,#1e3a8a,#2563eb)',
+    tagline:'比任何人都更想弄清楚「這個世界到底是怎麼運作的」',
+    desc:'你在遊戲中的樂趣，是找到別人沒發現的東西。一個隱藏彩蛋、一個沒人講過的機制、一個奇怪地圖角落裡藏著的秘密——這些讓你眼睛發亮的程度，遠超過任何獎勵或排名。你不是在「玩」遊戲，你是在「研究」它。',
+    traits:[{l:'最大動力',v:'發現未知、理解機制'},{l:'遊戲中最享受',v:'彩蛋、隱藏內容、世界觀'},{l:'讓你繼續玩的理由',v:'還有沒搞清楚的東西'},{l:'你最在意的',v:'知識與理解的深度'}],
+    relations:[
+      {suit:'♦',name:'成就型',text:'你知道的那些捷徑、隱藏機制和效率技巧，對成就型來說是寶藏。你們合作很有默契——你負責搞清楚怎麼做最快，他負責真正去做。只是你有時會為了探索而忘記目標，讓成就型有點抓狂。'},
+      {suit:'♥',name:'社交型',text:'社交型很享受聽你分享遊戲裡的秘密和發現，你是他們眼中的「遊戲百科全書」。你則可以從社交型那裡聽到其他人的發現，讓你的知識庫更完整。'},
+      {suit:'♣',name:'殺手型',text:'你和殺手型有時會有點衝突——他們只想快速打贏，你想慢下來研究。但你深厚的知識庫其實能讓殺手型找到更有效的打法，只要你們能說上話。'},
+    ],
+    classTraits:['在小組中通常是最早去查資料、研究主題背景的人','對「為什麼這樣做」比「趕快做完」更感興趣','能提供最完整的資訊和最深入的分析，讓小組的成果更有底蘊','有時需要提醒自己設定時間限制，不然可能一直在研究、沒有產出'],
+  },
+  S:{ name:'社交型', en:'Socializer', suit:'♥', color:'var(--s)', light:'var(--s-l)', border:'var(--s-border)', heroGrad:'linear-gradient(135deg,#14532d,#16a34a)',
+    tagline:'遊戲只是場合，讓你和別人產生連結才是真正的樂趣',
+    desc:'你玩遊戲，主要是因為遊戲讓你和人在一起。一起笑、一起討論、一起罵老闆、一起慶祝——這些才是你最享受的部分。就算遊戲內容普通，只要是和喜歡的人一起玩，你都能玩得很開心。你在乎的不是角色有多強，而是你們有沒有玩得很爽。',
+    traits:[{l:'最大動力',v:'連結他人、維繫關係'},{l:'遊戲中最享受',v:'和朋友互動、聊天合作'},{l:'讓你繼續玩的理由',v:'因為朋友都在玩'},{l:'你最在意的',v:'關係與共同體驗'}],
+    relations:[
+      {suit:'♦',name:'成就型',text:'成就型給了你一個一起努力的方向，讓社交有了共同的焦點。你給了他們最需要的東西——欣賞和讚美他們的成就。你們在一起，遊戲既有目標又有溫度。'},
+      {suit:'♠',name:'探索型',text:'探索型有時比較沉默、喜歡自己研究，但你很擅長讓他們分享知識、打開話匣子。你讓探索型不再孤獨，他讓你的社交有更豐富的話題和深度。'},
+      {suit:'♣',name:'殺手型',text:'你和殺手型可能是最大的反差——你想讓大家都開心，他們想讓別人輸。但你們並不是天敵：有些殺手型其實非常享受觀眾和讚美，而你正好能提供這些。'},
+    ],
+    classTraits:['在小組中通常是氣氛的維繫者，讓大家相處起來舒服','對人際關係非常敏感，容易察覺到誰之間有摩擦或誰狀態不好','能讓小組的凝聚力很強，讓大家真的想在一起合作而不是敷衍','有時需要提醒自己，不是每個人都一樣重視社交，工作效率也是重要的'],
+  },
+  K:{ name:'殺手型', en:'Killer', suit:'♣', color:'var(--k)', light:'var(--k-l)', border:'var(--k-border)', heroGrad:'linear-gradient(135deg,#7f1d1d,#dc2626)',
+    tagline:'打敗真實的人，才是遊戲最真實的樂趣所在',
+    desc:'你在遊戲中最有感的事，是對上一個真實的人然後贏了他。打電腦沒有那種感覺，你需要的是真正的對手——有情緒、有反應、可能會不爽的那種人。你在遊戲裡的存在感來自於你對別人的影響力，不管是讓他們景仰你、怕你，還是被你激怒。',
+    traits:[{l:'最大動力',v:'超越他人、留下印記'},{l:'遊戲中最享受',v:'PVP、競爭、打敗真實對手'},{l:'讓你繼續玩的理由',v:'還有人沒贏過、還沒到頂'},{l:'你最在意的',v:'在他人眼中的地位'}],
+    relations:[
+      {suit:'♦',name:'成就型',text:'你們都想到頂，但路徑不同。成就型想把所有目標解完，你想把所有對手打趴。合作時你提供戰鬥的衝勁，他提供系統性的計畫，組合起來可以非常強。'},
+      {suit:'♠',name:'探索型',text:'探索型知道各種你不知道的技巧和弱點，對你來說是有用的資訊來源。只是他們有時太龜毛、太慢，讓你不耐煩。但如果你願意聽他們說完，往往能讓你變得更難打敗。'},
+      {suit:'♥',name:'社交型',text:'社交型是你最好的觀眾。他們不是你的對手，但他們的反應——無論是景仰、討論你的威名，還是被你嚇到——都讓你的存在更有意義。只要你不過分，社交型甚至會幫你宣傳你的實力。'},
+    ],
+    classTraits:['在小組中通常是最有競爭意識的人，不喜歡輸、對結果很在意','能讓整組保持鬥志，不容易擺爛或認輸','在需要對抗或競爭的任務中特別投入，是小組的戰力核心','有時需要提醒自己，合作任務不是和隊友競爭，而是一起讓整組贏'],
+  },
+};
+
+// ══════════════════════════════════════
+//  30 題題庫
+//  每題格式：{ text, a:{ type, text }, b:{ type, text } }
+//  type：'A'成就者 'E'探索者 'S'社交者 'K'競爭者
+// ══════════════════════════════════════
+const ALL_QUESTIONS = [
+  // === A vs E（成就者 vs 探索者）5題 ===
+  { text:'在一款新遊戲裡，你最想先做什麼？',
+    a:{type:'A', text:'看看有哪些成就或任務可以完成，為自己設下第一個目標'},
+    b:{type:'E', text:'先到處逛逛，看看這個遊戲世界有什麼有趣的東西或機制'} },
+  { text:'你在遊戲中解開了一個很難的關卡，最開心的是：',
+    a:{type:'A', text:'又往通關或滿成就更近一步了'},
+    b:{type:'E', text:'終於搞清楚這個關卡的設計邏輯是怎麼運作的'} },
+  { text:'遊戲出了一個超難的限時活動，你會：',
+    a:{type:'A', text:'拚了！限時獎勵一定要拿到，不拿到不罷休'},
+    b:{type:'E', text:'先研究一下活動的設計和規則，搞清楚再動手'} },
+  { text:'你最享受的遊戲時刻是：',
+    a:{type:'A', text:'看到角色的等級、數值或裝備分數往上升的那一刻'},
+    b:{type:'E', text:'發現一個藏在地圖角落的彩蛋或沒人講過的隱藏內容'} },
+  { text:'玩了一款遊戲很久，你通常是因為什麼繼續玩下去？',
+    a:{type:'A', text:'還有目標沒完成、成就沒解鎖、東西沒收集齊'},
+    b:{type:'E', text:'還有沒搞清楚的機制或沒探索完的地方'} },
+  // === K vs A（競爭者 vs 成就者）5題 ===
+  { text:'在一款有玩家對戰的遊戲裡，你最想做什麼？',
+    a:{type:'K', text:'打贏別人，讓對手知道我比他強'},
+    b:{type:'A', text:'讓自己的數值或裝備強到對手根本打不過我'} },
+  { text:'遊戲裡的排行榜對你來說意義是什麼？',
+    a:{type:'K', text:'我要在上面，而且要比我認識的人排得更高'},
+    b:{type:'A', text:'它告訴我距離頂尖還差多少，給我一個努力的方向'} },
+  { text:'玩遊戲輸了，你比較想做什麼？',
+    a:{type:'K', text:'找到對手的弱點，下次直接贏他'},
+    b:{type:'A', text:'檢討自己的配置或策略，讓自己整體變得更強'} },
+  { text:'遊戲裡有個讓你不爽的玩家，你比較可能：',
+    a:{type:'K', text:'想辦法在遊戲裡回擊他、讓他嘗嘗苦頭'},
+    b:{type:'A', text:'不管他，繼續專注在提升自己的實力'} },
+  { text:'對你來說，「贏」最有意義的是：',
+    a:{type:'K', text:'打敗了一個真實的人，而不只是電腦'},
+    b:{type:'A', text:'達到了一個自己設定的目標或打破自己的紀錄'} },
+  // === S vs A（社交者 vs 成就者）5題 ===
+  { text:'你正在玩一款多人遊戲，你比較享受：',
+    a:{type:'S', text:'和隊友一起聊天合作，就算輸了也覺得過程很開心'},
+    b:{type:'A', text:'努力讓自己變強，讓整個隊伍因為有我而贏'} },
+  { text:'遊戲裡有人需要幫助，你：',
+    a:{type:'S', text:'去幫他，認識新朋友或幫助別人本身就很有趣'},
+    b:{type:'A', text:'評估一下值不值得，幫忙對我的進度有沒有好處'} },
+  { text:'你最享受的多人遊戲體驗是：',
+    a:{type:'S', text:'和朋友一起玩、笑聲不斷，過程中很快樂'},
+    b:{type:'A', text:'大家一起拚到通關或達成某個目標的那一刻'} },
+  { text:'你最在意的遊戲體驗是：',
+    a:{type:'S', text:'遊戲裡認識的人，以及和他們一起玩的記憶'},
+    b:{type:'A', text:'我的角色有多強、收集了多少資源或成就'} },
+  { text:'如果一款遊戲你的朋友都在玩，但你覺得內容有點無聊：',
+    a:{type:'S', text:'還是去玩，因為重點是跟朋友在一起'},
+    b:{type:'A', text:'不玩，把時間花在真正能讓我有進展的遊戲上'} },
+  // === K vs E（競爭者 vs 探索者）5題 ===
+  { text:'遊戲出了一個全新地圖，你最想做的是：',
+    a:{type:'K', text:'看看有沒有對手可以在這裡挑戰，搶先佔據優勢'},
+    b:{type:'E', text:'把整個地圖走過一遍，弄清楚每個地方有什麼'} },
+  { text:'你在遊戲裡遇到一個陌生的玩家，你的第一個念頭是：',
+    a:{type:'K', text:'他是潛在的對手還是威脅？能不能打得贏他？'},
+    b:{type:'E', text:'他知不知道什麼我還不清楚的事情或技巧？'} },
+  { text:'你覺得遊戲裡最刺激的感覺是：',
+    a:{type:'K', text:'打贏一個實力比你強的對手'},
+    b:{type:'E', text:'發現一個沒什麼人知道的隱藏機制或秘密地點'} },
+  { text:'在一款開放世界遊戲裡，你比較喜歡：',
+    a:{type:'K', text:'找其他玩家互相競爭，在遊戲裡分出個高下'},
+    b:{type:'E', text:'不管別人，自己把整個世界地圖探索得清清楚楚'} },
+  { text:'你覺得在遊戲中「有影響力」是指：',
+    a:{type:'K', text:'讓別人怕你、尊重你，知道你不好惹'},
+    b:{type:'E', text:'知道的事情比別人多，成為大家遇到問題都會來問的人'} },
+  // === S vs E（社交者 vs 探索者）5題 ===
+  { text:'你在遊戲中最常花時間做什麼？',
+    a:{type:'S', text:'和朋友或隊員聊天、協調、一起搞事、分享好笑的事'},
+    b:{type:'E', text:'研究遊戲的各種機制、數值、隱藏內容或世界觀細節'} },
+  { text:'你買了一款新遊戲，打開後的第一件事是：',
+    a:{type:'S', text:'看看有沒有多人模式，馬上找人一起玩'},
+    b:{type:'E', text:'先自己玩一下，把基本的東西和玩法都搞清楚再說'} },
+  { text:'你覺得一款遊戲最有趣的地方是：',
+    a:{type:'S', text:'裡面的玩家社群、遊戲文化和各種有趣的人際互動'},
+    b:{type:'E', text:'遊戲世界的設定、故事背景和各種等著被挖掘的隱藏細節'} },
+  { text:'如果可以選擇，你比較想要：',
+    a:{type:'S', text:'透過遊戲認識一群真正投緣的遊戲朋友'},
+    b:{type:'E', text:'把一款遊戲的所有內容、機制和秘密都完全搞清楚'} },
+  { text:'你最享受的遊戲類型通常是：',
+    a:{type:'S', text:'需要和真人互動、溝通、合作才好玩的多人遊戲'},
+    b:{type:'E', text:'有豐富世界觀、大量內容和故事可以慢慢深挖的遊戲'} },
+  // === S vs K（社交者 vs 競爭者）5題 ===
+  { text:'在一個多人遊戲的公會或隊伍裡，你比較希望扮演的是：',
+    a:{type:'S', text:'那個讓大家凝聚在一起、讓氣氛很好的人'},
+    b:{type:'K', text:'那個讓整個隊伍因為有你而讓對手聞風喪膽的人'} },
+  { text:'遊戲裡有個玩家一直找你麻煩，你比較會：',
+    a:{type:'S', text:'試著和他溝通、化解衝突，或乾脆不理他'},
+    b:{type:'K', text:'在遊戲裡直接回擊他，讓他知道這樣做是有代價的'} },
+  { text:'你最受不了的遊戲體驗是：',
+    a:{type:'S', text:'玩家之間的氣氛很差，大家互相罵來罵去、搞得很不愉快'},
+    b:{type:'K', text:'自己一直輸、一直被欺負，卻完全沒辦法反擊'} },
+  { text:'如果你在遊戲裡很厲害，你最希望的是：',
+    a:{type:'S', text:'大家都很喜歡你、願意主動來找你一起玩'},
+    b:{type:'K', text:'大家都知道你很強，不敢輕易招惹你'} },
+  { text:'遊戲對你來說最重要的價值是：',
+    a:{type:'S', text:'認識朋友、維繫感情，和喜歡的人一起享受歡樂時光'},
+    b:{type:'K', text:'磨練技術、打敗對手，在競爭中超越自己和別人的極限'} },
+];
+
+// 精簡版 12 題（每種配對各取 2 題）
+// A vs E: Q1,Q3（index 0,2）
+// K vs A: Q6,Q8（index 5,7）
+// S vs A: Q11,Q13（index 10,12）
+// K vs E: Q16,Q18（index 15,17）
+// S vs E: Q21,Q23（index 20,22）
+// S vs K: Q26,Q28（index 25,27）
+const SHORT_INDICES = [0,2, 5,7, 10,12, 15,17, 20,22, 25,27];
+
+// ══════════════════════════════════════
+//  狀態管理
+// ══════════════════════════════════════
+let testMode = 30;
+let activeIndices = [];
+let currentQ = 0;
+let answers = []; // 每題答 'a' 或 'b' 或 null
+
+function startTest(mode) {
+  testMode = mode;
+  activeIndices = mode === 12 ? SHORT_INDICES : ALL_QUESTIONS.map((_,i)=>i);
+  answers = activeIndices.map(() => null);
+  currentQ = 0;
+  document.getElementById('screen-intro').style.display = 'none';
+  document.getElementById('screen-test').style.display = 'block';
+  renderQ();
+}
+
+function renderQ() {
+  const qi = activeIndices[currentQ];
+  const q = ALL_QUESTIONS[qi];
+  const total = activeIndices.length;
+  const ans = answers[currentQ];
+
+  document.getElementById('q-num-label').textContent = `第 ${currentQ+1} 題`;
+  document.getElementById('prog-num').textContent = `第 ${currentQ+1} 題 / 共 ${total} 題`;
+  document.getElementById('prog-bar').style.width = `${((currentQ+1)/total)*100}%`;
+  document.getElementById('q-text').textContent = q.text;
+
+  const grid = document.getElementById('choice-grid');
+  grid.innerHTML = '';
+
+  ['a','b'].forEach(side => {
+    const opt = q[side];
+    const typeData = TYPES[opt.type];
+    const isSelected = ans === side;
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn' + (isSelected ? ' selected' : '');
+    if(isSelected) {
+      btn.style.borderColor = typeData.color.replace('var(--','').replace(')','');
+      btn.style.borderColor = getComputedStyle(document.documentElement).getPropertyValue(
+        typeData.color.match(/var\(([^)]+)\)/)[1]
+      ).trim();
+      btn.style.background = getComputedStyle(document.documentElement).getPropertyValue(
+        typeData.light.match(/var\(([^)]+)\)/)[1]
+      ).trim();
+    }
+    btn.onclick = () => selectAnswer(side);
+
+    const check = document.createElement('div');
+    check.className = 'choice-check';
+    check.style.background = isSelected ? (typeData.color.includes('var') ?
+      getComputedStyle(document.documentElement).getPropertyValue(typeData.color.match(/var\(([^)]+)\)/)[1]).trim()
+      : typeData.color) : '#e2e8f0';
+    check.textContent = isSelected ? '✓' : '';
+
+    const label = document.createElement('div');
+    label.className = 'choice-label';
+    label.textContent = side.toUpperCase();
+
+    const text = document.createElement('div');
+    text.className = 'choice-text';
+    text.textContent = opt.text;
+
+    btn.appendChild(check);
+    btn.appendChild(label);
+    btn.appendChild(text);
+    grid.appendChild(btn);
+  });
+
+  document.getElementById('btn-prev').style.visibility = currentQ===0?'hidden':'visible';
+  const btnNext = document.getElementById('btn-next');
+  btnNext.disabled = ans === null;
+  btnNext.textContent = currentQ===activeIndices.length-1 ? '看結果 →' : '下一題 →';
+}
+
+function selectAnswer(side) {
+  answers[currentQ] = side;
+  renderQ();
+}
+function nextQ() {
+  if(currentQ < activeIndices.length-1){ currentQ++; renderQ(); window.scrollTo(0,0); }
+  else { calcAndShow(); }
+}
+function prevQ() {
+  if(currentQ>0){ currentQ--; renderQ(); window.scrollTo(0,0); }
+}
+
+// ══════════════════════════════════════
+//  計分
+// ══════════════════════════════════════
+function calcAndShow() {
+  const scores = {A:0, E:0, S:0, K:0};
+  answers.forEach((ans, ci) => {
+    const qi = activeIndices[ci];
+    const q = ALL_QUESTIONS[qi];
+    if(ans) scores[q[ans].type]++;
+  });
+
+  // 完整版(30題)：四類型總分固定=30，×(200/30)，總和=200%
+  // 精簡版(12題)：四類型總分固定=12，÷12×100，總和=100%
+  let pcts = {};
+  if(testMode === 30) {
+    pcts = {
+      A: Math.round(scores.A / 30 * 200),
+      E: Math.round(scores.E / 30 * 200),
+      S: Math.round(scores.S / 30 * 200),
+      K: Math.round(scores.K / 30 * 200),
+    };
+  } else {
+    pcts = {
+      A: Math.round(scores.A / 12 * 100),
+      E: Math.round(scores.E / 12 * 100),
+      S: Math.round(scores.S / 12 * 100),
+      K: Math.round(scores.K / 12 * 100),
+    };
+  }
+
+  const sorted = Object.entries(pcts).sort((a,b)=>b[1]-a[1]);
+  const primary = sorted[0][0];
+  showResult(pcts, primary);
+}
+
+// ══════════════════════════════════════
+//  顯示結果
+// ══════════════════════════════════════
+function showResult(pcts, primary) {
+  document.getElementById('screen-test').style.display = 'none';
+  document.getElementById('screen-result').style.display = 'block';
+  window.scrollTo(0,0);
+
+  const pData = TYPES[primary];
+
+  // Hero
+  const hero = document.getElementById('result-hero');
+  hero.style.background = pData.heroGrad;
+  document.getElementById('r-suit').textContent = pData.suit;
+  document.getElementById('r-name').textContent = pData.name;
+  document.getElementById('r-en').textContent = pData.en;
+  document.getElementById('r-tagline').textContent = pData.tagline;
+
+  // 分數長條
+  const sb = document.getElementById('score-bars');
+  sb.innerHTML = '';
+  const typeOrder = ['A','E','S','K'];
+  const bgColors = {A:'#d97706',E:'#2563eb',S:'#16a34a',K:'#dc2626'};
+  const maxPct = Math.max(...Object.values(pcts));
+
+  typeOrder.forEach(k => {
+    const d = TYPES[k];
+    const pct = pcts[k];
+    const barW = maxPct > 0 ? Math.round((pct/maxPct)*100) : 0;
+    const row = document.createElement('div');
+    row.className = 'score-row';
+    row.innerHTML = `
+      <div class="score-suit">${d.suit}</div>
+      <div class="score-label" style="color:${bgColors[k]}">${d.name}</div>
+      <div class="score-track">
+        <div class="score-fill" style="background:${bgColors[k]};width:0%" data-w="${barW}%">
+          <span>${pct}%</span>
+        </div>
+      </div>
+      <div class="score-num" style="color:${bgColors[k]}">${pct}%</div>
+    `;
+    sb.appendChild(row);
+  });
+  setTimeout(() => {
+    sb.querySelectorAll('.score-fill').forEach(el => { el.style.width = el.dataset.w; });
+  }, 300);
+
+  // 座標圖
+  // X軸：玩家導向（右）vs 世界導向（左）→ K/S 偏右，A/E 偏左
+  // Y軸：行動（上）vs 互動（下）→ A/K 偏上，E/S 偏下
+  // A = 左上（世界×行動），K = 右上（玩家×行動）
+  // E = 左下（世界×互動），S = 右下（玩家×互動）
+  const total = pcts.A + pcts.E + pcts.S + pcts.K || 1;
+  const worldScore = pcts.A + pcts.E;  // 世界導向
+  const playerScore = pcts.K + pcts.S; // 玩家導向
+  const actionScore = pcts.A + pcts.K; // 行動
+  const interactScore = pcts.E + pcts.S; // 互動
+  // x: 10~190, 越偏玩家→越右
+  const dotX = 10 + Math.round((playerScore/total) * 180);
+  // y: 10~190, 越偏行動→越上
+  const dotY = 10 + Math.round((interactScore/total) * 180);
+  document.getElementById('axis-dot').setAttribute('cx', dotX);
+  document.getElementById('axis-dot').setAttribute('cy', dotY);
+  document.getElementById('axis-dot-ring').setAttribute('cx', dotX);
+  document.getElementById('axis-dot-ring').setAttribute('cy', dotY);
+
+  // 特質
+  document.getElementById('trait-title').textContent = pData.suit + ' ' + pData.name + '的玩家特質';
+  document.getElementById('type-desc').textContent = pData.desc;
+  const tg = document.getElementById('trait-grid'); tg.innerHTML = '';
+  pData.traits.forEach(tr => {
+    const d = document.createElement('div'); d.className = 'trait-item';
+    d.innerHTML = `<div class="ti-l">${tr.l}</div><div class="ti-v">${tr.v}</div>`;
+    tg.appendChild(d);
+  });
+
+  // 關係
+  const rl = document.getElementById('relation-list'); rl.innerHTML = '';
+  pData.relations.forEach(r => {
+    const row = document.createElement('div'); row.className = 'relation-row';
+    row.innerHTML = `<div class="relation-suit">${r.suit}</div><div class="relation-text"><strong>${r.suit} ${r.name}</strong>：${r.text}</div>`;
+    rl.appendChild(row);
+  });
+
+  // 班級合作
+  const cl = document.getElementById('class-list'); cl.innerHTML = '';
+  pData.classTraits.forEach(c => {
+    const item = document.createElement('div'); item.className = 'class-item';
+    item.innerHTML = `<div class="class-dot" style="background:${bgColors[primary]}"></div><div class="class-text">${c}</div>`;
+    cl.appendChild(item);
+  });
+
+  // 截圖卡
+  const sc = document.getElementById('share-card');
+  sc.style.background = pData.heroGrad;
+  document.getElementById('sc-suit').textContent = pData.suit;
+  document.getElementById('sc-name').textContent = pData.name;
+  document.getElementById('sc-en').textContent = pData.en + (testMode===15?' · 精簡版':' · 完整版');
+  const scScores = document.getElementById('sc-scores'); scScores.innerHTML = '';
+  typeOrder.forEach(k => {
+    const col = document.createElement('div'); col.className = 'sc-score-col';
+    col.innerHTML = `<span class="sc-score-suit">${TYPES[k].suit}</span><div class="sc-score-pct">${pcts[k]}%</div><div class="sc-score-name">${TYPES[k].name}</div>`;
+    scScores.appendChild(col);
+  });
+}
+
+function retryTest() {
+  currentQ = 0; answers = [];
+  document.getElementById('screen-result').style.display = 'none';
+  document.getElementById('screen-intro').style.display = 'flex';
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>
