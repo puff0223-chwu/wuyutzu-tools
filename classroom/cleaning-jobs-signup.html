@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧹 打掃工作志願登記</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Microsoft JhengHei', Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+.container {
+    max-width: 720px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    overflow: hidden;
+}
+.header {
+    background: linear-gradient(135deg, #c41e3a 0%, #8b0000 100%);
+    color: white;
+    padding: 26px 30px;
+    text-align: center;
+    position: relative;
+}
+.header .back-home {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: white;
+    text-decoration: none;
+    font-size: 0.85em;
+    opacity: 0.9;
+}
+.header .back-home:hover { opacity: 1; }
+.header h1 { font-size: 1.7em; margin-bottom: 4px; }
+.header .version { font-size: 0.85em; opacity: 0.9; }
+.content { padding: 22px; }
+.section {
+    background: #f8f9fa;
+    padding: 18px;
+    border-radius: 12px;
+    margin-bottom: 18px;
+}
+.section h3 {
+    color: #333;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #667eea;
+    font-size: 1.15em;
+}
+.alert {
+    padding: 14px;
+    border-radius: 10px;
+    margin: 12px 0;
+    border-left: 4px solid;
+    font-size: 0.92em;
+    line-height: 1.6;
+}
+.alert-info { background: #e3f2fd; border-color: #2196f3; color: #1565c0; }
+.alert-success { background: #d4edda; border-color: #16a34a; color: #155724; }
+.alert-warning { background: #fff3cd; border-color: #ffc107; color: #856404; }
+.alert-danger { background: #fee; border-color: #dc2626; color: #991b1b; }
+.job-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+}
+.job-card {
+    background: white;
+    padding: 14px;
+    border-radius: 10px;
+    border: 2px solid #e0e0e0;
+}
+.job-card .title { font-size: 1.02em; font-weight: bold; color: #333; margin-bottom: 6px; }
+.job-card .count { color: #666; font-size: 0.9em; }
+label {
+    display: block;
+    font-weight: bold;
+    color: #444;
+    margin: 14px 0 6px;
+    font-size: 0.95em;
+}
+label .req { color: #c41e3a; }
+label .opt { color: #999; font-weight: normal; font-size: 0.85em; }
+input, select {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1em;
+    font-family: inherit;
+    background: white;
+}
+input:focus, select:focus { outline: none; border-color: #667eea; }
+.choice-row { display: flex; align-items: center; gap: 10px; }
+.choice-num {
+    flex: 0 0 34px;
+    height: 34px;
+    background: #667eea;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.95em;
+}
+.btn {
+    background: linear-gradient(135deg, #c41e3a 0%, #8b0000 100%);
+    color: white;
+    border: none;
+    padding: 15px 28px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1.1em;
+    width: 100%;
+    margin-top: 10px;
+    transition: all 0.3s;
+}
+.btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(196, 30, 58, 0.3); }
+.btn:disabled { background: #ccc; cursor: not-allowed; }
+.btn-secondary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); width: auto; padding: 8px 16px; font-size: 0.85em; margin-top: 0; }
+.settings-toggle {
+    text-align: right;
+    font-size: 0.8em;
+    color: #999;
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 6px;
+}
+.settings-toggle:hover { color: #667eea; }
+.settings-panel { display: none; margin-top: 10px; }
+.settings-panel.show { display: block; }
+.settings-panel textarea {
+    width: 100%;
+    min-height: 90px;
+    font-family: monospace;
+    font-size: 0.85em;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+}
+#screen-success {
+    display: none;
+    text-align: center;
+    padding: 30px 10px;
+}
+#screen-success .big-icon { font-size: 3.5em; margin-bottom: 10px; }
+#screen-success h2 { color: #16a34a; margin-bottom: 16px; }
+.summary-table { width: 100%; border-collapse: collapse; margin-top: 12px; text-align: left; }
+.summary-table th, .summary-table td { padding: 10px; border-bottom: 1px solid #eee; }
+.summary-table th { color: #666; font-size: 0.85em; width: 90px; }
+footer { text-align: center; padding: 18px; border-top: 2px solid #f0f0f0; color: #999; font-size: 0.85em; }
+@media (max-width: 600px) {
+    body { padding: 0; }
+    .container { border-radius: 0; }
+    .job-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <a href="../index.html" class="back-home">← 返回工具箱首頁</a>
+        <h1>🧹 打掃工作志願登記</h1>
+        <p class="version">v4.0 志願序登記</p>
+    </div>
+
+    <div class="content">
+        <div id="screen-form">
+            <div class="section">
+                <div class="settings-toggle" onclick="toggleSettings()">⚙️ 老師設定 / 手動載入項目清單</div>
+                <div class="settings-panel" id="settingsPanel">
+                    <div class="alert alert-info" style="margin-top:0;">
+                        若這個頁面沒有自動帶入打掃項目，老師可以到「管理頁」複製項目清單 JSON，貼在下方後按套用。
+                    </div>
+                    <textarea id="jobsJsonInput" placeholder='例如：[{"name":"擦窗戶","count":5},{"name":"倒垃圾","count":3}]'></textarea>
+                    <button class="btn btn-secondary" onclick="applyManualJobs()">套用項目清單</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>📋 本次打掃項目（僅供參考）</h3>
+                <div class="job-grid" id="jobGrid"></div>
+            </div>
+
+            <div class="section" id="formSection">
+                <h3>✏️ 填寫志願登記</h3>
+
+                <label>座號 <span class="req">*</span></label>
+                <input type="number" id="inSeat" min="1" step="1" placeholder="請輸入座號">
+
+                <label>姓名 <span class="req">*</span></label>
+                <input type="text" id="inName" placeholder="請輸入姓名">
+
+                <div id="choicesArea"></div>
+
+                <label>投入金幣數 <span class="req">*</span>（沒有要投入請填 0）</label>
+                <input type="number" id="inCoins" min="0" step="1" placeholder="請輸入非負整數">
+
+                <button class="btn" id="submitBtn" onclick="submitSignup()">📮 送出登記</button>
+            </div>
+        </div>
+
+        <div id="screen-success">
+            <div class="big-icon">✅</div>
+            <h2>登記成功！</h2>
+            <p style="color:#666;">請截圖保留這頁畫面作為紀錄</p>
+            <table class="summary-table" id="summaryTable"></table>
+            <button class="btn btn-secondary" style="width:100%;margin-top:20px;" onclick="location.reload()">再登記一筆</button>
+        </div>
+    </div>
+
+    <footer>程式設計：巫魚子 © 2025 | v4.0 志願序登記</footer>
+</div>
+
+<script>
+// ══════════════════════════════════════
+//  Google 表單設定（由 Claude Code 自動建立表單後填入）
+// ══════════════════════════════════════
+const FORM_ACTION = 'https://docs.google.com/forms/d/e/1FAIpQLSewdNHcgBvxcK-EEPwooxuxW1eWnYZyMMaY5gBjv38J8sdAjg/formResponse';
+const ENTRIES = [
+  'entry.1907531830',  // 0: 座號
+  'entry.904545506',   // 1: 姓名
+  'entry.2094013973',  // 2: 志願1
+  'entry.1747772013',  // 3: 志願2
+  'entry.724259315',   // 4: 志願3
+  'entry.1368198101',  // 5: 志願4（可能未作答）
+  'entry.1498240330',  // 6: 志願5（可能未作答）
+  'entry.1928835679',  // 7: 投入金幣數
+];
+
+// ══════════════════════════════════════
+//  項目清單載入（URL 參數 > 本機快取 > 手動貼上）
+// ══════════════════════════════════════
+let jobs = [];
+
+function loadJobs() {
+    const params = new URLSearchParams(location.search);
+    const fromUrl = params.get('jobs');
+    if (fromUrl) {
+        try {
+            const parsed = JSON.parse(fromUrl);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                jobs = parsed;
+                localStorage.setItem('cleaningSignup_jobs', JSON.stringify(jobs));
+                renderJobs();
+                return;
+            }
+        } catch (e) { /* fall through */ }
+    }
+    const cached = localStorage.getItem('cleaningSignup_jobs');
+    if (cached) {
+        try {
+            jobs = JSON.parse(cached);
+            renderJobs();
+            return;
+        } catch (e) { /* fall through */ }
+    }
+    renderJobs();
+}
+
+function toggleSettings() {
+    document.getElementById('settingsPanel').classList.toggle('show');
+}
+
+function applyManualJobs() {
+    const raw = document.getElementById('jobsJsonInput').value.trim();
+    if (!raw) { alert('請貼上項目清單 JSON'); return; }
+    try {
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed) || parsed.length === 0) throw new Error('格式錯誤');
+        jobs = parsed;
+        localStorage.setItem('cleaningSignup_jobs', JSON.stringify(jobs));
+        renderJobs();
+        alert('✅ 已套用項目清單！');
+        document.getElementById('settingsPanel').classList.remove('show');
+    } catch (e) {
+        alert('❌ JSON 格式錯誤，請確認格式後再試一次');
+    }
+}
+
+function renderJobs() {
+    const grid = document.getElementById('jobGrid');
+    const formSection = document.getElementById('formSection');
+    if (jobs.length === 0) {
+        grid.innerHTML = '<div class="alert alert-warning">⚠️ 尚未載入打掃項目清單，請聯絡老師或使用上方「⚙️ 老師設定」手動貼上項目清單。</div>';
+        formSection.style.display = 'none';
+        return;
+    }
+    formSection.style.display = 'block';
+    grid.innerHTML = jobs.map(j => `
+        <div class="job-card">
+            <div class="title">🧹 ${escapeHtml(j.name)}</div>
+            <div class="count">需要 ${j.count} 人</div>
+        </div>
+    `).join('');
+    renderChoiceSelects();
+}
+
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ══════════════════════════════════════
+//  志願下拉選單（互斥選擇）
+// ══════════════════════════════════════
+function renderChoiceSelects() {
+    const area = document.getElementById('choicesArea');
+    let html = '';
+    for (let i = 1; i <= 5; i++) {
+        const req = i <= 3 ? '<span class="req">*</span>' : '<span class="opt">（可留空）</span>';
+        html += `
+            <label>志願 ${i} ${req}</label>
+            <div class="choice-row">
+                <div class="choice-num">${i}</div>
+                <select id="choice${i}" onchange="onChoiceChange()">
+                    <option value="">-- 請選擇 --</option>
+                    ${jobs.map(j => `<option value="${escapeHtml(j.name)}">${escapeHtml(j.name)}</option>`).join('')}
+                </select>
+            </div>
+        `;
+    }
+    area.innerHTML = html;
+}
+
+function onChoiceChange() {
+    const selected = [];
+    for (let i = 1; i <= 5; i++) {
+        const v = document.getElementById('choice' + i).value;
+        if (v) selected.push(v);
+    }
+    for (let i = 1; i <= 5; i++) {
+        const sel = document.getElementById('choice' + i);
+        const current = sel.value;
+        Array.from(sel.options).forEach(opt => {
+            if (!opt.value) return;
+            opt.disabled = selected.includes(opt.value) && opt.value !== current;
+        });
+    }
+}
+
+// ══════════════════════════════════════
+//  驗證與送出
+// ══════════════════════════════════════
+function submitSignup() {
+    const seat = document.getElementById('inSeat').value.trim();
+    const name = document.getElementById('inName').value.trim();
+    const coinsRaw = document.getElementById('inCoins').value.trim();
+
+    if (!seat) { alert('❌ 請輸入座號'); return; }
+    if (!name) { alert('❌ 請輸入姓名'); return; }
+
+    const choices = [];
+    for (let i = 1; i <= 5; i++) {
+        choices.push(document.getElementById('choice' + i).value);
+    }
+    const filled = choices.filter(c => c);
+    if (filled.length < 3) { alert('❌ 至少需要選滿 3 個志願'); return; }
+
+    const uniqueFilled = new Set(filled);
+    if (uniqueFilled.size !== filled.length) { alert('❌ 志願不能重複選擇同一個項目'); return; }
+
+    if (coinsRaw === '') { alert('❌ 請輸入投入金幣數（沒有要投入請填 0）'); return; }
+    const coins = Number(coinsRaw);
+    if (!Number.isInteger(coins) || coins < 0) { alert('❌ 投入金幣數必須是 0 或正整數'); return; }
+
+    const vals = [seat, name, choices[0], choices[1], choices[2], choices[3], choices[4], String(coins)];
+
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = '送出中...';
+
+    fetch(FORM_ACTION, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: ENTRIES.map((e, i) => `${e}=${encodeURIComponent(vals[i] !== undefined ? vals[i] : '')}`).join('&')
+    }).then(() => {
+        showSuccess(seat, name, choices, coins);
+    }).catch(() => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '📮 送出登記';
+        alert('❌ 送出失敗，請檢查網路連線後重新送出一次');
+    });
+}
+
+function showSuccess(seat, name, choices, coins) {
+    document.getElementById('screen-form').style.display = 'none';
+    const table = document.getElementById('summaryTable');
+    let rows = `<tr><th>座號</th><td>${escapeHtml(seat)}</td></tr>`;
+    rows += `<tr><th>姓名</th><td>${escapeHtml(name)}</td></tr>`;
+    choices.forEach((c, i) => {
+        if (c) rows += `<tr><th>志願 ${i + 1}</th><td>${escapeHtml(c)}</td></tr>`;
+    });
+    rows += `<tr><th>投入金幣</th><td>${coins}</td></tr>`;
+    table.innerHTML = rows;
+    document.getElementById('screen-success').style.display = 'block';
+    window.scrollTo(0, 0);
+}
+
+window.addEventListener('load', loadJobs);
+</script>
+</body>
+</html>

@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧹 打掃工作分發管理系統 v4.0</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Microsoft JhengHei', Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    overflow: hidden;
+}
+.header {
+    background: linear-gradient(135deg, #c41e3a 0%, #8b0000 100%);
+    color: white;
+    padding: 30px;
+    text-align: center;
+    position: relative;
+}
+.header .back-home {
+    position: absolute;
+    left: 30px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: white;
+    text-decoration: none;
+    transition: opacity 0.3s;
+}
+.header h1 { font-size: 2em; margin-bottom: 5px; }
+.header .version { font-size: 0.9em; opacity: 0.9; }
+.tabs { display: flex; background: #f0f0f0; flex-wrap: wrap; }
+.tab {
+    flex: 1;
+    min-width: 100px;
+    padding: 15px;
+    text-align: center;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.9em;
+    border: none;
+    background: none;
+    transition: all 0.3s;
+}
+.tab:hover { background: #e0e0e0; }
+.tab.active { background: white; color: #c41e3a; border-bottom: 3px solid #c41e3a; }
+.content { padding: 25px; }
+.system { display: none; }
+.system.active { display: block; }
+.section { background: #f8f9fa; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+.section h3 { color: #333; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #667eea; font-size: 1.3em; }
+.btn {
+    background: linear-gradient(135deg, #c41e3a 0%, #8b0000 100%);
+    color: white; border: none; padding: 12px 24px; border-radius: 10px;
+    cursor: pointer; margin: 5px; font-weight: bold; font-size: 1em; transition: all 0.3s;
+}
+.btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(196, 30, 58, 0.3); }
+.btn:disabled { background: #ccc; cursor: not-allowed; }
+.btn-secondary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+.btn-success { background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); }
+.btn-danger { background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); }
+.btn-small { padding: 8px 16px; font-size: 0.9em; }
+.btn-large { padding: 15px 35px; font-size: 1.2em; }
+.alert { padding: 15px; border-radius: 10px; margin: 15px 0; border-left: 4px solid; line-height: 1.6; }
+.alert-info { background: #e3f2fd; border-color: #2196f3; color: #1565c0; }
+.alert-success { background: #d4edda; border-color: #16a34a; color: #155724; }
+.alert-warning { background: #fff3cd; border-color: #ffc107; color: #856404; }
+.alert-danger { background: #fee; border-color: #dc2626; color: #991b1b; }
+input, textarea, select {
+    width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px;
+    margin: 8px 0; font-size: 1em; font-family: inherit;
+}
+input:focus, textarea:focus, select:focus { outline: none; border-color: #667eea; }
+.upload-area {
+    border: 3px dashed #667eea; border-radius: 12px; padding: 40px; text-align: center;
+    background: #f8f9fa; cursor: pointer; transition: all 0.3s;
+}
+.upload-area:hover { background: #e3f2fd; border-color: #2196f3; }
+.job-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
+.job-card { background: white; padding: 18px; border-radius: 12px; border: 2px solid #e0e0e0; transition: all 0.3s; }
+.job-card:hover { border-color: #667eea; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.job-card .title { font-size: 1.2em; font-weight: bold; color: #333; margin-bottom: 10px; }
+.job-card .count { color: #666; font-size: 0.95em; margin-bottom: 12px; }
+.student-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; max-height: 400px; overflow-y: auto; padding: 10px; }
+.student-item { background: white; padding: 10px; border-radius: 6px; text-align: center; border: 1px solid #e0e0e0; font-size: 0.85em; }
+.student-item.cadre { background: #fff3cd; border-color: #ffc107; }
+.result-table { width: 100%; border-collapse: collapse; margin: 15px 0; background: white; border-radius: 10px; overflow: hidden; font-size: 0.92em; }
+.result-table th { background: #667eea; color: white; padding: 10px; text-align: left; font-weight: bold; }
+.result-table td { padding: 10px; border-bottom: 1px solid #e0e0e0; }
+.result-table tr:hover { background: #f8f9fa; }
+.status-badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 0.85em; font-weight: bold; }
+.status-selected { background: #d4edda; color: #155724; }
+.status-rejected { background: #fee; color: #991b1b; }
+.status-random { background: #cfe2ff; color: #084298; }
+.status-cadre { background: #fff3cd; color: #856404; }
+footer { text-align: center; padding: 20px; border-top: 2px solid #f0f0f0; color: #999; font-size: 0.9em; }
+
+/* 抽籤動畫區 */
+.round-banner {
+    background: linear-gradient(135deg, #c41e3a 0%, #8b0000 100%);
+    color: white; padding: 14px 20px; border-radius: 12px; font-size: 1.3em; font-weight: 900;
+    margin: 20px 0 12px; text-align: center;
+}
+.lottery-section { background: white; padding: 20px; border-radius: 12px; margin: 15px 0; border: 2px solid #667eea; }
+.lottery-title { font-size: 1.2em; font-weight: bold; color: #333; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 2px solid #667eea; }
+.marquee-box {
+    height: 60px; display: flex; align-items: center; justify-content: center;
+    background: #1a202c; border-radius: 10px; margin: 12px 0; overflow: hidden;
+}
+.marquee-text { color: #fff; font-size: 1.3em; font-weight: 900; letter-spacing: 0.05em; }
+.participant-list { max-height: 260px; overflow-y: auto; margin: 10px 0; }
+.participant-item {
+    display: flex; align-items: center; justify-content: space-between; padding: 10px 14px;
+    background: #f8f9fa; border-radius: 8px; margin: 6px 0; border-left: 4px solid #2196f3; font-size: 0.92em;
+}
+.participant-item.selected { background: #d4edda; border-left-color: #16a34a; }
+.participant-item.rejected { background: #fee; border-left-color: #dc2626; opacity: 0.7; }
+.participant-name { font-weight: bold; }
+.participant-score { background: #667eea; color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.85em; margin-right: 6px; }
+.participant-probability { background: #16a34a; color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.85em; }
+.auto-admit { background: #cfe2ff; color: #084298; padding: 10px; border-radius: 8px; margin: 8px 0; font-weight: bold; }
+.confetti { width: 10px; height: 10px; background: #f0f; position: fixed; animation: confetti-fall 3s linear forwards; z-index: 9999; }
+@keyframes confetti-fall { to { transform: translateY(100vh) rotate(360deg); opacity: 0; } }
+.winner-notification {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8);
+    background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%); padding: 40px 50px; border-radius: 25px;
+    box-shadow: 0 20px 80px rgba(0,0,0,0.3); z-index: 10000; opacity: 0;
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); border: 5px solid #16a34a; min-width: 320px; text-align: center;
+}
+.winner-notification.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.winner-icon { font-size: 4em; margin-bottom: 10px; animation: bounce 0.8s ease infinite; }
+@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+.winner-title { font-size: 1.8em; font-weight: 800; color: #16a34a; margin-bottom: 10px; }
+.log-box { max-height: 260px; overflow-y: auto; background: #1a202c; color: #d1fae5; font-family: monospace; font-size: 0.8em; padding: 12px; border-radius: 10px; line-height: 1.6; }
+.csv-warn-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em; }
+.csv-warn-table th, .csv-warn-table td { padding: 8px; border-bottom: 1px solid #eee; text-align: left; }
+@media (max-width: 768px) {
+    .container { margin: 0; border-radius: 0; }
+    .header h1 { font-size: 1.5em; }
+    .tabs { flex-direction: column; }
+    .job-grid, .student-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <a href="../index.html" class="back-home">← 返回工具箱首頁</a>
+        <h1>🧹 打掃工作分發管理系統</h1>
+        <p class="version">v4.0 志願序 + 貢獻度/金幣分發</p>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab('students')">👥 班級名單</button>
+        <button class="tab" onclick="switchTab('jobs')">📋 打掃項目</button>
+        <button class="tab" onclick="switchTab('responses')">📤 志願回覆</button>
+        <button class="tab" onclick="switchTab('lottery')">🎰 分發抽籤</button>
+        <button class="tab" onclick="switchTab('results')">🏆 結果匯出</button>
+    </div>
+
+    <div class="content">
+        <!-- A. 班級名單與貢獻度 -->
+        <div id="tab-students" class="system active">
+            <div class="section">
+                <h3>👥 班級名單與上學期貢獻度上傳</h3>
+                <div class="alert alert-info">
+                    📌 Excel/CSV 欄位：<strong>座號、姓名、上學期貢獻度（0～100）、身份標記</strong><br>
+                    身份標記欄位：一般學生請填「一般學生」或留空；幹部請直接填職務名稱（例如「衛生股長」），幹部不參與志願分發，會直接保留固定職務。
+                </div>
+                <div style="margin:15px 0;">
+                    <button class="btn btn-secondary" onclick="document.getElementById('classFile').click()">📤 上傳班級名單</button>
+                    <button class="btn btn-success" onclick="downloadClassTemplate()">📥 下載範例</button>
+                    <button class="btn btn-danger" onclick="clearClassList()">🗑️ 清空名單</button>
+                    <input type="file" id="classFile" accept=".csv,.xlsx,.xls" style="display:none" onchange="importClassList(event)">
+                </div>
+            </div>
+            <div class="section">
+                <h3>📋 目前名單 (<span id="classCount">0</span> 人，含幹部 <span id="cadreCount">0</span> 人)</h3>
+                <div class="student-grid" id="classGrid"></div>
+            </div>
+        </div>
+
+        <!-- B. 打掃項目設定 -->
+        <div id="tab-jobs" class="system">
+            <div class="section">
+                <h3>📋 打掃項目管理</h3>
+                <input type="text" id="jobName" placeholder="打掃項目名稱 (例如：擦窗戶)">
+                <input type="number" id="jobCount" min="1" value="1" placeholder="需要人數">
+                <button class="btn btn-success" onclick="addJob()">➕ 新增項目</button>
+                <div id="jobCheckAlert"></div>
+            </div>
+            <div class="section">
+                <h3>📋 目前打掃項目</h3>
+                <div class="job-grid" id="jobList"></div>
+            </div>
+            <div class="section">
+                <h3>🔗 產生學生志願登記連結</h3>
+                <div class="alert alert-info">依目前的打掃項目清單產生連結，分享給學生填寫志願（此連結不含任何學生資料，只有項目名稱與需求人數）。</div>
+                <button class="btn btn-success" onclick="generateSignupLink()">🔗 產生連結</button>
+                <textarea id="signupLinkOutput" readonly style="margin-top:10px;display:none;font-family:monospace;font-size:0.85em;"></textarea>
+            </div>
+        </div>
+
+        <!-- C. 上傳學生志願回覆 -->
+        <div id="tab-responses" class="system">
+            <div class="section">
+                <h3>📤 上傳學生志願回覆（Google 表單回覆試算表匯出的 CSV/Excel）</h3>
+                <div class="alert alert-info">
+                    請到 Google 表單的「回覆」分頁 → 開啟試算表 → 下載為 CSV 或 Excel，再上傳到這裡。<br>
+                    系統會自動比對欄位：座號、姓名、志願1～志願5、投入金幣數。
+                </div>
+                <button class="btn btn-secondary" onclick="document.getElementById('responseFile').click()">📤 上傳志願回覆</button>
+                <button class="btn btn-danger" onclick="clearResponses()">🗑️ 清空回覆資料</button>
+                <input type="file" id="responseFile" accept=".csv,.xlsx,.xls" style="display:none" onchange="importResponses(event)">
+                <div id="responseStatus"></div>
+            </div>
+            <div class="section">
+                <h3>⚠️ 名單比對異常</h3>
+                <div id="mismatchArea"><div class="alert alert-info">尚未上傳志願回覆</div></div>
+            </div>
+        </div>
+
+        <!-- D+E. 分發抽籤與動畫 -->
+        <div id="tab-lottery" class="system">
+            <div class="section">
+                <h3>🎰 開始分發（依志願1→5，共5輪，之後隨機分配剩餘工作）</h3>
+                <div class="alert alert-info">
+                    📌 個人分數 = 上學期貢獻度 + floor(投入金幣 ÷ 100)，分數越高中籤機率越大，但仍保留抽籤的隨機性。
+                </div>
+                <button class="btn btn-success btn-large" onclick="startFullAssignment()" id="startAssignBtn">🎰 開始分發抽籤</button>
+                <button class="btn btn-secondary" onclick="skipAnimation()" id="skipBtn" style="display:none;">⏩ 跳過動畫</button>
+            </div>
+            <div id="lotteryStage"></div>
+        </div>
+
+        <!-- F. 結果匯出 -->
+        <div id="tab-results" class="system">
+            <div class="section">
+                <h3>🏆 完整分發結果</h3>
+                <div id="resultSummary"></div>
+                <div id="resultContent"></div>
+                <div style="margin-top:20px;">
+                    <button class="btn btn-success" onclick="exportByJob()">📥 下載結果（依打掃項目）</button>
+                    <button class="btn btn-success" onclick="exportByStudent()">📥 下載結果（依學生統計）</button>
+                    <button class="btn btn-secondary" onclick="exportLotteryLog()">📥 下載抽籤過程紀錄</button>
+                    <button class="btn btn-danger" onclick="resetAssignment()">🔄 重置本次分發</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>程式設計：巫魚子 © 2025 | v4.0 志願序 + 貢獻度/金幣分發</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// ========================================
+// 全域資料
+// ========================================
+let classList = [];   // {seat, name, contribution, role:'student'|'cadre', fixedJob}
+let jobs = [
+    {id: 1, name: '[教室]地板天花板', count: 5},
+    {id: 2, name: '[教室]倒垃圾(含陽台地板)', count: 3},
+    {id: 3, name: '[教室]黑板教師桌', count: 2},
+    {id: 4, name: '[教室]書櫃電腦櫃圖書櫃', count: 4},
+    {id: 5, name: '[教室]擦門窗', count: 5},
+    {id: 6, name: '[教室]洗手台飲水機', count: 2},
+    {id: 7, name: '[教室]抬餐(含廚餘、清潔)', count: 3}
+];
+let responses = [];   // {seat, name, choices:[c1..c5], coins}
+let mismatches = [];  // {type, seat, name, detail}
+let finalResults = []; // populated after assignment
+let lotteryLog = [];   // audit trail
+let animationEvents = []; // sequential reveal queue
+let animationSkip = false;
+let animationRunning = false;
+
+// ========================================
+// 初始化 / 儲存
+// ========================================
+window.addEventListener('load', () => {
+    loadData();
+    updateAll();
+});
+
+function loadData() {
+    const saved = localStorage.getItem('cleaningAdmin_v4_data');
+    if (saved) {
+        try {
+            const data = JSON.parse(saved);
+            classList = data.classList || [];
+            jobs = data.jobs || jobs;
+            responses = data.responses || [];
+            finalResults = data.finalResults || [];
+            lotteryLog = data.lotteryLog || [];
+        } catch (e) { /* ignore corrupt cache */ }
+    }
+}
+
+function saveData() {
+    localStorage.setItem('cleaningAdmin_v4_data', JSON.stringify({
+        classList, jobs, responses, finalResults, lotteryLog
+    }));
+}
+
+function updateAll() {
+    updateClassGrid();
+    updateJobList();
+    checkJobCountMatch();
+    updateResponseArea();
+    updateResults();
+}
+
+function switchTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.system').forEach(s => s.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('tab-' + name).classList.add('active');
+    if (name === 'results') updateResults();
+}
+
+function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ========================================
+// A. 班級名單
+// ========================================
+function updateClassGrid() {
+    const total = classList.length;
+    const cadres = classList.filter(s => s.role === 'cadre').length;
+    document.getElementById('classCount').textContent = total;
+    document.getElementById('cadreCount').textContent = cadres;
+    const grid = document.getElementById('classGrid');
+    if (total === 0) {
+        grid.innerHTML = '<div style="padding:40px;text-align:center;color:#999">尚未上傳班級名單</div>';
+        return;
+    }
+    grid.innerHTML = classList.map(s => `
+        <div class="student-item ${s.role === 'cadre' ? 'cadre' : ''}">
+            ${escapeHtml(s.seat)} ${escapeHtml(s.name)}<br>
+            <small>${s.role === 'cadre' ? '👑 ' + escapeHtml(s.fixedJob) : '貢獻度 ' + s.contribution}</small>
+        </div>
+    `).join('');
+}
+
+function importClassList(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (ev) {
+        try {
+            const data = new Uint8Array(ev.target.result);
+            const wb = XLSX.read(data, {type: 'array'});
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            const json = XLSX.utils.sheet_to_json(ws, {defval: ''});
+            if (json.length === 0) { alert('❌ 檔案沒有資料！'); return; }
+
+            const required = ['座號', '姓名', '上學期貢獻度', '身份標記'];
+            const missing = required.filter(f => !(f in json[0]));
+            if (missing.length > 0) {
+                alert(`❌ 缺少必要欄位：${missing.join('、')}\n請確認欄位名稱完全一致`);
+                return;
+            }
+
+            classList = json.map(row => {
+                const mark = String(row['身份標記'] || '').trim();
+                const isCadre = mark && mark !== '一般學生';
+                return {
+                    seat: row['座號'],
+                    name: String(row['姓名']).trim(),
+                    contribution: Math.max(0, Math.min(100, Number(row['上學期貢獻度']) || 0)),
+                    role: isCadre ? 'cadre' : 'student',
+                    fixedJob: isCadre ? mark : null
+                };
+            });
+            saveData();
+            updateAll();
+            alert(`✅ 成功匯入 ${classList.length} 位學生！`);
+        } catch (err) {
+            alert('❌ 檔案讀取失敗：' + err.message);
+        }
+        e.target.value = '';
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function clearClassList() {
+    if (confirm('確定清空班級名單？')) {
+        classList = [];
+        saveData();
+        updateAll();
+    }
+}
+
+function downloadClassTemplate() {
+    const data = [['座號', '姓名', '上學期貢獻度', '身份標記']];
+    data.push([1, '學生1號', 85, '一般學生']);
+    data.push([2, '學生2號', 90, '衛生股長']);
+    data.push([3, '學生3號', 78, '一般學生']);
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols'] = [{wch: 10}, {wch: 15}, {wch: 14}, {wch: 14}];
+    XLSX.utils.book_append_sheet(wb, ws, '班級名單');
+    XLSX.writeFile(wb, '班級名單範例.xlsx');
+}
+
+// ========================================
+// B. 打掃項目設定
+// ========================================
+function updateJobList() {
+    const list = document.getElementById('jobList');
+    if (jobs.length === 0) {
+        list.innerHTML = '<div style="padding:40px;text-align:center;color:#999">尚無打掃項目</div>';
+        return;
+    }
+    list.innerHTML = jobs.map((j, i) => `
+        <div class="job-card">
+            <div class="title">🧹 ${escapeHtml(j.name)}</div>
+            <div class="count">需要 ${j.count} 人</div>
+            <button class="btn btn-small btn-secondary" onclick="editJob(${i})">✏️ 編輯</button>
+            <button class="btn btn-small btn-danger" onclick="deleteJob(${i})">🗑️ 刪除</button>
+        </div>
+    `).join('');
+}
+
+function checkJobCountMatch() {
+    const el = document.getElementById('jobCheckAlert');
+    const studentCount = classList.filter(s => s.role === 'student').length;
+    const jobTotal = jobs.reduce((sum, j) => sum + Number(j.count), 0);
+    if (classList.length === 0) {
+        el.innerHTML = '';
+        return;
+    }
+    if (jobTotal === studentCount) {
+        el.innerHTML = `<div class="alert alert-success">✅ 項目需求人數總計 ${jobTotal} 人，與非幹部學生人數 ${studentCount} 人相符。</div>`;
+    } else {
+        el.innerHTML = `<div class="alert alert-warning">⚠️ 項目需求人數總計 ${jobTotal} 人，但非幹部學生人數為 ${studentCount} 人，兩者不相符，請確認是否需要調整項目人數。</div>`;
+    }
+}
+
+function addJob() {
+    const name = document.getElementById('jobName').value.trim();
+    const count = parseInt(document.getElementById('jobCount').value);
+    if (!name) { alert('請輸入項目名稱'); return; }
+    if (!count || count < 1) { alert('人數至少1人'); return; }
+    jobs.push({id: Date.now(), name, count});
+    document.getElementById('jobName').value = '';
+    document.getElementById('jobCount').value = '1';
+    saveData();
+    updateJobList();
+    checkJobCountMatch();
+}
+
+function editJob(i) {
+    const newName = prompt('修改項目名稱：', jobs[i].name);
+    if (newName && newName.trim()) jobs[i].name = newName.trim();
+    const newCount = prompt('修改人數：', jobs[i].count);
+    if (newCount && parseInt(newCount) > 0) jobs[i].count = parseInt(newCount);
+    saveData();
+    updateJobList();
+    checkJobCountMatch();
+}
+
+function deleteJob(i) {
+    if (confirm(`確定刪除「${jobs[i].name}」？`)) {
+        jobs.splice(i, 1);
+        saveData();
+        updateJobList();
+        checkJobCountMatch();
+    }
+}
+
+function generateSignupLink() {
+    const payload = jobs.map(j => ({name: j.name, count: j.count}));
+    const url = new URL('cleaning-jobs-signup.html', location.href);
+    url.searchParams.set('jobs', JSON.stringify(payload));
+    const out = document.getElementById('signupLinkOutput');
+    out.style.display = 'block';
+    out.value = url.href;
+    out.rows = Math.max(2, Math.ceil(url.href.length / 60));
+}
+
+// ========================================
+// C. 志願回覆上傳與比對
+// ========================================
+function importResponses(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (ev) {
+        try {
+            const data = new Uint8Array(ev.target.result);
+            const wb = XLSX.read(data, {type: 'array'});
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            const json = XLSX.utils.sheet_to_json(ws, {defval: ''});
+            if (json.length === 0) { alert('❌ 檔案沒有資料！'); return; }
+
+            const required = ['座號', '姓名', '志願1', '志願2', '志願3'];
+            const missing = required.filter(f => !(f in json[0]));
+            if (missing.length > 0) {
+                alert(`❌ 缺少必要欄位：${missing.join('、')}\n請確認這是志願登記頁匯出的回覆檔案`);
+                return;
+            }
+
+            responses = json.map(row => ({
+                seat: row['座號'],
+                name: String(row['姓名']).trim(),
+                choices: [row['志願1'], row['志願2'], row['志願3'], row['志願4'], row['志願5']]
+                    .map(c => String(c || '').trim()).filter(c => c),
+                coins: Number(row['投入金幣數']) || 0
+            }));
+
+            saveData();
+            document.getElementById('responseStatus').innerHTML =
+                `<div class="alert alert-success">✅ 成功匯入 ${responses.length} 筆志願回覆！</div>`;
+            checkMismatches();
+        } catch (err) {
+            alert('❌ 檔案讀取失敗：' + err.message);
+        }
+        e.target.value = '';
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function clearResponses() {
+    if (confirm('確定清空志願回覆資料？')) {
+        responses = [];
+        saveData();
+        document.getElementById('responseStatus').innerHTML = '';
+        checkMismatches();
+    }
+}
+
+function checkMismatches() {
+    mismatches = [];
+    const students = classList.filter(s => s.role === 'student');
+    const studentBySeat = new Map(students.map(s => [String(s.seat), s]));
+    const respondedSeats = new Set();
+
+    responses.forEach(r => {
+        const key = String(r.seat);
+        respondedSeats.add(key);
+        const match = studentBySeat.get(key);
+        if (!match) {
+            mismatches.push({type: '有填志願但不在名單上', seat: r.seat, name: r.name, detail: '名單中找不到此座號的一般學生'});
+        } else if (match.name !== r.name) {
+            mismatches.push({type: '姓名不一致', seat: r.seat, name: r.name, detail: `名單姓名為「${match.name}」，請確認是否同一人`});
+        }
+    });
+
+    students.forEach(s => {
+        if (!respondedSeats.has(String(s.seat))) {
+            mismatches.push({type: '在名單上但沒填志願', seat: s.seat, name: s.name, detail: '尚未收到此學生的志願回覆'});
+        }
+    });
+
+    updateResponseArea();
+}
+
+function updateResponseArea() {
+    const area = document.getElementById('mismatchArea');
+    if (responses.length === 0) {
+        area.innerHTML = '<div class="alert alert-info">尚未上傳志願回覆</div>';
+        return;
+    }
+    if (mismatches.length === 0) {
+        area.innerHTML = '<div class="alert alert-success">✅ 名單與志願回覆完全比對相符，沒有發現異常！</div>';
+        return;
+    }
+    area.innerHTML = `
+        <div class="alert alert-warning">⚠️ 發現 ${mismatches.length} 筆異常，請確認：</div>
+        <table class="csv-warn-table">
+            <tr><th>類型</th><th>座號</th><th>姓名</th><th>說明</th></tr>
+            ${mismatches.map(m => `<tr><td>${escapeHtml(m.type)}</td><td>${escapeHtml(m.seat)}</td><td>${escapeHtml(m.name)}</td><td>${escapeHtml(m.detail)}</td></tr>`).join('')}
+        </table>
+    `;
+}
+
+// ========================================
+// D. 分發演算法
+// ========================================
+function computeScore(student, coins) {
+    return (student.contribution || 0) + Math.floor((coins || 0) / 100);
+}
+
+function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+// 加權隨機不放回抽樣：從 pool 中抽出 count 位得獎者，回傳 {winners, log}
+function weightedDrawWithoutReplacement(pool, count, jobName, round) {
+    const drawLog = [];
+    const remainingPool = [...pool];
+    const winners = [];
+    for (let k = 0; k < count && remainingPool.length > 0; k++) {
+        const totalScore = remainingPool.reduce((s, p) => s + p.score, 0);
+        let winnerIdx;
+        let randomValue;
+        const snapshot = remainingPool.map(p => ({
+            name: p.name, seat: p.seat, score: p.score,
+            probability: totalScore > 0 ? (p.score / totalScore) : (1 / remainingPool.length)
+        }));
+        if (totalScore <= 0) {
+            randomValue = Math.random();
+            winnerIdx = Math.floor(randomValue * remainingPool.length);
+        } else {
+            randomValue = Math.random() * totalScore;
+            let cumulative = 0;
+            winnerIdx = remainingPool.length - 1;
+            for (let i = 0; i < remainingPool.length; i++) {
+                cumulative += remainingPool[i].score;
+                if (randomValue <= cumulative) { winnerIdx = i; break; }
+            }
+        }
+        const winner = remainingPool.splice(winnerIdx, 1)[0];
+        winners.push(winner);
+        drawLog.push({
+            job: jobName, round, drawIndex: k + 1, totalScore, randomValue,
+            candidates: snapshot, winner: {name: winner.name, seat: winner.seat, score: winner.score}
+        });
+    }
+    return {winners, losers: remainingPool, drawLog};
+}
+
+function runAssignment() {
+    lotteryLog = [];
+    animationEvents = [];
+    const students = classList.filter(s => s.role === 'student');
+    const respByKey = new Map(responses.map(r => [String(r.seat), r]));
+
+    // 建立參與者
+    const participants = students.map(s => {
+        const r = respByKey.get(String(s.seat));
+        const coins = r ? r.coins : 0;
+        return {
+            seat: s.seat, name: s.name, contribution: s.contribution,
+            coins, score: computeScore(s, coins),
+            choices: r ? r.choices : [],
+            assignedJob: null, assignedRound: null, assignedMethod: null
+        };
+    });
+
+    const jobAssignedCount = {};
+    jobs.forEach(j => { jobAssignedCount[j.name] = 0; });
+
+    for (let round = 1; round <= 5; round++) {
+        animationEvents.push({type: 'round-banner', round});
+        jobs.forEach(job => {
+            const remaining = job.count - jobAssignedCount[job.name];
+            if (remaining <= 0) return;
+            const competitors = participants.filter(p => !p.assignedJob && p.choices[round - 1] === job.name);
+            if (competitors.length === 0) return;
+
+            if (competitors.length <= remaining) {
+                competitors.forEach(c => {
+                    c.assignedJob = job.name;
+                    c.assignedRound = round;
+                    c.assignedMethod = `志願${round}（全額錄取）`;
+                    jobAssignedCount[job.name]++;
+                });
+                animationEvents.push({
+                    type: 'auto-admit', round, job: job.name,
+                    names: competitors.map(c => `${c.seat} ${c.name}`)
+                });
+            } else {
+                const {winners, drawLog} = weightedDrawWithoutReplacement(competitors, remaining, job.name, round);
+                winners.forEach(w => {
+                    const p = participants.find(pp => pp.seat === w.seat && pp.name === w.name);
+                    p.assignedJob = job.name;
+                    p.assignedRound = round;
+                    p.assignedMethod = `志願${round}（抽籤）`;
+                    jobAssignedCount[job.name]++;
+                });
+                lotteryLog.push(...drawLog);
+                animationEvents.push({
+                    type: 'lottery', round, job: job.name,
+                    competitors: competitors.map(c => ({name: c.name, seat: c.seat, score: c.score})),
+                    winners: winners.map(w => `${w.seat} ${w.name}`),
+                    drawLog
+                });
+            }
+        });
+    }
+
+    // 最終隨機分配剩餘工作
+    const stillUnassigned = participants.filter(p => !p.assignedJob);
+    const slotTickets = [];
+    jobs.forEach(job => {
+        const remaining = job.count - jobAssignedCount[job.name];
+        for (let i = 0; i < remaining; i++) slotTickets.push(job.name);
+    });
+
+    if (stillUnassigned.length > 0 || slotTickets.length > 0) {
+        const shuffledStudents = shuffle(stillUnassigned);
+        const shuffledSlots = shuffle(slotTickets);
+        const pairCount = Math.min(shuffledStudents.length, shuffledSlots.length);
+        const randomAssignments = [];
+        for (let i = 0; i < pairCount; i++) {
+            shuffledStudents[i].assignedJob = shuffledSlots[i];
+            shuffledStudents[i].assignedRound = '隨機';
+            shuffledStudents[i].assignedMethod = '隨機分配';
+            randomAssignments.push(`${shuffledStudents[i].seat} ${shuffledStudents[i].name} → ${shuffledSlots[i]}`);
+        }
+        const leftoverStudents = shuffledStudents.slice(pairCount).map(s => `${s.seat} ${s.name}`);
+        const leftoverSlots = shuffledSlots.slice(pairCount);
+        animationEvents.push({
+            type: 'final-random',
+            assignments: randomAssignments,
+            leftoverStudents, leftoverSlots
+        });
+    }
+
+    // 幹部固定職務
+    const cadreResults = classList.filter(s => s.role === 'cadre').map(s => ({
+        seat: s.seat, name: s.name, job: s.fixedJob, method: '幹部固定職務', score: '-'
+    }));
+
+    finalResults = [
+        ...participants.map(p => ({
+            seat: p.seat, name: p.name, job: p.assignedJob || '⚠️未分配',
+            method: p.assignedMethod || '⚠️未分配', score: p.score
+        })),
+        ...cadreResults
+    ];
+
+    saveData();
+}
+
+// ========================================
+// D+E. 動畫播放
+// ========================================
+function startFullAssignment() {
+    if (classList.length === 0) { alert('❌ 請先上傳班級名單'); return; }
+    if (jobs.length === 0) { alert('❌ 請先設定打掃項目'); return; }
+    if (responses.length === 0) {
+        if (!confirm('⚠️ 尚未上傳任何志願回覆，將直接進入隨機分配，確定繼續嗎？')) return;
+    }
+    runAssignment();
+    document.getElementById('startAssignBtn').disabled = true;
+    document.getElementById('skipBtn').style.display = 'inline-block';
+    animationSkip = false;
+    animationRunning = true;
+    document.getElementById('lotteryStage').innerHTML = '';
+    playAnimationQueue();
+}
+
+function skipAnimation() {
+    animationSkip = true;
+}
+
+function wait(ms) {
+    return new Promise(resolve => setTimeout(resolve, animationSkip ? 0 : ms));
+}
+
+async function playAnimationQueue() {
+    const stage = document.getElementById('lotteryStage');
+    for (const ev of animationEvents) {
+        if (ev.type === 'round-banner') {
+            const div = document.createElement('div');
+            div.className = 'round-banner';
+            div.textContent = `🎯 第 ${ev.round} 志願`;
+            stage.appendChild(div);
+            div.scrollIntoView({behavior: 'smooth', block: 'end'});
+            await wait(400);
+        } else if (ev.type === 'auto-admit') {
+            const div = document.createElement('div');
+            div.className = 'lottery-section';
+            div.innerHTML = `
+                <div class="lottery-title">🧹 ${escapeHtml(ev.job)}</div>
+                <div class="auto-admit">✅ 競爭人數未超過名額，全數錄取：${ev.names.map(escapeHtml).join('、')}</div>
+            `;
+            stage.appendChild(div);
+            div.scrollIntoView({behavior: 'smooth', block: 'end'});
+            await wait(600);
+        } else if (ev.type === 'lottery') {
+            await playLotteryReveal(stage, ev);
+        } else if (ev.type === 'final-random') {
+            const div = document.createElement('div');
+            div.className = 'lottery-section';
+            let html = `<div class="lottery-title">🎲 最後隨機分配剩餘工作</div>`;
+            if (ev.assignments.length > 0) {
+                html += `<div class="participant-list">${ev.assignments.map(a => `<div class="participant-item selected">${escapeHtml(a)}</div>`).join('')}</div>`;
+            } else {
+                html += `<div class="alert alert-success">✅ 沒有剩餘需要隨機分配的工作</div>`;
+            }
+            if (ev.leftoverStudents.length > 0) {
+                html += `<div class="alert alert-warning">⚠️ 名額不足，以下學生暫未分配：${ev.leftoverStudents.map(escapeHtml).join('、')}</div>`;
+            }
+            if (ev.leftoverSlots.length > 0) {
+                html += `<div class="alert alert-warning">⚠️ 人數不足，以下工作名額尚未填滿：${ev.leftoverSlots.map(escapeHtml).join('、')}</div>`;
+            }
+            div.innerHTML = html;
+            stage.appendChild(div);
+            div.scrollIntoView({behavior: 'smooth', block: 'end'});
+            createConfetti();
+            await wait(800);
+        }
+    }
+    animationRunning = false;
+    document.getElementById('skipBtn').style.display = 'none';
+    document.getElementById('startAssignBtn').disabled = false;
+    document.getElementById('startAssignBtn').textContent = '🔄 重新開始分發抽籤';
+    showWinnerNotification('🎉 全部分發完成！', '可以到「🏆 結果匯出」查看完整結果');
+    updateResults();
+}
+
+async function playLotteryReveal(stage, ev) {
+    const totalScore = ev.competitors.reduce((s, c) => s + c.score, 0);
+    const div = document.createElement('div');
+    div.className = 'lottery-section';
+    div.innerHTML = `
+        <div class="lottery-title">🧹 ${escapeHtml(ev.job)}（第 ${ev.round} 志願，競爭 ${ev.competitors.length} 人，名額 ${ev.winners.length}）</div>
+        <div class="marquee-box"><div class="marquee-text" id="marquee-${stage.children.length}">🎲 抽籤中...</div></div>
+        <div class="participant-list">
+            ${ev.competitors.map(c => `
+                <div class="participant-item" data-key="${escapeHtml(c.seat)}-${escapeHtml(c.name)}">
+                    <div class="participant-name">${escapeHtml(c.seat)} ${escapeHtml(c.name)}</div>
+                    <div>
+                        <span class="participant-score">分數 ${c.score}</span>
+                        <span class="participant-probability">${totalScore > 0 ? ((c.score / totalScore) * 100).toFixed(1) : '-'}%</span>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+        <div class="lottery-result" id="lresult-${stage.children.length}"></div>
+    `;
+    stage.appendChild(div);
+    div.scrollIntoView({behavior: 'smooth', block: 'end'});
+
+    const marquee = div.querySelector('.marquee-text');
+    const names = ev.competitors.map(c => `${c.seat} ${c.name}`);
+    let spin = 0;
+    const spinInterval = setInterval(() => {
+        marquee.textContent = '🎲 ' + names[spin % names.length];
+        spin++;
+    }, 70);
+    await wait(1200);
+    clearInterval(spinInterval);
+    marquee.textContent = '🎉 中籤：' + ev.winners.join('、');
+
+    ev.winners.forEach(w => {
+        const item = div.querySelector(`.participant-item[data-key="${CSS.escape(w.split(' ')[0])}-${CSS.escape(w.split(' ').slice(1).join(' '))}"]`);
+        if (item) item.classList.add('selected');
+    });
+    div.querySelectorAll('.participant-item').forEach(item => {
+        if (!item.classList.contains('selected')) item.classList.add('rejected');
+    });
+
+    createConfetti();
+    await wait(500);
+}
+
+function createConfetti() {
+    const colors = ['#f0f', '#0ff', '#ff0', '#0f0', '#f00', '#00f'];
+    for (let i = 0; i < 30; i++) {
+        setTimeout(() => {
+            const c = document.createElement('div');
+            c.className = 'confetti';
+            c.style.left = Math.random() * window.innerWidth + 'px';
+            c.style.top = '-10px';
+            c.style.background = colors[Math.floor(Math.random() * colors.length)];
+            document.body.appendChild(c);
+            setTimeout(() => c.remove(), 3000);
+        }, i * 25);
+    }
+}
+
+function showWinnerNotification(title, sub) {
+    const n = document.createElement('div');
+    n.className = 'winner-notification';
+    n.innerHTML = `<div class="winner-icon">🎉</div><div class="winner-title">${escapeHtml(title)}</div><div>${escapeHtml(sub)}</div>`;
+    document.body.appendChild(n);
+    setTimeout(() => n.classList.add('show'), 100);
+    setTimeout(() => { n.classList.remove('show'); setTimeout(() => n.remove(), 500); }, 3000);
+}
+
+// ========================================
+// F. 結果與匯出
+// ========================================
+function updateResults() {
+    const summary = document.getElementById('resultSummary');
+    const content = document.getElementById('resultContent');
+    if (finalResults.length === 0) {
+        summary.innerHTML = '<div class="alert alert-warning">尚未進行分發</div>';
+        content.innerHTML = '';
+        return;
+    }
+    const unassigned = finalResults.filter(r => r.job === '⚠️未分配').length;
+    summary.innerHTML = `
+        <div class="alert alert-success">
+            📊 分發完成，共 ${finalResults.length} 人（含幹部）${unassigned > 0 ? `，⚠️ 仍有 ${unassigned} 人未分配，請確認項目人數設定` : ''}
+        </div>
+    `;
+    const byJob = {};
+    finalResults.forEach(r => {
+        if (!byJob[r.job]) byJob[r.job] = [];
+        byJob[r.job].push(r);
+    });
+    let html = '';
+    Object.keys(byJob).forEach(jobName => {
+        html += `
+            <div style="margin:15px 0;">
+                <h4 style="color:#333;margin-bottom:10px;">🧹 ${escapeHtml(jobName)}</h4>
+                <table class="result-table">
+                    <tr><th>座號</th><th>姓名</th><th>方式</th><th>分數</th></tr>
+                    ${byJob[jobName].map(r => `
+                        <tr>
+                            <td>${escapeHtml(r.seat)}</td>
+                            <td><strong>${escapeHtml(r.name)}</strong></td>
+                            <td><span class="status-badge ${r.method.includes('幹部') ? 'status-cadre' : r.method.includes('隨機') ? 'status-random' : 'status-selected'}">${escapeHtml(r.method)}</span></td>
+                            <td>${r.score}</td>
+                        </tr>
+                    `).join('')}
+                </table>
+            </div>
+        `;
+    });
+    content.innerHTML = html;
+}
+
+function exportByJob() {
+    if (finalResults.length === 0) { alert('❌ 尚無結果可匯出！'); return; }
+    const data = [['打掃項目', '座號', '姓名', '分發方式']];
+    const byJob = {};
+    finalResults.forEach(r => {
+        if (!byJob[r.job]) byJob[r.job] = [];
+        byJob[r.job].push(r);
+    });
+    Object.keys(byJob).forEach(jobName => {
+        byJob[jobName].forEach(r => data.push([jobName, r.seat, r.name, r.method]));
+    });
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols'] = [{wch: 30}, {wch: 10}, {wch: 15}, {wch: 18}];
+    XLSX.utils.book_append_sheet(wb, ws, '依打掃項目');
+    XLSX.writeFile(wb, `打掃分發結果_依項目_${new Date().toISOString().split('T')[0]}.xlsx`);
+}
+
+function exportByStudent() {
+    if (finalResults.length === 0) { alert('❌ 尚無結果可匯出！'); return; }
+    const data = [['座號', '姓名', '打掃項目', '分發方式', '分數']];
+    [...finalResults].sort((a, b) => (Number(a.seat) || 0) - (Number(b.seat) || 0))
+        .forEach(r => data.push([r.seat, r.name, r.job, r.method, r.score]));
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols'] = [{wch: 10}, {wch: 15}, {wch: 30}, {wch: 18}, {wch: 10}];
+    XLSX.utils.book_append_sheet(wb, ws, '依學生統計');
+    XLSX.writeFile(wb, `打掃分發結果_依學生_${new Date().toISOString().split('T')[0]}.xlsx`);
+}
+
+function exportLotteryLog() {
+    if (lotteryLog.length === 0) { alert('❌ 尚無抽籤紀錄可匯出！'); return; }
+    const data = [['志願序', '打掃項目', '第幾次抽出', '候選人座號', '候選人姓名', '候選人分數', '候選人機率', '該次亂數值', '該次總分數', '是否中籤']];
+    lotteryLog.forEach(log => {
+        log.candidates.forEach(c => {
+            const isWinner = c.seat === log.winner.seat && c.name === log.winner.name;
+            data.push([
+                log.round, log.job, log.drawIndex, c.seat, c.name, c.score,
+                (c.probability * 100).toFixed(2) + '%', log.randomValue.toFixed(4), log.totalScore,
+                isWinner ? '✅ 中籤' : ''
+            ]);
+        });
+    });
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols'] = [{wch: 8}, {wch: 22}, {wch: 12}, {wch: 10}, {wch: 12}, {wch: 10}, {wch: 10}, {wch: 12}, {wch: 10}, {wch: 10}];
+    XLSX.utils.book_append_sheet(wb, ws, '抽籤過程紀錄');
+    XLSX.writeFile(wb, `打掃分發_抽籤過程紀錄_${new Date().toISOString().split('T')[0]}.xlsx`);
+}
+
+function resetAssignment() {
+    if (confirm('⚠️ 確定要重置本次分發嗎？\n\n這將清除志願回覆與分發結果，但保留班級名單與打掃項目設定。')) {
+        responses = [];
+        finalResults = [];
+        lotteryLog = [];
+        mismatches = [];
+        saveData();
+        document.getElementById('responseStatus').innerHTML = '';
+        document.getElementById('lotteryStage').innerHTML = '';
+        document.getElementById('startAssignBtn').disabled = false;
+        document.getElementById('startAssignBtn').textContent = '🎰 開始分發抽籤';
+        updateAll();
+        alert('✅ 已重置！可以重新上傳志願回覆並進行分發。');
+    }
+}
+</script>
+</body>
+</html>
