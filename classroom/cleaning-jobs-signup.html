@@ -168,14 +168,14 @@ footer { text-align: center; padding: 18px; border-top: 2px solid #f0f0f0; color
 <body>
 <div class="container">
     <div class="header">
-        <a href="../index.html" class="back-home">← 返回工具箱首頁</a>
+        <a href="../index.html" class="back-home" id="backHomeLink">← 返回工具箱首頁</a>
         <h1>🧹 打掃工作志願登記</h1>
-        <p class="version">v4.0 志願序登記</p>
+        <p class="version">v4.2 志願序登記</p>
     </div>
 
     <div class="content">
         <div id="screen-form">
-            <div class="section">
+            <div class="section" id="teacherSettingsSection">
                 <div class="settings-toggle" onclick="toggleSettings()">⚙️ 老師設定 / 手動載入項目清單</div>
                 <div class="settings-panel" id="settingsPanel">
                     <div class="alert alert-info" style="margin-top:0;">
@@ -218,7 +218,7 @@ footer { text-align: center; padding: 18px; border-top: 2px solid #f0f0f0; color
         </div>
     </div>
 
-    <footer>程式設計：巫魚子 © 2025 | v4.0 志願序登記</footer>
+    <footer>程式設計：巫魚子 © 2025 | v4.2 志願序登記</footer>
 </div>
 
 <script>
@@ -244,6 +244,8 @@ let jobs = [];
 
 function loadJobs() {
     const params = new URLSearchParams(location.search);
+    applyStudentModeUI(params.has('jobs'));
+
     const fromUrl = params.get('jobs');
     if (fromUrl) {
         try {
@@ -269,6 +271,14 @@ function loadJobs() {
 
 function toggleSettings() {
     document.getElementById('settingsPanel').classList.toggle('show');
+}
+
+// 網址帶有 jobs 參數 = 老師產生給學生的連結，隱藏管理用元素，呈現學生專用乾淨畫面
+function applyStudentModeUI(isStudentLink) {
+    const backHome = document.getElementById('backHomeLink');
+    const teacherSection = document.getElementById('teacherSettingsSection');
+    if (backHome) backHome.style.display = isStudentLink ? 'none' : '';
+    if (teacherSection) teacherSection.style.display = isStudentLink ? 'none' : '';
 }
 
 function applyManualJobs() {
