@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🧹 打掃工作分發管理系統 v4.0</title>
+<title>🧹 打掃工作分發管理系統 v4.1</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
@@ -143,6 +143,28 @@ footer { text-align: center; padding: 20px; border-top: 2px solid #f0f0f0; color
 .log-box { max-height: 260px; overflow-y: auto; background: #1a202c; color: #d1fae5; font-family: monospace; font-size: 0.8em; padding: 12px; border-radius: 10px; line-height: 1.6; }
 .csv-warn-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em; }
 .csv-warn-table th, .csv-warn-table td { padding: 8px; border-bottom: 1px solid #eee; text-align: left; }
+
+/* 分發前最終確認 */
+#finalConfirmOverlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    z-index: 5000; align-items: center; justify-content: center; padding: 20px;
+}
+.modal-box-fc {
+    background: white; border-radius: 16px; padding: 24px; max-width: 720px; width: 100%;
+    max-height: 88vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+}
+.modal-box-fc h3 { color: #333; margin-bottom: 4px; padding-bottom: 8px; border-bottom: 2px solid #667eea; }
+.final-confirm-list { max-height: 45vh; overflow-y: auto; margin: 14px 0; border: 1px solid #eee; border-radius: 10px; }
+.final-confirm-row {
+    display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid #f0f0f0; flex-wrap: wrap;
+}
+.final-confirm-row:last-child { border-bottom: none; }
+.fc-seat-name { flex: 0 0 110px; font-weight: bold; }
+.fc-checkbox { display: flex; align-items: center; gap: 6px; font-size: 0.88em; color: #856404; white-space: nowrap; }
+.fc-checkbox input { width: auto; margin: 0; }
+.fc-jobtitle { flex: 1; min-width: 140px; padding: 6px 10px; margin: 0; font-size: 0.9em; }
+.fc-jobtitle:disabled { background: #f0f0f0; color: #aaa; }
+.modal-actions-fc { margin-top: 16px; text-align: right; }
 @media (max-width: 768px) {
     .container { margin: 0; border-radius: 0; }
     .header h1 { font-size: 1.5em; }
@@ -156,7 +178,7 @@ footer { text-align: center; padding: 20px; border-top: 2px solid #f0f0f0; color
     <div class="header">
         <a href="../index.html" class="back-home">← 返回工具箱首頁</a>
         <h1>🧹 打掃工作分發管理系統</h1>
-        <p class="version">v4.0 志願序 + 貢獻度/金幣分發</p>
+        <p class="version">v4.1 志願序 + 貢獻度/金幣分發（分發前最終確認）</p>
     </div>
 
     <div class="tabs">
@@ -258,7 +280,22 @@ footer { text-align: center; padding: 20px; border-top: 2px solid #f0f0f0; color
         </div>
     </div>
 
-    <footer>程式設計：巫魚子 © 2025 | v4.0 志願序 + 貢獻度/金幣分發</footer>
+    <div id="finalConfirmOverlay">
+        <div class="modal-box-fc">
+            <h3>✅ 分發前最終確認</h3>
+            <div class="alert alert-info" style="margin-top:10px;">
+                請確認每位學生的身份。勾選「幹部（不參與分發）」的學生，將完全不會被納入志願1～5任何一輪的抽籤競爭，也不會出現在最後的隨機分配名單裡。這是最後一次校正機會，不受區塊A上傳名單時的標記限制。
+            </div>
+            <div id="finalConfirmCheckAlert"></div>
+            <div class="final-confirm-list" id="finalConfirmList"></div>
+            <div class="modal-actions-fc">
+                <button class="btn btn-secondary" onclick="closeFinalConfirmModal()">取消/返回</button>
+                <button class="btn btn-success" onclick="confirmAndRunAssignment()">✅ 確認名單，開始分發</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>程式設計：巫魚子 © 2025 | v4.1 志願序 + 貢獻度/金幣分發</footer>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -283,6 +320,7 @@ let lotteryLog = [];   // audit trail
 let animationEvents = []; // sequential reveal queue
 let animationSkip = false;
 let animationRunning = false;
+let finalConfirmDraft = []; // 分發前最終確認畫面的暫存名單草稿
 
 // ========================================
 // 初始化 / 儲存
@@ -727,13 +765,13 @@ function runAssignment() {
 
     // 幹部固定職務
     const cadreResults = classList.filter(s => s.role === 'cadre').map(s => ({
-        seat: s.seat, name: s.name, job: s.fixedJob, method: '幹部固定職務', score: '-'
+        seat: s.seat, name: s.name, job: s.fixedJob, method: '幹部固定職務', score: '-', isCadre: true
     }));
 
     finalResults = [
         ...participants.map(p => ({
             seat: p.seat, name: p.name, job: p.assignedJob || '⚠️未分配',
-            method: p.assignedMethod || '⚠️未分配', score: p.score
+            method: p.assignedMethod || '⚠️未分配', score: p.score, isCadre: false
         })),
         ...cadreResults
     ];
@@ -750,6 +788,83 @@ function startFullAssignment() {
     if (responses.length === 0) {
         if (!confirm('⚠️ 尚未上傳任何志願回覆，將直接進入隨機分配，確定繼續嗎？')) return;
     }
+    openFinalConfirmModal();
+}
+
+// ========================================
+// 分發前最終確認
+// ========================================
+function openFinalConfirmModal() {
+    finalConfirmDraft = classList.map(s => ({...s}));
+    renderFinalConfirmList();
+    document.getElementById('finalConfirmOverlay').style.display = 'flex';
+}
+
+function closeFinalConfirmModal() {
+    document.getElementById('finalConfirmOverlay').style.display = 'none';
+}
+
+function renderFinalConfirmList() {
+    const list = document.getElementById('finalConfirmList');
+    list.innerHTML = finalConfirmDraft.map((s, i) => `
+        <div class="final-confirm-row">
+            <span class="fc-seat-name">${escapeHtml(s.seat)} ${escapeHtml(s.name)}</span>
+            <label class="fc-checkbox">
+                <input type="checkbox" ${s.role === 'cadre' ? 'checked' : ''} onchange="onFinalConfirmToggle(${i}, this.checked)">
+                幹部（不參與分發）
+            </label>
+            <input type="text" class="fc-jobtitle" data-idx="${i}" placeholder="固定職務名稱（例如：衛生股長）"
+                value="${escapeHtml(s.fixedJob || '')}" ${s.role === 'cadre' ? '' : 'disabled'}
+                oninput="onFinalConfirmJobTitleInput(${i}, this.value)">
+        </div>
+    `).join('');
+    updateFinalConfirmCheck();
+}
+
+function onFinalConfirmToggle(i, checked) {
+    finalConfirmDraft[i].role = checked ? 'cadre' : 'student';
+    const input = document.querySelector(`.fc-jobtitle[data-idx="${i}"]`);
+    if (checked) {
+        input.disabled = false;
+    } else {
+        finalConfirmDraft[i].fixedJob = null;
+        input.value = '';
+        input.disabled = true;
+    }
+    updateFinalConfirmCheck();
+}
+
+function onFinalConfirmJobTitleInput(i, value) {
+    finalConfirmDraft[i].fixedJob = value;
+}
+
+function updateFinalConfirmCheck() {
+    const el = document.getElementById('finalConfirmCheckAlert');
+    const cadreCount = finalConfirmDraft.filter(s => s.role === 'cadre').length;
+    const studentCount = finalConfirmDraft.length - cadreCount;
+    const jobTotal = jobs.reduce((sum, j) => sum + Number(j.count), 0);
+    if (jobTotal === studentCount) {
+        el.innerHTML = `<div class="alert alert-success">✅ 項目需求人數總計 ${jobTotal} 人，與目前勾選後的非幹部學生人數 ${studentCount} 人相符。</div>`;
+    } else {
+        el.innerHTML = `<div class="alert alert-warning">⚠️ 項目需求人數總計 ${jobTotal} 人，但目前勾選後的非幹部學生人數為 ${studentCount} 人，兩者不相符，請確認勾選狀態或回到「打掃項目」分頁調整人數。</div>`;
+    }
+}
+
+function confirmAndRunAssignment() {
+    finalConfirmDraft.forEach(s => {
+        if (s.role === 'cadre' && !String(s.fixedJob || '').trim()) {
+            s.fixedJob = '幹部';
+        }
+    });
+    classList = finalConfirmDraft.map(s => ({...s}));
+    saveData();
+    updateClassGrid();
+    checkJobCountMatch();
+    closeFinalConfirmModal();
+    runAssignmentAndAnimate();
+}
+
+function runAssignmentAndAnimate() {
     runAssignment();
     document.getElementById('startAssignBtn').disabled = true;
     document.getElementById('skipBtn').style.display = 'inline-block';
@@ -907,7 +1022,7 @@ function updateResults() {
         </div>
     `;
     const byJob = {};
-    finalResults.forEach(r => {
+    finalResults.filter(r => !r.isCadre).forEach(r => {
         if (!byJob[r.job]) byJob[r.job] = [];
         byJob[r.job].push(r);
     });
@@ -930,6 +1045,24 @@ function updateResults() {
             </div>
         `;
     });
+    const cadreList = finalResults.filter(r => r.isCadre);
+    if (cadreList.length > 0) {
+        html += `
+            <div style="margin:15px 0;">
+                <h4 style="color:#333;margin-bottom:10px;">👑 幹部固定職務（不參與分發，僅列於此供參考）</h4>
+                <table class="result-table">
+                    <tr><th>座號</th><th>姓名</th><th>固定職務</th></tr>
+                    ${cadreList.map(r => `
+                        <tr>
+                            <td>${escapeHtml(r.seat)}</td>
+                            <td><strong>${escapeHtml(r.name)}</strong></td>
+                            <td><span class="status-badge status-cadre">${escapeHtml(r.job)}</span></td>
+                        </tr>
+                    `).join('')}
+                </table>
+            </div>
+        `;
+    }
     content.innerHTML = html;
 }
 
@@ -937,7 +1070,7 @@ function exportByJob() {
     if (finalResults.length === 0) { alert('❌ 尚無結果可匯出！'); return; }
     const data = [['打掃項目', '座號', '姓名', '分發方式']];
     const byJob = {};
-    finalResults.forEach(r => {
+    finalResults.filter(r => !r.isCadre).forEach(r => {
         if (!byJob[r.job]) byJob[r.job] = [];
         byJob[r.job].push(r);
     });
