@@ -6,19 +6,14 @@
 
 ```
 wuyutzu-tools/
-├── index.html                    # 工具導覽首頁
-├── christmas/                    # 聖誕節系列工具
-│   ├── lottery.html             # 交換禮物抽籤系統
-│   ├── adjectives.html          # 禮物形容詞產生器
-│   ├── gift-exchange.html       # 聖誕禮物交換系統
-│   └── points.html              # 聖誕集點系統
-├── classroom/                    # 班級管理工具
-│   ├── cleaning-jobs.html       # 打掃工作徵才系統 (v3.3)
-│   └── seating.html             # 座位安排系統
-└── gamification/                 # 遊戲化教學工具
-    ├── random-selector.html     # 隨機選人系統
-    └── system.html              # 選人系統 + 陣亡詛咒系統
+├── index.html        # 工具導覽首頁
+├── classroom/        # 導師班工具（座位、打掃徵才、DISC、貝爾賓、巴圖、金曲歌王、詩籤）
+├── chemistry/        # 化學學習遊戲（消失的實驗器材）
+├── gamification/     # 課堂遊戲化（選人、陣亡詛咒、戳戳樂、真心話大冒險）
+└── christmas/        # 聖誕節系列（交換禮物抽籤、形容詞產生器）
 ```
+
+完整的檔案結構、資料儲存方式與新增工具步驟，請看 **[DEVELOPMENT.md](DEVELOPMENT.md)**。
 
 ## 🎯 工具介紹
 
@@ -54,6 +49,14 @@ wuyutzu-tools/
 - 一鍵隨機分配座位
 - 下載座位表紀錄
 
+### ⚗️ 化學學習遊戲
+
+#### 🔍 消失的實驗器材
+- 33 種實驗器材題庫，每局隨機 30 題
+- 看圖輸入名稱，一字不差才過關；整場 3 條命
+- 答得越快分數越高，結算後顯示待加強器材
+- Firebase 即時排行榜（前 30 名，可篩選班級）
+
 ### 🎮 遊戲化教學工具
 
 #### 🎯 選人系統
@@ -84,7 +87,7 @@ wuyutzu-tools/
 
 訪問 GitHub Pages:
 ```
-https://你的GitHub帳號.github.io/wuyutzu-tools/
+https://puff0223-chwu.github.io/wuyutzu-tools/
 ```
 
 ## 👨‍💻 作者
