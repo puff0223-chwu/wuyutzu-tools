@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔍 消失的實驗器材</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #14212c;
+    --ink-2: #1d2f3e;
+    --paper: #fbf7ee;
+    --paper-line: #e6dcc6;
+    --amber: #ffb627;
+    --red: #e23d3d;
+    --green: #2fb36d;
+    --muted: #8a9aa8;
+    --text: #22303c;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+    background: var(--ink);
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(255,182,39,0.08), transparent 40%),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 32px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 32px);
+    color: var(--paper);
+    min-height: 100vh;
+    padding: 16px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  .hidden { display: none !important; }
+
+  /* caution tape */
+  .tape {
+    height: 14px; border-radius: 3px; margin-bottom: 18px;
+    background: repeating-linear-gradient(-45deg, var(--amber) 0 14px, #1a1a1a 14px 28px);
+    opacity: 0.9;
+  }
+  .home-link { color: var(--muted); font-size: 0.85em; text-decoration: none; }
+  .home-link:hover { color: var(--amber); }
+
+  h1 {
+    font-weight: 900; font-size: clamp(2em, 7vw, 3.1em);
+    letter-spacing: 0.06em; margin: 10px 0 4px;
+  }
+  h1 span { color: var(--amber); }
+  .case-no { color: var(--muted); font-size: 0.85em; letter-spacing: 0.2em; }
+
+  .paper {
+    background: var(--paper); color: var(--text);
+    border-radius: 14px; padding: 22px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    position: relative;
+  }
+  .story { line-height: 1.85; margin: 18px 0; }
+  .story b { color: var(--red); }
+
+  .rules { list-style: none; margin: 14px 0 0; display: grid; gap: 8px; }
+  .rules li { background: #fff; border: 1px dashed var(--paper-line); border-radius: 10px; padding: 9px 12px; font-size: 0.95em; }
+
+  .form { display: grid; grid-template-columns: 1fr 0.7fr 1.3fr; gap: 10px; margin-top: 18px; }
+  .form label { font-size: 0.8em; color: #6b5d43; font-weight: 700; display: block; margin-bottom: 4px; }
+  input[type=text], input[type=number] {
+    width: 100%; font: inherit; font-size: 1.05em;
+    padding: 11px 12px; border-radius: 10px;
+    border: 2px solid var(--paper-line); background: #fff; color: var(--text);
+    outline: none;
+  }
+  input:focus { border-color: var(--amber); }
+
+  .btn {
+    font: inherit; font-weight: 900; font-size: 1.1em; letter-spacing: 0.05em;
+    border: none; border-radius: 12px; padding: 14px 20px; cursor: pointer;
+    background: var(--amber); color: #1a1a1a;
+    box-shadow: 0 4px 0 #b97d0b; transition: transform 0.08s;
+  }
+  .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #b97d0b; }
+  .btn.ghost { background: transparent; color: var(--paper); border: 2px solid rgba(255,255,255,0.3); box-shadow: none; }
+  .btn.dark { background: var(--ink-2); color: var(--paper); box-shadow: 0 4px 0 #0b141b; }
+  .btn-row { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+  .btn-row .btn { flex: 1; min-width: 150px; }
+  .err { color: var(--red); font-size: 0.9em; margin-top: 8px; min-height: 1.2em; }
+
+  /* game HUD */
+  .hud { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+  .hud .chip { background: var(--ink-2); border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; padding: 6px 14px; font-weight: 700; }
+  .hearts { font-size: 1.4em; letter-spacing: 4px; }
+  .hearts .lost { filter: grayscale(1); opacity: 0.3; }
+  .progress { height: 6px; background: var(--ink-2); border-radius: 3px; overflow: hidden; margin-bottom: 14px; }
+  .progress div { height: 100%; background: var(--amber); width: 0; transition: width 0.3s; }
+
+  .evidence { text-align: center; padding: 18px 18px 22px; }
+  .evidence-tag {
+    position: absolute; top: 14px; left: 14px;
+    background: var(--red); color: #fff; font-weight: 900; font-size: 0.8em;
+    padding: 4px 10px; border-radius: 6px; transform: rotate(-4deg); letter-spacing: 0.1em;
+  }
+  .cat-tag { position: absolute; top: 14px; right: 14px; font-size: 0.8em; color: #6b5d43; background: #f1e8d4; padding: 4px 10px; border-radius: 6px; }
+  .evidence img {
+    max-width: 100%; max-height: 300px; height: 300px; object-fit: contain;
+    margin: 26px auto 6px; display: block; border-radius: 8px; background: #fff;
+  }
+  .mark-hint { font-size: 0.9em; color: var(--red); font-weight: 700; min-height: 1.3em; }
+  .timer { font-size: 0.9em; color: #6b5d43; margin-top: 4px; }
+  .timer b { font-size: 1.3em; color: var(--text); }
+
+  .answer-row { display: flex; gap: 10px; margin-top: 14px; }
+  .answer-row input { flex: 1; font-size: 1.25em; text-align: center; font-weight: 700; }
+  .answer-row .btn { white-space: nowrap; }
+
+  .feedback { text-align: center; font-weight: 900; font-size: 1.15em; min-height: 1.6em; margin-top: 12px; }
+  .feedback.ok { color: var(--green); }
+  .feedback.bad { color: var(--red); }
+
+  .shake { animation: shake 0.4s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-10px)} 40%,80%{transform:translateX(10px)} }
+  .flash-ok { animation: flashOk 0.6s; }
+  @keyframes flashOk { 0%{box-shadow:0 0 0 0 rgba(47,179,109,0.8)} 100%{box-shadow:0 0 0 24px rgba(47,179,109,0)} }
+
+  /* result */
+  .stamp {
+    display: inline-block; border: 4px solid; border-radius: 10px;
+    padding: 6px 18px; font-weight: 900; font-size: 1.6em; letter-spacing: 0.15em;
+    transform: rotate(-6deg); margin: 6px 0 14px;
+  }
+  .stamp.win { color: var(--green); }
+  .stamp.lose { color: var(--red); }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 8px 0 4px; }
+  .stat { background: #fff; border-radius: 12px; padding: 12px 6px; text-align: center; border: 1px solid var(--paper-line); }
+  .stat .n { font-size: 1.7em; font-weight: 900; }
+  .stat .l { font-size: 0.78em; color: #6b5d43; }
+  .stat.total .n { color: #c27c00; }
+
+  .review { margin-top: 16px; }
+  .review h3 { font-size: 1em; margin-bottom: 8px; }
+  .review-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .review-item { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--paper-line); border-radius: 10px; padding: 6px 10px 6px 6px; }
+  .review-item img { width: 46px; height: 46px; object-fit: contain; background: #fff; border-radius: 6px; }
+
+  /* leaderboard */
+  .lb-head { display: flex; justify-content: space-between; align-items: center; margin: 22px 0 10px; gap: 10px; flex-wrap: wrap; }
+  .lb-head h2 { font-size: 1.3em; }
+  .seg { display: flex; background: var(--ink-2); border-radius: 999px; padding: 3px; }
+  .seg button { font: inherit; font-size: 0.85em; border: none; background: none; color: var(--muted); padding: 6px 12px; border-radius: 999px; cursor: pointer; }
+  .seg button.on { background: var(--amber); color: #1a1a1a; font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.95em; }
+  th { text-align: left; font-size: 0.78em; color: var(--muted); font-weight: 700; padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,0.12); }
+  td { padding: 9px 8px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.me td { background: rgba(255,182,39,0.2); color: #fff; font-weight: 700; }
+  tr.me td:first-child { border-left: 4px solid var(--amber); }
+  .medal { font-size: 1.1em; }
+  .lb-note { color: var(--muted); font-size: 0.85em; margin-top: 10px; text-align: center; }
+  .lb-gap td { text-align: center; color: var(--muted); padding: 4px; }
+
+  .footer { text-align: center; color: var(--muted); font-size: 0.8em; padding: 26px 0 10px; }
+
+  @media (max-width: 560px) {
+    .form { grid-template-columns: 1fr 1fr; }
+    .form .name-field { grid-column: 1 / -1; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .evidence img { height: 230px; }
+    .answer-row { flex-direction: column; }
+    th.hide-sm, td.hide-sm { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="tape"></div>
+  <a class="home-link" href="../index.html">← 回到巫魚子的教學工具箱</a>
+
+  <!-- ===== 開始畫面 ===== -->
+  <section id="screen-start">
+    <div class="case-no">CASE FILE · 化學實驗室 No.307</div>
+    <h1>消失的<span>實驗器材</span></h1>
+
+    <div class="paper">
+      <p class="story">
+        昨晚化學實驗室遭人闖入，所有器材上的<b>標籤全被撕光</b>了！<br>
+        明天就要上實驗課，身為實驗室助理的你，必須在最短時間內認出每一件器材，把正確名稱重新貼回去。
+      </p>
+      <ul class="rules">
+        <li>🔎 每局隨機出現 <b>30 件</b>器材，看圖輸入名稱，<b>一字不差</b>才算過關</li>
+        <li>❤️ 整場共有 <b>3 條命</b>，答錯一次扣一條，扣完就 Game Over</li>
+        <li>⏱️ 答得越快分數越高：5 秒內答對得 100 分，之後每秒扣 5 分，最低 30 分</li>
+        <li>🔴 圖片裡有<b>紅圈</b>時，請回答紅圈中的那一件器材</li>
+      </ul>
+
+      <div class="form">
+        <div><label for="in-cls">班級</label><input id="in-cls" type="text" maxlength="10" placeholder="例：101"></div>
+        <div><label for="in-seat">座號</label><input id="in-seat" type="number" min="1" max="99" placeholder="例：7"></div>
+        <div class="name-field"><label for="in-name">姓名</label><input id="in-name" type="text" maxlength="12" placeholder="你的名字"></div>
+      </div>
+      <div class="err" id="start-err"></div>
+
+      <div class="btn-row">
+        <button class="btn" id="btn-start">開始搜查 🔍</button>
+        <button class="btn dark" id="btn-lb-home">🏆 看排行榜</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 遊戲畫面 ===== -->
+  <section id="screen-game" class="hidden">
+    <div class="hud" style="margin-top:14px">
+      <span class="chip" id="hud-q">第 1 / 30 件</span>
+      <span class="hearts" id="hud-hearts"></span>
+      <span class="chip">🏅 <span id="hud-score">0</span> 分</span>
+    </div>
+    <div class="progress"><div id="hud-bar"></div></div>
+
+    <div class="paper evidence" id="evidence-card">
+      <span class="evidence-tag">證物</span>
+      <span class="cat-tag" id="q-cat"></span>
+      <img id="q-img" alt="實驗器材圖片">
+      <div class="mark-hint" id="q-mark"></div>
+      <div class="timer">本題已用 <b id="q-time">0</b> 秒 · 目前可得 <b id="q-worth">100</b> 分</div>
+      <div class="answer-row">
+        <input id="in-answer" type="text" autocomplete="off" placeholder="輸入器材名稱，按 Enter 送出">
+        <button class="btn" id="btn-submit">貼上標籤</button>
+      </div>
+      <div class="feedback" id="feedback"></div>
+    </div>
+  </section>
+
+  <!-- ===== 結算畫面 ===== -->
+  <section id="screen-result" class="hidden">
+    <div class="paper" style="margin-top:14px; text-align:center">
+      <div class="stamp" id="res-stamp"></div>
+      <div id="res-sub" style="margin-bottom:10px"></div>
+      <div class="stats">
+        <div class="stat"><div class="n" id="res-correct">0</div><div class="l">答對題數</div></div>
+        <div class="stat"><div class="n" id="res-wrong">0</div><div class="l">答錯次數</div></div>
+        <div class="stat"><div class="n" id="res-time">0</div><div class="l">總用時（秒）</div></div>
+        <div class="stat total"><div class="n" id="res-score">0</div><div class="l">總分</div></div>
+      </div>
+      <div class="review" id="res-review" style="text-align:left"></div>
+      <div class="btn-row">
+        <button class="btn" id="btn-again">再挑戰一次 🔁</button>
+        <button class="btn dark" id="btn-home">回到首頁</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 排行榜 ===== -->
+  <section id="screen-lb" class="hidden">
+    <div class="lb-head">
+      <h2>🏆 名偵探排行榜</h2>
+      <div class="seg">
+        <button id="seg-all" class="on">全部</button>
+        <button id="seg-cls">只看我的班</button>
+      </div>
+    </div>
+    <div id="lb-body"></div>
+    <div class="btn-row" id="lb-back-row">
+      <button class="btn ghost" id="btn-lb-back">← 返回</button>
+    </div>
+  </section>
+
+  <div class="footer">程式設計：巫魚子 © 2026 · 化學實驗器材辨識</div>
+</div>
+
+<script>
+/* ========== 設定區（老師可修改） ========== */
+const CONFIG = {
+  QUESTIONS_PER_GAME: 30,     // 每局題數
+  LIVES: 3,                   // 整場命數
+  FULL_SCORE: 100,            // 每題滿分
+  FULL_SCORE_SECONDS: 5,      // 幾秒內答對拿滿分
+  PENALTY_PER_SECOND: 5,      // 超過後每秒扣幾分
+  MIN_SCORE: 30,              // 每題最低分
+  LEADERBOARD_SIZE: 30,       // 排行榜顯示名次
+  FIREBASE_URL: 'https://point-collection-stash-default-rtdb.asia-southeast1.firebasedatabase.app',
+  DB_PATH: 'missing-equipment/scores',
+  IMG_DIR: 'images/equipment/'
+};
+
+/* ========== 題庫：33 種實驗器材 ==========
+   name：標準答案；aliases：其他也算對的寫法；marked：圖片上有紅圈 */
+const ITEMS = [
+  {id:'volumetric-flask',    name:'容量瓶',     aliases:[], category:'精準刻度類'},
+  {id:'graduated-cylinder',  name:'量筒',       aliases:[], category:'精準刻度類'},
+  {id:'latex-dropper',       name:'乳膠滴管',   aliases:[], category:'精準刻度類'},
+  {id:'plastic-dropper',     name:'塑膠滴管',   aliases:[], category:'精準刻度類'},
+  {id:'burette',             name:'滴定管',     aliases:[], category:'精準刻度類'},
+  {id:'graduated-pipette',   name:'分度吸量管', aliases:[], category:'精準刻度類', marked:true},
+  {id:'pipette-bulb',        name:'安全吸球',   aliases:[], category:'精準刻度類', marked:true},
+  {id:'distilling-flask',    name:'蒸餾瓶',     aliases:[], category:'容器類'},
+  {id:'wide-mouth-bottle',   name:'廣口瓶',     aliases:[], category:'容器類'},
+  {id:'beaker',              name:'燒杯',       aliases:[], category:'容器類'},
+  {id:'round-flask',         name:'燒瓶',       aliases:[], category:'容器類'},
+  {id:'erlenmeyer-flask',    name:'錐形瓶',     aliases:[], category:'容器類'},
+  {id:'conical-test-tube',   name:'錐形試管',   aliases:[], category:'容器類'},
+  {id:'round-test-tube',     name:'圓形試管',   aliases:[], category:'容器類'},
+  {id:'alcohol-lamp',        name:'酒精燈',     aliases:[], category:'裝置類'},
+  {id:'electronic-balance',  name:'電子天平',   aliases:[], category:'裝置類'},
+  {id:'thermometer',         name:'溫度計',     aliases:[], category:'裝置類', marked:true},
+  {id:'digital-thermometer', name:'電子溫度計', aliases:[], category:'裝置類', marked:true},
+  {id:'hot-plate',           name:'加熱器',     aliases:[], category:'裝置類'},
+  {id:'separatory-funnel',   name:'分液漏斗',   aliases:[], category:'漏斗類'},
+  {id:'buchner-funnel',      name:'布氏漏斗',   aliases:[], category:'漏斗類'},
+  {id:'thistle-funnel',      name:'薊頭漏斗',   aliases:[], category:'漏斗類'},
+  {id:'funnel',              name:'普通漏斗',   aliases:[], category:'漏斗類'},
+  {id:'weighing-paper',      name:'秤量紙',     aliases:[], category:'耗材類'},
+  {id:'label-paper',         name:'標籤紙',     aliases:[], category:'耗材類'},
+  {id:'filter-paper',        name:'濾紙',       aliases:[], category:'耗材類'},
+  {id:'iron-stand',          name:'鐵架',       aliases:[], category:'其他專用器材', marked:true},
+  {id:'burette-clamp',       name:'滴定夾',     aliases:['蝴蝶夾','滴定夾(蝴蝶夾)'], category:'其他專用器材', marked:true},
+  {id:'spatula',             name:'刮勺',       aliases:[], category:'其他專用器材'},
+  {id:'condenser',           name:'蒸餾管',     aliases:[], category:'其他專用器材'},
+  {id:'combustion-spoon',    name:'燒匙',       aliases:[], category:'其他專用器材'},
+  {id:'mortar',              name:'研缽',       aliases:[], category:'其他專用器材'},
+  {id:'stirring-rod',        name:'攪拌棒',     aliases:[], category:'其他專用器材'}
+];
+
+/* ========== 小工具 ========== */
+const $ = id => document.getElementById(id);
+const screens = ['start', 'game', 'result', 'lb'];
+function show(name) {
+  screens.forEach(s => $('screen-' + s).classList.toggle('hidden', s !== name));
+  window.scrollTo(0, 0);
+}
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+// 只忽略空白與全形/半形差異，錯字一律算錯
+function normalize(s) {
+  return String(s)
+    .replace(/[！-～]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
+    .replace(/\s+/g, '')
+    .toLowerCase();
+}
+function isCorrect(item, input) {
+  const ans = normalize(input);
+  return [item.name, ...(item.aliases || [])].some(a => normalize(a) === ans);
+}
+function scoreFor(seconds) {
+  const extra = Math.max(0, Math.ceil(seconds - CONFIG.FULL_SCORE_SECONDS));
+  return Math.max(CONFIG.MIN_SCORE, CONFIG.FULL_SCORE - extra * CONFIG.PENALTY_PER_SECOND);
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ========== 遊戲狀態 ========== */
+let player = null;      // {cls, seat, name}
+let game = null;
+
+// 先預載圖片，避免出題時閃一下
+ITEMS.forEach(it => { const im = new Image(); im.src = CONFIG.IMG_DIR + it.id + '.jpg'; });
+
+// 記住上次輸入的班級座號（只存在這台裝置）
+try {
+  const saved = JSON.parse(localStorage.getItem('missing-equipment-player') || 'null');
+  if (saved) { $('in-cls').value = saved.cls || ''; $('in-seat').value = saved.seat || ''; $('in-name').value = saved.name || ''; }
+} catch (e) {}
+
+$('btn-start').onclick = () => {
+  const cls = $('in-cls').value.trim();
+  const seat = $('in-seat').value.trim();
+  const name = $('in-name').value.trim();
+  if (!cls || !seat || !name) { $('start-err').textContent = '請把班級、座號、姓名都填好喔！'; return; }
+  $('start-err').textContent = '';
+  player = { cls, seat: Number(seat), name };
+  try { localStorage.setItem('missing-equipment-player', JSON.stringify(player)); } catch (e) {}
+  startGame();
+};
+
+function startGame() {
+  game = {
+    queue: shuffle(ITEMS).slice(0, Math.min(CONFIG.QUESTIONS_PER_GAME, ITEMS.length)),
+    index: 0,
+    lives: CONFIG.LIVES,
+    score: 0,
+    correct: 0,
+    wrong: 0,
+    missed: new Set(),
+    startAt: Date.now(),
+    qStart: 0,
+    locked: false,
+    tick: null
+  };
+  show('game');
+  renderHearts();
+  nextQuestion();
+}
+
+function renderHearts() {
+  let h = '';
+  for (let i = 0; i < CONFIG.LIVES; i++) h += `<span class="${i < game.lives ? '' : 'lost'}">❤️</span>`;
+  $('hud-hearts').innerHTML = h;
+}
+
+function nextQuestion() {
+  const item = game.queue[game.index];
+  const total = game.queue.length;
+  $('hud-q').textContent = `第 ${game.index + 1} / ${total} 件`;
+  $('hud-bar').style.width = (game.index / total * 100) + '%';
+  $('hud-score').textContent = game.score;
+  $('q-img').src = CONFIG.IMG_DIR + item.id + '.jpg';
+  $('q-cat').textContent = item.category;
+  $('q-mark').textContent = item.marked ? '⭕ 請回答紅圈中的器材' : '';
+  $('feedback').textContent = '';
+  $('feedback').className = 'feedback';
+  $('in-answer').value = '';
+  $('in-answer').disabled = false;
+  $('btn-submit').disabled = false;
+  $('in-answer').focus();
+  game.locked = false;
+  game.qStart = Date.now();
+  clearInterval(game.tick);
+  updateTimer();
+  game.tick = setInterval(updateTimer, 250);
+}
+
+function updateTimer() {
+  const sec = (Date.now() - game.qStart) / 1000;
+  $('q-time').textContent = Math.floor(sec);
+  $('q-worth').textContent = scoreFor(sec);
+}
+
+function submitAnswer() {
+  if (game.locked) return;
+  const input = $('in-answer').value;
+  if (!input.trim()) { $('in-answer').focus(); return; }
+  const item = game.queue[game.index];
+  const card = $('evidence-card');
+
+  if (isCorrect(item, input)) {
+    game.locked = true;
+    clearInterval(game.tick);
+    const sec = (Date.now() - game.qStart) / 1000;
+    const pts = scoreFor(sec);
+    game.score += pts;
+    game.correct++;
+    $('hud-score').textContent = game.score;
+    $('feedback').className = 'feedback ok';
+    $('feedback').textContent = `✅ 正確！${item.name}　+${pts} 分（${sec.toFixed(1)} 秒）`;
+    card.classList.remove('flash-ok'); void card.offsetWidth; card.classList.add('flash-ok');
+    $('in-answer').disabled = true;
+    $('btn-submit').disabled = true;
+    setTimeout(() => {
+      game.index++;
+      if (game.index >= game.queue.length) endGame(true);
+      else nextQuestion();
+    }, 1100);
+  } else {
+    game.wrong++;
+    game.lives--;
+    game.missed.add(item.id);
+    renderHearts();
+    card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+    if (game.lives <= 0) {
+      game.locked = true;
+      clearInterval(game.tick);
+      $('feedback').className = 'feedback bad';
+      $('feedback').textContent = `💥 答錯了！這是「${item.name}」`;
+      $('in-answer').disabled = true;
+      $('btn-submit').disabled = true;
+      setTimeout(() => endGame(false), 1600);
+    } else {
+      $('feedback').className = 'feedback bad';
+      $('feedback').textContent = `❌ 不對喔！還剩 ${game.lives} 條命，再仔細看看`;
+      $('in-answer').select();
+    }
+  }
+}
+$('btn-submit').onclick = submitAnswer;
+$('in-answer').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.isComposing) submitAnswer();   // 避免注音選字時誤送
+});
+
+/* ========== 結算 ========== */
+let lastRecordKey = null;
+
+function endGame(cleared) {
+  clearInterval(game.tick);
+  const totalSec = Math.round((Date.now() - game.startAt) / 1000);
+  $('res-stamp').textContent = cleared ? '破案成功' : 'GAME OVER';
+  $('res-stamp').className = 'stamp ' + (cleared ? 'win' : 'lose');
+  $('res-sub').textContent = cleared
+    ? `${player.name}，30 件器材全部歸位，實驗課得救了！`
+    : `${player.name}，3 條命用完了…再挑戰一次吧！`;
+  $('res-correct').textContent = game.correct;
+  $('res-wrong').textContent = game.wrong;
+  $('res-time').textContent = totalSec;
+  $('res-score').textContent = game.score;
+
+  const missed = ITEMS.filter(it => game.missed.has(it.id));
+  $('res-review').innerHTML = missed.length
+    ? `<h3>📌 這些器材要再記熟：</h3><div class="review-list">${missed.map(it =>
+        `<div class="review-item"><img src="${CONFIG.IMG_DIR}${it.id}.jpg" alt=""><b>${it.name}</b></div>`).join('')}</div>`
+    : '';
+  show('result');
+
+  const record = {
+    cls: player.cls, seat: player.seat, name: player.name,
+    score: game.score, correct: game.correct, wrong: game.wrong,
+    total: game.queue.length, cleared, seconds: totalSec, ts: Date.now()
+  };
+  lastRecordKey = null;
+  saveRecord(record);
+}
+
+async function saveRecord(record) {
+  $('lb-body').innerHTML = '';
+  try {
+    const res = await fetch(`${CONFIG.FIREBASE_URL}/${CONFIG.DB_PATH}.json`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(record)
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    lastRecordKey = data.name;
+  } catch (e) {
+    console.error('成績上傳失敗', e);
+  }
+  // 結算畫面下方直接接排行榜
+  appendLeaderboardToResult();
+}
+
+function appendLeaderboardToResult() {
+  const box = $('screen-result');
+  let lb = $('result-lb');
+  if (!lb) {
+    lb = document.createElement('div');
+    lb.id = 'result-lb';
+    box.appendChild(lb);
+  }
+  lb.innerHTML = `<div class="lb-head"><h2>🏆 名偵探排行榜</h2>
+    <div class="seg"><button class="on" data-f="all">全部</button><button data-f="cls">只看我的班</button></div></div>
+    <div class="lb-inner"><p class="lb-note">讀取排行榜中…</p></div>`;
+  const inner = lb.querySelector('.lb-inner');
+  const btns = lb.querySelectorAll('.seg button');
+  btns.forEach(b => b.onclick = () => {
+    btns.forEach(x => x.classList.toggle('on', x === b));
+    renderLeaderboard(inner, b.dataset.f === 'cls');
+  });
+  renderLeaderboard(inner, false);
+}
+
+/* ========== 排行榜 ========== */
+let cachedRows = null;
+
+async function fetchRows() {
+  const res = await fetch(`${CONFIG.FIREBASE_URL}/${CONFIG.DB_PATH}.json`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const data = await res.json() || {};
+  return Object.entries(data).map(([key, r]) => ({ key, ...r }));
+}
+
+// 同一位學生（班級＋座號＋姓名）只保留最佳成績
+function bestPerStudent(rows) {
+  const best = new Map();
+  for (const r of rows) {
+    const k = `${r.cls}|${r.seat}|${r.name}`;
+    const cur = best.get(k);
+    if (!cur || compare(r, cur) < 0) best.set(k, r);
+  }
+  return [...best.values()].sort(compare);
+}
+// 排序：總分高 → 答對多 → 用時短 → 先完成
+function compare(a, b) {
+  return (b.score - a.score) || (b.correct - a.correct) || (a.seconds - b.seconds) || (a.ts - b.ts);
+}
+
+async function renderLeaderboard(container, onlyMyClass) {
+  container.innerHTML = '<p class="lb-note">讀取排行榜中…</p>';
+  let rows;
+  try {
+    rows = await fetchRows();
+    cachedRows = rows;
+  } catch (e) {
+    console.error(e);
+    container.innerHTML = '<p class="lb-note">😵 排行榜暫時連不上，請稍後再試或請老師檢查網路。</p>';
+    return;
+  }
+  if (onlyMyClass && player) rows = rows.filter(r => String(r.cls) === String(player.cls));
+  const ranked = bestPerStudent(rows);
+  if (!ranked.length) { container.innerHTML = '<p class="lb-note">目前還沒有人上榜，快來搶第一！</p>'; return; }
+
+  const meKey = player ? `${player.cls}|${player.seat}|${player.name}` : null;
+  const myIdx = meKey ? ranked.findIndex(r => `${r.cls}|${r.seat}|${r.name}` === meKey) : -1;
+  const N = CONFIG.LEADERBOARD_SIZE;
+  const medals = ['🥇', '🥈', '🥉'];
+
+  const rowHtml = (r, i) => `<tr class="${i === myIdx ? 'me' : ''}">
+      <td>${i < 3 ? `<span class="medal">${medals[i]}</span>` : i + 1}</td>
+      <td>${escapeHtml(r.cls)}</td>
+      <td class="hide-sm">${escapeHtml(r.seat)}</td>
+      <td>${escapeHtml(r.name)}${i === myIdx ? ' 👈' : ''}</td>
+      <td class="num">${r.correct}/${r.total || 30}</td>
+      <td class="num hide-sm">${r.seconds}s</td>
+      <td class="num"><b>${r.score}</b></td>
+    </tr>`;
+
+  let body = ranked.slice(0, N).map(rowHtml).join('');
+  if (myIdx >= N) {
+    body += `<tr class="lb-gap"><td colspan="7">⋯</td></tr>` + rowHtml(ranked[myIdx], myIdx);
+  }
+  let note = '';
+  if (myIdx >= 0) {
+    note = myIdx < N
+      ? `你目前排在第 <b>${myIdx + 1}</b> 名，共 ${ranked.length} 位偵探上榜！`
+      : `你目前排在第 <b>${myIdx + 1}</b> 名，再加把勁就能擠進前 ${N} 名！`;
+  }
+  container.innerHTML = `<table>
+      <thead><tr><th>名次</th><th>班級</th><th class="hide-sm">座號</th><th>姓名</th>
+      <th class="num">答對</th><th class="num hide-sm">用時</th><th class="num">總分</th></tr></thead>
+      <tbody>${body}</tbody></table>
+      <p class="lb-note">${note || `前 ${N} 名 · 每位同學只列最佳成績`}</p>`;
+}
+
+/* 首頁的排行榜按鈕 */
+$('btn-lb-home').onclick = () => {
+  const cls = $('in-cls').value.trim();
+  const seat = $('in-seat').value.trim();
+  const name = $('in-name').value.trim();
+  if (cls && seat && name) player = { cls, seat: Number(seat), name };
+  show('lb');
+  $('seg-all').classList.add('on'); $('seg-cls').classList.remove('on');
+  renderLeaderboard($('lb-body'), false);
+};
+$('seg-all').onclick = () => { $('seg-all').classList.add('on'); $('seg-cls').classList.remove('on'); renderLeaderboard($('lb-body'), false); };
+$('seg-cls').onclick = () => { $('seg-cls').classList.add('on'); $('seg-all').classList.remove('on'); renderLeaderboard($('lb-body'), true); };
+$('btn-lb-back').onclick = () => show('start');
+$('btn-again').onclick = () => startGame();
+$('btn-home').onclick = () => show('start');
+</script>
+</body>
+</html>

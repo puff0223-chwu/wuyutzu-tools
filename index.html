@@ -211,6 +211,19 @@
   <!-- ===== 化學課堂工具 ===== -->
   <div class="section">
     <div class="section-title">⚗️ 化學課堂工具</div>
+
+    <!-- 子分類：化學學習遊戲 -->
+    <div class="sub-title">🔬 化學學習遊戲</div>
+    <div class="tool-grid">
+      <div class="tool-card" onclick="openModal('equipment')">
+        <div class="tool-icon">🔍</div>
+        <div class="tool-name">消失的實驗器材</div>
+        <div class="tool-brief">看圖認器材，限時搶分，3條命挑戰排行榜</div>
+      </div>
+    </div>
+
+    <!-- 子分類：課堂遊戲化 -->
+    <div class="sub-title">🎲 課堂遊戲化</div>
     <div class="tool-grid">
       <div class="tool-card" onclick="openModal('gamification')">
         <div class="tool-icon">🎯</div>
@@ -413,6 +426,24 @@
       <li>✅ 理論來源：Richard Bartle（1996）</li>
     </ul>
     <a class="btn-start" href="classroom/bartle.html" target="_blank">開始測驗 →</a>
+  </div>
+</div>
+
+<!-- 消失的實驗器材 -->
+<div class="modal-overlay" id="modal-equipment" onclick="closeOnBg(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('equipment')">✕</button>
+    <div class="modal-icon">🔍</div>
+    <div class="modal-title">消失的實驗器材</div>
+    <div class="modal-sub">化學實驗器材辨識 · 限時搶分</div>
+    <ul class="modal-features">
+      <li>✅ 33 種實驗器材題庫，每局隨機 30 題</li>
+      <li>✅ 看圖輸入名稱，一字不差才過關</li>
+      <li>✅ 整場 3 條命，答錯扣命，扣完 Game Over</li>
+      <li>✅ 答得越快分數越高，結算答對、答錯與總分</li>
+      <li>✅ 即時排行榜前 30 名，可只看自己班級</li>
+    </ul>
+    <a class="btn-start" href="chemistry/missing-equipment.html" target="_blank">開始搜查 →</a>
   </div>
 </div>
 
