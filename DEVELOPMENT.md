@@ -91,10 +91,11 @@ wuyutzu-tools/
 /
 └── missing-equipment/
     └── scores/
-        └── <自動產生的 key>: { cls, seat, name, score, correct, wrong, total, cleared, seconds, ts }
+        └── <班級_座號_姓名>: { cls, seat, name, score, correct, wrong, total, cleared, seconds, ts }
+            （每位學生一筆，只保留最佳成績）
 ```
 
-- **安全規則**（2026-10-03 發布）：根目錄全部上鎖；只開放 `missing-equipment/scores` 可讀、只能新增不能修改刪除、分數 0～3000。
+- **安全規則**（2026-10-03 發布）：根目錄全部上鎖；只開放 `missing-equipment/scores` 可讀；每位學生的紀錄只有在「分數更高，或同分但用時更短」時才能覆蓋，不能刪除；分數 0～3000。
 - ⚠️ **之後新工具要用 Firebase**：要在規則裡為它新增一個抽屜的規則，否則會被擋（HTTP 401/403）。
 - 與「科學任務偵探所」的 Supabase 完全分開：**Supabase 給大系統、Firebase 給輕量小工具**。
 
@@ -120,7 +121,7 @@ wuyutzu-tools/
 - 題庫在檔案中的 `ITEMS` 陣列：`id`（圖片檔名）、`name`（標準答案）、`aliases`（其他可接受寫法）、`category`、`marked`（圖上有紅圈）
 - 遊戲參數集中在 `CONFIG`：每局 30 題、3 條命、5 秒內 100 分、之後每秒 −5、最低 30 分、排行榜前 30 名
 - 判分只忽略空白與全形/半形差異，錯字一律算錯；「滴定夾」也接受「蝴蝶夾」
-- 排行榜：同一位學生（班級＋座號＋姓名）只列最佳成績；排序依總分 → 答對數 → 用時
+- 排行榜：資料庫裡每位學生（班級＋座號＋姓名）只存一筆最佳成績，分數更高（或同分但更快）才會覆蓋；排序依總分 → 答對數 → 用時
 - 圖片來源：老師自製的器材簡報 PDF（6 頁、6 大類）；同框器材用遮白或紅圈處理
 - **新增器材**：把圖片放進 `images/equipment/<id>.jpg`，在 `ITEMS` 加一行即可
 
