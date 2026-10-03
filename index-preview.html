@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔎 巫魚子教課事務所</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700;900&family=IM+Fell+English+SC&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --night: #1b1611;      /* 煙燻深棕：夜晚的書房 */
+    --night-2: #2a221a;
+    --leather: #3b2c20;    /* 皮革 */
+    --paper: #efe3c8;      /* 羊皮紙 */
+    --paper-2: #e6d6b3;
+    --manila: #d9c294;     /* 牛皮紙卷宗 */
+    --brass: #b08d57;      /* 黃銅 */
+    --brass-hi: #d6b77c;
+    --oxblood: #7a1f1f;    /* 酒紅封蠟 */
+    --ink: #2b2420;        /* 墨水 */
+    --ink-soft: #5a4a3c;
+    --fog: #a8998a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+    color: var(--paper);
+    background-color: var(--night);
+    background-image:
+      radial-gradient(ellipse at 50% -10%, rgba(214,183,124,0.22), transparent 55%),
+      radial-gradient(ellipse at 50% 120%, rgba(0,0,0,0.6), transparent 60%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.018) 0 2px, transparent 2px 7px);
+    min-height: 100vh;
+    padding: 0 16px 40px;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; }
+  .serif { font-family: 'Noto Serif TC', serif; }
+  .fell { font-family: 'IM Fell English SC', 'Noto Serif TC', serif; letter-spacing: 0.12em; }
+
+  /* ===== 招牌 ===== */
+  header { text-align: center; padding: 44px 0 26px; }
+  .emblem { width: 74px; height: 74px; margin: 0 auto 10px; }
+  .eyebrow { color: var(--brass-hi); font-size: 0.95em; }
+  h1 {
+    font-family: 'Noto Serif TC', serif; font-weight: 900;
+    font-size: clamp(2.1em, 7vw, 3.6em); letter-spacing: 0.12em;
+    color: var(--paper); text-shadow: 0 2px 0 #000, 0 0 24px rgba(214,183,124,0.25);
+    margin: 4px 0 6px;
+  }
+  .rule { display: flex; align-items: center; gap: 12px; justify-content: center; color: var(--brass); margin: 6px auto 10px; max-width: 520px; }
+  .rule::before, .rule::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--brass), transparent); }
+  .tagline { color: var(--fog); font-size: 0.95em; }
+  .motto { font-family: 'IM Fell English', 'Noto Serif TC', serif; font-style: italic; color: var(--brass-hi); margin-top: 10px; font-size: 1.02em; }
+
+  /* ===== 搜尋 ===== */
+  .search-bar {
+    position: sticky; top: 0; z-index: 20;
+    background: linear-gradient(var(--night), rgba(27,22,17,0.92));
+    padding: 12px 0 10px; margin-bottom: 8px;
+    backdrop-filter: blur(4px);
+  }
+  .search {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--paper); color: var(--ink);
+    border: 2px solid var(--brass); border-radius: 999px;
+    padding: 6px 8px 6px 16px; box-shadow: 0 6px 18px rgba(0,0,0,0.45), inset 0 0 0 3px rgba(176,141,87,0.18);
+  }
+  .search svg { flex: none; }
+  .search input { flex: 1; min-width: 0; border: none; background: transparent; font: inherit; font-size: 1.05em; color: var(--ink); outline: none; padding: 6px 0; }
+  .search input::placeholder { color: #8a7a64; }
+  .search .clear { border: none; background: var(--ink); color: var(--paper); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 0.85em; cursor: pointer; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; justify-content: center; }
+  .chip {
+    font: inherit; font-size: 0.88em; cursor: pointer;
+    background: transparent; color: var(--paper-2);
+    border: 1px solid rgba(176,141,87,0.55); border-radius: 4px; padding: 5px 12px;
+  }
+  .chip.on { background: var(--brass); color: var(--night); border-color: var(--brass); font-weight: 700; }
+  .result-note { text-align: center; color: var(--fog); font-size: 0.9em; min-height: 1.4em; margin-top: 6px; }
+
+  /* ===== 抽屜 ===== */
+  .drawer { margin: 26px 0 34px; }
+  .plate {
+    display: flex; align-items: center; gap: 14px;
+    background: linear-gradient(180deg, #4a3826, var(--leather));
+    border: 1px solid #5c4630; border-radius: 6px;
+    padding: 12px 18px; box-shadow: 0 4px 0 #120d09, inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+  .plate .label {
+    background: linear-gradient(180deg, var(--brass-hi), var(--brass));
+    color: var(--ink); border-radius: 3px; padding: 4px 14px;
+    font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: 1.15em; letter-spacing: 0.08em;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.25), 0 1px 0 rgba(255,255,255,0.2);
+  }
+  .plate .no { color: var(--brass-hi); font-size: 0.85em; }
+  .plate .desc { color: var(--fog); font-size: 0.85em; margin-left: auto; text-align: right; }
+  .shelf-title {
+    display: flex; align-items: center; gap: 10px;
+    color: var(--brass-hi); font-family: 'Noto Serif TC', serif; font-weight: 700;
+    margin: 20px 0 12px 4px; font-size: 1.02em;
+  }
+  .shelf-title::after { content: ''; flex: 1; border-bottom: 1px dashed rgba(176,141,87,0.4); }
+
+  /* ===== 卷宗卡片 ===== */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 22px 18px; }
+  .folder {
+    position: relative; cursor: pointer; text-align: left;
+    display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start;
+    background: linear-gradient(170deg, #e8d6ab 0%, var(--manila) 60%, #cdb27d 100%);
+    color: var(--ink); border: none; font: inherit;
+    border-radius: 2px 8px 8px 8px; padding: 26px 16px 16px;
+    margin-top: 14px;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(90,70,40,0.25), inset 0 -10px 22px rgba(120,90,40,0.18);
+    transition: transform 0.18s, box-shadow 0.18s;
+  }
+  .folder::before {             /* 卷宗標籤 */
+    content: attr(data-no);
+    position: absolute; top: -16px; left: 0;
+    background: linear-gradient(180deg, #e8d6ab, var(--manila));
+    padding: 2px 14px 0; height: 17px; line-height: 17px;
+    border-radius: 6px 10px 0 0;
+    font-family: 'IM Fell English SC', serif; font-size: 0.75em; letter-spacing: 0.12em; color: var(--ink-soft);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+  }
+  .folder:hover, .folder:focus-visible { transform: translateY(-4px) rotate(-0.4deg); box-shadow: 0 14px 26px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(90,70,40,0.3); outline: none; }
+  .folder:focus-visible { box-shadow: 0 0 0 3px var(--brass-hi), 0 14px 26px rgba(0,0,0,0.55); }
+  .folder .icon {
+    width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-size: 1.6em;
+    background: radial-gradient(circle at 35% 30%, #f6ecd4, #d8c294);
+    border: 2px solid rgba(90,70,40,0.35); margin-bottom: 10px;
+    filter: sepia(0.35) saturate(0.85);
+  }
+  .folder .name { font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: 1.12em; margin-bottom: 4px; }
+  .folder .brief { font-size: 0.86em; color: var(--ink-soft); line-height: 1.5; }
+  .folder .clip { position: absolute; top: -6px; right: 18px; width: 14px; height: 34px; border: 3px solid #8e8a83; border-radius: 8px; border-bottom-color: transparent; opacity: 0.8; }
+
+  .stamp {
+    position: absolute; right: 10px; bottom: 10px;
+    font-family: 'IM Fell English SC', 'Noto Serif TC', serif; font-size: 0.72em; letter-spacing: 0.1em;
+    color: var(--oxblood); border: 2px solid var(--oxblood); border-radius: 4px; padding: 1px 7px;
+    transform: rotate(-8deg); opacity: 0.85; background: rgba(239,227,200,0.35);
+  }
+  .stamp.lock { font-family: 'Noto Sans TC', sans-serif; font-weight: 700; letter-spacing: 0; }
+  .folder.has-stamp { padding-bottom: 38px; }
+
+  .empty { text-align: center; color: var(--fog); padding: 40px 0; font-family: 'Noto Serif TC', serif; }
+
+  /* ===== 卷宗打開（彈窗） ===== */
+  .overlay { position: fixed; inset: 0; background: rgba(10,7,5,0.72); z-index: 100; display: none; align-items: center; justify-content: center; padding: 16px; }
+  .overlay.on { display: flex; }
+  .dossier {
+    position: relative; width: min(520px, 100%); max-height: 90vh; overflow: auto;
+    background:
+      repeating-linear-gradient(0deg, transparent 0 27px, rgba(90,70,40,0.12) 27px 28px),
+      radial-gradient(ellipse at 30% 20%, #f6ecd6, var(--paper) 60%, var(--paper-2));
+    color: var(--ink); border-radius: 4px;
+    padding: 30px 28px 24px; box-shadow: 0 24px 60px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(90,70,40,0.25);
+    animation: open 0.22s ease;
+  }
+  @keyframes open { from { transform: translateY(14px) rotate(-1deg); opacity: 0; } to { transform: none; opacity: 1; } }
+  .dossier .close { position: absolute; top: 10px; right: 12px; border: none; background: none; font-size: 1.4em; color: var(--ink-soft); cursor: pointer; }
+  .dossier .file-no { color: var(--ink-soft); font-size: 0.85em; }
+  .dossier h2 { font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: 1.7em; margin: 4px 0 2px; display: flex; align-items: center; gap: 10px; }
+  .dossier .d-sub { color: var(--ink-soft); font-size: 0.92em; margin-bottom: 14px; }
+  .dossier .seal {
+    position: absolute; top: 22px; right: 46px; transform: rotate(10deg);
+    color: var(--oxblood); border: 3px double var(--oxblood); border-radius: 6px; padding: 2px 10px;
+    font-family: 'IM Fell English SC', serif; letter-spacing: 0.15em; opacity: 0.8;
+  }
+  .dossier ul { list-style: none; margin: 4px 0 18px; }
+  .dossier li { padding: 6px 0 6px 26px; position: relative; line-height: 1.6; border-bottom: 1px dotted rgba(90,70,40,0.3); font-size: 0.95em; }
+  .dossier li::before { content: '✒'; position: absolute; left: 2px; color: var(--brass); }
+  .dossier .go {
+    display: block; text-align: center; text-decoration: none;
+    background: linear-gradient(180deg, #8f2a2a, var(--oxblood)); color: var(--paper);
+    padding: 13px; border-radius: 4px; font-weight: 700; letter-spacing: 0.08em;
+    box-shadow: 0 4px 0 #3d0e0e;
+  }
+  .dossier .go:active { transform: translateY(2px); box-shadow: 0 2px 0 #3d0e0e; }
+  .dossier .note { text-align: center; font-size: 0.85em; color: var(--ink-soft); margin-top: 10px; }
+  .dossier .warn { background: rgba(122,31,31,0.1); border-left: 3px solid var(--oxblood); padding: 8px 10px; font-size: 0.85em; margin-bottom: 14px; }
+
+  footer { text-align: center; color: var(--fog); font-size: 0.85em; padding: 30px 0 10px; border-top: 1px solid rgba(176,141,87,0.25); margin-top: 20px; }
+  footer a { color: var(--brass-hi); margin: 0 8px; text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  @media (max-width: 640px) {
+    header { padding-top: 30px; }
+    .plate { flex-wrap: wrap; }
+    .plate .desc { margin-left: 0; text-align: left; width: 100%; }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 20px 12px; }
+    .folder { padding: 22px 12px 14px; }
+    .folder .icon { width: 44px; height: 44px; font-size: 1.35em; }
+    .folder .name { font-size: 1em; }
+    .folder .brief { font-size: 0.8em; }
+    .dossier { padding: 26px 18px 20px; }
+    .dossier .seal { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { .folder, .dossier { transition: none; animation: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <svg class="emblem" viewBox="0 0 80 80" aria-hidden="true">
+      <circle cx="40" cy="40" r="37" fill="none" stroke="#b08d57" stroke-width="2"/>
+      <circle cx="40" cy="40" r="32" fill="none" stroke="#b08d57" stroke-width="0.8" stroke-dasharray="2 3"/>
+      <circle cx="35" cy="34" r="13" fill="rgba(214,183,124,0.12)" stroke="#d6b77c" stroke-width="3.5"/>
+      <line x1="44.5" y1="43.5" x2="57" y2="56" stroke="#d6b77c" stroke-width="6" stroke-linecap="round"/>
+      <path d="M29 30 q4 -5 10 -2" fill="none" stroke="#efe3c8" stroke-width="1.6" opacity="0.7"/>
+    </svg>
+    <div class="eyebrow fell">The Casebook of Wu Yu-Zi</div>
+    <h1>巫魚子教課事務所</h1>
+    <div class="rule fell">Est. 2025 · Daxi, Taoyuan</div>
+    <p class="tagline">班級事務 · 化學實驗室 · 遊戲研究　——　每一件工具，都是一份等待開啟的卷宗</p>
+    <p class="motto">“Every question in class is a case waiting to be solved.”</p>
+  </header>
+
+  <div class="search-bar">
+    <label class="search">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6.5" fill="none" stroke="#2b2420" stroke-width="2.2"/><line x1="15" y1="15" x2="21" y2="21" stroke="#2b2420" stroke-width="2.6" stroke-linecap="round"/></svg>
+      <input id="q" type="search" placeholder="搜尋卷宗：例如 打掃、pH、測驗、抽籤" autocomplete="off" aria-label="搜尋工具">
+      <button class="clear hidden" id="clear" type="button">清除</button>
+    </label>
+    <div class="chips" id="chips"></div>
+    <div class="result-note" id="note"></div>
+  </div>
+
+  <main id="drawers"></main>
+
+  <footer>
+    程式設計：巫魚子 © 2025 ｜
+    <a href="https://sites.google.com/view/teacher-wuyutzu/%E9%A6%96%E9%A0%81?authuser=0" target="_blank" rel="noopener">巫魚子網站</a>
+    <a href="https://www.youtube.com/@chwu0223" target="_blank" rel="noopener">YouTube 頻道</a>
+  </footer>
+</div>
+
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="d-title">
+  <div class="dossier" id="dossier"></div>
+</div>
+
+<script>
+/* =========================================================
+   工具清單：新增工具只要在這裡加一筆資料，卡片和說明卷宗會自動產生
+   drawer：0 班級事務卷宗、1 化學實驗室 No.307、2 遊戲研究室
+   teacher：true 表示連到老師專用頁（會蓋「🔒 老師專用」章）
+   case：系列案件編號（會蓋在卷宗右下角）
+   ========================================================= */
+const TOOLS = [
+  {"id": "seating", "drawer": 0, "shelf": "班級行政", "icon": "💺", "name": "座位安排系統", "brief": "智慧排座，支援固定座位與隨機分配", "title": "座位安排系統", "sub": "智慧排座 · 彈性管理", "features": ["自訂教室格局（幾排幾列）", "設定固定座位與關閉座位", "隨機分配剩餘學生", "下載座位表 Excel"], "href": "classroom/seating.html", "btn": "開始使用"},
+  {"id": "cleaning", "drawer": 0, "shelf": "班級行政", "icon": "🧹", "name": "打掃徵才系統", "brief": "機率抽籤競標打掃工作，多輪徵選", "title": "打掃徵才系統", "sub": "v4.0 志願序 · 貢獻度/金幣加權抽籤", "features": ["學生填志願1～5＋投入金幣，老師端管理分發", "個人分數＝上學期貢獻度＋投入金幣加成", "依志願序加權隨機抽籤，保留隨機性也重視貢獻", "剩餘職缺自動隨機分配，幹部保留固定職務", "匯出結果＋完整抽籤過程紀錄，有憑有據"], "href": "classroom/cleaning-jobs-admin.html", "btn": "老師管理頁", "note": "學生登記頁連結由老師在管理頁的「打掃項目」分頁產生後分享", "teacher": true},
+  {"id": "disc", "drawer": 0, "shelf": "認識學生", "icon": "🧠", "name": "DISC 人格測驗", "brief": "探索行為風格，10題快速版或20題完整版", "title": "DISC 人格類型測驗", "sub": "行為風格探索 · 導師評語參考", "features": ["快速版 10 題（約3分鐘）／完整版 20 題（約8分鐘）", "四維度分析：D支配・I影響・S穩定・C謹慎", "每題選「最像我」與「最不像我」，結果更準確", "作答完輸入座號，自動產生結果卡片", "資料同步送出，供導師撰寫評語參考"], "href": "classroom/disc.html", "btn": "開始測驗"},
+  {"id": "belbin", "drawer": 0, "shelf": "認識學生", "icon": "🧩", "name": "貝爾賓團隊角色", "brief": "18題找出你在團隊中的天生角色定位", "title": "貝爾賓團隊角色測驗", "sub": "團隊角色探索 · 導師評語參考", "features": ["共 18 題高中生情境選擇題，約 8 分鐘", "找出你的主要＋次要＋第三角色組合", "九大角色：執行者、推進者、完成者、協調者、凝聚者、外交者、創新者、審議者、專家師", "根據角色組合呈現個人化說明，每個人的結果都不同", "作答完輸入座號，自動產生角色卡片", "資料同步送出，供導師撰寫評語參考"], "href": "classroom/belbin.html", "btn": "開始測驗"},
+  {"id": "goldenhits", "drawer": 0, "shelf": "班級氣氛", "icon": "🎤", "name": "金曲歌王", "brief": "音樂資料庫，45位歌手，自我覺察學習", "title": "金曲歌王", "sub": "音樂資料庫 · 自我覺察學習", "features": ["45位經典歌手，90首代表歌曲", "三個年代分類（1990前／1991-2005／2006後）", "音樂風格標籤清楚標示", "適合投影展示與學習單配合"], "href": "classroom/golden-hits.html", "btn": "開始使用"},
+  {"id": "fortune", "drawer": 0, "shelf": "班級氣氛", "icon": "🏮", "name": "詩籤系統", "brief": "108支文青詩籤，抽籤得到人生智慧", "title": "巫魚子文青學院詩籤", "sub": "108支詩籤 · 人生智慧抽抽看", "features": ["108支精選詩籤，10大類別", "上上籤至下下籤，5種籤級", "每支籤附有出處與解說", "搖晃動畫，沉浸式抽籤體驗"], "href": "classroom/poetry_fortune.html", "btn": "開始使用"},
+  {"id": "lottery", "drawer": 0, "shelf": "班級氣氛", "icon": "🎲", "name": "聖誕抽籤系統", "brief": "交換禮物神秘配對，保留驚喜感", "title": "聖誕抽籤系統", "sub": "交換禮物 · 保密配對", "features": ["自動配對，確保沒人抽到自己", "個別查詢，保持驚喜感", "下載備份清單，應急查詢", "支援上傳舊備份重新查詢"], "href": "christmas/lottery.html", "btn": "開始使用"},
+  {"id": "adjectives", "drawer": 0, "shelf": "班級氣氛", "icon": "✨", "name": "禮物形容詞產生器", "brief": "160個形容詞，幫你想到禮物靈感", "title": "禮物形容詞產生器", "sub": "8大類別 · 160個形容詞", "features": ["8種類別按鈕，選最多3類", "隨機產生3個形容詞", "一鍵複製，貼到Google表單", "幫助想不出禮物的同學"], "href": "christmas/adjectives.html", "btn": "開始使用"},
+  {"id": "equipment", "drawer": 1, "shelf": "No.307 懸案系列", "icon": "🔍", "name": "消失的實驗器材", "brief": "看圖認器材，限時搶分，3條命挑戰排行榜", "title": "消失的實驗器材", "sub": "化學實驗器材辨識 · 限時搶分", "features": ["33 種實驗器材題庫，每局隨機 30 題", "看圖輸入名稱，一字不差才過關", "整場 3 條命，答錯扣命，扣完 Game Over", "答得越快分數越高，結算答對、答錯與總分", "即時排行榜前 30 名，可只看自己班級"], "href": "chemistry/missing-equipment.html", "btn": "開始搜查", "case": "CASE 01"},
+  {"id": "ph", "drawer": 1, "shelf": "No.307 懸案系列", "icon": "🧪", "name": "消失的指示劑", "brief": "pH 值計算：每人專屬5題，四級難度", "title": "消失的指示劑", "sub": "pH 值計算練習 · 老師頁產生題組碼讓學生領題", "features": ["係數由 2、3、5、7、10 組成，四級難度自由分配", "題組碼＋班級＋座號 → 每人專屬 5 題，重新整理不變", "即時對錯（不給答案）或交卷後老師批改", "投影共同題目與解法、列印學習單與解答表", "全班總表即時更新，匯出 Excel"], "href": "chemistry/ph-generator-teacher.html", "btn": "開啟老師頁", "note": "學生連結與 QR Code 由老師頁產生後分享", "teacher": true, "case": "CASE 02"},
+  {"id": "unit", "drawer": 1, "shelf": "No.307 懸案系列", "icon": "📜", "name": "失落的配方", "brief": "單位換算：g、mol、分子數、CM、%、ppm", "title": "失落的配方", "sub": "化學單位換算練習 · 老師頁產生題組碼讓學生領題", "features": ["質量、莫耳數、分子數、原子數、CM、重量百分率、ppm", "生活情境題，只給原子量，四級難度自由分配", "答錯時亮出「單位換算地圖」路線提示（不給答案）", "投影共同題目與解法、列印學習單與解答表", "全班總表即時更新，匯出 Excel"], "href": "chemistry/unit-generator-teacher.html", "btn": "開啟老師頁", "note": "學生連結與 QR Code 由老師頁產生後分享", "teacher": true, "case": "CASE 03"},
+  {"id": "gamification", "drawer": 1, "shelf": "課堂遊戲化", "icon": "🎯", "name": "選人系統", "brief": "可調機率隨機抽籤，8種抽選方式", "title": "巫魚子大師選人系統", "sub": "可調機率 · 8種抽選方式", "features": ["設定班級人數（1-50人）", "8種抽籤方式，每種可調整機率", "智能驗證，機率總和100%", "保留最近10次抽籤記錄"], "href": "gamification/system.html", "btn": "開始使用"},
+  {"id": "curse", "drawer": 1, "shelf": "課堂遊戲化", "icon": "💀", "name": "陣亡詛咒系統", "brief": "角色血量歸零時隨機抽取懲罰", "title": "陣亡詛咒系統", "sub": "遊戲化教學 · 懲罰抽取", "features": ["角色血量歸零時觸發", "9種詛咒等機率隨機抽取", "記錄所有陣亡歷史", "增加課堂遊戲化趣味"], "href": "gamification/system.html", "btn": "開始使用"},
+  {"id": "poke", "drawer": 1, "shelf": "課堂遊戲化", "icon": "🎁", "name": "戳戳樂", "brief": "6×6格子，隨機獎品，即時開獎音效", "title": "戳戳樂", "sub": "6×6格子 · 即時開獎", "features": ["上傳背景圖片，36格覆蓋展示", "老師自訂獎品內容與數量", "學生輸入座號，點格即時開獎", "中獎金色閃亮，銘謝惠顧灰底", "下載完整中獎名單 Excel"], "href": "gamification/poke-game.html", "btn": "開始使用"},
+  {"id": "truthdare", "drawer": 1, "shelf": "課堂遊戲化", "icon": "🎲", "name": "真心話大冒險", "brief": "真心話開放式提問・大冒險拉霸機", "title": "真心話大冒險", "sub": "班級互動遊戲 · 兩種模式", "features": ["真心話：7大類70題，開放式問法", "大冒險：拉霸機決定任務，保證合理有趣", "對象機率：自己60%・同學30%・老師10%", "無傷大雅，適合課堂使用"], "href": "gamification/truth-or-dare.html", "btn": "開始使用"},
+  {"id": "bartle", "drawer": 2, "shelf": "玩家研究", "icon": "🃏", "name": "巴圖玩家類型", "brief": "♦♠♥♣ 四種玩家風格，12題精簡或30題完整版", "title": "巴圖玩家類型測驗", "sub": "遊戲設計思考 · 玩家心理探索", "features": ["精簡版 12 題（約2分鐘）／完整版 30 題（約6分鐘）", "四種玩家類型：♦成就型・♠探索型・♥社交型・♣殺手型", "每題二選一，操作簡單直覺", "結果含四維度分數、座標軸位置圖、與其他類型的關係", "理論來源：Richard Bartle（1996）"], "href": "classroom/bartle.html", "btn": "開始測驗"}
+];
+
+const DRAWERS = [
+  { name: '班級事務卷宗',       no: 'Drawer I',   desc: '導師班的行政、認識學生與班級氣氛' },
+  { name: '化學實驗室 No.307',  no: 'Drawer II',  desc: '化學課堂的懸案系列與遊戲化工具' },
+  { name: '遊戲研究室',         no: 'Drawer III', desc: '遊戲設計思考課程的研究工具' }
+];
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let filterDrawer = -1;
+
+// 卷宗編號：抽屜代號＋序號，例如 I-03
+const ROMAN = ['I', 'II', 'III', 'IV', 'V'];
+const counters = {};
+TOOLS.forEach(t => { counters[t.drawer] = (counters[t.drawer] || 0) + 1; t.no = `No. ${ROMAN[t.drawer]}-${String(counters[t.drawer]).padStart(2, '0')}`; });
+
+/* ---------- 篩選籤 ---------- */
+$('chips').innerHTML = ['全部卷宗', ...DRAWERS.map(d => d.name)].map((n, i) =>
+  `<button class="chip${i === 0 ? ' on' : ''}" data-d="${i - 1}" type="button">${esc(n)}</button>`).join('');
+$('chips').querySelectorAll('.chip').forEach(b => b.onclick = () => {
+  filterDrawer = +b.dataset.d;
+  $('chips').querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === b));
+  render();
+});
+
+/* ---------- 搜尋 ---------- */
+const norm = s => String(s).toLowerCase().replace(/\s+/g, '');
+function matches(t, q) {
+  if (!q) return true;
+  const hay = norm([t.name, t.brief, t.title, t.sub, t.shelf, DRAWERS[t.drawer].name, ...t.features, t.teacher ? '老師專用 老師頁' : '', t.case || ''].join(' '));
+  return q.split(/\s+/).filter(Boolean).every(k => hay.includes(norm(k)));
+}
+$('q').addEventListener('input', () => { $('clear').classList.toggle('hidden', !$('q').value); render(); });
+$('clear').onclick = () => { $('q').value = ''; $('clear').classList.add('hidden'); render(); $('q').focus(); };
+
+/* ---------- 畫抽屜與卷宗 ---------- */
+function folderHTML(t) {
+  const stamp = t.case ? `<span class="stamp">${esc(t.case)}</span>` : t.teacher ? `<span class="stamp lock">🔒 老師專用</span>` : '';
+  return `<button class="folder${stamp ? ' has-stamp' : ''}" data-id="${t.id}" data-no="${t.no}" type="button">
+    <span class="clip" aria-hidden="true"></span>
+    <div class="icon" aria-hidden="true">${t.icon}</div>
+    <div class="name">${esc(t.name)}</div>
+    <div class="brief">${esc(t.brief)}</div>
+    ${stamp}
+  </button>`;
+}
+function render() {
+  const q = $('q').value.trim();
+  const shown = TOOLS.filter(t => (filterDrawer < 0 || t.drawer === filterDrawer) && matches(t, q));
+  let html = '';
+  DRAWERS.forEach((d, di) => {
+    const items = shown.filter(t => t.drawer === di);
+    if (!items.length) return;
+    const shelves = [...new Set(items.map(t => t.shelf))];
+    html += `<section class="drawer">
+      <div class="plate"><span class="no fell">${d.no}</span><span class="label">${esc(d.name)}</span><span class="desc">${esc(d.desc)}</span></div>
+      ${shelves.map(s => `<div class="shelf-title">${esc(s)}</div><div class="grid">${items.filter(t => t.shelf === s).map(folderHTML).join('')}</div>`).join('')}
+    </section>`;
+  });
+  $('drawers').innerHTML = html || `<div class="empty">🔎 查無此案……換個關鍵字再找找看吧</div>`;
+  $('note').textContent = q || filterDrawer >= 0 ? `找到 ${shown.length} 份卷宗` : `共 ${TOOLS.length} 份卷宗`;
+  $('drawers').querySelectorAll('.folder').forEach(b => b.onclick = () => openDossier(b.dataset.id));
+}
+
+/* ---------- 打開卷宗 ---------- */
+let lastFocus = null;
+function openDossier(id) {
+  const t = TOOLS.find(x => x.id === id);
+  if (!t) return;
+  lastFocus = document.activeElement;
+  $('dossier').innerHTML = `
+    <button class="close" id="d-close" aria-label="關閉">✕</button>
+    <div class="seal">${t.case ? esc(t.case) : 'FILE'}</div>
+    <div class="file-no fell">${t.no} · ${esc(DRAWERS[t.drawer].name)}</div>
+    <h2 id="d-title"><span aria-hidden="true">${t.icon}</span>${esc(t.title)}</h2>
+    <div class="d-sub">${esc(t.sub)}</div>
+    ${t.teacher ? `<div class="warn">🔒 這是老師專用頁面，含答案與管理功能，請勿提供給學生。</div>` : ''}
+    <ul>${t.features.map(f => `<li>${esc(f)}</li>`).join('')}</ul>
+    <a class="go" href="${esc(t.href)}" target="_blank" rel="noopener">${t.teacher ? '🔒 ' : ''}${esc(t.btn)} →</a>
+    ${t.note ? `<p class="note">${esc(t.note)}</p>` : ''}`;
+  $('overlay').classList.add('on');
+  $('d-close').onclick = closeDossier;
+  $('d-close').focus();
+}
+function closeDossier() {
+  $('overlay').classList.remove('on');
+  if (lastFocus) lastFocus.focus();
+}
+$('overlay').addEventListener('click', e => { if (e.target === $('overlay')) closeDossier(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && $('overlay').classList.contains('on')) closeDossier();
+  if (e.key === '/' && document.activeElement !== $('q') && !$('overlay').classList.contains('on')) { e.preventDefault(); $('q').focus(); }
+});
+
+render();
+</script>
+<style>.hidden { display: none !important; }</style>
+</body>
+</html>

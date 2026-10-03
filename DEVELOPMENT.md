@@ -25,6 +25,7 @@
 ```
 wuyutzu-tools/
 ├── index.html                    # 工具導覽首頁（卡片＋說明彈窗）
+├── index-preview.html            # 首頁改版預覽：「巫魚子教課事務所」偵探風（資料驅動，尚未取代 index.html）
 ├── DEVELOPMENT.md                # 本說明檔
 ├── README.md                     # 專案簡介
 │
@@ -78,6 +79,15 @@ wuyutzu-tools/
 > 首頁是老師專用的工具箱，不會提供給學生；學生只會拿到各工具的「學生頁」連結（學生頁不連回首頁）。
 
 ---
+
+### 首頁改版預覽（index-preview.html）
+
+- 風格：維多利亞偵探風「巫魚子教課事務所」——煙燻深棕背景、牛皮紙卷宗卡、黃銅名牌、酒紅封蠟章；標題 Noto Serif TC，英文裝飾字 IM Fell English
+- 三個抽屜：Drawer I 班級事務卷宗、Drawer II 化學實驗室 No.307、Drawer III 遊戲研究室；卷宗自動編號（No. I-01…）
+- **資料驅動**：所有工具寫在檔案裡的 `TOOLS` 陣列，新增工具只要加一筆（drawer、shelf、icon、name、brief、title、sub、features、href、btn，選填 teacher／case／note）
+- `teacher: true` 會蓋「🔒 老師專用」章並在卷宗內加警語；`case` 會蓋「CASE 01」章
+- 搜尋框（按 `/` 可快速聚焦）＋抽屜篩選；不做「最近開啟」
+- 確認滿意後：把 index-preview.html 內容取代 index.html
 
 ## 4. 資料存在哪裡？（四種方式）
 
