@@ -1,6 +1,7 @@
 # 🛠️ 巫魚子教學工具箱：開發與整合說明
 
 > 給未來的自己（和 Claude）看的說明書：這個網站怎麼組成、資料放哪裡、要新增工具時怎麼接進來。
+> **每次開發的過程與決定記在 [CHANGELOG.md](CHANGELOG.md)（開發歷程）**，每次開發結束都要同步更新本檔與 CHANGELOG。
 > 最後更新：2026-10-03
 
 ---
@@ -26,7 +27,8 @@
 wuyutzu-tools/
 ├── index.html                    # 首頁「巫魚子教課事務所」（資料驅動：工具清單 TOOLS 陣列）
 ├── index-preview.html            # 首頁預覽區（改版時先在這裡試，滿意再複製成 index.html）
-├── DEVELOPMENT.md                # 本說明檔
+├── DEVELOPMENT.md                # 本說明檔（結構、資料、規則）
+├── CHANGELOG.md                  # 開發歷程（每次開發的內容與老師的決定）
 ├── README.md                     # 專案簡介
 │
 ├── classroom/                    # 🏫 導師班工具
@@ -87,6 +89,7 @@ wuyutzu-tools/
 - **資料驅動**：所有工具寫在檔案裡的 `TOOLS` 陣列，新增工具只要加一筆（drawer、shelf、icon、name、brief、title、sub、features、href、btn，選填 teacher／case／note）
 - `teacher: true` 顯示「🔒 老師專用」標籤並在卷宗內加警語；`case` 顯示紅色「CASE 01」標籤；`DRAWERS` 陣列設定抽屜名稱與代表色
 - 搜尋框（按 `/` 可快速聚焦）＋抽屜篩選；不做「最近開啟」
+- 預覽頁目前是**第三版**（拿掉格紋、細框柔和陰影），等老師決定是否上線；正式首頁仍是第二版
 - 舊版紫色首頁可從 git 歷史找回（commit 226f6ec 之後、ac464b8 之前的 index.html）
 - 之後要改版：先改 index-preview.html 給老師看，確認後再複製成 index.html
 
