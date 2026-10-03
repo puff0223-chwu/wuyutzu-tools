@@ -220,6 +220,11 @@
         <div class="tool-name">消失的實驗器材</div>
         <div class="tool-brief">看圖認器材，限時搶分，3條命挑戰排行榜</div>
       </div>
+      <div class="tool-card" onclick="openModal('ph')">
+        <div class="tool-icon">🧪</div>
+        <div class="tool-name">pH 值計算練習</div>
+        <div class="tool-brief">每人專屬5題，四級難度，即時對錯或交卷批改</div>
+      </div>
     </div>
 
     <!-- 子分類：課堂遊戲化 -->
@@ -444,6 +449,25 @@
       <li>✅ 即時排行榜前 30 名，可只看自己班級</li>
     </ul>
     <a class="btn-start" href="chemistry/missing-equipment.html" target="_blank">開始搜查 →</a>
+  </div>
+</div>
+
+<!-- pH 值計算練習 -->
+<div class="modal-overlay" id="modal-ph" onclick="closeOnBg(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('ph')">✕</button>
+    <div class="modal-icon">🧪</div>
+    <div class="modal-title">pH 值計算練習</div>
+    <div class="modal-sub">老師頁 · 產生題組碼讓學生領題</div>
+    <ul class="modal-features">
+      <li>✅ 係數由 2、3、5、7、10 組成，四級難度自由分配</li>
+      <li>✅ 題組碼＋班級＋座號 → 每人專屬 5 題，重新整理不變</li>
+      <li>✅ 即時對錯（不給答案）或交卷後老師批改</li>
+      <li>✅ 投影共同題目與解法、列印學習單與解答表</li>
+      <li>✅ 全班總表即時更新，匯出 Excel</li>
+    </ul>
+    <a class="btn-start" href="chemistry/ph-generator-teacher.html" target="_blank">🧑‍🏫 開啟老師頁 →</a>
+    <p style="text-align:center; font-size:0.85em; color:#888; margin-top:8px;">學生連結與 QR Code 由老師頁產生後分享</p>
   </div>
 </div>
 
