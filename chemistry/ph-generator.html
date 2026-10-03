@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>🧪 pH 值計算練習</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #102226; --ink-2: #183238; --paper: #f8f6ef; --line: #e3ddca;
+    --acid: #ef5b4c; --neutral: #3fb56b; --base: #4b6fe0;
+    --amber: #ffb627; --muted: #8aa2a6; --text: #1f2d30;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+    background: var(--ink); color: var(--paper); min-height: 100vh; padding: 16px;
+    background-image: repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 30px),
+                      repeating-linear-gradient(90deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 30px);
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  .hidden { display: none !important; }
+  .ph-strip { height: 12px; border-radius: 6px; margin-bottom: 18px;
+    background: linear-gradient(90deg, #d7263d, #f46036, #f9c80e, #9bc53d, #3fb56b, #2a9d8f, #3a86ff, #5e60ce, #7b2cbf); }
+  h1 { font-weight: 900; font-size: clamp(1.8em, 6.5vw, 2.6em); letter-spacing: 0.04em; }
+  h1 span { color: var(--amber); }
+  .sub { color: var(--muted); margin: 4px 0 16px; }
+
+  .paper { background: var(--paper); color: var(--text); border-radius: 14px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.35); }
+  label { font-size: 0.8em; color: #6b6248; font-weight: 700; display: block; margin-bottom: 4px; }
+  input[type=text], input[type=number] {
+    width: 100%; font: inherit; font-size: 1.05em; padding: 11px 12px; border-radius: 10px;
+    border: 2px solid var(--line); background: #fff; color: var(--text); outline: none;
+  }
+  input:focus { border-color: var(--amber); }
+  input:disabled { background: #f1efe8; }
+  .grid { display: grid; grid-template-columns: 1.2fr 1fr 0.7fr 1.3fr; gap: 10px; }
+  .code-input { font-family: 'JetBrains Mono', monospace; letter-spacing: 0.12em; text-transform: uppercase; }
+
+  .btn { font: inherit; font-weight: 900; font-size: 1.05em; border: none; border-radius: 12px; padding: 13px 18px; cursor: pointer;
+    background: var(--amber); color: #1a1a1a; box-shadow: 0 4px 0 #b97d0b; }
+  .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #b97d0b; }
+  .btn:disabled { opacity: 0.45; cursor: default; transform: none; }
+  .btn.small { font-size: 0.95em; padding: 10px 14px; }
+  .btn.dark { background: var(--ink-2); color: var(--paper); box-shadow: 0 4px 0 #071114; }
+  .err { color: var(--acid); font-size: 0.9em; min-height: 1.3em; margin-top: 8px; }
+
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .chip { background: var(--ink-2); border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; padding: 5px 12px; font-size: 0.9em; }
+  .chip b { color: var(--amber); }
+  .logbox { background: rgba(255,182,39,0.12); border: 1px dashed rgba(255,182,39,0.6); border-radius: 12px;
+    padding: 10px 14px; margin-bottom: 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.95em;
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 22px; }
+
+  .q { background: var(--paper); color: var(--text); border-radius: 14px; padding: 16px; margin-bottom: 12px;
+    border-left: 8px solid var(--line); transition: border-color 0.3s; }
+  .q.ok { border-left-color: var(--neutral); }
+  .q.bad { border-left-color: var(--acid); }
+  .q-head { display: flex; justify-content: space-between; align-items: center; font-size: 0.85em; color: #6b6248; margin-bottom: 6px; }
+  .q-conc { font-family: 'JetBrains Mono', 'Noto Sans TC', monospace; font-size: 1.45em; font-weight: 700; margin: 4px 0 12px; }
+  .q-conc sup { font-size: 0.6em; }
+  .q-row { display: flex; gap: 10px; align-items: center; }
+  .q-row .eq { font-weight: 900; font-size: 1.2em; white-space: nowrap; }
+  .q-row .btn { white-space: nowrap; flex: none; }
+  .q-row input { flex: 1; min-width: 0; font-family: 'JetBrains Mono', monospace; font-size: 1.2em; text-align: center; font-weight: 700; }
+  .q-msg { min-height: 1.4em; margin-top: 8px; font-weight: 700; }
+  .q-msg.ok { color: var(--neutral); }
+  .q-msg.bad { color: var(--acid); }
+  .shake { animation: shake 0.35s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%,75%{transform:translateX(-8px)} 50%{transform:translateX(8px)} }
+
+  .foot { background: var(--paper); color: var(--text); border-radius: 14px; padding: 16px; text-align: center; }
+  .progress { height: 10px; background: #e7e2d2; border-radius: 5px; overflow: hidden; margin: 10px 0; }
+  .progress div { height: 100%; background: var(--neutral); width: 0; transition: width 0.4s; }
+  .sync { color: var(--muted); font-size: 0.82em; text-align: center; margin-top: 10px; min-height: 1.2em; }
+  .confirm { margin-top: 12px; background: #fff4dc; border-radius: 10px; padding: 12px; }
+  .confirm .row { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
+  .done-banner { font-size: 1.3em; font-weight: 900; color: var(--neutral); }
+
+  @media (max-width: 560px) {
+    .grid { grid-template-columns: 1fr 1fr; }
+    .grid .wide { grid-column: 1 / -1; }
+    .q-conc { font-size: 1.2em; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="ph-strip"></div>
+  <h1>pH 值<span>計算練習</span></h1>
+  <p class="sub">輸入老師給的題組碼，領取你專屬的 5 道題目</p>
+
+  <!-- 領題 -->
+  <section id="join" class="paper">
+    <div class="grid">
+      <div class="wide"><label for="in-code">題組碼</label><input id="in-code" class="code-input" type="text" maxlength="9" placeholder="例：4TJ-6NKY" autocomplete="off"></div>
+      <div><label for="in-cls">班級</label><input id="in-cls" type="text" maxlength="10" placeholder="例：101"></div>
+      <div><label for="in-seat">座號</label><input id="in-seat" type="number" min="1" max="99" placeholder="例：7"></div>
+      <div class="wide"><label for="in-name">姓名</label><input id="in-name" type="text" maxlength="12" placeholder="你的名字"></div>
+    </div>
+    <div class="err" id="join-err"></div>
+    <button class="btn" id="btn-join" style="width:100%;margin-top:6px">領取我的題目 🧪</button>
+  </section>
+
+  <!-- 作答 -->
+  <section id="work" class="hidden">
+    <div class="bar" id="info"></div>
+    <div class="logbox hidden" id="logbox"><span>log 2 = 0.30</span><span>log 3 = 0.48</span><span>log 5 = 0.70</span><span>log 7 = 0.85</span></div>
+    <div id="questions"></div>
+    <div class="foot" id="foot"></div>
+    <div class="sync" id="sync"></div>
+  </section>
+</div>
+
+<script src="ph-core.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+let S = null;   // { parsed, cls, seat, name, sid, qs, answers, attempts, solved, history, submitted }
+
+/* ---------- 領題 ---------- */
+const urlCode = new URLSearchParams(location.search).get('code');
+if (urlCode) $('in-code').value = PH.prettyCode(PH.normalizeCode(urlCode));
+try {
+  const saved = JSON.parse(localStorage.getItem('ph-student') || 'null');
+  if (saved) { $('in-cls').value = saved.cls || ''; $('in-seat').value = saved.seat || ''; $('in-name').value = saved.name || ''; }
+} catch (e) {}
+
+$('btn-join').onclick = join;
+async function join() {
+  const parsed = PH.parseCode($('in-code').value);
+  const cls = PH.normalizeClass($('in-cls').value);
+  const seat = parseInt($('in-seat').value, 10);
+  const name = $('in-name').value.trim();
+  if (!parsed) return showErr('題組碼不正確，請再確認一次（共 7 個字）');
+  if (!cls || !seat || seat < 1 || !name) return showErr('請把班級、座號、姓名都填好喔！');
+  showErr('');
+  try { localStorage.setItem('ph-student', JSON.stringify({ cls, seat, name })); } catch (e) {}
+
+  const n = PH.CONFIG.QUESTIONS;
+  S = { parsed, cls, seat, name, sid: PH.studentId(cls, seat), qs: PH.forStudent(parsed, cls, seat),
+        answers: Array(n).fill(''), attempts: Array(n).fill(0), solved: Array(n).fill(false),
+        history: [], submitted: false, firstTs: Date.now() };
+
+  $('btn-join').disabled = true; $('btn-join').textContent = '領取中…';
+  // 先讀回之前的作答（重新整理或換裝置也接得上）
+  try {
+    const rec = await PH.fetchRecord(parsed.code, S.sid);
+    if (rec) {
+      S.answers = PH.toArray(rec.answers, n, '').map(String);
+      S.attempts = PH.toArray(rec.attempts, n, 0).map(Number);
+      S.history = Array.isArray(rec.history) ? rec.history : Object.values(rec.history || {});
+      S.submitted = !!rec.submitted;
+      S.firstTs = rec.firstTs || S.firstTs;
+      if (parsed.instant) S.solved = S.qs.map((q, i) => PH.isCorrect(q, S.answers[i]));
+    }
+    setSync('');
+  } catch (e) {
+    console.error(e);
+    setSync('⚠️ 目前連不上伺服器，仍可作答，下次作答時會再送出');
+  }
+  $('btn-join').disabled = false; $('btn-join').textContent = '領取我的題目 🧪';
+  render();
+}
+function showErr(msg) { $('join-err').textContent = msg; }
+
+/* ---------- 畫題目 ---------- */
+function render() {
+  $('join').classList.add('hidden');
+  $('work').classList.remove('hidden');
+  const p = S.parsed;
+  $('info').innerHTML =
+    `<span class="chip">${PH.escapeHtml(S.cls)} 班 ${S.seat} 號 <b>${PH.escapeHtml(S.name)}</b></span>` +
+    `<span class="chip">題組碼 ${PH.prettyCode(p.code)}</span>` +
+    `<span class="chip">${p.instant ? '✅ 即時對錯' : '📝 交卷後由老師批改'}</span>`;
+  $('logbox').classList.toggle('hidden', !p.showLog);
+
+  $('questions').innerHTML = S.qs.map((q, i) => {
+    const lv = PH.LEVELS[q.level];
+    return `<div class="q" id="q${i}">
+      <div class="q-head"><span>第 ${i + 1} 題</span><span>${lv.stars} ${lv.name}</span></div>
+      <div class="q-conc">${PH.concHTML(q)}</div>
+      <div class="q-row">
+        <span class="eq">pH =</span>
+        <input type="text" inputmode="decimal" id="a${i}" autocomplete="off" placeholder="小數點後兩位">
+        ${p.instant ? `<button class="btn small" id="c${i}">檢查</button>` : ''}
+      </div>
+      <div class="q-msg" id="m${i}"></div>
+    </div>`;
+  }).join('');
+
+  S.qs.forEach((q, i) => {
+    const input = $('a' + i);
+    input.value = S.answers[i] || '';
+    if (p.instant) {
+      $('c' + i).onclick = () => check(i);
+      input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) check(i); });
+    } else {
+      input.addEventListener('input', () => { S.answers[i] = input.value.trim(); scheduleSave(); });
+      input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { const nx = $('a' + (i + 1)); if (nx) nx.focus(); } });
+    }
+    paintQuestion(i);
+  });
+  renderFoot();
+}
+
+function paintQuestion(i) {
+  const box = $('q' + i), input = $('a' + i), msg = $('m' + i);
+  box.classList.remove('ok', 'bad');
+  if (S.parsed.instant) {
+    if (S.solved[i]) {
+      box.classList.add('ok'); input.disabled = true; $('c' + i).disabled = true;
+      msg.className = 'q-msg ok';
+      msg.textContent = `✅ 答對了！${S.attempts[i] > 1 ? `（第 ${S.attempts[i]} 次）` : ''}`;
+    } else if (S.attempts[i] > 0) {
+      msg.className = 'q-msg bad';
+      msg.textContent = `❌ 還不對，再算一次（已試 ${S.attempts[i]} 次）`;
+    }
+  } else if (S.submitted) {
+    input.disabled = true;
+  }
+}
+
+/* ---------- 即時對錯 ---------- */
+function check(i) {
+  if (S.solved[i]) return;
+  const input = $('a' + i), val = input.value.trim();
+  if (!val) { input.focus(); return; }
+  if (PH.parseAnswer(val) === null) {
+    $('m' + i).className = 'q-msg bad'; $('m' + i).textContent = '請輸入數字，例如 4.82'; return;
+  }
+  const ok = PH.isCorrect(S.qs[i], val);
+  S.answers[i] = val; S.attempts[i]++; S.solved[i] = ok;
+  S.history.push([i, val, ok ? 1 : 0, Date.now()]);
+  if (S.history.length > 100) S.history = S.history.slice(-100);
+  if (!ok) { const box = $('q' + i); box.classList.add('bad'); box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake'); input.select(); }
+  paintQuestion(i);
+  renderFoot();
+  save();
+  if (ok) { const nx = S.solved.findIndex(s => !s); if (nx >= 0) $('a' + nx).focus(); }
+}
+
+/* ---------- 底部 ---------- */
+function renderFoot() {
+  const n = S.qs.length;
+  if (S.parsed.instant) {
+    const done = S.solved.filter(Boolean).length;
+    $('foot').innerHTML = done === n
+      ? `<div class="done-banner">🎉 5 題全部答對！</div><p style="margin-top:6px">老師已經收到你的作答紀錄。</p>`
+      : `<div>答對 <b>${done}</b> / ${n} 題</div><div class="progress"><div style="width:${done / n * 100}%"></div></div>`;
+  } else if (S.submitted) {
+    $('foot').innerHTML = `<div class="done-banner">📮 已交卷</div><p style="margin-top:6px">答案已送給老師，等待老師批改。</p>`;
+  } else {
+    const filled = S.answers.filter(a => String(a).trim()).length;
+    $('foot').innerHTML = `<div>已填寫 <b>${filled}</b> / ${n} 題</div>
+      <button class="btn" id="btn-submit" style="margin-top:10px;width:100%">交卷 📮</button>
+      <div class="confirm hidden" id="confirm">交卷後就不能再修改答案囉，確定要交卷嗎？
+        <div class="row"><button class="btn small" id="btn-yes">確定交卷</button><button class="btn small dark" id="btn-no">再檢查一下</button></div>
+      </div>`;
+    $('btn-submit').onclick = () => { $('confirm').classList.remove('hidden'); $('btn-submit').classList.add('hidden'); };
+    $('btn-no').onclick = () => { $('confirm').classList.add('hidden'); $('btn-submit').classList.remove('hidden'); };
+    $('btn-yes').onclick = submit;
+  }
+}
+
+async function submit() {
+  S.qs.forEach((q, i) => { S.answers[i] = $('a' + i).value.trim(); });
+  S.submitted = true;
+  const ok = await save();
+  if (!ok) { S.submitted = false; renderFoot(); return; }
+  S.qs.forEach((q, i) => paintQuestion(i));
+  renderFoot();
+}
+
+/* ---------- 存到 Firebase ---------- */
+let saveTimer = null;
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => { save(); updateFilled(); }, 800);
+}
+function updateFilled() {
+  if (S.parsed.instant || S.submitted) return;
+  const b = document.querySelector('#foot b');
+  if (b) b.textContent = S.answers.filter(a => String(a).trim()).length;
+}
+async function save() {
+  const rec = {
+    cls: S.cls, seat: S.seat, name: S.name,
+    answers: S.answers, attempts: S.attempts, history: S.history,
+    submitted: S.submitted, firstTs: S.firstTs, ts: Date.now()
+  };
+  try {
+    await PH.saveRecord(S.parsed.code, S.sid, rec);
+    setSync('✔ 已同步給老師 ' + new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }));
+    return true;
+  } catch (e) {
+    console.error(e);
+    setSync('⚠️ 送出失敗，請檢查網路後再試一次');
+    return false;
+  }
+}
+function setSync(msg) { $('sync').textContent = msg; }
+</script>
+</body>
+</html>

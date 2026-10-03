@@ -42,7 +42,10 @@ wuyutzu-tools/
 │
 ├── chemistry/                    # ⚗️ 化學學習遊戲
 │   ├── missing-equipment.html    # 消失的實驗器材
-│   └── images/equipment/         # 33 張器材圖片（檔名＝題庫 id）
+│   ├── images/equipment/         # 33 張器材圖片（檔名＝題庫 id）
+│   ├── ph-core.js                # pH 練習：共用核心（出題、題組碼、解法、Firebase）
+│   ├── ph-generator.html         # pH 練習：學生作答頁
+│   └── ph-generator-teacher.html # pH 練習：老師頁（不放首頁、請勿給學生）
 │
 ├── gamification/                 # 🎲 課堂遊戲化
 │   ├── system.html               # 選人系統＋陣亡詛咒系統
@@ -69,6 +72,8 @@ wuyutzu-tools/
 | | 🎲 課堂遊戲化 | 選人系統、陣亡詛咒、戳戳樂、真心話大冒險 |
 | 🎮 遊戲設計思考 | — | 巴圖玩家類型 |
 
+> **不放在首頁的頁面**（避免學生看到答案）：`chemistry/ph-generator-teacher.html`（請用書籤開啟）
+
 ---
 
 ## 4. 資料存在哪裡？（四種方式）
@@ -78,7 +83,8 @@ wuyutzu-tools/
 | **不存資料** | 詩籤、金曲歌王、真心話、抽籤、形容詞 | 打開就能用，最單純 |
 | **瀏覽器 localStorage** | 座位、打掃徵才管理頁、選人 | 只存在那一台電腦的瀏覽器，換電腦就沒了；常搭配 Excel 匯出備份 |
 | **Google 表單無聲送出** | DISC、貝爾賓、打掃徵才學生頁 | 學生送出→進老師的 Google 表單；只能「寫入」，網頁讀不回來 |
-| **Firebase Realtime Database** | 消失的實驗器材（排行榜） | 可寫可讀、即時；全班共用排行榜 |
+| **Firebase Realtime Database** | 消失的實驗器材（排行榜）、pH 練習（作答紀錄） | 可寫可讀、即時；全班共用 |
+| **固定亂數（不存資料）** | pH 練習的出題 | 同一個「題組碼＋班級＋座號」永遠算出同一組題目，老師頁可重算全班題目與答案 |
 
 ### Firebase 設定
 
@@ -93,9 +99,16 @@ wuyutzu-tools/
     └── scores/
         └── <班級_座號_姓名>: { cls, seat, name, score, correct, wrong, total, cleared, seconds, ts }
             （每位學生一筆，只保留最佳成績）
+└── ph-generator/
+    └── <題組碼 7 碼>/
+        └── <班級_座號>: { cls, seat, name, answers[5], attempts[5], history[[題號,作答,對錯,時間]…], submitted, firstTs, ts }
+            （不存正確答案，老師頁用固定亂數重算後比對）
 ```
 
-- **安全規則**（2026-10-03 發布）：根目錄全部上鎖；只開放 `missing-equipment/scores` 可讀；每位學生的紀錄只有在「分數更高，或同分但用時更短」時才能覆蓋，不能刪除；分數 0～3000。
+- **安全規則**（2026-10-03 發布）：根目錄全部上鎖。
+  - `missing-equipment/scores`：可讀；每位學生的紀錄只有在「分數更高，或同分但用時更短」時才能覆蓋，不能刪除；分數 0～3000。
+  - `ph-generator/<題組碼>`：可讀；題組碼必須是 7 碼合法字元；可新增或更新，但**交卷（submitted=true）後就不能再改**，不能刪除。
+  - 規則全文見本檔最後的附錄。
 - ⚠️ **之後新工具要用 Firebase**：要在規則裡為它新增一個抽屜的規則，否則會被擋（HTTP 401/403）。
 - 與「科學任務偵探所」的 Supabase 完全分開：**Supabase 給大系統、Firebase 給輕量小工具**。
 
@@ -125,6 +138,17 @@ wuyutzu-tools/
 - 圖片來源：老師自製的器材簡報 PDF（6 頁、6 大類）；同框器材用遮白或紅圈處理
 - **新增器材**：把圖片放進 `images/equipment/<id>.jpg`，在 `ITEMS` 加一行即可
 
+### 🧪 pH 值計算練習（chemistry/ph-*.html）
+
+- **出題規則都在 `ph-core.js` 的 `CONFIG`**：log 值兩位小數（0.30/0.48/0.70/0.85）、10 次方範圍（pH 落在 1～13）、挑戰題中 [OH⁻] 的比例
+- 係數只由 2、3、5、7、10 相乘相除組成，程式自動列舉；所有計算用「整數百分位」，不會有小數誤差
+- 難度：⭐基礎（[H⁺]，係數 1）／⭐⭐進階（[H⁺]，2、3、5、7）／⭐⭐⭐挑戰（[OH⁻] 題，或 [H⁺] 兩數組合）／⭐⭐⭐⭐魔王（[H⁺] 三數組合）
+- **題組碼**（7 碼，例 `4TJ-6NKY`）裡藏了：難度分配、作答方式（即時對錯／交卷批改）、是否顯示 log、隨機輪次，還有 1 碼檢查碼防打錯
+- 題目種子＝題組碼＋班級＋座號（不含姓名，打錯名字題目也不變）；投影用的共同題目種子＝題組碼＋`PROJECT|n`
+- 學生頁：`ph-generator.html?code=題組碼`；答案只判對錯不給解；重新整理會從 Firebase 接回進度
+- 老師頁四個分頁：出題設定（產生題組碼＋QR）、投影（共同題目＋逐題解法）、列印（每人學習單＋解答表）、全班總表（即時作答、每 10 秒自動更新、匯出 Excel：總表／作答歷程／題目與解法）
+- 限制：答案是在學生瀏覽器裡算的，懂程式的學生理論上能從原始碼推出答案；屬於練習工具，不適合正式考試
+
 ### 🧹 打掃徵才 v4
 
 - 老師在管理頁產生學生登記連結；學生資料透過 Google 表單送出
@@ -137,3 +161,34 @@ wuyutzu-tools/
 - 部署後看不到更新 → 多半是瀏覽器快取，用無痕視窗或 `Ctrl+Shift+R`
 - Claude Artifact 裡的網頁連不到 Firebase／外部網站；GitHub Pages 上的網頁可以
 - Google Apps Script 在學校與個人帳號都被擋，不要用來當後端
+
+---
+
+## 附錄：Firebase 安全規則全文（2026-10-03）
+
+```json
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "missing-equipment": {
+      "scores": {
+        ".read": true,
+        "$id": {
+          ".write": "newData.exists() && (!data.exists() || newData.child('score').val() > data.child('score').val() || (newData.child('score').val() == data.child('score').val() && newData.child('seconds').val() < data.child('seconds').val()))",
+          ".validate": "newData.hasChildren(['cls','seat','name','score','correct','wrong','seconds','ts']) && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 3000 && newData.child('seconds').isNumber() && newData.child('correct').isNumber() && newData.child('correct').val() <= 30 && newData.child('name').isString() && newData.child('name').val().length <= 12"
+        }
+      }
+    },
+    "ph-generator": {
+      "$code": {
+        ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{7}$/)",
+        "$sid": {
+          ".write": "newData.exists() && $code.matches(/^[2-9A-HJ-NP-Z]{7}$/) && data.child('submitted').val() != true",
+          ".validate": "newData.hasChildren(['cls','seat','name','ts']) && newData.child('cls').isString() && newData.child('cls').val().length <= 10 && newData.child('seat').isNumber() && newData.child('name').isString() && newData.child('name').val().length <= 12"
+        }
+      }
+    }
+  }
+}
+```
