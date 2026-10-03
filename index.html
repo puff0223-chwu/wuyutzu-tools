@@ -225,6 +225,11 @@
         <div class="tool-name">pH 值計算練習</div>
         <div class="tool-brief">每人專屬5題，四級難度，即時對錯或交卷批改</div>
       </div>
+      <div class="tool-card" onclick="openModal('unit')">
+        <div class="tool-icon">⚖️</div>
+        <div class="tool-name">化學單位換算練習</div>
+        <div class="tool-brief">g、mol、分子數、原子數、CM、%、ppm 生活情境題</div>
+      </div>
     </div>
 
     <!-- 子分類：課堂遊戲化 -->
@@ -467,6 +472,25 @@
       <li>✅ 全班總表即時更新，匯出 Excel</li>
     </ul>
     <a class="btn-start" href="chemistry/ph-generator-teacher.html" target="_blank">🧑‍🏫 開啟老師頁 →</a>
+    <p style="text-align:center; font-size:0.85em; color:#888; margin-top:8px;">學生連結與 QR Code 由老師頁產生後分享</p>
+  </div>
+</div>
+
+<!-- 化學單位換算練習 -->
+<div class="modal-overlay" id="modal-unit" onclick="closeOnBg(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('unit')">✕</button>
+    <div class="modal-icon">⚖️</div>
+    <div class="modal-title">化學單位換算練習</div>
+    <div class="modal-sub">老師頁 · 產生題組碼讓學生領題</div>
+    <ul class="modal-features">
+      <li>✅ 質量、莫耳數、分子數、原子數、CM、重量百分率、ppm</li>
+      <li>✅ 生活情境題，只給原子量，四級難度自由分配</li>
+      <li>✅ 答錯時亮出「單位換算地圖」路線提示（不給答案）</li>
+      <li>✅ 投影共同題目與解法、列印學習單與解答表</li>
+      <li>✅ 全班總表即時更新，匯出 Excel</li>
+    </ul>
+    <a class="btn-start" href="chemistry/unit-generator-teacher.html" target="_blank">🧑‍🏫 開啟老師頁 →</a>
     <p style="text-align:center; font-size:0.85em; color:#888; margin-top:8px;">學生連結與 QR Code 由老師頁產生後分享</p>
   </div>
 </div>

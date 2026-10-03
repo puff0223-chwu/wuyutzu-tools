@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>⚖️ 化學單位換算練習｜老師頁</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --ink: #102226; --ink-2: #183238; --paper: #f8f6ef; --line: #e3ddca;
+    --ok: #2e9e5b; --bad: #d9473a; --amber: #ffb627; --muted: #8aa2a6; --text: #1f2d30;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif; background: var(--ink); color: var(--paper); min-height: 100vh; padding: 16px; }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  .hidden { display: none !important; }
+  .ph-strip { height: 10px; border-radius: 5px; margin-bottom: 14px; opacity: 0.85;
+    background: repeating-linear-gradient(90deg, #ffb627 0 40px, #3a86ff 40px 80px, #2fa866 80px 120px, #e0503f 120px 160px); }
+  .umap { display: block; width: 100%; max-width: 420px; height: auto; margin: 6px auto; }
+  .umap .edge line { stroke: #c9c1a8; stroke-width: 3; }
+  .umap .edge text { font-size: 13px; fill: #8a8068; }
+  .umap .edge.on line { stroke: #3a86ff; stroke-width: 6; }
+  .umap .edge.on text { fill: #3a86ff; font-weight: 700; }
+  .umap .node rect { fill: #fff; stroke: #c9c1a8; stroke-width: 2; }
+  .umap .node text { font-size: 14px; font-weight: 700; fill: #1f2a36; }
+  .umap .node.on rect { fill: #3a86ff; stroke: #3a86ff; }
+  .umap .node.on text { fill: #fff; }
+  .atomic { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; color: #6b6248; background: #efe9d8; display: inline-block; padding: 3px 10px; border-radius: 8px; margin: 4px 0 8px; }
+  .note { display: block; font-size: 0.85em; color: #7a715a; }
+  h1 { font-weight: 900; font-size: 1.9em; }
+  h1 small { font-size: 0.5em; color: var(--muted); font-weight: 400; margin-left: 8px; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  .current { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 12px 0; background: var(--ink-2);
+    border-radius: 12px; padding: 10px 14px; }
+  .current .code { font-family: 'JetBrains Mono', monospace; font-size: 1.5em; font-weight: 700; color: var(--amber); letter-spacing: 0.1em; }
+  .current .meta { color: var(--muted); font-size: 0.9em; }
+
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .tabs button { font: inherit; border: none; padding: 9px 16px; border-radius: 999px; cursor: pointer; background: var(--ink-2); color: var(--muted); }
+  .tabs button.on { background: var(--amber); color: #1a1a1a; font-weight: 700; }
+
+  .paper { background: var(--paper); color: var(--text); border-radius: 14px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+  .paper h2 { font-size: 1.15em; margin-bottom: 12px; }
+  .paper h3 { font-size: 1em; margin: 18px 0 8px; }
+  .hint { color: #6b6248; font-size: 0.88em; line-height: 1.6; }
+  label.l { font-size: 0.82em; color: #6b6248; font-weight: 700; display: block; margin-bottom: 4px; }
+  input[type=text], input[type=number] { font: inherit; padding: 9px 11px; border-radius: 9px; border: 2px solid var(--line); background: #fff; color: var(--text); outline: none; }
+  input:focus { border-color: var(--amber); }
+
+  .btn { font: inherit; font-weight: 700; border: none; border-radius: 10px; padding: 10px 16px; cursor: pointer; background: var(--amber); color: #1a1a1a; }
+  .btn.dark { background: var(--ink-2); color: var(--paper); }
+  .btn.ghost { background: #fff; border: 2px solid var(--line); color: var(--text); }
+  .btn:disabled { opacity: 0.4; cursor: default; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+
+  .levels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .lv { background: #fff; border: 2px solid var(--line); border-radius: 12px; padding: 12px; text-align: center; }
+  .lv .stars { font-size: 0.85em; }
+  .lv .name { font-weight: 900; margin: 2px 0; }
+  .lv .desc { font-size: 0.75em; color: #7a715a; min-height: 2.6em; }
+  .stepper { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 8px; }
+  .stepper button { width: 34px; height: 34px; border-radius: 50%; border: none; background: var(--ink-2); color: #fff; font-size: 1.2em; cursor: pointer; }
+  .stepper span { font-size: 1.6em; font-weight: 900; min-width: 1.2em; }
+  .total { margin-top: 10px; font-weight: 700; }
+  .total.bad { color: var(--bad); }
+  .opts { display: grid; gap: 8px; margin-top: 8px; }
+  .opt { display: flex; gap: 10px; align-items: flex-start; background: #fff; border: 2px solid var(--line); border-radius: 10px; padding: 10px 12px; cursor: pointer; }
+  .opt input { margin-top: 4px; }
+
+  .result { margin-top: 16px; display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: center; background: #fff; border-radius: 12px; padding: 16px; border: 2px dashed var(--amber); }
+  .result .bigcode { font-family: 'JetBrains Mono', monospace; font-size: 2.4em; font-weight: 700; letter-spacing: 0.1em; }
+  .linkbox { font-family: 'JetBrains Mono', monospace; font-size: 0.8em; word-break: break-all; color: #555; margin: 6px 0 10px; }
+  .qr { width: 150px; height: 150px; }
+  .qr img, .qr canvas { width: 100% !important; height: 100% !important; }
+  .recent { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .recent button { font: inherit; font-size: 0.85em; border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 5px 9px; cursor: pointer; }
+
+  /* 投影 */
+  .proj-q { background: #fff; border-radius: 14px; padding: 18px 20px; margin-bottom: 12px; border: 2px solid var(--line); }
+  .proj-q .top { display: flex; justify-content: space-between; color: #7a715a; font-size: 0.9em; }
+  .proj-q .ptext { font-size: 1.45em; line-height: 1.7; font-weight: 700; margin: 6px 0; }
+  .proj-q .ptext .note { font-weight: 400; }
+  .proj-q .sol { font-size: 1.15em; line-height: 1.8; color: #2a5d43; margin-top: 6px; }
+  .proj-q .ans { font-size: 1.6em; font-weight: 900; color: var(--ok); }
+
+  .overlay { position: fixed; inset: 0; background: var(--ink); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 20px; text-align: center; }
+  .overlay .big { font-family: 'JetBrains Mono', monospace; font-size: min(14vw, 9em); font-weight: 700; color: var(--amber); letter-spacing: 0.08em; }
+  .overlay .qr { width: min(42vh, 70vw); height: min(42vh, 70vw); background: #fff; padding: 14px; border-radius: 14px; }
+  .overlay .url { font-family: 'JetBrains Mono', monospace; color: var(--muted); font-size: 1.1em; word-break: break-all; }
+  .overlay .close { position: absolute; top: 16px; right: 20px; }
+
+  /* 總表 */
+  .table-wrap { overflow-x: auto; margin-top: 12px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.86em; background: #fff; }
+  th, td { border: 1px solid var(--line); padding: 6px 7px; text-align: center; vertical-align: top; }
+  th { background: #efe9d8; position: sticky; top: 0; }
+  td.qcell { min-width: 120px; }
+  .qtxt { font-family: 'JetBrains Mono', monospace; font-size: 0.82em; color: #555; }
+  .key { color: #7a715a; font-size: 0.85em; }
+  .stu { font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+  .stu.ok { color: var(--ok); } .stu.bad { color: var(--bad); }
+  .tries { font-size: 0.78em; color: #888; }
+  .status { font-size: 0.8em; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .st-none { background: #eee; color: #888; } .st-doing { background: #fff1cc; color: #8a6200; }
+  .st-sub { background: #dde8ff; color: #2849a8; } .st-all { background: #d8f3e3; color: #1f7a45; }
+  tr.summary td { background: #faf6ea; font-weight: 700; }
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+  /* 列印 */
+  #print-area { display: none; }
+  @media print {
+    body { background: #fff !important; padding: 0; color: #000; }
+    .wrap > *:not(#print-area) { display: none !important; }
+    #print-area { display: block !important; }
+    .sheet { break-inside: avoid; page-break-inside: avoid; border: 1.5px solid #000; border-radius: 6px; padding: 12px 16px; margin-bottom: 12px; }
+    .sheet h4 { font-size: 13pt; margin-bottom: 4px; }
+    .sheet .who { display: flex; gap: 22px; font-size: 11pt; margin-bottom: 8px; }
+    .sheet .logline { font-size: 9.5pt; margin-bottom: 6px; }
+    .sheet ol { margin-left: 20px; }
+    .sheet li { font-size: 11pt; padding: 5px 0; line-height: 1.5; }
+    .sheet .note { display: inline; font-size: 9pt; color: #333; }
+    .sheet .patomic { font-size: 9pt; color: #333; }
+    .sheet .pblank { text-align: right; padding-top: 4px; }
+    .sheet li sup { font-size: 0.65em; }
+    .pb { page-break-after: always; }
+    .keytable { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+    .keytable th, .keytable td { border: 1px solid #000; padding: 3px 5px; text-align: left; }
+  }
+  @media (max-width: 700px) { .levels { grid-template-columns: 1fr 1fr; } .result { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="ph-strip"></div>
+  <h1>⚖️ 化學單位換算練習 <small>老師頁 · 請勿提供給學生</small></h1>
+
+  <div class="current" id="current"></div>
+
+  <div class="tabs" id="tabs">
+    <button data-t="setup" class="on">① 出題設定</button>
+    <button data-t="project">② 投影</button>
+    <button data-t="print">③ 列印學習單</button>
+    <button data-t="board">④ 全班總表</button>
+  </div>
+
+  <!-- ① 出題設定 -->
+  <section class="paper" id="t-setup">
+    <h2>難度分配（每人 5 題）</h2>
+    <div class="levels" id="levels"></div>
+    <div class="total" id="total"></div>
+
+    <h3>學生作答方式</h3>
+    <div class="opts">
+      <label class="opt"><input type="radio" name="mode" value="instant" checked><div><b>✅ 即時對錯</b><div class="hint">每題按「檢查」只顯示對或錯（不給答案），可以一直重算到對；老師看得到每題試了幾次、填過什麼。</div></div></label>
+      <label class="opt"><input type="radio" name="mode" value="graded"><div><b>📝 交卷後由老師批改</b><div class="hint">學生只填答案、按交卷，看不到對錯；老師在「全班總表」看結果。</div></div></label>
+    </div>
+    <h3>其他</h3>
+    <label class="opt" style="max-width:560px"><input type="checkbox" id="opt-log" checked><div><b>顯示「單位換算地圖」與路線提示</b><div class="hint">學生頁上方顯示換算地圖；即時對錯模式下答錯時，會亮出該題要走的路線（不給答案）。</div></div></label>
+
+    <div class="row" style="margin-top:16px">
+      <button class="btn" id="btn-new">✨ 產生新題組碼</button>
+    </div>
+    <p class="hint" style="margin-top:8px">設定都藏在題組碼裡，改了設定就要產生新的題組碼。換一個題組碼，全班就會拿到全新的題目。</p>
+
+    <h3>或載入以前的題組碼</h3>
+    <div class="row">
+      <input type="text" id="in-load" class="mono" placeholder="例：4TJ-6NKY" style="width:180px;text-transform:uppercase">
+      <button class="btn dark" id="btn-load">載入</button>
+    </div>
+    <div class="recent" id="recent"></div>
+
+    <div class="result hidden" id="result">
+      <div class="qr" id="qr-small"></div>
+      <div>
+        <div class="hint">學生題組碼</div>
+        <div class="bigcode" id="res-code"></div>
+        <div class="linkbox" id="res-link"></div>
+        <div class="row">
+          <button class="btn" id="btn-copy">📋 複製學生連結</button>
+          <button class="btn dark" id="btn-show">🖥️ 全螢幕投影題組碼</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ② 投影 -->
+  <section class="paper hidden" id="t-project">
+    <h2>全班共同練習題</h2>
+    <p class="hint">依目前題組碼的難度分配，產生一組全班一起算的題目，適合上課講解。按「顯示答案」才會出現解法。</p>
+    <div class="row" style="margin:12px 0">
+      <button class="btn" id="btn-proj-new">🔄 換一組</button>
+      <button class="btn dark" id="btn-proj-all">顯示全部答案</button>
+      <button class="btn ghost" id="btn-proj-hide">全部隱藏</button>
+      <button class="btn ghost" id="btn-show2">🖥️ 投影題組碼 QR</button>
+    </div>
+    <details style="margin-bottom:12px"><summary style="cursor:pointer;font-weight:700">🗺️ 單位換算地圖（講解用）</summary><div id="proj-map"></div></details>
+    <div id="proj-list"></div>
+  </section>
+
+  <!-- ③ 列印 -->
+  <section class="paper hidden" id="t-print">
+    <h2>列印學習單</h2>
+    <p class="hint">每位學生的題目和他用平板領到的完全一樣（同一個題組碼＋班級＋座號）。</p>
+    <div class="row" style="margin-top:12px">
+      <div><label class="l">班級</label><input type="text" id="pr-cls" style="width:110px" placeholder="例：101"></div>
+      <div><label class="l">座號從</label><input type="number" id="pr-from" value="1" min="1" style="width:80px"></div>
+      <div><label class="l">到</label><input type="number" id="pr-to" value="35" min="1" style="width:80px"></div>
+    </div>
+    <div class="opts" style="max-width:520px">
+      <label class="opt"><input type="checkbox" id="pr-sheets" checked><div><b>學生學習單</b><div class="hint">每人一張小卡，含班級座號、5 題與作答欄</div></div></label>
+      <label class="opt"><input type="checkbox" id="pr-key" checked><div><b>解答表（含解法）</b><div class="hint">接在學習單後面，另起一頁</div></div></label>
+    </div>
+    <div class="row" style="margin-top:14px"><button class="btn" id="btn-print">🖨️ 列印</button></div>
+  </section>
+
+  <!-- ④ 全班總表 -->
+  <section class="paper hidden" id="t-board">
+    <h2>全班總表</h2>
+    <div class="toolbar">
+      <div><label class="l">班級</label><input type="text" id="bd-cls" style="width:110px" placeholder="例：101"></div>
+      <div><label class="l">人數</label><input type="number" id="bd-n" value="35" min="1" max="60" style="width:80px"></div>
+      <button class="btn" id="btn-refresh" style="align-self:flex-end">🔄 更新</button>
+      <label style="align-self:flex-end;font-size:0.9em"><input type="checkbox" id="bd-auto"> 每 10 秒自動更新</label>
+      <button class="btn dark" id="btn-xlsx" style="align-self:flex-end">📥 匯出 Excel</button>
+    </div>
+    <p class="hint" id="bd-note" style="margin-top:8px"></p>
+    <p class="hint">滑鼠停在格子上可看完整題目；匯出的 Excel 有完整題目與解法。</p>
+    <div class="table-wrap" id="bd-table"></div>
+  </section>
+
+  <div id="print-area"></div>
+</div>
+
+<div class="overlay hidden" id="overlay">
+  <button class="btn dark close" id="btn-close">✕ 關閉</button>
+  <div style="font-size:1.4em">⚖️ 化學單位換算練習｜掃碼或輸入題組碼</div>
+  <div class="qr" id="qr-big"></div>
+  <div class="big" id="ov-code"></div>
+  <div class="url" id="ov-url"></div>
+</div>
+
+<script src="unit-core.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const esc = UC.escapeHtml;
+const STUDENT_PAGE = new URL('unit-generator.html', location.href).href;
+let current = null;              // 目前的題組（parseCode 的結果）
+const dist = [1, 2, 2, 0];
+
+/* ---------- 分頁 ---------- */
+document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => showTab(b.dataset.t));
+function showTab(t) {
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+  ['setup', 'project', 'print', 'board'].forEach(x => $('t-' + x).classList.toggle('hidden', x !== t));
+  if (t === 'project') renderProjection();
+  if (t === 'board') refreshBoard();
+  setAuto();
+}
+
+/* ---------- ① 出題設定 ---------- */
+function renderLevels() {
+  $('levels').innerHTML = UC.LEVELS.map((lv, i) => `<div class="lv">
+    <div class="stars">${lv.stars}</div><div class="name">${lv.name}</div><div class="desc">${lv.desc}</div>
+    <div class="stepper"><button data-i="${i}" data-d="-1">−</button><span>${dist[i]}</span><button data-i="${i}" data-d="1">+</button></div>
+  </div>`).join('');
+  $('levels').querySelectorAll('button').forEach(b => b.onclick = () => {
+    const i = +b.dataset.i, d = +b.dataset.d;
+    dist[i] = Math.max(0, Math.min(5, dist[i] + d));
+    renderLevels();
+  });
+  const sum = dist.reduce((a, b) => a + b, 0);
+  $('total').textContent = sum === 5 ? `合計 5 題 ✔` : `合計 ${sum} 題，必須剛好 5 題`;
+  $('total').className = 'total' + (sum === 5 ? '' : ' bad');
+  $('btn-new').disabled = sum !== 5;
+}
+
+$('btn-new').onclick = () => {
+  const code = UC.makeCode({
+    dist: dist.slice(),
+    instant: document.querySelector('input[name=mode]:checked').value === 'instant',
+    hint: $('opt-log').checked
+  });
+  useCode(code, true);
+};
+$('btn-load').onclick = () => {
+  const p = UC.parseCode($('in-load').value);
+  if (!p) { alertBox('題組碼不正確，請再確認一次'); return; }
+  useCode(p.code, true);
+  $('in-load').value = '';
+};
+
+function useCode(code, remember) {
+  current = UC.parseCode(code);
+  if (!current) return;
+  // 設定區同步成這個題組碼的設定
+  current.dist.forEach((v, i) => dist[i] = v);
+  document.querySelector(`input[name=mode][value=${current.instant ? 'instant' : 'graded'}]`).checked = true;
+  $('opt-log').checked = current.hint;
+  renderLevels();
+  if (remember) rememberCode(code);
+  try { localStorage.setItem('unit-teacher-current', code); } catch (e) {}
+
+  const link = studentLink();
+  $('result').classList.remove('hidden');
+  $('res-code').textContent = UC.prettyCode(code);
+  $('res-link').textContent = link;
+  drawQR('qr-small', link, 150);
+  renderCurrent();
+  projSeed = 0;
+  if (!$('t-project').classList.contains('hidden')) renderProjection();
+  if (!$('t-board').classList.contains('hidden')) refreshBoard();
+}
+const studentLink = () => `${STUDENT_PAGE}?code=${current.code}`;
+
+function describe(p) {
+  const parts = UC.LEVELS.map((lv, i) => p.dist[i] ? `${lv.name}${p.dist[i]}` : '').filter(Boolean).join('、');
+  return `${parts}｜${p.instant ? '即時對錯' : '交卷批改'}｜${p.hint ? '顯示地圖與路線提示' : '不顯示地圖'}`;
+}
+function renderCurrent() {
+  $('current').innerHTML = current
+    ? `<span>目前題組碼</span><span class="code">${UC.prettyCode(current.code)}</span><span class="meta">${describe(current)}</span>`
+    : `<span class="meta">尚未選擇題組碼：請在「出題設定」產生或載入一組</span>`;
+}
+
+function rememberCode(code) {
+  let list = [];
+  try { list = JSON.parse(localStorage.getItem('unit-teacher-recent') || '[]'); } catch (e) {}
+  list = [{ code, t: Date.now() }, ...list.filter(x => x.code !== code)].slice(0, 10);
+  try { localStorage.setItem('unit-teacher-recent', JSON.stringify(list)); } catch (e) {}
+  renderRecent();
+}
+function renderRecent() {
+  let list = [];
+  try { list = JSON.parse(localStorage.getItem('unit-teacher-recent') || '[]'); } catch (e) {}
+  $('recent').innerHTML = list.length ? '<span class="hint">最近用過：</span>' + list.map(x => {
+    const p = UC.parseCode(x.code); if (!p) return '';
+    const d = new Date(x.t);
+    return `<button data-c="${x.code}" title="${esc(describe(p))}">${UC.prettyCode(x.code)}・${d.getMonth() + 1}/${d.getDate()}</button>`;
+  }).join('') : '';
+  $('recent').querySelectorAll('button').forEach(b => b.onclick = () => useCode(b.dataset.c, true));
+}
+
+$('btn-copy').onclick = async () => {
+  try { await navigator.clipboard.writeText(studentLink()); $('btn-copy').textContent = '✔ 已複製'; }
+  catch (e) { $('btn-copy').textContent = '請手動複製上方連結'; }
+  setTimeout(() => $('btn-copy').textContent = '📋 複製學生連結', 1800);
+};
+
+function drawQR(id, text, size) {
+  const box = $(id); box.innerHTML = '';
+  if (typeof QRCode === 'undefined') { box.innerHTML = '<div class="hint">（QR Code 載入失敗）</div>'; return; }
+  new QRCode(box, { text, width: size, height: size, correctLevel: QRCode.CorrectLevel.M });
+}
+function showOverlay() {
+  if (!current) return alertBox('請先產生或載入題組碼');
+  $('overlay').classList.remove('hidden');
+  $('ov-code').textContent = UC.prettyCode(current.code);
+  $('ov-url').textContent = studentLink();
+  drawQR('qr-big', studentLink(), 512);
+}
+$('btn-show').onclick = showOverlay;
+$('btn-show2').onclick = showOverlay;
+$('btn-close').onclick = () => $('overlay').classList.add('hidden');
+document.addEventListener('keydown', e => { if (e.key === 'Escape') $('overlay').classList.add('hidden'); });
+
+function alertBox(msg) { $('current').innerHTML = `<span style="color:#ffb4a8">⚠️ ${esc(msg)}</span>`; setTimeout(renderCurrent, 2500); }
+function needCode() { if (!current) { alertBox('請先在「出題設定」產生或載入題組碼'); return false; } return true; }
+
+/* ---------- ② 投影 ---------- */
+let projSeed = 0;
+function renderProjection() {
+  if (!current) { $('proj-list').innerHTML = '<p class="hint">請先產生或載入題組碼。</p>'; return; }
+  $('proj-map').innerHTML = UC.mapSVG([]);
+  const qs = UC.generate(current, 'PROJECT|' + projSeed);
+  $('proj-list').innerHTML = qs.map((q, i) => {
+    const lv = UC.LEVELS[q.level];
+    return `<div class="proj-q">
+      <div class="top"><span>第 ${i + 1} 題</span><span>${lv.stars} ${lv.name}</span></div>
+      <div class="ptext">${q.html}</div>
+      ${UC.atomicHTML(q) ? `<div class="atomic">原子量：${UC.atomicHTML(q)}</div><br>` : ''}
+      <button class="btn ghost" data-i="${i}">顯示答案</button>
+      <div class="sol hidden" id="sol${i}"><div style="color:#3a86ff;font-weight:700">🗺️ ${esc(UC.routeText(q.route))}</div>${q.steps.map(esc).join('<br>')}<div class="ans">${UC.ansHTML(q)}</div></div>
+    </div>`;
+  }).join('');
+  $('proj-list').querySelectorAll('button[data-i]').forEach(b => b.onclick = () => {
+    const s = $('sol' + b.dataset.i); s.classList.toggle('hidden');
+    b.textContent = s.classList.contains('hidden') ? '顯示答案' : '隱藏答案';
+  });
+}
+$('btn-proj-new').onclick = () => { projSeed++; renderProjection(); };
+$('btn-proj-all').onclick = () => document.querySelectorAll('#proj-list .sol').forEach(s => s.classList.remove('hidden'));
+$('btn-proj-hide').onclick = () => document.querySelectorAll('#proj-list .sol').forEach(s => s.classList.add('hidden'));
+
+/* ---------- ③ 列印 ---------- */
+$('btn-print').onclick = () => {
+  if (!needCode()) return;
+  const cls = UC.normalizeClass($('pr-cls').value);
+  const from = parseInt($('pr-from').value, 10), to = parseInt($('pr-to').value, 10);
+  if (!cls || !(from >= 1) || !(to >= from)) return alertBox('請填好班級和座號範圍');
+  const seats = []; for (let s = from; s <= to; s++) seats.push(s);
+  const logLine = '<div class="logline">亞佛加厥數 N<sub>A</sub> = 6.02 × 10<sup>23</sup>；答案算到小數點後第二位</div>';
+  const blank = q => q.kind === 'sci' ? `答：＿＿＿＿ × 10<sup>＿＿</sup> ${q.unit}` : `答：＿＿＿＿＿＿ ${q.unit}`;
+  let html = '';
+  if ($('pr-sheets').checked) {
+    html += seats.map(seat => {
+      const qs = UC.forStudent(current, cls, seat);
+      return `<div class="sheet"><h4>⚖️ 化學單位換算練習　<span style="font-weight:400;font-size:10pt">題組碼 ${UC.prettyCode(current.code)}</span></h4>
+        <div class="who"><span>班級：${esc(cls)}</span><span>座號：${seat}</span><span>姓名：＿＿＿＿＿＿＿</span></div>${logLine}
+        <ol>${qs.map(q => `<li>${q.html}${UC.atomicHTML(q) ? `<div class="patomic">原子量：${UC.atomicHTML(q)}</div>` : ''}<div class="pblank">${blank(q)}</div></li>`).join('')}</ol></div>`;
+    }).join('');
+  }
+  if ($('pr-key').checked) {
+    if (html) html += '<div class="pb"></div>';
+    html += `<h3 style="margin-bottom:8px">解答表｜${esc(cls)} 班｜題組碼 ${UC.prettyCode(current.code)}</h3>
+      <table class="keytable"><tr><th>座號</th><th>題目與解法</th></tr>` +
+      seats.map(seat => `<tr><td>${seat}</td><td>${UC.forStudent(current, cls, seat).map((q, i) =>
+        `${i + 1}. ${esc(UC.qText(q))} → <b>${UC.ansHTML(q)}</b><br><span style="color:#555">${q.steps.map(esc).join('；')}</span>`).join('<br>')}</td></tr>`).join('') +
+      `</table>`;
+  }
+  if (!html) return alertBox('請至少勾選一種要列印的內容');
+  $('print-area').innerHTML = html;
+  window.print();
+};
+
+/* ---------- ④ 全班總表 ---------- */
+let boardData = null, autoTimer = null;
+function setAuto() {
+  clearInterval(autoTimer);
+  if ($('bd-auto').checked && !$('t-board').classList.contains('hidden'))
+    autoTimer = setInterval(refreshBoard, 10000);
+}
+$('bd-auto').onchange = setAuto;
+$('btn-refresh').onclick = refreshBoard;
+$('bd-cls').onchange = refreshBoard;
+$('bd-n').onchange = refreshBoard;
+
+async function refreshBoard() {
+  if (!current) { $('bd-table').innerHTML = '<p class="hint">請先產生或載入題組碼。</p>'; return; }
+  const cls = UC.normalizeClass($('bd-cls').value);
+  if (!cls) { $('bd-note').textContent = '請輸入班級。'; $('bd-table').innerHTML = ''; return; }
+  try { localStorage.setItem('unit-teacher-board', JSON.stringify({ cls, n: $('bd-n').value })); } catch (e) {}
+  $('bd-note').textContent = '讀取中…';
+  let all = {};
+  try { all = await UC.fetchAll(current.code); }
+  catch (e) { console.error(e); $('bd-note').textContent = '⚠️ 讀不到作答資料，請檢查網路或 Firebase 規則。'; }
+  const recs = {};
+  Object.values(all).forEach(r => { if (r && UC.normalizeClass(r.cls) === cls) recs[Number(r.seat)] = r; });
+  const n = Math.max(parseInt($('bd-n').value, 10) || 0, ...Object.keys(recs).map(Number), 0);
+  const N = UC.CONFIG.QUESTIONS;
+  const rows = [];
+  for (let seat = 1; seat <= n; seat++) {
+    const qs = UC.forStudent(current, cls, seat);
+    const r = recs[seat];
+    const answers = UC.toArray(r?.answers, N, '').map(String);
+    const attempts = UC.toArray(r?.attempts, N, 0).map(Number);
+    const correct = qs.map((q, i) => UC.isCorrect(q, answers[i]));
+    const filled = answers.filter(a => a.trim()).length;
+    const nCorrect = correct.filter(Boolean).length;
+    let status = 'none';
+    if (r) status = nCorrect === N ? 'all' : r.submitted ? 'sub' : 'doing';
+    rows.push({ seat, name: r?.name || '', qs, answers, attempts, correct, filled, nCorrect, status, r });
+  }
+  boardData = { cls, rows };
+  const joined = rows.filter(x => x.r).length;
+  $('bd-note').textContent = `${cls} 班：${joined} 人已領題　·　更新時間 ${new Date().toLocaleTimeString('zh-TW')}`;
+  const ST = { none: ['st-none', '未領題'], doing: ['st-doing', '作答中'], sub: ['st-sub', '已交卷'], all: ['st-all', '全對'] };
+  const instant = current.instant;
+  const head = `<tr><th>座號</th><th>姓名</th>${Array.from({ length: N }, (_, i) => `<th>第 ${i + 1} 題</th>`).join('')}<th>答對</th><th>狀態</th></tr>`;
+  const body = rows.map(x => `<tr>
+    <td>${x.seat}</td><td>${esc(x.name)}</td>
+    ${x.qs.map((q, i) => {
+      const a = x.answers[i].trim();
+      const cls2 = a ? (x.correct[i] ? 'ok' : 'bad') : '';
+      return `<td class="qcell" title="${esc(UC.qText(q))}"><div class="qtxt">${UC.LEVELS[q.level].stars} ${esc(UC.routeText(q.route))}</div><div class="key">解 ${UC.ansHTML(q)}</div>
+        <div class="stu ${cls2}">${a ? esc(UC.formatAnswerStr(a)) + (x.correct[i] ? ' ✓' : ' ✗') : (x.r ? '—' : '')}</div>
+        ${instant && x.attempts[i] ? `<div class="tries">試 ${x.attempts[i]} 次</div>` : ''}</td>`;
+    }).join('')}
+    <td><b>${x.r ? x.nCorrect : ''}</b></td><td><span class="status ${ST[x.status][0]}">${ST[x.status][1]}</span></td></tr>`).join('');
+  const active = rows.filter(x => x.r);
+  const rate = i => active.length ? `${active.filter(x => x.correct[i]).length} / ${active.length}` : '—';
+  const summary = `<tr class="summary"><td colspan="2">答對人數 / 領題人數</td>${Array.from({ length: N }, (_, i) => `<td>${rate(i)}</td>`).join('')}<td colspan="2"></td></tr>`;
+  $('bd-table').innerHTML = `<table>${head}${body}${summary}</table>`;
+}
+
+$('btn-xlsx').onclick = async () => {
+  if (!needCode()) return;
+  if (!boardData) await refreshBoard();
+  if (!boardData) return;
+  if (typeof XLSX === 'undefined') return alertBox('Excel 元件載入失敗，請檢查網路後重新整理');
+  const N = UC.CONFIG.QUESTIONS, code = UC.prettyCode(current.code);
+  const ST = { none: '未領題', doing: '作答中', sub: '已交卷', all: '全對' };
+  const sheet1 = boardData.rows.map(x => {
+    const o = { 座號: x.seat, 姓名: x.name };
+    x.qs.forEach((q, i) => {
+      o[`第${i + 1}題 題目`] = UC.qText(q);
+      o[`第${i + 1}題 正解`] = UC.ansText(q);
+      o[`第${i + 1}題 作答`] = UC.formatAnswerStr(x.answers[i]);
+      o[`第${i + 1}題 對錯`] = x.answers[i].trim() ? (x.correct[i] ? '✓' : '✗') : '';
+      if (current.instant) o[`第${i + 1}題 嘗試次數`] = x.attempts[i] || '';
+    });
+    o['答對題數'] = x.r ? x.nCorrect : '';
+    o['狀態'] = ST[x.status];
+    o['最後更新'] = x.r?.ts ? new Date(x.r.ts).toLocaleString('zh-TW') : '';
+    return o;
+  });
+  const sheet2 = [];
+  boardData.rows.forEach(x => {
+    const h = Array.isArray(x.r?.history) ? x.r.history : Object.values(x.r?.history || {});
+    h.forEach(([qi, val, ok, t]) => sheet2.push({ 座號: x.seat, 姓名: x.name, 題號: qi + 1, 題目: UC.qText(x.qs[qi]),
+      作答: UC.formatAnswerStr(val), 對錯: ok ? '✓' : '✗', 時間: new Date(t).toLocaleString('zh-TW') }));
+  });
+  const sheet3 = [];
+  boardData.rows.forEach(x => x.qs.forEach((q, i) => sheet3.push({ 座號: x.seat, 題號: i + 1, 難度: UC.LEVELS[q.level].name,
+    題目: UC.qText(q), 路線: UC.routeText(q.route), 答案: UC.ansText(q), 解法: q.steps.join('；') })));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sheet1), '全班總表');
+  if (current.instant) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sheet2.length ? sheet2 : [{ 說明: '尚無作答紀錄' }]), '作答歷程');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sheet3), '題目與解法');
+  XLSX.writeFile(wb, `單位換算練習_${boardData.cls}班_${code}.xlsx`);
+};
+
+/* ---------- 啟動 ---------- */
+renderLevels();
+renderRecent();
+try {
+  const b = JSON.parse(localStorage.getItem('unit-teacher-board') || 'null');
+  if (b) { $('bd-cls').value = b.cls || ''; $('bd-n').value = b.n || 35; $('pr-cls').value = b.cls || ''; }
+  const c = localStorage.getItem('unit-teacher-current');
+  if (c) useCode(c, false);
+} catch (e) {}
+renderCurrent();
+</script>
+</body>
+</html>

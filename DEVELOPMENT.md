@@ -45,7 +45,10 @@ wuyutzu-tools/
 │   ├── images/equipment/         # 33 張器材圖片（檔名＝題庫 id）
 │   ├── ph-core.js                # pH 練習：共用核心（出題、題組碼、解法、Firebase）
 │   ├── ph-generator.html         # pH 練習：學生作答頁
-│   └── ph-generator-teacher.html # pH 練習：老師頁（首頁卡片連到這裡，請勿給學生）
+│   ├── ph-generator-teacher.html # pH 練習：老師頁（首頁卡片連到這裡，請勿給學生）
+│   ├── unit-core.js              # 單位換算：共用核心（物質庫、題型、題組碼、判分、換算地圖）
+│   ├── unit-generator.html       # 單位換算：學生作答頁
+│   └── unit-generator-teacher.html # 單位換算：老師頁（首頁卡片連到這裡）
 │
 ├── gamification/                 # 🎲 課堂遊戲化
 │   ├── system.html               # 選人系統＋陣亡詛咒系統
@@ -68,7 +71,7 @@ wuyutzu-tools/
 | 🏫 導師班工具 | 📋 班級行政 | 座位安排、打掃徵才 |
 | | 🧠 認識學生 | DISC、貝爾賓 |
 | | 🎉 班級氣氛 | 金曲歌王、詩籤、聖誕抽籤、形容詞產生器 |
-| ⚗️ 化學課堂工具 | 🔬 化學學習遊戲 | 消失的實驗器材、pH 值計算練習（連到老師頁） |
+| ⚗️ 化學課堂工具 | 🔬 化學學習遊戲 | 消失的實驗器材、pH 值計算練習、化學單位換算練習（後兩者連到老師頁） |
 | | 🎲 課堂遊戲化 | 選人系統、陣亡詛咒、戳戳樂、真心話大冒險 |
 | 🎮 遊戲設計思考 | — | 巴圖玩家類型 |
 
@@ -83,8 +86,8 @@ wuyutzu-tools/
 | **不存資料** | 詩籤、金曲歌王、真心話、抽籤、形容詞 | 打開就能用，最單純 |
 | **瀏覽器 localStorage** | 座位、打掃徵才管理頁、選人 | 只存在那一台電腦的瀏覽器，換電腦就沒了；常搭配 Excel 匯出備份 |
 | **Google 表單無聲送出** | DISC、貝爾賓、打掃徵才學生頁 | 學生送出→進老師的 Google 表單；只能「寫入」，網頁讀不回來 |
-| **Firebase Realtime Database** | 消失的實驗器材（排行榜）、pH 練習（作答紀錄） | 可寫可讀、即時；全班共用 |
-| **固定亂數（不存資料）** | pH 練習的出題 | 同一個「題組碼＋班級＋座號」永遠算出同一組題目，老師頁可重算全班題目與答案 |
+| **Firebase Realtime Database** | 消失的實驗器材（排行榜）、pH 練習與單位換算練習（作答紀錄） | 可寫可讀、即時；全班共用 |
+| **固定亂數（不存資料）** | pH 練習、單位換算練習的出題 | 同一個「題組碼＋班級＋座號」永遠算出同一組題目，老師頁可重算全班題目與答案 |
 
 ### Firebase 設定
 
@@ -103,11 +106,14 @@ wuyutzu-tools/
     └── <題組碼 7 碼>/
         └── <班級_座號>: { cls, seat, name, answers[5], attempts[5], history[[題號,作答,對錯,時間]…], submitted, firstTs, ts }
             （不存正確答案，老師頁用固定亂數重算後比對）
+└── unit-convert/
+    └── <題組碼 7 碼>/
+        └── <班級_座號>: 格式同 ph-generator；科學記號答案存成 "3.01e23"
 ```
 
 - **安全規則**（2026-10-03 發布）：根目錄全部上鎖。
   - `missing-equipment/scores`：可讀；每位學生的紀錄只有在「分數更高，或同分但用時更短」時才能覆蓋，不能刪除；分數 0～3000。
-  - `ph-generator/<題組碼>`：可讀；題組碼必須是 7 碼合法字元；可新增或更新，但**交卷（submitted=true）後就不能再改**，不能刪除。
+  - `ph-generator/<題組碼>`、`unit-convert/<題組碼>`：可讀；題組碼必須是 7 碼合法字元；可新增或更新，但**交卷（submitted=true）後就不能再改**，不能刪除。
   - 規則全文見本檔最後的附錄。
 - ⚠️ **之後新工具要用 Firebase**：要在規則裡為它新增一個抽屜的規則，否則會被擋（HTTP 401/403）。
 - 與「科學任務偵探所」的 Supabase 完全分開：**Supabase 給大系統、Firebase 給輕量小工具**。
@@ -149,6 +155,21 @@ wuyutzu-tools/
 - 老師頁四個分頁：出題設定（產生題組碼＋QR）、投影（共同題目＋逐題解法）、列印（每人學習單＋解答表）、全班總表（即時作答、每 10 秒自動更新、匯出 Excel：總表／作答歷程／題目與解法）
 - 限制：答案是在學生瀏覽器裡算的，懂程式的學生理論上能從原始碼推出答案；屬於練習工具，不適合正式考試
 
+### ⚖️ 化學單位換算練習（chemistry/unit-*.html）
+
+- 架構完全比照 pH 練習（題組碼、固定亂數、即時對錯／交卷批改、投影、列印、全班總表、Excel）
+- 題組碼的檢查碼加了 `CODE_SALT`，所以 pH 的題組碼不能拿來這裡用（反之亦然）；題組碼第 2 個旗標改為「顯示換算地圖與路線提示」
+- **物質庫** `SUBS`、**溶液情境** `SOLUTES`、**市售濃溶液** `CONC_STOCK`、**ppm 情境** `PPM_MASS`／`PPM_VOL` 都在 `unit-core.js` 上方，新增物質只要加一行（原子量表 `ATOMIC`）
+- 只給原子量（H1 C12 N14 O16 F19 Na23 S32 Cl35.5 Ca40），N<sub>A</sub> = 6.02×10²³
+- 難度與題型（`LEVEL_TYPES`）：
+  - ⭐ 基礎：g→mol、mol→g、mol→分子數、分子數→mol
+  - ⭐⭐ 進階：g→分子數、分子數→g、mol→總原子數
+  - ⭐⭐⭐ 挑戰：g＋體積→CM、CM＋體積→g、重量百分率（兩向）、ppm（質量定義、1 ppm = 1 mg/L 定義、反算 mg）
+  - ⭐⭐⭐⭐ 魔王：重量百分率＋密度→CM、CM＋密度→重量百分率、g↔某種原子數、溶質＋水＋密度→CM
+- 數字規則：一般答案到小數第二位；分子數／原子數用科學記號（係數兩位小數）；中間步驟也四捨五入到小數第二位（`ans`），同時保留不四捨五入的精確值（`alt`），**兩種算法都接受，各自允許 ±1%**
+- 為了讓中間步驟四捨五入不失真，溶液題的溶質莫耳數至少 0.2 mol
+- 換算地圖 `mapSVG(route)`：直式版面，`route` 是題目要走的節點；即時對錯模式下答錯會亮出路線
+
 ### 🧹 打掃徵才 v4
 
 - 老師在管理頁產生學生登記連結；學生資料透過 Google 表單送出
@@ -164,7 +185,7 @@ wuyutzu-tools/
 
 ---
 
-## 附錄：Firebase 安全規則全文（2026-10-03）
+## 附錄：Firebase 安全規則全文（2026-10-03，含單位換算）
 
 ```json
 {
@@ -177,6 +198,15 @@ wuyutzu-tools/
         "$id": {
           ".write": "newData.exists() && (!data.exists() || newData.child('score').val() > data.child('score').val() || (newData.child('score').val() == data.child('score').val() && newData.child('seconds').val() < data.child('seconds').val()))",
           ".validate": "newData.hasChildren(['cls','seat','name','score','correct','wrong','seconds','ts']) && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 3000 && newData.child('seconds').isNumber() && newData.child('correct').isNumber() && newData.child('correct').val() <= 30 && newData.child('name').isString() && newData.child('name').val().length <= 12"
+        }
+      }
+    },
+    "unit-convert": {
+      "$code": {
+        ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{7}$/)",
+        "$sid": {
+          ".write": "newData.exists() && $code.matches(/^[2-9A-HJ-NP-Z]{7}$/) && data.child('submitted').val() != true",
+          ".validate": "newData.hasChildren(['cls','seat','name','ts']) && newData.child('cls').isString() && newData.child('cls').val().length <= 10 && newData.child('seat').isNumber() && newData.child('name').isString() && newData.child('name').val().length <= 12"
         }
       }
     },
