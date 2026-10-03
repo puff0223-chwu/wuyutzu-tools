@@ -82,10 +82,10 @@ wuyutzu-tools/
 
 ### 首頁改版預覽（index-preview.html）
 
-- 風格：維多利亞偵探風「巫魚子教課事務所」——煙燻深棕背景、牛皮紙卷宗卡、黃銅名牌、酒紅封蠟章；標題 Noto Serif TC，英文裝飾字 IM Fell English
-- 三個抽屜：Drawer I 班級事務卷宗、Drawer II 化學實驗室 No.307、Drawer III 遊戲研究室；卷宗自動編號（No. I-01…）
+- 風格（第二版，明亮有活力的偵探風）：米白底＋淡千鳥格紋、深藍大衣色 `#1f2a44` 粗框卡片與位移陰影、芥末黃 `#f2b134` 放大鏡徽章與重點按鈕、線索紅 `#e4572e`；抽屜各有代表色（班級事務 藍綠、化學實驗室 紅橘、遊戲研究室 紫）；標題 Noto Serif TC，英文標籤 Bebas Neue
+- 三個抽屜：Drawer I 班級事務、Drawer II 化學實驗室 No.307、Drawer III 遊戲研究室；卷宗自動編號（No. I-01…，顯示在說明卷宗上）
 - **資料驅動**：所有工具寫在檔案裡的 `TOOLS` 陣列，新增工具只要加一筆（drawer、shelf、icon、name、brief、title、sub、features、href、btn，選填 teacher／case／note）
-- `teacher: true` 會蓋「🔒 老師專用」章並在卷宗內加警語；`case` 會蓋「CASE 01」章
+- `teacher: true` 顯示「🔒 老師專用」標籤並在卷宗內加警語；`case` 顯示紅色「CASE 01」標籤；`DRAWERS` 陣列設定抽屜名稱與代表色
 - 搜尋框（按 `/` 可快速聚焦）＋抽屜篩選；不做「最近開啟」
 - 確認滿意後：把 index-preview.html 內容取代 index.html
 
