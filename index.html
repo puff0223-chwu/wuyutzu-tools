@@ -1,586 +1,301 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🧰 巫魚子的教學工具箱</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔎 巫魚子教課事務所</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #fbf6ec;      /* 偵探筆記本的米白 */
+    --card: #ffffff;
+    --navy: #1f2a44;       /* 偵探大衣深藍 */
+    --navy-2: #34405e;
+    --mustard: #f2b134;    /* 放大鏡黃銅（亮版） */
+    --red: #e4572e;        /* 線索紅 */
+    --teal: #1f9e8f;       /* 化學藍綠 */
+    --plum: #7b5ea7;       /* 遊戲紫 */
+    --line: #ece3d2;
+    --muted: #6d6a75;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+    color: var(--navy); background-color: var(--cream);
+    /* 千鳥格紋（很淡）＝偵探帽的質感 */
+    background-image:
+      linear-gradient(45deg, rgba(31,42,68,0.035) 25%, transparent 25%, transparent 75%, rgba(31,42,68,0.035) 75%),
+      linear-gradient(45deg, rgba(31,42,68,0.035) 25%, transparent 25%, transparent 75%, rgba(31,42,68,0.035) 75%);
+    background-size: 22px 22px; background-position: 0 0, 11px 11px;
+    min-height: 100vh; padding: 0 16px 40px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  .hidden { display: none !important; }
 
-    body {
-      font-family: 'Microsoft JhengHei', Arial, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      padding: 20px;
-    }
+  /* ===== 招牌 ===== */
+  header { display: flex; align-items: center; gap: 18px; padding: 34px 0 22px; }
+  .badge {
+    flex: none; width: 76px; height: 76px; border-radius: 50%;
+    background: var(--mustard); display: grid; place-items: center;
+    box-shadow: 0 0 0 5px var(--cream), 0 0 0 8px var(--navy), 0 10px 20px rgba(31,42,68,0.25);
+    transform: rotate(-8deg);
+  }
+  .eyebrow { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.18em; color: var(--red); font-size: 1.05em; }
+  h1 { font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: clamp(1.9em, 6vw, 2.9em); letter-spacing: 0.06em; line-height: 1.15; }
+  h1 .hl { background: linear-gradient(transparent 62%, rgba(242,177,52,0.65) 62%); padding: 0 2px; }
+  .tagline { color: var(--muted); margin-top: 4px; font-size: 0.95em; }
 
-    .container {
-      max-width: 1100px;
-      margin: 0 auto;
-    }
+  /* ===== 搜尋 ===== */
+  .tools { position: sticky; top: 0; z-index: 20; padding: 10px 0 12px; background: linear-gradient(var(--cream) 80%, rgba(251,246,236,0)); }
+  .search {
+    display: flex; align-items: center; gap: 10px; background: var(--card);
+    border: 2.5px solid var(--navy); border-radius: 14px; padding: 4px 6px 4px 14px;
+    box-shadow: 4px 4px 0 var(--navy);
+  }
+  .search input { flex: 1; min-width: 0; border: none; background: transparent; font: inherit; font-size: 1.05em; color: var(--navy); outline: none; padding: 9px 0; }
+  .search input::placeholder { color: #9a96a3; }
+  .search .clear { border: none; background: var(--navy); color: #fff; border-radius: 9px; padding: 7px 12px; font: inherit; font-size: 0.85em; cursor: pointer; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .chip {
+    font: inherit; font-size: 0.9em; font-weight: 700; cursor: pointer; color: var(--navy);
+    background: var(--card); border: 2px solid var(--navy); border-radius: 999px; padding: 5px 14px;
+  }
+  .chip.on { background: var(--navy); color: #fff; }
+  .chip .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+  .count { margin-left: auto; align-self: center; color: var(--muted); font-size: 0.88em; }
 
-    /* Header */
-    .header {
-      text-align: center;
-      padding: 40px 20px 30px;
-      color: white;
-    }
-    .header h1 { font-size: 2.4em; margin-bottom: 8px; text-shadow: 0 2px 8px rgba(0,0,0,0.3); }
-    .header p { font-size: 1.1em; opacity: 0.9; }
+  /* ===== 抽屜 ===== */
+  .drawer { margin: 22px 0 30px; }
+  .drawer-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin-bottom: 4px; }
+  .drawer-head h2 { white-space: nowrap; font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: 1.45em; }
+  .drawer-head .tag { white-space: nowrap; font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.12em; color: #fff; padding: 1px 10px; border-radius: 6px; font-size: 0.95em; }
+  .drawer-head .desc { color: var(--muted); font-size: 0.88em; }
+  .shelf { color: var(--muted); font-size: 0.85em; font-weight: 700; letter-spacing: 0.06em; margin: 14px 0 10px; }
 
-    /* Section */
-    .section { margin-bottom: 36px; }
-    .section-title {
-      color: white;
-      font-size: 1.3em;
-      font-weight: 700;
-      margin-bottom: 16px;
-      padding: 8px 16px;
-      background: rgba(255,255,255,0.15);
-      border-radius: 10px;
-      display: inline-block;
-    }
-    .sub-title {
-      color: rgba(255,255,255,0.75);
-      font-size: 0.88em;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      margin: 18px 0 10px 4px;
-      padding-left: 10px;
-      border-left: 3px solid rgba(255,255,255,0.35);
-    }
+  /* ===== 工具卡 ===== */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+  .card {
+    position: relative; display: flex; gap: 12px; align-items: flex-start; text-align: left;
+    background: var(--card); color: var(--navy); font: inherit; cursor: pointer;
+    border: 2px solid var(--navy); border-radius: 14px; padding: 14px;
+    box-shadow: 3px 3px 0 var(--navy); transition: transform 0.12s, box-shadow 0.12s;
+  }
+  .card:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--accent, var(--navy)); }
+  .card:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--navy); }
+  .card:focus-visible { outline: 3px solid var(--mustard); outline-offset: 2px; }
+  .card .icon { flex: none; width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; font-size: 1.5em; background: var(--soft, #f3efe6); }
+  .card .name { font-weight: 900; font-size: 1.05em; line-height: 1.3; }
+  .card .brief { color: var(--muted); font-size: 0.84em; line-height: 1.5; margin-top: 2px; }
+  .pill { display: inline-block; font-size: 0.72em; font-weight: 700; border-radius: 999px; padding: 1px 8px; margin-top: 6px; }
+  .pill.case { background: var(--red); color: #fff; font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.1em; font-size: 0.82em; }
+  .pill.lock { background: #fff1d6; color: #8a5a00; border: 1px solid var(--mustard); }
 
-    /* Tool grid */
-    .tool-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 16px;
-    }
+  .empty { text-align: center; color: var(--muted); padding: 50px 0; font-weight: 700; }
 
-    /* Tool card */
-    .tool-card {
-      background: white;
-      border-radius: 16px;
-      padding: 24px 16px;
-      text-align: center;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-    }
-    .tool-card:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 10px 28px rgba(0,0,0,0.25);
-    }
-    .tool-icon { font-size: 2.4em; margin-bottom: 10px; }
-    .tool-name { font-size: 1.05em; font-weight: 700; color: #333; margin-bottom: 6px; }
-    .tool-brief { font-size: 0.82em; color: #777; line-height: 1.4; }
+  /* ===== 說明卷宗（彈窗） ===== */
+  .overlay { position: fixed; inset: 0; background: rgba(31,42,68,0.55); z-index: 100; display: none; align-items: center; justify-content: center; padding: 16px; }
+  .overlay.on { display: flex; }
+  .dossier {
+    position: relative; width: min(500px, 100%); max-height: 90vh; overflow: auto;
+    background: var(--card); color: var(--navy); border: 3px solid var(--navy); border-radius: 18px;
+    box-shadow: 8px 8px 0 var(--navy); animation: pop 0.18s ease;
+  }
+  @keyframes pop { from { transform: scale(0.94); opacity: 0; } to { transform: none; opacity: 1; } }
+  .d-top { background: var(--accent, var(--navy)); color: #fff; padding: 18px 22px 16px; border-radius: 14px 14px 0 0; }
+  .d-top .no { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.15em; opacity: 0.9; }
+  .d-top h3 { font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: 1.6em; display: flex; align-items: center; gap: 10px; }
+  .d-top .sub { opacity: 0.92; font-size: 0.9em; margin-top: 2px; }
+  .close { position: absolute; top: 12px; right: 14px; border: none; background: rgba(255,255,255,0.22); color: #fff; width: 32px; height: 32px; border-radius: 50%; font-size: 1.05em; cursor: pointer; }
+  .d-body { padding: 16px 22px 20px; }
+  .warn { background: #fff1d6; border: 1.5px solid var(--mustard); border-radius: 10px; padding: 8px 12px; font-size: 0.86em; margin-bottom: 12px; }
+  .d-body ul { list-style: none; margin-bottom: 16px; }
+  .d-body li { padding: 7px 0 7px 26px; position: relative; line-height: 1.55; font-size: 0.95em; border-bottom: 1px dashed var(--line); }
+  .d-body li::before { content: '🔍'; position: absolute; left: 0; top: 7px; font-size: 0.85em; }
+  .go {
+    display: block; text-align: center; text-decoration: none; font-weight: 900; letter-spacing: 0.05em;
+    background: var(--mustard); color: var(--navy); border: 2.5px solid var(--navy); border-radius: 12px;
+    padding: 12px; box-shadow: 3px 3px 0 var(--navy);
+  }
+  .go:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--navy); }
+  .note { text-align: center; font-size: 0.84em; color: var(--muted); margin-top: 10px; }
 
-    /* Modal */
-    .modal-overlay {
-      display: none;
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.55);
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
-    }
-    .modal-overlay.active { display: flex; }
+  footer { text-align: center; color: var(--muted); font-size: 0.85em; padding: 26px 0 6px; }
+  footer a { color: var(--navy); font-weight: 700; margin: 0 8px; }
 
-    .modal {
-      background: white;
-      border-radius: 20px;
-      padding: 36px 32px;
-      max-width: 480px;
-      width: 90%;
-      position: relative;
-      animation: modalIn 0.25s ease;
-    }
-    @keyframes modalIn {
-      from { transform: scale(0.88); opacity: 0; }
-      to   { transform: scale(1);    opacity: 1; }
-    }
-
-    .modal-close {
-      position: absolute; top: 14px; right: 18px;
-      background: none; border: none;
-      font-size: 1.5em; cursor: pointer; color: #aaa;
-    }
-    .modal-icon { font-size: 2.8em; text-align: center; margin-bottom: 10px; }
-    .modal-title { font-size: 1.5em; font-weight: 700; color: #333; text-align: center; margin-bottom: 6px; }
-    .modal-sub { font-size: 0.9em; color: #888; text-align: center; margin-bottom: 20px; }
-    .modal-features { list-style: none; margin-bottom: 20px; }
-    .modal-features li {
-      padding: 7px 0;
-      border-bottom: 1px solid #f0f0f0;
-      font-size: 0.93em; color: #555;
-    }
-    .modal-features li:last-child { border-bottom: none; }
-
-    .btn-start {
-      display: block; width: 100%;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white; border: none;
-      padding: 14px; border-radius: 10px;
-      font-size: 1.05em; font-weight: 700;
-      cursor: pointer; text-decoration: none;
-      text-align: center;
-      transition: opacity 0.2s;
-    }
-    .btn-start:hover { opacity: 0.88; }
-
-    /* Footer */
-    .footer {
-      text-align: center;
-      color: rgba(255,255,255,0.75);
-      font-size: 0.85em;
-      padding: 30px 0 20px;
-    }
-    .footer a { color: rgba(255,255,255,0.85); margin: 0 8px; }
-  </style>
+  @media (max-width: 640px) {
+    header { padding-top: 24px; gap: 14px; }
+    .badge { width: 58px; height: 58px; }
+    .badge svg { width: 30px; height: 30px; }
+    .grid { grid-template-columns: 1fr; gap: 10px; }
+    .count { width: 100%; margin-left: 0; }
+    .drawer-head .desc { width: 100%; }
+    .tagline { font-size: 0.88em; }
+  }
+  @media (prefers-reduced-motion: reduce) { .card, .dossier { transition: none; animation: none; } }
+</style>
 </head>
 <body>
-<div class="container">
+<div class="wrap">
 
-  <!-- Header -->
-  <div class="header">
-    <h1>🧰 巫魚子的教學工具箱</h1>
-    <p>點擊工具卡片，查看說明並開始使用</p>
-  </div>
-
-  <!-- 🎄 聖誕節系列 -->
-  <!-- ===== 導師班工具 ===== -->
-  <div class="section">
-    <div class="section-title">🏫 導師班工具</div>
-
-    <!-- 子分類：班級行政 -->
-    <div class="sub-title">📋 班級行政</div>
-    <div class="tool-grid">
-      <div class="tool-card" onclick="openModal('seating')">
-        <div class="tool-icon">💺</div>
-        <div class="tool-name">座位安排系統</div>
-        <div class="tool-brief">智慧排座，支援固定座位與隨機分配</div>
-      </div>
-      <div class="tool-card" onclick="openModal('cleaning')">
-        <div class="tool-icon">🧹</div>
-        <div class="tool-name">打掃徵才系統</div>
-        <div class="tool-brief">機率抽籤競標打掃工作，多輪徵選</div>
-      </div>
+  <header>
+    <div class="badge" aria-hidden="true">
+      <svg width="40" height="40" viewBox="0 0 24 24"><circle cx="10" cy="10" r="6.2" fill="#fff" stroke="#1f2a44" stroke-width="2.4"/><line x1="14.6" y1="14.6" x2="21" y2="21" stroke="#1f2a44" stroke-width="3" stroke-linecap="round"/><path d="M7 8.5 q1.6-2 4-1" fill="none" stroke="#f2b134" stroke-width="1.6"/></svg>
     </div>
-
-    <!-- 子分類：認識學生 -->
-    <div class="sub-title">🧠 認識學生</div>
-    <div class="tool-grid">
-      <div class="tool-card" onclick="openModal('disc')">
-        <div class="tool-icon">🧠</div>
-        <div class="tool-name">DISC 人格測驗</div>
-        <div class="tool-brief">探索行為風格，10題快速版或20題完整版</div>
-      </div>
-      <div class="tool-card" onclick="openModal('belbin')">
-        <div class="tool-icon">🧩</div>
-        <div class="tool-name">貝爾賓團隊角色</div>
-        <div class="tool-brief">18題找出你在團隊中的天生角色定位</div>
-      </div>
+    <div>
+      <div class="eyebrow">The Casebook of Wu Yu-Zi</div>
+      <h1>巫魚子<span class="hl">教課事務所</span></h1>
+      <p class="tagline">班級事務 · 化學實驗室 · 遊戲研究——每個工具都是一份待破解的卷宗</p>
     </div>
+  </header>
 
-    <!-- 子分類：班級氣氛 -->
-    <div class="sub-title">🎉 班級氣氛</div>
-    <div class="tool-grid">
-      <div class="tool-card" onclick="openModal('goldenhits')">
-        <div class="tool-icon">🎤</div>
-        <div class="tool-name">金曲歌王</div>
-        <div class="tool-brief">音樂資料庫，45位歌手，自我覺察學習</div>
-      </div>
-      <div class="tool-card" onclick="openModal('fortune')">
-        <div class="tool-icon">🏮</div>
-        <div class="tool-name">詩籤系統</div>
-        <div class="tool-brief">108支文青詩籤，抽籤得到人生智慧</div>
-      </div>
-      <div class="tool-card" onclick="openModal('lottery')">
-        <div class="tool-icon">🎲</div>
-        <div class="tool-name">聖誕抽籤系統</div>
-        <div class="tool-brief">交換禮物神秘配對，保留驚喜感</div>
-      </div>
-      <div class="tool-card" onclick="openModal('adjectives')">
-        <div class="tool-icon">✨</div>
-        <div class="tool-name">禮物形容詞產生器</div>
-        <div class="tool-brief">160個形容詞，幫你想到禮物靈感</div>
-      </div>
-    </div>
+  <div class="tools">
+    <label class="search">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6.5" fill="none" stroke="#1f2a44" stroke-width="2.4"/><line x1="15" y1="15" x2="21" y2="21" stroke="#1f2a44" stroke-width="2.8" stroke-linecap="round"/></svg>
+      <input id="q" type="search" placeholder="搜尋卷宗：例如 打掃、pH、測驗、抽籤" autocomplete="off" aria-label="搜尋工具">
+      <button class="clear hidden" id="clear" type="button">清除</button>
+    </label>
+    <div class="chips" id="chips"></div>
   </div>
 
-  <!-- ===== 化學課堂工具 ===== -->
-  <div class="section">
-    <div class="section-title">⚗️ 化學課堂工具</div>
+  <main id="drawers"></main>
 
-    <!-- 子分類：化學學習遊戲 -->
-    <div class="sub-title">🔬 化學學習遊戲</div>
-    <div class="tool-grid">
-      <div class="tool-card" onclick="openModal('equipment')">
-        <div class="tool-icon">🔍</div>
-        <div class="tool-name">消失的實驗器材</div>
-        <div class="tool-brief">看圖認器材，限時搶分，3條命挑戰排行榜</div>
-      </div>
-      <div class="tool-card" onclick="openModal('ph')">
-        <div class="tool-icon">🧪</div>
-        <div class="tool-name">消失的指示劑</div>
-        <div class="tool-brief">pH 值計算：每人專屬5題，四級難度</div>
-      </div>
-      <div class="tool-card" onclick="openModal('unit')">
-        <div class="tool-icon">📜</div>
-        <div class="tool-name">失落的配方</div>
-        <div class="tool-brief">單位換算：g、mol、分子數、CM、%、ppm</div>
-      </div>
-    </div>
-
-    <!-- 子分類：課堂遊戲化 -->
-    <div class="sub-title">🎲 課堂遊戲化</div>
-    <div class="tool-grid">
-      <div class="tool-card" onclick="openModal('gamification')">
-        <div class="tool-icon">🎯</div>
-        <div class="tool-name">選人系統</div>
-        <div class="tool-brief">可調機率隨機抽籤，8種抽選方式</div>
-      </div>
-      <div class="tool-card" onclick="openModal('curse')">
-        <div class="tool-icon">💀</div>
-        <div class="tool-name">陣亡詛咒系統</div>
-        <div class="tool-brief">角色血量歸零時隨機抽取懲罰</div>
-      </div>
-      <div class="tool-card" onclick="openModal('poke')">
-        <div class="tool-icon">🎁</div>
-        <div class="tool-name">戳戳樂</div>
-        <div class="tool-brief">6×6格子，隨機獎品，即時開獎音效</div>
-      </div>
-      <div class="tool-card" onclick="openModal('truthdare')">
-        <div class="tool-icon">🎲</div>
-        <div class="tool-name">真心話大冒險</div>
-        <div class="tool-brief">真心話開放式提問・大冒險拉霸機</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== 遊戲設計思考（選修課） ===== -->
-  <div class="section">
-    <div class="section-title">🎮 遊戲設計思考</div>
-    <div class="tool-grid">
-      <div class="tool-card" onclick="openModal('bartle')">
-        <div class="tool-icon">🃏</div>
-        <div class="tool-name">巴圖玩家類型</div>
-        <div class="tool-brief">♦♠♥♣ 四種玩家風格，12題精簡或30題完整版</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Footer -->
-  <div class="footer">
-    程式設計：巫魚子 <sup>©</sup> 2025 ｜
-    <a href="https://sites.google.com/view/teacher-wuyutzu/%E9%A6%96%E9%A0%81?authuser=0" target="_blank">🌐 巫魚子網站</a>
-    <a href="https://www.youtube.com/@chwu0223" target="_blank">📺 YouTube 頻道</a>
-  </div>
+  <footer>
+    程式設計：巫魚子 © 2025 ｜
+    <a href="https://sites.google.com/view/teacher-wuyutzu/%E9%A6%96%E9%A0%81?authuser=0" target="_blank" rel="noopener">巫魚子網站</a>
+    <a href="https://www.youtube.com/@chwu0223" target="_blank" rel="noopener">YouTube 頻道</a>
+  </footer>
 </div>
 
-<!-- ===== MODALS ===== -->
-
-<!-- 聖誕抽籤 -->
-<div class="modal-overlay" id="modal-lottery" onclick="closeOnBg(event)">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('lottery')">✕</button>
-    <div class="modal-icon">🎲</div>
-    <div class="modal-title">聖誕抽籤系統</div>
-    <div class="modal-sub">交換禮物 · 保密配對</div>
-    <ul class="modal-features">
-      <li>✅ 自動配對，確保沒人抽到自己</li>
-      <li>✅ 個別查詢，保持驚喜感</li>
-      <li>✅ 下載備份清單，應急查詢</li>
-      <li>✅ 支援上傳舊備份重新查詢</li>
-    </ul>
-    <a class="btn-start" href="christmas/lottery.html" target="_blank">開始使用 →</a>
-  </div>
-</div>
-
-<!-- 形容詞產生器 -->
-<div class="modal-overlay" id="modal-adjectives" onclick="closeOnBg(event)">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('adjectives')">✕</button>
-    <div class="modal-icon">✨</div>
-    <div class="modal-title">禮物形容詞產生器</div>
-    <div class="modal-sub">8大類別 · 160個形容詞</div>
-    <ul class="modal-features">
-      <li>✅ 8種類別按鈕，選最多3類</li>
-      <li>✅ 隨機產生3個形容詞</li>
-      <li>✅ 一鍵複製，貼到Google表單</li>
-      <li>✅ 幫助想不出禮物的同學</li>
-    </ul>
-    <a class="btn-start" href="christmas/adjectives.html" target="_blank">開始使用 →</a>
-  </div>
-</div>
-
-<!-- 座位安排 -->
-<div class="modal-overlay" id="modal-seating" onclick="closeOnBg(event)">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('seating')">✕</button>
-    <div class="modal-icon">💺</div>
-    <div class="modal-title">座位安排系統</div>
-    <div class="modal-sub">智慧排座 · 彈性管理</div>
-    <ul class="modal-features">
-      <li>✅ 自訂教室格局（幾排幾列）</li>
-      <li>✅ 設定固定座位與關閉座位</li>
-      <li>✅ 隨機分配剩餘學生</li>
-      <li>✅ 下載座位表 Excel</li>
-    </ul>
-    <a class="btn-start" href="classroom/seating.html" target="_blank">開始使用 →</a>
-  </div>
-</div>
-
-<!-- 打掃徵才 -->
-<div class="modal-overlay" id="modal-cleaning" onclick="closeOnBg(event)">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('cleaning')">✕</button>
-    <div class="modal-icon">🧹</div>
-    <div class="modal-title">打掃徵才系統</div>
-    <div class="modal-sub">v4.0 志願序 · 貢獻度/金幣加權抽籤</div>
-    <ul class="modal-features">
-      <li>✅ 學生填志願1～5＋投入金幣，老師端管理分發</li>
-      <li>✅ 個人分數＝上學期貢獻度＋投入金幣加成</li>
-      <li>✅ 依志願序加權隨機抽籤，保留隨機性也重視貢獻</li>
-      <li>✅ 剩餘職缺自動隨機分配，幹部保留固定職務</li>
-      <li>✅ 匯出結果＋完整抽籤過程紀錄，有憑有據</li>
-    </ul>
-    <a class="btn-start" href="classroom/cleaning-jobs-admin.html" target="_blank">🧑‍🏫 老師管理頁 →</a>
-    <p style="text-align:center; font-size:0.85em; color:#888; margin-top:8px;">學生登記頁連結由老師在管理頁的「打掃項目」分頁產生後分享</p>
-  </div>
-</div>
-
-<!-- 金曲歌王 -->
-<div class="modal-overlay" id="modal-goldenhits" onclick="closeOnBg(event)">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('goldenhits')">✕</button>
-    <div class="modal-icon">🎤</div>
-    <div class="modal-title">金曲歌王</div>
-    <div class="modal-sub">音樂資料庫 · 自我覺察學習</div>
-    <ul class="modal-features">
-      <li>✅ 45位經典歌手，90首代表歌曲</li>
-      <li>✅ 三個年代分類（1990前／1991-2005／2006後）</li>
-      <li>✅ 音樂風格標籤清楚標示</li>
-      <li>✅ 適合投影展示與學習單配合</li>
-    </ul>
-    <a class="btn-start" href="classroom/golden-hits.html" target="_blank">開始使用 →</a>
-  </div>
-</div>
-
-<!-- 詩籤系統 -->
-<div class="modal-overlay" id="modal-fortune" onclick="closeOnBg(event)">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('fortune')">✕</button>
-    <div class="modal-icon">🏮</div>
-    <div class="modal-title">巫魚子文青學院詩籤</div>
-    <div class="modal-sub">108支詩籤 · 人生智慧抽抽看</div>
-    <ul class="modal-features">
-      <li>✅ 108支精選詩籤，10大類別</li>
-      <li>✅ 上上籤至下下籤，5種籤級</li>
-      <li>✅ 每支籤附有出處與解說</li>
-      <li>✅ 搖晃動畫，沉浸式抽籤體驗</li>
-    </ul>
-    <a class="btn-start" href="classroom/poetry_fortune.html" target="_blank">開始使用 →</a>
-  </div>
-</div>
-
-<!-- DISC 人格測驗 -->
-<div class="modal-overlay" id="modal-disc" onclick="closeOnBg(event)">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('disc')">✕</button>
-    <div class="modal-icon">🧠</div>
-    <div class="modal-title">DISC 人格類型測驗</div>
-    <div class="modal-sub">行為風格探索 · 導師評語參考</div>
-    <ul class="modal-features">
-      <li>✅ 快速版 10 題（約3分鐘）／完整版 20 題（約8分鐘）</li>
-      <li>✅ 四維度分析：D支配・I影響・S穩定・C謹慎</li>
-      <li>✅ 每題選「最像我」與「最不像我」，結果更準確</li>
-      <li>✅ 作答完輸入座號，自動產生結果卡片</li>
-      <li>✅ 資料同步送出，供導師撰寫評語參考</li>
-    </ul>
-    <a class="btn-start" href="classroom/disc.html" target="_blank">開始測驗 →</a>
-  </div>
-</div>
-
-<!-- 貝爾賓團隊角色測驗 -->
-<div class="modal-overlay" id="modal-belbin" onclick="closeOnBg(event)">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('belbin')">✕</button>
-    <div class="modal-icon">🧩</div>
-    <div class="modal-title">貝爾賓團隊角色測驗</div>
-    <div class="modal-sub">團隊角色探索 · 導師評語參考</div>
-    <ul class="modal-features">
-      <li>✅ 共 18 題高中生情境選擇題，約 8 分鐘</li>
-      <li>✅ 找出你的主要＋次要＋第三角色組合</li>
-      <li>✅ 九大角色：執行者、推進者、完成者、協調者、凝聚者、外交者、創新者、審議者、專家師</li>
-      <li>✅ 根據角色組合呈現個人化說明，每個人的結果都不同</li>
-      <li>✅ 作答完輸入座號，自動產生角色卡片</li>
-      <li>✅ 資料同步送出，供導師撰寫評語參考</li>
-    </ul>
-    <a class="btn-start" href="classroom/belbin.html" target="_blank">開始測驗 →</a>
-  </div>
-</div>
-
-<!-- 巴圖玩家類型 -->
-<div class="modal-overlay" id="modal-bartle" onclick="closeOnBg(event)">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('bartle')">✕</button>
-    <div class="modal-icon">🃏</div>
-    <div class="modal-title">巴圖玩家類型測驗</div>
-    <div class="modal-sub">遊戲設計思考 · 玩家心理探索</div>
-    <ul class="modal-features">
-      <li>✅ 精簡版 12 題（約2分鐘）／完整版 30 題（約6分鐘）</li>
-      <li>✅ 四種玩家類型：♦成就型・♠探索型・♥社交型・♣殺手型</li>
-      <li>✅ 每題二選一，操作簡單直覺</li>
-      <li>✅ 結果含四維度分數、座標軸位置圖、與其他類型的關係</li>
-      <li>✅ 理論來源：Richard Bartle（1996）</li>
-    </ul>
-    <a class="btn-start" href="classroom/bartle.html" target="_blank">開始測驗 →</a>
-  </div>
-</div>
-
-<!-- 消失的實驗器材 -->
-<div class="modal-overlay" id="modal-equipment" onclick="closeOnBg(event)">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('equipment')">✕</button>
-    <div class="modal-icon">🔍</div>
-    <div class="modal-title">消失的實驗器材</div>
-    <div class="modal-sub">化學實驗器材辨識 · 限時搶分</div>
-    <ul class="modal-features">
-      <li>✅ 33 種實驗器材題庫，每局隨機 30 題</li>
-      <li>✅ 看圖輸入名稱，一字不差才過關</li>
-      <li>✅ 整場 3 條命，答錯扣命，扣完 Game Over</li>
-      <li>✅ 答得越快分數越高，結算答對、答錯與總分</li>
-      <li>✅ 即時排行榜前 30 名，可只看自己班級</li>
-    </ul>
-    <a class="btn-start" href="chemistry/missing-equipment.html" target="_blank">開始搜查 →</a>
-  </div>
-</div>
-
-<!-- 消失的指示劑（pH 值計算練習） -->
-<div class="modal-overlay" id="modal-ph" onclick="closeOnBg(event)">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('ph')">✕</button>
-    <div class="modal-icon">🧪</div>
-    <div class="modal-title">消失的指示劑</div>
-    <div class="modal-sub">pH 值計算練習 · 老師頁產生題組碼讓學生領題</div>
-    <ul class="modal-features">
-      <li>✅ 係數由 2、3、5、7、10 組成，四級難度自由分配</li>
-      <li>✅ 題組碼＋班級＋座號 → 每人專屬 5 題，重新整理不變</li>
-      <li>✅ 即時對錯（不給答案）或交卷後老師批改</li>
-      <li>✅ 投影共同題目與解法、列印學習單與解答表</li>
-      <li>✅ 全班總表即時更新，匯出 Excel</li>
-    </ul>
-    <a class="btn-start" href="chemistry/ph-generator-teacher.html" target="_blank">🧑‍🏫 開啟老師頁 →</a>
-    <p style="text-align:center; font-size:0.85em; color:#888; margin-top:8px;">學生連結與 QR Code 由老師頁產生後分享</p>
-  </div>
-</div>
-
-<!-- 失落的配方（化學單位換算練習） -->
-<div class="modal-overlay" id="modal-unit" onclick="closeOnBg(event)">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('unit')">✕</button>
-    <div class="modal-icon">📜</div>
-    <div class="modal-title">失落的配方</div>
-    <div class="modal-sub">化學單位換算練習 · 老師頁產生題組碼讓學生領題</div>
-    <ul class="modal-features">
-      <li>✅ 質量、莫耳數、分子數、原子數、CM、重量百分率、ppm</li>
-      <li>✅ 生活情境題，只給原子量，四級難度自由分配</li>
-      <li>✅ 答錯時亮出「單位換算地圖」路線提示（不給答案）</li>
-      <li>✅ 投影共同題目與解法、列印學習單與解答表</li>
-      <li>✅ 全班總表即時更新，匯出 Excel</li>
-    </ul>
-    <a class="btn-start" href="chemistry/unit-generator-teacher.html" target="_blank">🧑‍🏫 開啟老師頁 →</a>
-    <p style="text-align:center; font-size:0.85em; color:#888; margin-top:8px;">學生連結與 QR Code 由老師頁產生後分享</p>
-  </div>
-</div>
-
-<!-- 選人系統 -->
-<div class="modal-overlay" id="modal-gamification" onclick="closeOnBg(event)">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('gamification')">✕</button>
-    <div class="modal-icon">🎯</div>
-    <div class="modal-title">巫魚子大師選人系統</div>
-    <div class="modal-sub">可調機率 · 8種抽選方式</div>
-    <ul class="modal-features">
-      <li>✅ 設定班級人數（1-50人）</li>
-      <li>✅ 8種抽籤方式，每種可調整機率</li>
-      <li>✅ 智能驗證，機率總和100%</li>
-      <li>✅ 保留最近10次抽籤記錄</li>
-    </ul>
-    <a class="btn-start" href="gamification/system.html" target="_blank">開始使用 →</a>
-  </div>
-</div>
-
-<!-- 陣亡詛咒 -->
-<div class="modal-overlay" id="modal-curse" onclick="closeOnBg(event)">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('curse')">✕</button>
-    <div class="modal-icon">💀</div>
-    <div class="modal-title">陣亡詛咒系統</div>
-    <div class="modal-sub">遊戲化教學 · 懲罰抽取</div>
-    <ul class="modal-features">
-      <li>✅ 角色血量歸零時觸發</li>
-      <li>✅ 9種詛咒等機率隨機抽取</li>
-      <li>✅ 記錄所有陣亡歷史</li>
-      <li>✅ 增加課堂遊戲化趣味</li>
-    </ul>
-    <a class="btn-start" href="gamification/system.html" target="_blank">開始使用 →</a>
-  </div>
-</div>
-
-<!-- 戳戳樂 -->
-<div class="modal-overlay" id="modal-poke" onclick="closeOnBg(event)">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('poke')">✕</button>
-    <div class="modal-icon">🎯</div>
-    <div class="modal-title">戳戳樂</div>
-    <div class="modal-sub">6×6格子 · 即時開獎</div>
-    <ul class="modal-features">
-      <li>✅ 上傳背景圖片，36格覆蓋展示</li>
-      <li>✅ 老師自訂獎品內容與數量</li>
-      <li>✅ 學生輸入座號，點格即時開獎</li>
-      <li>✅ 中獎金色閃亮，銘謝惠顧灰底</li>
-      <li>✅ 下載完整中獎名單 Excel</li>
-    </ul>
-    <a class="btn-start" href="gamification/poke-game.html" target="_blank">開始使用 →</a>
-  </div>
-</div>
-
-<!-- 真心話大冒險 -->
-<div class="modal-overlay" id="modal-truthdare" onclick="closeOnBg(event)">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('truthdare')">✕</button>
-    <div class="modal-icon">🎲</div>
-    <div class="modal-title">真心話大冒險</div>
-    <div class="modal-sub">班級互動遊戲 · 兩種模式</div>
-    <ul class="modal-features">
-      <li>✅ 真心話：7大類70題，開放式問法</li>
-      <li>✅ 大冒險：拉霸機決定任務，保證合理有趣</li>
-      <li>✅ 對象機率：自己60%・同學30%・老師10%</li>
-      <li>✅ 無傷大雅，適合課堂使用</li>
-    </ul>
-    <a class="btn-start" href="gamification/truth-or-dare.html" target="_blank">開始使用 →</a>
-  </div>
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="d-title">
+  <div class="dossier" id="dossier"></div>
 </div>
 
 <script>
-  function openModal(id) {
-    document.getElementById('modal-' + id).classList.add('active');
-  }
-  function closeModal(id) {
-    document.getElementById('modal-' + id).classList.remove('active');
-  }
-  function closeOnBg(e) {
-    if (e.target.classList.contains('modal-overlay')) {
-      e.target.classList.remove('active');
-    }
-  }
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-      document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
-    }
+/* =========================================================
+   工具清單：新增工具只要在這裡加一筆資料，卡片和說明卷宗會自動產生
+   drawer：0 班級事務、1 化學實驗室 No.307、2 遊戲研究室
+   shelf：抽屜裡的小分類
+   teacher：true 表示連到老師專用頁（顯示「🔒 老師專用」）
+   case：系列案件編號（顯示紅色 CASE 標籤）
+   ========================================================= */
+const TOOLS = [
+  {"id": "seating", "drawer": 0, "shelf": "班級行政", "icon": "💺", "name": "座位安排系統", "brief": "智慧排座，支援固定座位與隨機分配", "title": "座位安排系統", "sub": "智慧排座 · 彈性管理", "features": ["自訂教室格局（幾排幾列）", "設定固定座位與關閉座位", "隨機分配剩餘學生", "下載座位表 Excel"], "href": "classroom/seating.html", "btn": "開始使用"},
+  {"id": "cleaning", "drawer": 0, "shelf": "班級行政", "icon": "🧹", "name": "打掃徵才系統", "brief": "機率抽籤競標打掃工作，多輪徵選", "title": "打掃徵才系統", "sub": "v4.0 志願序 · 貢獻度/金幣加權抽籤", "features": ["學生填志願1～5＋投入金幣，老師端管理分發", "個人分數＝上學期貢獻度＋投入金幣加成", "依志願序加權隨機抽籤，保留隨機性也重視貢獻", "剩餘職缺自動隨機分配，幹部保留固定職務", "匯出結果＋完整抽籤過程紀錄，有憑有據"], "href": "classroom/cleaning-jobs-admin.html", "btn": "老師管理頁", "note": "學生登記頁連結由老師在管理頁的「打掃項目」分頁產生後分享", "teacher": true},
+  {"id": "disc", "drawer": 0, "shelf": "認識學生", "icon": "🧠", "name": "DISC 人格測驗", "brief": "探索行為風格，10題快速版或20題完整版", "title": "DISC 人格類型測驗", "sub": "行為風格探索 · 導師評語參考", "features": ["快速版 10 題（約3分鐘）／完整版 20 題（約8分鐘）", "四維度分析：D支配・I影響・S穩定・C謹慎", "每題選「最像我」與「最不像我」，結果更準確", "作答完輸入座號，自動產生結果卡片", "資料同步送出，供導師撰寫評語參考"], "href": "classroom/disc.html", "btn": "開始測驗"},
+  {"id": "belbin", "drawer": 0, "shelf": "認識學生", "icon": "🧩", "name": "貝爾賓團隊角色", "brief": "18題找出你在團隊中的天生角色定位", "title": "貝爾賓團隊角色測驗", "sub": "團隊角色探索 · 導師評語參考", "features": ["共 18 題高中生情境選擇題，約 8 分鐘", "找出你的主要＋次要＋第三角色組合", "九大角色：執行者、推進者、完成者、協調者、凝聚者、外交者、創新者、審議者、專家師", "根據角色組合呈現個人化說明，每個人的結果都不同", "作答完輸入座號，自動產生角色卡片", "資料同步送出，供導師撰寫評語參考"], "href": "classroom/belbin.html", "btn": "開始測驗"},
+  {"id": "goldenhits", "drawer": 0, "shelf": "班級氣氛", "icon": "🎤", "name": "金曲歌王", "brief": "音樂資料庫，45位歌手，自我覺察學習", "title": "金曲歌王", "sub": "音樂資料庫 · 自我覺察學習", "features": ["45位經典歌手，90首代表歌曲", "三個年代分類（1990前／1991-2005／2006後）", "音樂風格標籤清楚標示", "適合投影展示與學習單配合"], "href": "classroom/golden-hits.html", "btn": "開始使用"},
+  {"id": "fortune", "drawer": 0, "shelf": "班級氣氛", "icon": "🏮", "name": "詩籤系統", "brief": "108支文青詩籤，抽籤得到人生智慧", "title": "巫魚子文青學院詩籤", "sub": "108支詩籤 · 人生智慧抽抽看", "features": ["108支精選詩籤，10大類別", "上上籤至下下籤，5種籤級", "每支籤附有出處與解說", "搖晃動畫，沉浸式抽籤體驗"], "href": "classroom/poetry_fortune.html", "btn": "開始使用"},
+  {"id": "lottery", "drawer": 0, "shelf": "班級氣氛", "icon": "🎲", "name": "聖誕抽籤系統", "brief": "交換禮物神秘配對，保留驚喜感", "title": "聖誕抽籤系統", "sub": "交換禮物 · 保密配對", "features": ["自動配對，確保沒人抽到自己", "個別查詢，保持驚喜感", "下載備份清單，應急查詢", "支援上傳舊備份重新查詢"], "href": "christmas/lottery.html", "btn": "開始使用"},
+  {"id": "adjectives", "drawer": 0, "shelf": "班級氣氛", "icon": "✨", "name": "禮物形容詞產生器", "brief": "160個形容詞，幫你想到禮物靈感", "title": "禮物形容詞產生器", "sub": "8大類別 · 160個形容詞", "features": ["8種類別按鈕，選最多3類", "隨機產生3個形容詞", "一鍵複製，貼到Google表單", "幫助想不出禮物的同學"], "href": "christmas/adjectives.html", "btn": "開始使用"},
+  {"id": "equipment", "drawer": 1, "shelf": "No.307 懸案系列", "icon": "🔍", "name": "消失的實驗器材", "brief": "看圖認器材，限時搶分，3條命挑戰排行榜", "title": "消失的實驗器材", "sub": "化學實驗器材辨識 · 限時搶分", "features": ["33 種實驗器材題庫，每局隨機 30 題", "看圖輸入名稱，一字不差才過關", "整場 3 條命，答錯扣命，扣完 Game Over", "答得越快分數越高，結算答對、答錯與總分", "即時排行榜前 30 名，可只看自己班級"], "href": "chemistry/missing-equipment.html", "btn": "開始搜查", "case": "CASE 01"},
+  {"id": "ph", "drawer": 1, "shelf": "No.307 懸案系列", "icon": "🧪", "name": "消失的指示劑", "brief": "pH 值計算：每人專屬5題，四級難度", "title": "消失的指示劑", "sub": "pH 值計算練習 · 老師頁產生題組碼讓學生領題", "features": ["係數由 2、3、5、7、10 組成，四級難度自由分配", "題組碼＋班級＋座號 → 每人專屬 5 題，重新整理不變", "即時對錯（不給答案）或交卷後老師批改", "投影共同題目與解法、列印學習單與解答表", "全班總表即時更新，匯出 Excel"], "href": "chemistry/ph-generator-teacher.html", "btn": "開啟老師頁", "note": "學生連結與 QR Code 由老師頁產生後分享", "teacher": true, "case": "CASE 02"},
+  {"id": "unit", "drawer": 1, "shelf": "No.307 懸案系列", "icon": "📜", "name": "失落的配方", "brief": "單位換算：g、mol、分子數、CM、%、ppm", "title": "失落的配方", "sub": "化學單位換算練習 · 老師頁產生題組碼讓學生領題", "features": ["質量、莫耳數、分子數、原子數、CM、重量百分率、ppm", "生活情境題，只給原子量，四級難度自由分配", "答錯時亮出「單位換算地圖」路線提示（不給答案）", "投影共同題目與解法、列印學習單與解答表", "全班總表即時更新，匯出 Excel"], "href": "chemistry/unit-generator-teacher.html", "btn": "開啟老師頁", "note": "學生連結與 QR Code 由老師頁產生後分享", "teacher": true, "case": "CASE 03"},
+  {"id": "gamification", "drawer": 1, "shelf": "課堂遊戲化", "icon": "🎯", "name": "選人系統", "brief": "可調機率隨機抽籤，8種抽選方式", "title": "巫魚子大師選人系統", "sub": "可調機率 · 8種抽選方式", "features": ["設定班級人數（1-50人）", "8種抽籤方式，每種可調整機率", "智能驗證，機率總和100%", "保留最近10次抽籤記錄"], "href": "gamification/system.html", "btn": "開始使用"},
+  {"id": "curse", "drawer": 1, "shelf": "課堂遊戲化", "icon": "💀", "name": "陣亡詛咒系統", "brief": "角色血量歸零時隨機抽取懲罰", "title": "陣亡詛咒系統", "sub": "遊戲化教學 · 懲罰抽取", "features": ["角色血量歸零時觸發", "9種詛咒等機率隨機抽取", "記錄所有陣亡歷史", "增加課堂遊戲化趣味"], "href": "gamification/system.html", "btn": "開始使用"},
+  {"id": "poke", "drawer": 1, "shelf": "課堂遊戲化", "icon": "🎁", "name": "戳戳樂", "brief": "6×6格子，隨機獎品，即時開獎音效", "title": "戳戳樂", "sub": "6×6格子 · 即時開獎", "features": ["上傳背景圖片，36格覆蓋展示", "老師自訂獎品內容與數量", "學生輸入座號，點格即時開獎", "中獎金色閃亮，銘謝惠顧灰底", "下載完整中獎名單 Excel"], "href": "gamification/poke-game.html", "btn": "開始使用"},
+  {"id": "truthdare", "drawer": 1, "shelf": "課堂遊戲化", "icon": "🎲", "name": "真心話大冒險", "brief": "真心話開放式提問・大冒險拉霸機", "title": "真心話大冒險", "sub": "班級互動遊戲 · 兩種模式", "features": ["真心話：7大類70題，開放式問法", "大冒險：拉霸機決定任務，保證合理有趣", "對象機率：自己60%・同學30%・老師10%", "無傷大雅，適合課堂使用"], "href": "gamification/truth-or-dare.html", "btn": "開始使用"},
+  {"id": "bartle", "drawer": 2, "shelf": "玩家研究", "icon": "🃏", "name": "巴圖玩家類型", "brief": "♦♠♥♣ 四種玩家風格，12題精簡或30題完整版", "title": "巴圖玩家類型測驗", "sub": "遊戲設計思考 · 玩家心理探索", "features": ["精簡版 12 題（約2分鐘）／完整版 30 題（約6分鐘）", "四種玩家類型：♦成就型・♠探索型・♥社交型・♣殺手型", "每題二選一，操作簡單直覺", "結果含四維度分數、座標軸位置圖、與其他類型的關係", "理論來源：Richard Bartle（1996）"], "href": "classroom/bartle.html", "btn": "開始測驗"}
+];
+
+const DRAWERS = [
+  { name: '班級事務', tag: 'Drawer I',   desc: '行政、認識學生、班級氣氛', color: '#1f9e8f', soft: '#e3f4f1' },
+  { name: '化學實驗室 No.307', tag: 'Drawer II', desc: '懸案系列與課堂遊戲化', color: '#e4572e', soft: '#fde8e1' },
+  { name: '遊戲研究室', tag: 'Drawer III', desc: '遊戲設計思考課程', color: '#7b5ea7', soft: '#eee8f6' }
+];
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let filterDrawer = -1;
+
+// 卷宗編號：抽屜代號＋序號，例如 I-03
+const ROMAN = ['I', 'II', 'III', 'IV', 'V'];
+const counters = {};
+TOOLS.forEach(t => { counters[t.drawer] = (counters[t.drawer] || 0) + 1; t.no = `No. ${ROMAN[t.drawer]}-${String(counters[t.drawer]).padStart(2, '0')}`; });
+
+/* ---------- 篩選 ---------- */
+$('chips').innerHTML = `<button class="chip on" data-d="-1" type="button">全部</button>` +
+  DRAWERS.map((d, i) => `<button class="chip" data-d="${i}" type="button"><span class="dot" style="background:${d.color}"></span>${esc(d.name)}</button>`).join('') +
+  `<span class="count" id="count"></span>`;
+$('chips').querySelectorAll('.chip').forEach(b => b.onclick = () => {
+  filterDrawer = +b.dataset.d;
+  $('chips').querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === b));
+  render();
+});
+
+/* ---------- 搜尋 ---------- */
+const norm = s => String(s).toLowerCase().replace(/\s+/g, '');
+function matches(t, q) {
+  if (!q) return true;
+  const hay = norm([t.name, t.brief, t.title, t.sub, t.shelf, DRAWERS[t.drawer].name, ...t.features, t.teacher ? '老師專用 老師頁' : '', t.case || ''].join(' '));
+  return q.split(/\s+/).filter(Boolean).every(k => hay.includes(norm(k)));
+}
+$('q').addEventListener('input', () => { $('clear').classList.toggle('hidden', !$('q').value); render(); });
+$('clear').onclick = () => { $('q').value = ''; $('clear').classList.add('hidden'); render(); $('q').focus(); };
+
+/* ---------- 畫抽屜與卡片 ---------- */
+function cardHTML(t) {
+  const d = DRAWERS[t.drawer];
+  const pill = t.case ? `<span class="pill case">${esc(t.case)}</span>` : t.teacher ? `<span class="pill lock">🔒 老師專用</span>` : '';
+  return `<button class="card" data-id="${t.id}" type="button" style="--accent:${d.color};--soft:${d.soft}">
+    <span class="icon" aria-hidden="true">${t.icon}</span>
+    <span><span class="name">${esc(t.name)}</span><br><span class="brief">${esc(t.brief)}</span>${pill ? '<br>' + pill : ''}</span>
+  </button>`;
+}
+function render() {
+  const q = $('q').value.trim();
+  const shown = TOOLS.filter(t => (filterDrawer < 0 || t.drawer === filterDrawer) && matches(t, q));
+  let html = '';
+  DRAWERS.forEach((d, di) => {
+    const items = shown.filter(t => t.drawer === di);
+    if (!items.length) return;
+    const shelves = [...new Set(items.map(t => t.shelf))];
+    html += `<section class="drawer">
+      <div class="drawer-head"><span class="tag" style="background:${d.color}">${d.tag}</span><h2>${esc(d.name)}</h2><span class="desc">${esc(d.desc)}</span></div>
+      ${shelves.map(s => `${shelves.length > 1 ? `<div class="shelf">${esc(s)}</div>` : '<div class="shelf"></div>'}<div class="grid">${items.filter(t => t.shelf === s).map(cardHTML).join('')}</div>`).join('')}
+    </section>`;
   });
+  $('drawers').innerHTML = html || `<div class="empty">🔎 查無此案……換個關鍵字再找找看吧</div>`;
+  $('count').textContent = q || filterDrawer >= 0 ? `找到 ${shown.length} 份卷宗` : `共 ${TOOLS.length} 份卷宗`;
+  $('drawers').querySelectorAll('.card').forEach(b => b.onclick = () => openDossier(b.dataset.id));
+}
+
+/* ---------- 打開卷宗 ---------- */
+let lastFocus = null;
+function openDossier(id) {
+  const t = TOOLS.find(x => x.id === id);
+  if (!t) return;
+  const d = DRAWERS[t.drawer];
+  lastFocus = document.activeElement;
+  $('dossier').style.setProperty('--accent', d.color);
+  $('dossier').innerHTML = `
+    <div class="d-top">
+      <button class="close" id="d-close" aria-label="關閉">✕</button>
+      <div class="no">${t.no}${t.case ? ' · ' + esc(t.case) : ''} · ${esc(d.name)}</div>
+      <h3 id="d-title"><span aria-hidden="true">${t.icon}</span>${esc(t.title)}</h3>
+      <div class="sub">${esc(t.sub)}</div>
+    </div>
+    <div class="d-body">
+      ${t.teacher ? `<div class="warn">🔒 老師專用頁面，含答案與管理功能，請勿提供給學生。</div>` : ''}
+      <ul>${t.features.map(f => `<li>${esc(f)}</li>`).join('')}</ul>
+      <a class="go" href="${esc(t.href)}" target="_blank" rel="noopener">${t.teacher ? '🔒 ' : ''}${esc(t.btn)} →</a>
+      ${t.note ? `<p class="note">${esc(t.note)}</p>` : ''}
+    </div>`;
+  $('overlay').classList.add('on');
+  $('d-close').onclick = closeDossier;
+  $('d-close').focus();
+}
+function closeDossier() {
+  $('overlay').classList.remove('on');
+  if (lastFocus) lastFocus.focus();
+}
+$('overlay').addEventListener('click', e => { if (e.target === $('overlay')) closeDossier(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && $('overlay').classList.contains('on')) closeDossier();
+  if (e.key === '/' && document.activeElement !== $('q') && !$('overlay').classList.contains('on')) { e.preventDefault(); $('q').focus(); }
+});
+
+render();
 </script>
 </body>
 </html>

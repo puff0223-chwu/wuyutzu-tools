@@ -24,8 +24,8 @@
 
 ```
 wuyutzu-tools/
-├── index.html                    # 工具導覽首頁（卡片＋說明彈窗）
-├── index-preview.html            # 首頁改版預覽：「巫魚子教課事務所」偵探風（資料驅動，尚未取代 index.html）
+├── index.html                    # 首頁「巫魚子教課事務所」（資料驅動：工具清單 TOOLS 陣列）
+├── index-preview.html            # 首頁預覽區（改版時先在這裡試，滿意再複製成 index.html）
 ├── DEVELOPMENT.md                # 本說明檔
 ├── README.md                     # 專案簡介
 │
@@ -80,14 +80,15 @@ wuyutzu-tools/
 
 ---
 
-### 首頁改版預覽（index-preview.html）
+### 首頁（index.html，2026-10-03 上線「巫魚子教課事務所」）
 
 - 風格（第二版，明亮有活力的偵探風）：米白底＋淡千鳥格紋、深藍大衣色 `#1f2a44` 粗框卡片與位移陰影、芥末黃 `#f2b134` 放大鏡徽章與重點按鈕、線索紅 `#e4572e`；抽屜各有代表色（班級事務 藍綠、化學實驗室 紅橘、遊戲研究室 紫）；標題 Noto Serif TC，英文標籤 Bebas Neue
 - 三個抽屜：Drawer I 班級事務、Drawer II 化學實驗室 No.307、Drawer III 遊戲研究室；卷宗自動編號（No. I-01…，顯示在說明卷宗上）
 - **資料驅動**：所有工具寫在檔案裡的 `TOOLS` 陣列，新增工具只要加一筆（drawer、shelf、icon、name、brief、title、sub、features、href、btn，選填 teacher／case／note）
 - `teacher: true` 顯示「🔒 老師專用」標籤並在卷宗內加警語；`case` 顯示紅色「CASE 01」標籤；`DRAWERS` 陣列設定抽屜名稱與代表色
 - 搜尋框（按 `/` 可快速聚焦）＋抽屜篩選；不做「最近開啟」
-- 確認滿意後：把 index-preview.html 內容取代 index.html
+- 舊版紫色首頁可從 git 歷史找回（commit 226f6ec 之後、ac464b8 之前的 index.html）
+- 之後要改版：先改 index-preview.html 給老師看，確認後再複製成 index.html
 
 ## 4. 資料存在哪裡？（四種方式）
 
@@ -134,9 +135,8 @@ wuyutzu-tools/
 
 1. 在對應資料夾新增 `新工具.html`（單一檔案，CSS/JS 都寫在裡面）
 2. **學生使用的頁面不要放回首頁的連結**（老師不希望學生連到工具首頁）；只有老師自己用的頁面才考慮放 `../index.html`
-3. 在 `index.html`：
-   - 對應分類的 `tool-grid` 裡加一張 `tool-card`（`onclick="openModal('代號')"`）
-   - 在 `<!-- ===== MODALS ===== -->` 區加一個 `id="modal-代號"` 的說明彈窗
+3. 在 `index.html` 的 `TOOLS` 陣列加一筆資料（卡片和說明卷宗會自動產生）：
+   `{ id, drawer, shelf, icon, name, brief, title, sub, features: [...], href, btn }`，老師頁加 `teacher: true`，系列案件加 `case: 'CASE 04'`
 4. 需要存資料 → 先依第 4 節選擇方式；用 Firebase 記得改規則
 5. 更新本檔第 2、3 節的結構表
 6. Commit → Push → 等約 5 分鐘 → 用無痕視窗或 `Ctrl+Shift+R` 檢查
