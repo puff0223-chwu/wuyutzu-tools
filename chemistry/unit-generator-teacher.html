@@ -4,33 +4,33 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>⚖️ 化學單位換算練習｜老師頁</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<title>📜 失落的配方｜老師頁</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Noto+Serif+TC:wght@700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root {
-    --ink: #102226; --ink-2: #183238; --paper: #f8f6ef; --line: #e3ddca;
-    --ok: #2e9e5b; --bad: #d9473a; --amber: #ffb627; --muted: #8aa2a6; --text: #1f2d30;
+    --ink: #2a1b14; --ink-2: #3d2a1f; --paper: #f4e8cf; --line: #dcc69c;
+    --ok: #3f8f5a; --bad: #b8432f; --amber: #d9993f; --muted: #b8a185; --text: #3a281c; --route: #1f7a73;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif; background: var(--ink); color: var(--paper); min-height: 100vh; padding: 16px; }
   .wrap { max-width: 1100px; margin: 0 auto; }
   .hidden { display: none !important; }
   .ph-strip { height: 10px; border-radius: 5px; margin-bottom: 14px; opacity: 0.85;
-    background: repeating-linear-gradient(90deg, #ffb627 0 40px, #3a86ff 40px 80px, #2fa866 80px 120px, #e0503f 120px 160px); }
+    height: 8px; background: repeating-linear-gradient(90deg, var(--amber) 0 16px, transparent 16px 24px); }
   .umap { display: block; width: 100%; max-width: 420px; height: auto; margin: 6px auto; }
   .umap .edge line { stroke: #c9c1a8; stroke-width: 3; }
   .umap .edge text { font-size: 13px; fill: #8a8068; }
-  .umap .edge.on line { stroke: #3a86ff; stroke-width: 6; }
-  .umap .edge.on text { fill: #3a86ff; font-weight: 700; }
+  .umap .edge.on line { stroke: var(--route); stroke-width: 6; }
+  .umap .edge.on text { fill: var(--route); font-weight: 700; }
   .umap .node rect { fill: #fff; stroke: #c9c1a8; stroke-width: 2; }
   .umap .node text { font-size: 14px; font-weight: 700; fill: #1f2a36; }
-  .umap .node.on rect { fill: #3a86ff; stroke: #3a86ff; }
+  .umap .node.on rect { fill: var(--route); stroke: var(--route); }
   .umap .node.on text { fill: #fff; }
   .atomic { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; color: #6b6248; background: #efe9d8; display: inline-block; padding: 3px 10px; border-radius: 8px; margin: 4px 0 8px; }
   .note { display: block; font-size: 0.85em; color: #7a715a; }
-  h1 { font-weight: 900; font-size: 1.9em; }
+  h1 { font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: 1.9em; }
   h1 small { font-size: 0.5em; color: var(--muted); font-weight: 400; margin-left: 8px; }
   .mono { font-family: 'JetBrains Mono', monospace; }
 
@@ -77,6 +77,11 @@
   .qr { width: 150px; height: 150px; }
   .qr img, .qr canvas { width: 100% !important; height: 100% !important; }
   .recent { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .recent .rc { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #fff; }
+  .recent .rc button { border: none; border-radius: 0; }
+  .recent .rc .del { color: #b33; padding: 5px 8px; border-left: 1px solid var(--line); }
+  .recent .rc .del:hover { background: #fde8e6; }
+  .recent .clear { color: #b33; }
   .recent button { font: inherit; font-size: 0.85em; border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 5px 9px; cursor: pointer; }
 
   /* 投影 */
@@ -136,7 +141,7 @@
 <body>
 <div class="wrap">
   <div class="ph-strip"></div>
-  <h1>⚖️ 化學單位換算練習 <small>老師頁 · 請勿提供給學生</small></h1>
+  <h1>📜 失落的配方 <small>化學單位換算練習 · 老師頁 · 請勿提供給學生</small></h1>
 
   <div class="current" id="current"></div>
 
@@ -240,7 +245,7 @@
 
 <div class="overlay hidden" id="overlay">
   <button class="btn dark close" id="btn-close">✕ 關閉</button>
-  <div style="font-size:1.4em">⚖️ 化學單位換算練習｜掃碼或輸入題組碼</div>
+  <div style="font-size:1.4em">📜 失落的配方｜掃碼或輸入題組碼，領取你要還原的配方</div>
   <div class="qr" id="qr-big"></div>
   <div class="big" id="ov-code"></div>
   <div class="url" id="ov-url"></div>
@@ -331,21 +336,34 @@ function renderCurrent() {
 }
 
 function rememberCode(code) {
-  let list = [];
-  try { list = JSON.parse(localStorage.getItem('unit-teacher-recent') || '[]'); } catch (e) {}
-  list = [{ code, t: Date.now() }, ...list.filter(x => x.code !== code)].slice(0, 10);
-  try { localStorage.setItem('unit-teacher-recent', JSON.stringify(list)); } catch (e) {}
+  const list = [{ code, t: Date.now() }, ...loadRecent().filter(x => x.code !== code)].slice(0, 20);
+  saveRecent(list);
+  renderRecent();
+}
+function loadRecent() { try { return JSON.parse(localStorage.getItem('unit-teacher-recent') || '[]'); } catch (e) { return []; } }
+function saveRecent(list) { try { localStorage.setItem('unit-teacher-recent', JSON.stringify(list)); } catch (e) {} }
+// 從清單移除（只刪老師頁的紀錄，學生作答資料不受影響；要再用時輸入題組碼即可載入）
+function removeRecent(code) {
+  saveRecent(loadRecent().filter(x => x.code !== code));
+  try { if (localStorage.getItem('unit-teacher-current') === code) localStorage.removeItem('unit-teacher-current'); } catch (e) {}
   renderRecent();
 }
 function renderRecent() {
-  let list = [];
-  try { list = JSON.parse(localStorage.getItem('unit-teacher-recent') || '[]'); } catch (e) {}
+  const list = loadRecent();
   $('recent').innerHTML = list.length ? '<span class="hint">最近用過：</span>' + list.map(x => {
     const p = UC.parseCode(x.code); if (!p) return '';
     const d = new Date(x.t);
-    return `<button data-c="${x.code}" title="${esc(describe(p))}">${UC.prettyCode(x.code)}・${d.getMonth() + 1}/${d.getDate()}</button>`;
-  }).join('') : '';
-  $('recent').querySelectorAll('button').forEach(b => b.onclick = () => useCode(b.dataset.c, true));
+    return `<span class="rc"><button class="use" data-c="${x.code}" title="${esc(describe(p))}">${UC.prettyCode(x.code)}・${d.getMonth() + 1}/${d.getDate()}</button><button class="del" data-c="${x.code}" title="從清單移除">✕</button></span>`;
+  }).join('') + '<button class="clear" id="btn-clear-recent">🗑️ 全部清除</button>' : '';
+  $('recent').querySelectorAll('.use').forEach(b => b.onclick = () => useCode(b.dataset.c, true));
+  $('recent').querySelectorAll('.del').forEach(b => b.onclick = () => removeRecent(b.dataset.c));
+  const clr = $('btn-clear-recent');
+  if (clr) clr.onclick = () => {
+    if (!confirm('確定要清除全部「最近用過」的題組碼嗎？\n（只是從清單移除，學生的作答紀錄不會被刪掉）')) return;
+    saveRecent([]);
+    try { localStorage.removeItem('unit-teacher-current'); } catch (e) {}
+    renderRecent();
+  };
 }
 
 $('btn-copy').onclick = async () => {
@@ -387,7 +405,7 @@ function renderProjection() {
       <div class="ptext">${q.html}</div>
       ${UC.atomicHTML(q) ? `<div class="atomic">原子量：${UC.atomicHTML(q)}</div><br>` : ''}
       <button class="btn ghost" data-i="${i}">顯示答案</button>
-      <div class="sol hidden" id="sol${i}"><div style="color:#3a86ff;font-weight:700">🗺️ ${esc(UC.routeText(q.route))}</div>${q.steps.map(esc).join('<br>')}<div class="ans">${UC.ansHTML(q)}</div></div>
+      <div class="sol hidden" id="sol${i}"><div style="color:var(--route);font-weight:700">🗺️ ${esc(UC.routeText(q.route))}</div>${q.steps.map(esc).join('<br>')}<div class="ans">${UC.ansHTML(q)}</div></div>
     </div>`;
   }).join('');
   $('proj-list').querySelectorAll('button[data-i]').forEach(b => b.onclick = () => {
@@ -412,7 +430,7 @@ $('btn-print').onclick = () => {
   if ($('pr-sheets').checked) {
     html += seats.map(seat => {
       const qs = UC.forStudent(current, cls, seat);
-      return `<div class="sheet"><h4>⚖️ 化學單位換算練習　<span style="font-weight:400;font-size:10pt">題組碼 ${UC.prettyCode(current.code)}</span></h4>
+      return `<div class="sheet"><h4>📜 失落的配方（化學單位換算）　<span style="font-weight:400;font-size:10pt">題組碼 ${UC.prettyCode(current.code)}</span></h4>
         <div class="who"><span>班級：${esc(cls)}</span><span>座號：${seat}</span><span>姓名：＿＿＿＿＿＿＿</span></div>${logLine}
         <ol>${qs.map(q => `<li>${q.html}${UC.atomicHTML(q) ? `<div class="patomic">原子量：${UC.atomicHTML(q)}</div>` : ''}<div class="pblank">${blank(q)}</div></li>`).join('')}</ol></div>`;
     }).join('');
@@ -524,7 +542,7 @@ $('btn-xlsx').onclick = async () => {
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sheet1), '全班總表');
   if (current.instant) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sheet2.length ? sheet2 : [{ 說明: '尚無作答紀錄' }]), '作答歷程');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sheet3), '題目與解法');
-  XLSX.writeFile(wb, `單位換算練習_${boardData.cls}班_${code}.xlsx`);
+  XLSX.writeFile(wb, `失落的配方_${boardData.cls}班_${code}.xlsx`);
 };
 
 /* ---------- 啟動 ---------- */

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>🧪 pH 值計算練習｜老師頁</title>
+<title>🧪 消失的指示劑｜老師頁</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -66,6 +66,11 @@
   .qr { width: 150px; height: 150px; }
   .qr img, .qr canvas { width: 100% !important; height: 100% !important; }
   .recent { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .recent .rc { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #fff; }
+  .recent .rc button { border: none; border-radius: 0; }
+  .recent .rc .del { color: #b33; padding: 5px 8px; border-left: 1px solid var(--line); }
+  .recent .rc .del:hover { background: #fde8e6; }
+  .recent .clear { color: #b33; }
   .recent button { font: inherit; font-size: 0.85em; border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 5px 9px; cursor: pointer; }
 
   /* 投影 */
@@ -122,7 +127,7 @@
 <body>
 <div class="wrap">
   <div class="ph-strip"></div>
-  <h1>🧪 pH 值計算練習 <small>老師頁 · 請勿提供給學生</small></h1>
+  <h1>🧪 消失的指示劑 <small>pH 值計算練習 · 老師頁 · 請勿提供給學生</small></h1>
 
   <div class="current" id="current"></div>
 
@@ -221,7 +226,7 @@
 
 <div class="overlay hidden" id="overlay">
   <button class="btn dark close" id="btn-close">✕ 關閉</button>
-  <div style="font-size:1.4em">🧪 pH 值計算練習｜掃碼或輸入題組碼</div>
+  <div style="font-size:1.4em">🧪 消失的指示劑｜掃碼或輸入題組碼，領取你的溶液樣本</div>
   <div class="qr" id="qr-big"></div>
   <div class="big" id="ov-code"></div>
   <div class="url" id="ov-url"></div>
@@ -311,21 +316,34 @@ function renderCurrent() {
 }
 
 function rememberCode(code) {
-  let list = [];
-  try { list = JSON.parse(localStorage.getItem('ph-teacher-recent') || '[]'); } catch (e) {}
-  list = [{ code, t: Date.now() }, ...list.filter(x => x.code !== code)].slice(0, 10);
-  try { localStorage.setItem('ph-teacher-recent', JSON.stringify(list)); } catch (e) {}
+  const list = [{ code, t: Date.now() }, ...loadRecent().filter(x => x.code !== code)].slice(0, 20);
+  saveRecent(list);
+  renderRecent();
+}
+function loadRecent() { try { return JSON.parse(localStorage.getItem('ph-teacher-recent') || '[]'); } catch (e) { return []; } }
+function saveRecent(list) { try { localStorage.setItem('ph-teacher-recent', JSON.stringify(list)); } catch (e) {} }
+// 從清單移除（只刪老師頁的紀錄，學生作答資料不受影響；要再用時輸入題組碼即可載入）
+function removeRecent(code) {
+  saveRecent(loadRecent().filter(x => x.code !== code));
+  try { if (localStorage.getItem('ph-teacher-current') === code) localStorage.removeItem('ph-teacher-current'); } catch (e) {}
   renderRecent();
 }
 function renderRecent() {
-  let list = [];
-  try { list = JSON.parse(localStorage.getItem('ph-teacher-recent') || '[]'); } catch (e) {}
+  const list = loadRecent();
   $('recent').innerHTML = list.length ? '<span class="hint">最近用過：</span>' + list.map(x => {
     const p = PH.parseCode(x.code); if (!p) return '';
     const d = new Date(x.t);
-    return `<button data-c="${x.code}" title="${esc(describe(p))}">${PH.prettyCode(x.code)}・${d.getMonth() + 1}/${d.getDate()}</button>`;
-  }).join('') : '';
-  $('recent').querySelectorAll('button').forEach(b => b.onclick = () => useCode(b.dataset.c, true));
+    return `<span class="rc"><button class="use" data-c="${x.code}" title="${esc(describe(p))}">${PH.prettyCode(x.code)}・${d.getMonth() + 1}/${d.getDate()}</button><button class="del" data-c="${x.code}" title="從清單移除">✕</button></span>`;
+  }).join('') + '<button class="clear" id="btn-clear-recent">🗑️ 全部清除</button>' : '';
+  $('recent').querySelectorAll('.use').forEach(b => b.onclick = () => useCode(b.dataset.c, true));
+  $('recent').querySelectorAll('.del').forEach(b => b.onclick = () => removeRecent(b.dataset.c));
+  const clr = $('btn-clear-recent');
+  if (clr) clr.onclick = () => {
+    if (!confirm('確定要清除全部「最近用過」的題組碼嗎？\n（只是從清單移除，學生的作答紀錄不會被刪掉）')) return;
+    saveRecent([]);
+    try { localStorage.removeItem('ph-teacher-current'); } catch (e) {}
+    renderRecent();
+  };
 }
 
 $('btn-copy').onclick = async () => {
@@ -389,7 +407,7 @@ $('btn-print').onclick = () => {
   if ($('pr-sheets').checked) {
     html += seats.map(seat => {
       const qs = PH.forStudent(current, cls, seat);
-      return `<div class="sheet"><h4>🧪 pH 值計算練習　<span style="font-weight:400;font-size:10pt">題組碼 ${PH.prettyCode(current.code)}</span></h4>
+      return `<div class="sheet"><h4>🧪 消失的指示劑（pH 值計算）　<span style="font-weight:400;font-size:10pt">題組碼 ${PH.prettyCode(current.code)}</span></h4>
         <div class="who"><span>班級：${esc(cls)}</span><span>座號：${seat}</span><span>姓名：＿＿＿＿＿＿＿</span></div>${logLine}
         <ol>${qs.map(q => `<li>${PH.concHTML(q)}　　pH = ＿＿＿＿＿＿</li>`).join('')}</ol></div>`;
     }).join('');
@@ -501,7 +519,7 @@ $('btn-xlsx').onclick = async () => {
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sheet1), '全班總表');
   if (current.instant) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sheet2.length ? sheet2 : [{ 說明: '尚無作答紀錄' }]), '作答歷程');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sheet3), '題目與解法');
-  XLSX.writeFile(wb, `pH練習_${boardData.cls}班_${code}.xlsx`);
+  XLSX.writeFile(wb, `消失的指示劑_${boardData.cls}班_${code}.xlsx`);
 };
 
 /* ---------- 啟動 ---------- */

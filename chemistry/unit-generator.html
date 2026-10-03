@@ -4,27 +4,31 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>⚖️ 化學單位換算練習</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<title>📜 失落的配方</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Noto+Serif+TC:wght@700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --ink: #17202e; --ink-2: #222e40; --paper: #f8f6ef; --line: #e3ddca;
-    --ok: #2fa866; --bad: #e0503f; --amber: #ffb627; --route: #3a86ff; --muted: #8fa0b5; --text: #1f2a36;
+    --ink: #2a1b14; --ink-2: #3d2a1f; --paper: #f4e8cf; --line: #dcc69c;
+    --ok: #3f8f5a; --bad: #b8432f; --amber: #d9993f; --route: #1f7a73; --muted: #b8a185; --text: #3a281c;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
     background: var(--ink); color: var(--paper); min-height: 100vh; padding: 16px;
-    background-image: repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 30px),
-                      repeating-linear-gradient(90deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 30px);
+    background-image: radial-gradient(circle at 15% 0%, rgba(217,153,63,0.16), transparent 45%),
+                      radial-gradient(circle at 100% 100%, rgba(140,47,57,0.25), transparent 50%),
+                      repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0 2px, transparent 2px 14px);
   }
   .wrap { max-width: 760px; margin: 0 auto; }
   .hidden { display: none !important; }
   .strip { height: 12px; border-radius: 6px; margin-bottom: 18px;
-    background: repeating-linear-gradient(90deg, var(--amber) 0 40px, var(--route) 40px 80px, #2fa866 80px 120px, #e0503f 120px 160px); opacity: 0.85; }
-  h1 { font-weight: 900; font-size: clamp(1.8em, 6.5vw, 2.6em); letter-spacing: 0.04em; }
+    height: 8px; background: repeating-linear-gradient(90deg, var(--amber) 0 16px, transparent 16px 24px); opacity: 0.75; }
+  h1 { font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: clamp(1.8em, 6.5vw, 2.6em); letter-spacing: 0.04em; }
   h1 span { color: var(--amber); }
   .sub { color: var(--muted); margin: 4px 0 16px; }
+  .case-no { color: var(--muted); font-size: 0.8em; letter-spacing: 0.2em; margin-bottom: 2px; }
+  .story { color: #e8d9bf; line-height: 1.85; margin: 10px 0 16px; font-size: 0.97em; }
+  .story b { color: var(--amber); }
 
   .paper { background: var(--paper); color: var(--text); border-radius: 14px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.35); }
   label { font-size: 0.8em; color: #6b6248; font-weight: 700; display: block; margin-bottom: 4px; }
@@ -38,17 +42,17 @@
   .code-input { font-family: 'JetBrains Mono', monospace; letter-spacing: 0.12em; text-transform: uppercase; }
 
   .btn { font: inherit; font-weight: 900; font-size: 1.05em; border: none; border-radius: 12px; padding: 13px 18px; cursor: pointer;
-    background: var(--amber); color: #1a1a1a; box-shadow: 0 4px 0 #b97d0b; }
-  .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #b97d0b; }
+    background: var(--amber); color: #2a1b14; box-shadow: 0 4px 0 #8a5a1c; }
+  .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #8a5a1c; }
   .btn:disabled { opacity: 0.45; cursor: default; transform: none; }
   .btn.small { font-size: 0.95em; padding: 10px 14px; white-space: nowrap; }
-  .btn.dark { background: var(--ink-2); color: var(--paper); box-shadow: 0 4px 0 #0b111b; }
+  .btn.dark { background: var(--ink-2); color: var(--paper); box-shadow: 0 4px 0 #160d09; }
   .err { color: var(--bad); font-size: 0.9em; min-height: 1.3em; margin-top: 8px; }
 
   .bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
   .chip { background: var(--ink-2); border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; padding: 5px 12px; font-size: 0.9em; }
   .chip b { color: var(--amber); }
-  .const { background: rgba(255,182,39,0.12); border: 1px dashed rgba(255,182,39,0.6); border-radius: 12px;
+  .const { background: rgba(217,153,63,0.14); border: 1px dashed rgba(217,153,63,0.6); border-radius: 12px;
     padding: 9px 14px; margin-bottom: 12px; text-align: center; font-size: 0.95em; }
 
   details.mapbox { background: var(--paper); color: var(--text); border-radius: 14px; padding: 10px 14px; margin-bottom: 12px; }
@@ -71,7 +75,7 @@
   .q-head { display: flex; justify-content: space-between; align-items: center; font-size: 0.85em; color: #6b6248; margin-bottom: 6px; }
   .q-text { font-size: 1.08em; line-height: 1.75; margin: 4px 0 6px; }
   .q-text .note { display: block; font-size: 0.85em; color: #7a715a; }
-  .q-atomic { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; color: #6b6248; background: #efe9d8; display: inline-block; padding: 3px 10px; border-radius: 8px; margin-bottom: 10px; }
+  .q-atomic { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; color: #6b5233; background: #e9d9b6; display: inline-block; padding: 3px 10px; border-radius: 8px; margin-bottom: 10px; }
   .q-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .q-row input { font-family: 'JetBrains Mono', monospace; font-size: 1.15em; text-align: center; font-weight: 700; }
   .q-row .plain { flex: 1; min-width: 120px; }
@@ -107,8 +111,10 @@
 <body>
 <div class="wrap">
   <div class="strip"></div>
-  <h1>化學<span>單位換算</span>練習</h1>
-  <p class="sub">輸入老師給的題組碼，領取你專屬的 5 道題目（可以用計算機）</p>
+  <div class="case-no">CASE FILE · 化學實驗室 No.307 · 第三案</div>
+  <h1>失落的<span>配方</span></h1>
+  <p class="story">一位老化學家留下的<b>配方筆記</b>被人動了手腳，所有份量的單位全被打亂了！<br>
+  要把質量、莫耳數、分子數、濃度一一<b>換算</b>回來，才能重現這份失落的配方。輸入老師給的題組碼，領取你負責還原的 5 頁配方（可以用計算機）。</p>
 
   <!-- 領題 -->
   <section id="join" class="paper">
@@ -119,7 +125,7 @@
       <div class="wide"><label for="in-name">姓名</label><input id="in-name" type="text" maxlength="12" placeholder="你的名字"></div>
     </div>
     <div class="err" id="join-err"></div>
-    <button class="btn" id="btn-join" style="width:100%;margin-top:6px">領取我的題目 ⚖️</button>
+    <button class="btn" id="btn-join" style="width:100%;margin-top:6px">開始還原配方 📜</button>
   </section>
 
   <!-- 作答 -->
@@ -182,7 +188,7 @@ async function join() {
     console.error(e);
     setSync('⚠️ 目前連不上伺服器，仍可作答，下次作答時會再送出');
   }
-  $('btn-join').disabled = false; $('btn-join').textContent = '領取我的題目 ⚖️';
+  $('btn-join').disabled = false; $('btn-join').textContent = '開始還原配方 📜';
   render();
 }
 function showErr(msg) { $('join-err').textContent = msg; }
@@ -231,7 +237,7 @@ function render() {
   $('questions').innerHTML = S.qs.map((q, i) => {
     const lv = UC.LEVELS[q.level], atomic = UC.atomicHTML(q);
     return `<div class="q" id="q${i}">
-      <div class="q-head"><span>第 ${i + 1} 題</span><span>${lv.stars} ${lv.name}</span></div>
+      <div class="q-head"><span>📜 配方 第 ${i + 1} 頁</span><span>${lv.stars} ${lv.name}</span></div>
       <div class="q-text">${q.html}</div>
       ${atomic ? `<div class="q-atomic">原子量：${atomic}</div>` : ''}
       <div class="q-row">${answerInputs(q, i)}${p.instant ? `<button class="btn small" id="c${i}">檢查</button>` : ''}</div>
@@ -279,7 +285,7 @@ function showRoute(i) {
   $('rt' + i).classList.remove('hidden');
   $('rt' + i).textContent = `🗺️ 路線提示：${UC.routeText(q.route)}`;
   $('map').innerHTML = UC.mapSVG(q.route, S.parsed.formula);
-  $('map-cap').textContent = `第 ${i + 1} 題的路線：${UC.routeText(q.route)}`;
+  $('map-cap').textContent = `第 ${i + 1} 頁的路線：${UC.routeText(q.route)}`;
 }
 
 /* ---------- 即時對錯 ---------- */
@@ -311,8 +317,8 @@ function renderFoot() {
   if (S.parsed.instant) {
     const done = S.solved.filter(Boolean).length;
     $('foot').innerHTML = done === n
-      ? `<div class="done-banner">🎉 5 題全部答對！</div><p style="margin-top:6px">老師已經收到你的作答紀錄。</p>`
-      : `<div>答對 <b>${done}</b> / ${n} 題</div><div class="progress"><div style="width:${done / n * 100}%"></div></div>`;
+      ? `<div class="done-banner">🎉 5 頁配方全部還原！</div><p style="margin-top:6px">老師已經收到你的還原紀錄。</p>`
+      : `<div>已還原 <b>${done}</b> / ${n} 頁</div><div class="progress"><div style="width:${done / n * 100}%"></div></div>`;
   } else if (S.submitted) {
     $('foot').innerHTML = `<div class="done-banner">📮 已交卷</div><p style="margin-top:6px">答案已送給老師，等待老師批改。</p>`;
   } else {

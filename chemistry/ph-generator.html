@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>🧪 pH 值計算練習</title>
+<title>🧪 消失的指示劑</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -26,6 +26,9 @@
   h1 { font-weight: 900; font-size: clamp(1.8em, 6.5vw, 2.6em); letter-spacing: 0.04em; }
   h1 span { color: var(--amber); }
   .sub { color: var(--muted); margin: 4px 0 16px; }
+  .case-no { color: var(--muted); font-size: 0.8em; letter-spacing: 0.2em; margin-bottom: 2px; }
+  .story { color: #d7dfe0; line-height: 1.85; margin: 10px 0 16px; font-size: 0.97em; }
+  .story b { color: var(--amber); }
 
   .paper { background: var(--paper); color: var(--text); border-radius: 14px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.35); }
   label { font-size: 0.8em; color: #6b6248; font-weight: 700; display: block; margin-bottom: 4px; }
@@ -88,8 +91,10 @@
 <body>
 <div class="wrap">
   <div class="ph-strip"></div>
-  <h1>pH 值<span>計算練習</span></h1>
-  <p class="sub">輸入老師給的題組碼，領取你專屬的 5 道題目</p>
+  <div class="case-no">CASE FILE · 化學實驗室 No.307 · 第二案</div>
+  <h1>消失的<span>指示劑</span></h1>
+  <p class="story">石蕊、酚酞、廣用試紙……實驗室裡所有的<b>酸鹼指示劑</b>一夜之間全被偷走了！<br>
+  沒有指示劑，只能靠<b>計算</b>判斷每一瓶溶液的 pH 值。輸入老師給的題組碼，領取你負責鑑定的 5 瓶溶液樣本。</p>
 
   <!-- 領題 -->
   <section id="join" class="paper">
@@ -100,7 +105,7 @@
       <div class="wide"><label for="in-name">姓名</label><input id="in-name" type="text" maxlength="12" placeholder="你的名字"></div>
     </div>
     <div class="err" id="join-err"></div>
-    <button class="btn" id="btn-join" style="width:100%;margin-top:6px">領取我的題目 🧪</button>
+    <button class="btn" id="btn-join" style="width:100%;margin-top:6px">開始鑑定樣本 🧪</button>
   </section>
 
   <!-- 作答 -->
@@ -159,7 +164,7 @@ async function join() {
     console.error(e);
     setSync('⚠️ 目前連不上伺服器，仍可作答，下次作答時會再送出');
   }
-  $('btn-join').disabled = false; $('btn-join').textContent = '領取我的題目 🧪';
+  $('btn-join').disabled = false; $('btn-join').textContent = '開始鑑定樣本 🧪';
   render();
 }
 function showErr(msg) { $('join-err').textContent = msg; }
@@ -178,7 +183,7 @@ function render() {
   $('questions').innerHTML = S.qs.map((q, i) => {
     const lv = PH.LEVELS[q.level];
     return `<div class="q" id="q${i}">
-      <div class="q-head"><span>第 ${i + 1} 題</span><span>${lv.stars} ${lv.name}</span></div>
+      <div class="q-head"><span>🧪 樣本 ${i + 1}</span><span>${lv.stars} ${lv.name}</span></div>
       <div class="q-conc">${PH.concHTML(q)}</div>
       <div class="q-row">
         <span class="eq">pH =</span>
@@ -246,8 +251,8 @@ function renderFoot() {
   if (S.parsed.instant) {
     const done = S.solved.filter(Boolean).length;
     $('foot').innerHTML = done === n
-      ? `<div class="done-banner">🎉 5 題全部答對！</div><p style="margin-top:6px">老師已經收到你的作答紀錄。</p>`
-      : `<div>答對 <b>${done}</b> / ${n} 題</div><div class="progress"><div style="width:${done / n * 100}%"></div></div>`;
+      ? `<div class="done-banner">🎉 5 瓶溶液全部鑑定完成！</div><p style="margin-top:6px">老師已經收到你的鑑定報告。</p>`
+      : `<div>已鑑定 <b>${done}</b> / ${n} 瓶</div><div class="progress"><div style="width:${done / n * 100}%"></div></div>`;
   } else if (S.submitted) {
     $('foot').innerHTML = `<div class="done-banner">📮 已交卷</div><p style="margin-top:6px">答案已送給老師，等待老師批改。</p>`;
   } else {
