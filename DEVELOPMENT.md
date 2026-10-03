@@ -89,7 +89,7 @@ wuyutzu-tools/
 - **資料驅動**：所有工具寫在檔案裡的 `TOOLS` 陣列，新增工具只要加一筆（drawer、shelf、icon、name、brief、title、sub、features、href、btn，選填 teacher／case／note）
 - `teacher: true` 顯示「🔒 老師專用」標籤並在卷宗內加警語；`case` 顯示紅色「CASE 01」標籤；`DRAWERS` 陣列設定抽屜名稱與代表色
 - 搜尋框（按 `/` 可快速聚焦）＋抽屜篩選；不做「最近開啟」
-- 預覽頁目前是**第三版**（拿掉格紋、細框柔和陰影），等老師決定是否上線；正式首頁仍是第二版
+- 正式首頁＝第二版；預覽頁＝第三版（拿掉格紋、細框柔和陰影），老師評估**沒有比較好、不上線**，待日後研究（筆記見 CHANGELOG「首頁視覺花待研究筆記」）
 - 舊版紫色首頁可從 git 歷史找回（commit 226f6ec 之後、ac464b8 之前的 index.html）
 - 之後要改版：先改 index-preview.html 給老師看，確認後再複製成 index.html
 
