@@ -144,6 +144,13 @@
     <div class="levels" id="levels"></div>
     <div class="total" id="total"></div>
 
+    <h3>出題方向</h3>
+    <div class="opts">
+      <label class="opt"><input type="radio" name="dir" value="fwd"><div><b>① 只出正向：濃度 → pH</b><div class="hint">例：[H⁺] = 1.5×10⁻⁵ M，求 pH</div></div></label>
+      <label class="opt"><input type="radio" name="dir" value="rev"><div><b>② 只出反向：pH／pOH → 濃度</b><div class="hint">例：pH = 4.82，求 [H⁺]；pOH = 3.30，求 [OH⁻]；pH = 10.70，求 [OH⁻]（挑戰）。答案寫成「係數 × 10 的次方」，係數必須是 2、3、5、7 組出的值</div></div></label>
+      <label class="opt"><input type="radio" name="dir" value="mix" checked><div><b>③ 正反混合</b><div class="hint">每一題隨機決定正向或反向</div></div></label>
+    </div>
+
     <h3>學生作答方式</h3>
     <div class="opts">
       <label class="opt"><input type="radio" name="mode" value="instant" checked><div><b>✅ 即時對錯</b><div class="hint">每題按「檢查」只顯示對或錯（不給答案），可以一直重算到對；老師看得到每題試了幾次、填過什麼。</div></div></label>
@@ -232,7 +239,7 @@
   <div class="url" id="ov-url"></div>
 </div>
 
-<script src="ph-core.js?v=20261003b"></script>
+<script src="ph-core.js?v=20261004a"></script>
 <script>
 const $ = id => document.getElementById(id);
 const esc = PH.escapeHtml;
@@ -271,6 +278,7 @@ $('btn-new').onclick = () => {
   const code = PH.makeCode({
     dist: dist.slice(),
     instant: document.querySelector('input[name=mode]:checked').value === 'instant',
+    dir: document.querySelector('input[name=dir]:checked').value,
     showLog: $('opt-log').checked
   });
   useCode(code, true);
@@ -288,6 +296,7 @@ function useCode(code, remember) {
   // 設定區同步成這個題組碼的設定
   current.dist.forEach((v, i) => dist[i] = v);
   document.querySelector(`input[name=mode][value=${current.instant ? 'instant' : 'graded'}]`).checked = true;
+  document.querySelector(`input[name=dir][value=${current.dir}]`).checked = true;
   $('opt-log').checked = current.showLog;
   renderLevels();
   if (remember) rememberCode(code);
@@ -307,7 +316,7 @@ const studentLink = () => `${STUDENT_PAGE}?code=${current.code}`;
 
 function describe(p) {
   const parts = PH.LEVELS.map((lv, i) => p.dist[i] ? `${lv.name}${p.dist[i]}` : '').filter(Boolean).join('、');
-  return `${parts}｜${p.instant ? '即時對錯' : '交卷批改'}｜${p.showLog ? '顯示 log' : '不顯示 log'}`;
+  return `${parts}｜${{ fwd: '只正向', rev: '只反向', mix: '正反混合' }[p.dir]}｜${p.instant ? '即時對錯' : '交卷批改'}｜${p.showLog ? '顯示 log' : '不顯示 log'}`;
 }
 function renderCurrent() {
   $('current').innerHTML = current
@@ -383,7 +392,7 @@ function renderProjection() {
       <div class="top"><span>第 ${i + 1} 題</span><span>${lv.stars} ${lv.name}</span></div>
       <div class="conc">${PH.concHTML(q)}</div>
       <button class="btn ghost" data-i="${i}">顯示答案</button>
-      <div class="sol hidden" id="sol${i}">${PH.solution(q).map(esc).join('<br>')}<div class="ans">pH = ${PH.fix2(q.ans)}</div></div>
+      <div class="sol hidden" id="sol${i}">${PH.solution(q).map(esc).join('<br>')}<div class="ans">${PH.ansHTML(q)}</div></div>
     </div>`;
   }).join('');
   $('proj-list').querySelectorAll('button[data-i]').forEach(b => b.onclick = () => {
@@ -409,7 +418,7 @@ $('btn-print').onclick = () => {
       const qs = PH.forStudent(current, cls, seat);
       return `<div class="sheet"><h4>🧪 消失的指示劑（pH 值計算）　<span style="font-weight:400;font-size:10pt">題組碼 ${PH.prettyCode(current.code)}</span></h4>
         <div class="who"><span>班級：${esc(cls)}</span><span>座號：${seat}</span><span>姓名：＿＿＿＿＿＿＿</span></div>${logLine}
-        <ol>${qs.map(q => `<li>${PH.concHTML(q)}　　pH = ＿＿＿＿＿＿</li>`).join('')}</ol></div>`;
+        <ol>${qs.map(q => `<li>${PH.concHTML(q)}　　${PH.blankHTML(q)}</li>`).join('')}</ol></div>`;
     }).join('');
   }
   if ($('pr-key').checked) {
@@ -417,7 +426,7 @@ $('btn-print').onclick = () => {
     html += `<h3 style="margin-bottom:8px">解答表｜${esc(cls)} 班｜題組碼 ${PH.prettyCode(current.code)}</h3>
       <table class="keytable"><tr><th>座號</th><th>題目與解法</th></tr>` +
       seats.map(seat => `<tr><td>${seat}</td><td>${PH.forStudent(current, cls, seat).map((q, i) =>
-        `${i + 1}. ${esc(PH.concText(q))} → <b>pH = ${PH.fix2(q.ans)}</b><br><span style="color:#555">${PH.solution(q).map(esc).join('；')}</span>`).join('<br>')}</td></tr>`).join('') +
+        `${i + 1}. ${esc(PH.concText(q))} → <b>${PH.ansHTML(q)}</b><br><span style="color:#555">${PH.solution(q).map(esc).join('；')}</span>`).join('<br>')}</td></tr>`).join('') +
       `</table>`;
   }
   if (!html) return alertBox('請至少勾選一種要列印的內容');
@@ -474,8 +483,8 @@ async function refreshBoard() {
     ${x.qs.map((q, i) => {
       const a = x.answers[i].trim();
       const cls2 = a ? (x.correct[i] ? 'ok' : 'bad') : '';
-      return `<td class="qcell"><div class="qtxt">${esc(PH.concText(q))}</div><div class="key">解 ${PH.fix2(q.ans)}</div>
-        <div class="stu ${cls2}">${a ? esc(a) + (x.correct[i] ? ' ✓' : ' ✗') : (x.r ? '—' : '')}</div>
+      return `<td class="qcell"><div class="qtxt">${esc(PH.concText(q))}</div><div class="key">解 ${PH.ansHTML(q).replace(/^.*?= /, '')}</div>
+        <div class="stu ${cls2}">${a ? esc(PH.formatAnswerStr(a)) + (x.correct[i] ? ' ✓' : ' ✗') : (x.r ? '—' : '')}</div>
         ${instant && x.attempts[i] ? `<div class="tries">試 ${x.attempts[i]} 次</div>` : ''}</td>`;
     }).join('')}
     <td><b>${x.r ? x.nCorrect : ''}</b></td><td><span class="status ${ST[x.status][0]}">${ST[x.status][1]}</span></td></tr>`).join('');
@@ -496,8 +505,8 @@ $('btn-xlsx').onclick = async () => {
     const o = { 座號: x.seat, 姓名: x.name };
     x.qs.forEach((q, i) => {
       o[`第${i + 1}題 題目`] = PH.concText(q);
-      o[`第${i + 1}題 正解`] = PH.fix2(q.ans);
-      o[`第${i + 1}題 作答`] = x.answers[i];
+      o[`第${i + 1}題 正解`] = PH.ansText(q);
+      o[`第${i + 1}題 作答`] = PH.formatAnswerStr(x.answers[i]);
       o[`第${i + 1}題 對錯`] = x.answers[i].trim() ? (x.correct[i] ? '✓' : '✗') : '';
       if (current.instant) o[`第${i + 1}題 嘗試次數`] = x.attempts[i] || '';
     });
@@ -510,11 +519,11 @@ $('btn-xlsx').onclick = async () => {
   boardData.rows.forEach(x => {
     const h = Array.isArray(x.r?.history) ? x.r.history : Object.values(x.r?.history || {});
     h.forEach(([qi, val, ok, t]) => sheet2.push({ 座號: x.seat, 姓名: x.name, 題號: qi + 1, 題目: PH.concText(x.qs[qi]),
-      作答: val, 對錯: ok ? '✓' : '✗', 時間: new Date(t).toLocaleString('zh-TW') }));
+      作答: PH.formatAnswerStr(val), 對錯: ok ? '✓' : '✗', 時間: new Date(t).toLocaleString('zh-TW') }));
   });
   const sheet3 = [];
   boardData.rows.forEach(x => x.qs.forEach((q, i) => sheet3.push({ 座號: x.seat, 題號: i + 1, 難度: PH.LEVELS[q.level].name,
-    題目: PH.concText(q), 答案: PH.fix2(q.ans), 解法: PH.solution(q).join('；') })));
+    題目: PH.concText(q), 答案: PH.ansText(q), 解法: PH.solution(q).join('；') })));
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sheet1), '全班總表');
   if (current.instant) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sheet2.length ? sheet2 : [{ 說明: '尚無作答紀錄' }]), '作答歷程');

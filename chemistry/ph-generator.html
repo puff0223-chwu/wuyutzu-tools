@@ -66,6 +66,11 @@
   .q-row { display: flex; gap: 10px; align-items: center; }
   .q-row .eq { font-weight: 900; font-size: 1.2em; white-space: nowrap; }
   .q-row .btn { white-space: nowrap; flex: none; }
+  .q-row { flex-wrap: wrap; gap: 8px; }
+  .q-row .mant { flex: 0 1 92px; width: 92px; }
+  .q-row .exp { flex: 0 1 66px; width: 66px; font-size: 1em; padding-left: 4px; padding-right: 4px; }
+  .q-row .eq { flex: none; }
+  .q-row .times, .q-row .unit { font-weight: 900; white-space: nowrap; }
   .q-row input { flex: 1; min-width: 0; font-family: 'JetBrains Mono', monospace; font-size: 1.2em; text-align: center; font-weight: 700; }
   .q-msg { min-height: 1.4em; margin-top: 8px; font-weight: 700; }
   .q-msg.ok { color: var(--neutral); }
@@ -118,7 +123,7 @@
   </section>
 </div>
 
-<script src="ph-core.js?v=20261003b"></script>
+<script src="ph-core.js?v=20261004a"></script>
 <script>
 const $ = id => document.getElementById(id);
 let S = null;   // { parsed, cls, seat, name, sid, qs, answers, attempts, solved, history, submitted }
@@ -186,8 +191,12 @@ function render() {
       <div class="q-head"><span>🧪 樣本 ${i + 1}</span><span>${lv.stars} ${lv.name}</span></div>
       <div class="q-conc">${PH.concHTML(q)}</div>
       <div class="q-row">
-        <span class="eq">pH =</span>
-        <input type="text" inputmode="decimal" id="a${i}" autocomplete="off" placeholder="小數點後兩位">
+        <span class="eq">${PH.askHTML(q)}</span>
+        ${q.dir === 'rev'
+          ? `<input type="text" inputmode="decimal" class="mant" id="a${i}" autocomplete="off" placeholder="係數">
+             <span class="times">× 10</span><input type="text" inputmode="text" class="exp" id="e${i}" autocomplete="off" placeholder="次方">
+             <span class="unit">M</span>`
+          : `<input type="text" inputmode="decimal" id="a${i}" autocomplete="off" placeholder="小數點後兩位">`}
         ${p.instant ? `<button class="btn small" id="c${i}">檢查</button>` : ''}
       </div>
       <div class="q-msg" id="m${i}"></div>
@@ -195,26 +204,44 @@ function render() {
   }).join('');
 
   S.qs.forEach((q, i) => {
-    const input = $('a' + i);
-    input.value = S.answers[i] || '';
-    if (p.instant) {
-      $('c' + i).onclick = () => check(i);
-      input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) check(i); });
-    } else {
-      input.addEventListener('input', () => { S.answers[i] = input.value.trim(); scheduleSave(); });
-      input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { const nx = $('a' + (i + 1)); if (nx) nx.focus(); } });
-    }
+    setAnswer(i, S.answers[i]);
+    inputsOf(i).forEach((input, k, all) => {
+      if (p.instant) {
+        input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) check(i); });
+      } else {
+        input.addEventListener('input', () => { S.answers[i] = getAnswer(i); scheduleSave(); });
+        input.addEventListener('keydown', e => {
+          if (e.key !== 'Enter' || e.isComposing) return;
+          const nx = all[k + 1] || $('a' + (i + 1)); if (nx) nx.focus();
+        });
+      }
+    });
+    if (p.instant) $('c' + i).onclick = () => check(i);
     paintQuestion(i);
   });
   renderFoot();
 }
 
+/* 反向題有兩格（係數、次方），答案存成 "1.5e-5" */
+const inputsOf = i => S.qs[i].dir === 'rev' ? [$('a' + i), $('e' + i)] : [$('a' + i)];
+function getAnswer(i) {
+  if (S.qs[i].dir !== 'rev') return $('a' + i).value.trim();
+  const m = $('a' + i).value.trim(), e = $('e' + i).value.trim().replace(/[−–]/g, '-').replace(/^\+/, '');
+  return m || e ? `${m}e${e}` : '';
+}
+function setAnswer(i, str) {
+  if (S.qs[i].dir !== 'rev') { $('a' + i).value = str || ''; return; }
+  const parts = String(str || '').split(/e/i);
+  $('a' + i).value = parts[0] || ''; $('e' + i).value = parts[1] || '';
+}
+
 function paintQuestion(i) {
-  const box = $('q' + i), input = $('a' + i), msg = $('m' + i);
+  const box = $('q' + i), msg = $('m' + i);
+  const lock = () => inputsOf(i).forEach(el => el.disabled = true);
   box.classList.remove('ok', 'bad');
   if (S.parsed.instant) {
     if (S.solved[i]) {
-      box.classList.add('ok'); input.disabled = true; $('c' + i).disabled = true;
+      box.classList.add('ok'); lock(); $('c' + i).disabled = true;
       msg.className = 'q-msg ok';
       msg.textContent = `✅ 答對了！${S.attempts[i] > 1 ? `（第 ${S.attempts[i]} 次）` : ''}`;
     } else if (S.attempts[i] > 0) {
@@ -222,17 +249,20 @@ function paintQuestion(i) {
       msg.textContent = `❌ 還不對，再算一次（已試 ${S.attempts[i]} 次）`;
     }
   } else if (S.submitted) {
-    input.disabled = true;
+    lock();
   }
 }
 
 /* ---------- 即時對錯 ---------- */
 function check(i) {
   if (S.solved[i]) return;
-  const input = $('a' + i), val = input.value.trim();
+  const q = S.qs[i], input = $('a' + i), val = getAnswer(i);
   if (!val) { input.focus(); return; }
+  if (q.dir === 'rev' && (!$('a' + i).value.trim() || !$('e' + i).value.trim())) {
+    $('m' + i).className = 'q-msg bad'; $('m' + i).textContent = '係數和次方都要填喔，例如 1.5 和 -5'; return;
+  }
   if (PH.parseAnswer(val) === null) {
-    $('m' + i).className = 'q-msg bad'; $('m' + i).textContent = '請輸入數字，例如 4.82'; return;
+    $('m' + i).className = 'q-msg bad'; $('m' + i).textContent = q.dir === 'rev' ? '請輸入數字，例如 1.5 和 -5' : '請輸入數字，例如 4.82'; return;
   }
   const ok = PH.isCorrect(S.qs[i], val);
   S.answers[i] = val; S.attempts[i]++; S.solved[i] = ok;
@@ -269,7 +299,7 @@ function renderFoot() {
 }
 
 async function submit() {
-  S.qs.forEach((q, i) => { S.answers[i] = $('a' + i).value.trim(); });
+  S.qs.forEach((q, i) => { S.answers[i] = getAnswer(i); });
   S.submitted = true;
   const ok = await save();
   if (!ok) { S.submitted = false; renderFoot(); return; }

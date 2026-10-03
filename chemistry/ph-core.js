@@ -5,6 +5,7 @@
    ・log 值統一用兩位小數：log2=0.30 log3=0.48 log5=0.70 log7=0.85
    ・所有計算都用「整數百分位」進行，答案不會有浮點誤差
    ・同一個「題組碼＋班級＋座號」永遠產生同一組題目（固定亂數）
+   ・題目方向：正向（濃度 → pH）、反向（pH／pOH → 濃度），老師可選只正向、只反向或混合
    ========================================================= */
 const PH = (() => {
 
@@ -21,10 +22,10 @@ const PH = (() => {
   };
 
   const LEVELS = [
-    { key: 'basic', name: '基礎', stars: '⭐',       desc: '[H⁺]，係數為 1' },
-    { key: 'adv',   name: '進階', stars: '⭐⭐',     desc: '[H⁺]，係數為 2、3、5、7' },
-    { key: 'chal',  name: '挑戰', stars: '⭐⭐⭐',   desc: '[OH⁻] 題，或 [H⁺] 兩數組合（如 1.5、4、6）' },
-    { key: 'boss',  name: '魔王', stars: '⭐⭐⭐⭐', desc: '[H⁺]，三數組合（如 1.2、7.5、8）' }
+    { key: 'basic', name: '基礎', stars: '⭐',       desc: '係數為 1：[H⁺] ↔ pH' },
+    { key: 'adv',   name: '進階', stars: '⭐⭐',     desc: '係數 2、3、5、7：[H⁺] ↔ pH（反向也有 pOH → [OH⁻]）' },
+    { key: 'chal',  name: '挑戰', stars: '⭐⭐⭐',   desc: '[OH⁻] ↔ pH，或兩數組合（如 1.5、4、6）' },
+    { key: 'boss',  name: '魔王', stars: '⭐⭐⭐⭐', desc: '三數組合（如 1.2、7.5、8）' }
   ];
 
   /* ---------- 係數表：列出所有可用 2、3、5、7、10 組出的係數 ---------- */
@@ -56,6 +57,9 @@ const PH = (() => {
     return [...best.values()].sort((x, y) => x.h - y.h);
   })();
   const poolByCost = cost => COEFS.filter(x => x.cost === cost);
+  // 反向題要從 log 值推回係數，所以同一個 log 值只能對應一個係數（例如 4.9 和 5 的 log 都是 0.70，只留 5）
+  const REV_OK = new Set(COEFS.filter(c => !COEFS.some(o => o !== c && o.L === c.L && (o.cost < c.cost || (o.cost === c.cost && o.h < c.h)))).map(c => c.h));
+  const revPool = cost => poolByCost(cost).filter(c => REV_OK.has(c.h));
 
   /* ---------- 固定亂數 ---------- */
   function hash(str) {                       // cyrb53 → 32 位元種子
@@ -89,16 +93,18 @@ const PH = (() => {
     DISTS.push([x, y, z, 5 - x - y - z]);
   const ROUNDS = 32 ** 4;
 
-  function checksum(vals) { return vals.reduce((s, v, i) => s + (i + 1) * v, 0) % 32; }
+  // 檢查碼的 salt 同時記錄「題目方向」：0＝只正向（舊題組碼都是這種）、1＝正反混合、2＝只反向
+  const DIRS = ['fwd', 'mix', 'rev'];
+  function checksum(vals, salt = 0) { return (vals.reduce((s, v, i) => s + (i + 1) * v, 0) + salt) % 32; }
 
-  function makeCode({ dist, instant, showLog, round }) {
+  function makeCode({ dist, instant, showLog, dir = 'fwd', round }) {
     const di = DISTS.findIndex(d => d.join() === dist.join());
     if (di < 0) throw new Error('難度分配加總必須是 5');
     if (round === undefined) round = Math.floor(Math.random() * ROUNDS);
     let P = (round * DISTS.length + di) * 4 + (instant ? 1 : 0) + (showLog ? 2 : 0);
     const vals = [];
     for (let i = 0; i < 6; i++) { vals.unshift(P % 32); P = Math.floor(P / 32); }
-    vals.push(checksum(vals));
+    vals.push(checksum(vals, Math.max(0, DIRS.indexOf(dir))));
     return vals.map(v => ALPHA[v]).join('');
   }
 
@@ -110,12 +116,13 @@ const PH = (() => {
     if (code.length !== 7) return null;
     const vals = [...code].map(ch => ALPHA.indexOf(ch));
     if (vals.some(v => v < 0)) return null;
-    if (checksum(vals.slice(0, 6)) !== vals[6]) return null;
+    const salt = [0, 1, 2].find(x => checksum(vals.slice(0, 6), x) === vals[6]);
+    if (salt === undefined) return null;
     let P = 0;
     for (let i = 0; i < 6; i++) P = P * 32 + vals[i];
     const flags = P % 4; P = Math.floor(P / 4);
     const di = P % DISTS.length; const round = Math.floor(P / DISTS.length);
-    return { code, round, dist: DISTS[di].slice(), instant: !!(flags & 1), showLog: !!(flags & 2) };
+    return { code, round, dist: DISTS[di].slice(), instant: !!(flags & 1), showLog: !!(flags & 2), dir: DIRS[salt] };
   }
   const prettyCode = code => code.slice(0, 3) + '-' + code.slice(3);
 
@@ -131,7 +138,27 @@ const PH = (() => {
     exp = coef.h === 100 ? randInt(rng, CONFIG.EXP1_MIN, CONFIG.EXP1_MAX) : randInt(rng, CONFIG.EXP_MIN, CONFIG.EXP_MAX);
     const p = 100 * exp - coef.L;             // pH 或 pOH（×100）
     const ans = type === 'H' ? p : 1400 - p;  // pH × 100
-    return { level: levelIdx, type, coef, exp, ans, key: `${type}${coef.h}e${exp}` };
+    return { dir: 'fwd', level: levelIdx, type, coef, exp, ans, key: `${type}${coef.h}e${exp}` };
+  }
+
+  // 反向題：已知 pH 或 pOH，求濃度（答案為 係數 × 10^次方）
+  //   pH2H：pH → [H⁺]　pOH2OH：pOH → [OH⁻]　pH2OH：pH → [OH⁻]（先算 pOH）
+  function makeReverse(rng, levelIdx) {
+    let kind, coef;
+    const either = () => rng() < 0.5 ? 'pH2H' : 'pOH2OH';
+    if (levelIdx === 0) { kind = 'pH2H'; coef = revPool(0)[0]; }
+    else if (levelIdx === 1) { kind = either(); coef = pick(rng, revPool(1)); }
+    else if (levelIdx === 2) {
+      if (rng() < CONFIG.CHALLENGE_OH_RATIO) { kind = 'pH2OH'; coef = pick(rng, [...revPool(0), ...revPool(1)]); }
+      else { kind = either(); coef = pick(rng, revPool(2)); }
+    } else { kind = either(); coef = pick(rng, revPool(3)); }
+    const exp = coef.h === 100 ? randInt(rng, CONFIG.EXP1_MIN, CONFIG.EXP1_MAX) : randInt(rng, CONFIG.EXP_MIN, CONFIG.EXP_MAX);
+    const p = 100 * exp - coef.L;                    // 與答案濃度對應的 pH（[H⁺] 題）或 pOH（[OH⁻] 題），×100
+    const type = kind === 'pH2H' ? 'H' : 'OH';
+    const given = kind === 'pOH2OH' ? 'pOH' : 'pH';
+    const gv = kind === 'pH2OH' ? 1400 - p : p;      // 題目給的數值（×100）
+    return { dir: 'rev', kind, level: levelIdx, type, given, gv, coef, exp,
+      val: coef.h / 100 * 10 ** -exp, key: `R${kind}${coef.h}e${exp}` };
   }
 
   // 依題組碼＋種子產生一組題目（由易到難排序）
@@ -142,7 +169,12 @@ const PH = (() => {
       for (let i = 0; i < count; i++) {
         let q, tries = 0;
         // 同一組裡盡量不出現相同係數，真的抽不到才放寬
-        do { q = makeQuestion(rng, lv); tries++; }
+        // 只正向時不多抽亂數，舊題組碼的題目完全不變
+        do {
+          const rev = parsed.dir === 'rev' || (parsed.dir === 'mix' && rng() < 0.5);
+          q = rev ? makeReverse(rng, lv) : makeQuestion(rng, lv);
+          tries++;
+        }
         while (tries < 60 && (seen.has(q.key) || (tries < 30 && q.coef.h !== 100 && seenCoef.has(q.type + q.coef.h))));
         seen.add(q.key); seenCoef.add(q.type + q.coef.h); qs.push(q);
       }
@@ -159,16 +191,37 @@ const PH = (() => {
   const fix2 = n => (n / 100).toFixed(2);
   const num2 = n => (n / 100).toFixed(2);
 
-  // HTML：[H⁺] = 1.5 × 10<sup>−5</sup> M
-  function concHTML(q) {
-    const ion = q.type === 'H' ? '[H<sup>+</sup>]' : '[OH<sup>−</sup>]';
-    return `${ion} = ${coefText(q.coef.h)} × 10<sup>−${q.exp}</sup> M`;
-  }
-  // 純文字（Excel 用）：[H⁺] = 1.5×10⁻⁵ M
   const supText = n => String(n).split('').map(ch => SUP[ch]).join('');
+  const ionHTML = q => q.type === 'H' ? '[H<sup>+</sup>]' : '[OH<sup>−</sup>]';
+  const ionText = q => q.type === 'H' ? '[H⁺]' : '[OH⁻]';
+  const givenStr = q => q.gv % 100 === 0 ? String(q.gv / 100) : fix2(q.gv);   // 整數 pH 不寫 .00
+  // 題目（HTML）：正向「[H⁺] = 1.5 × 10⁻⁵ M」；反向「pH = 4.82，求 [H⁺]」
+  function concHTML(q) {
+    if (q.dir === 'rev') return `${q.given} = ${givenStr(q)}，求 ${ionHTML(q)}`;
+    return `${ionHTML(q)} = ${coefText(q.coef.h)} × 10<sup>−${q.exp}</sup> M`;
+  }
+  // 題目（純文字，Excel 用）
   function concText(q) {
-    const ion = q.type === 'H' ? '[H⁺]' : '[OH⁻]';
-    return `${ion} = ${coefText(q.coef.h)}×10${supText(-q.exp)} M`;
+    if (q.dir === 'rev') return `${q.given} = ${givenStr(q)}，求 ${ionText(q)}`;
+    return `${ionText(q)} = ${coefText(q.coef.h)}×10${supText(-q.exp)} M`;
+  }
+  // 作答欄前面的標籤
+  const askHTML = q => q.dir === 'rev' ? `${ionHTML(q)} =` : 'pH =';
+  // 正確答案
+  function ansHTML(q) {
+    if (q.dir === 'rev') return `${ionHTML(q)} = ${coefText(q.coef.h)} × 10<sup>−${q.exp}</sup> M`;
+    return `pH = ${fix2(q.ans)}`;
+  }
+  function ansText(q) {
+    if (q.dir === 'rev') return `${ionText(q)} = ${coefText(q.coef.h)}×10${supText(-q.exp)} M`;
+    return `pH = ${fix2(q.ans)}`;
+  }
+  // 列印學習單的作答欄
+  const blankHTML = q => q.dir === 'rev' ? `${ionHTML(q)} = ＿＿＿ × 10<sup>＿＿</sup> M` : 'pH = ＿＿＿＿＿＿';
+  // 學生作答字串顯示：反向題存成 "1.5e-5"，顯示成 1.5×10⁻⁵
+  function formatAnswerStr(str) {
+    const m = /^(.*)e(-?\d+)$/i.exec(String(str || '').trim());
+    return m ? `${m[1]}×10${supText(m[2])}` : String(str || '');
   }
 
   // 係數拆解，例如 1.5 → 「3 ÷ 2」，log → 「0.48 − 0.30」
@@ -187,6 +240,7 @@ const PH = (() => {
 
   // 解題過程（純文字，一行一步）
   function solution(q) {
+    if (q.dir === 'rev') return solutionRev(q);
     const steps = [];
     const c = coefText(q.coef.h);
     const label = q.type === 'H' ? 'pH' : 'pOH';
@@ -202,18 +256,38 @@ const PH = (() => {
     return steps;
   }
 
+  function solutionRev(q) {
+    const steps = [], c = coefText(q.coef.h), ion = ionText(q);
+    const p = 100 * q.exp - q.coef.L;
+    const label = q.type === 'H' ? 'pH' : 'pOH';
+    if (q.kind === 'pH2OH') steps.push(`pOH = 14 − ${givenStr(q)} = ${fix2(p)}`);
+    if (q.coef.h === 100) {
+      steps.push(`${ion} = 10^(−${label}) = 10${supText(-q.exp)} = 1×10${supText(-q.exp)} M`);
+      return steps;
+    }
+    steps.push(`${ion} = 10^(−${fix2(p)}) = 10^${num2(q.coef.L)} × 10${supText(-q.exp)}`);
+    const d = decompose(q.coef);
+    if (d.single) steps.push(`${num2(q.coef.L)} = log ${c}，所以 10^${num2(q.coef.L)} = ${c}`);
+    else steps.push(`${num2(q.coef.L)} = ${d.logExpr} = log(${d.expr}) = log ${c}，所以 10^${num2(q.coef.L)} = ${c}`);
+    steps.push(`${ion} = ${c}×10${supText(-q.exp)} M`);
+    return steps;
+  }
+
   /* ---------- 判斷答案 ---------- */
   function toHalf(s) {
     return String(s).replace(/[！-～]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0)).replace(/　/g, ' ');
   }
   function parseAnswer(input) {
-    const s = toHalf(input).replace(/\s+/g, '').replace(/^ph=?/i, '');
-    if (!/^-?\d+(\.\d+)?$|^-?\.\d+$/.test(s)) return null;
+    const s = toHalf(input).replace(/\s+/g, '').replace(/^ph=?/i, '').replace(/[−–]/g, '-');
+    if (!/^-?(\d+\.?\d*|\.\d+)(e-?\d+)?$/i.test(s)) return null;
     return Number(s);
   }
   function isCorrect(q, input) {
     const v = parseAnswer(input);
-    return v !== null && Math.abs(v * 100 - q.ans) < 1e-6;
+    if (v === null || !isFinite(v)) return false;
+    // 反向題：係數要是 2、3、5、7 組出的那個值（允許 1.50、15×10⁻⁶ 這類等價寫法）
+    if (q.dir === 'rev') return Math.abs(v - q.val) <= q.val * 0.005;
+    return Math.abs(v * 100 - q.ans) < 1e-6;
   }
 
   /* ---------- Firebase ---------- */
@@ -249,7 +323,7 @@ const PH = (() => {
     CONFIG, LEVELS, COEFS, DISTS,
     makeCode, parseCode, normalizeCode, prettyCode,
     generate, forStudent, normalizeClass,
-    concHTML, concText, solution, fix2, isCorrect, parseAnswer,
+    concHTML, concText, askHTML, ansHTML, ansText, blankHTML, formatAnswerStr, solution, fix2, isCorrect, parseAnswer, DIRS,
     studentId, fetchRecord, fetchAll, saveRecord, toArray, escapeHtml
   };
 })();
