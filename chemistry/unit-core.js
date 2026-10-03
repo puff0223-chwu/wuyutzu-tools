@@ -25,7 +25,7 @@ const UC = (() => {
   const LEVELS = [
     { key: 'basic', name: '基礎', stars: '⭐',       desc: '一步換算：g↔mol、mol↔分子數' },
     { key: 'adv',   name: '進階', stars: '⭐⭐',     desc: '兩步換算：g↔分子數、mol→總原子數' },
-    { key: 'chal',  name: '挑戰', stars: '⭐⭐⭐',   desc: '溶液濃度：CM、重量百分率、ppm' },
+    { key: 'chal',  name: '挑戰', stars: '⭐⭐⭐',   desc: '溶液濃度：C<sub>M</sub>、重量百分率、ppm' },
     { key: 'boss',  name: '魔王', stars: '⭐⭐⭐⭐', desc: '濃度互換（密度）、g↔某種原子數' }
   ];
 
@@ -217,7 +217,7 @@ const UC = (() => {
       const w = massGiven(CM0 * V / 1000 * M), n = r2(w / M), CM = n / (V / 1000), alt = w / M / (V / 1000);
       return { html: `${pick(rng, so.ctx)}：將 ${massStr(w)} g 的${nameF(id)}溶於水，配成 ${V} mL 的溶液，其體積莫耳濃度（C<sub>M</sub>）為多少 M？`,
         route: ['g', 'mol', 'CM'], kind: 'plain', unit: 'M', ans: CM, alt, els: els(id),
-        steps: [molarMassLine(id), `n = ${massStr(w)} ÷ ${trimNum(M)} = ${fix2(n)} mol`, `C_M = ${fix2(n)} ÷ ${V / 1000} L = ${fix2(CM)} M`] };
+        steps: [molarMassLine(id), `n = ${massStr(w)} ÷ ${trimNum(M)} = ${fix2(n)} mol`, `CM = ${fix2(n)} ÷ ${V / 1000} L = ${fix2(CM)} M`] };
     },
     CM2g(rng) {
       const so = pick(rng, SOLUTES), id = so.s, M = molarMass(id);
@@ -276,7 +276,7 @@ const UC = (() => {
       return { html: `${ctx}：${nameF(id)}溶液的重量百分率為 ${trimNum(p)}%、密度為 ${d.toFixed(2)} g/mL，其體積莫耳濃度（C<sub>M</sub>）為多少 M？`,
         route: ['pct', 'g', 'mol', 'CM'], kind: 'plain', unit: 'M', ans: n, alt: mass * p / 100 / M, els: els(id),
         steps: [molarMassLine(id), `取 1 L（1000 mL）溶液：質量 = 1000 × ${d.toFixed(2)} = ${trimNum(mass)} g`,
-          `溶質質量 = ${trimNum(mass)} × ${trimNum(p)}% = ${fix2(solute)} g`, `n = ${fix2(solute)} ÷ ${trimNum(M)} = ${fix2(n)} mol，C_M = ${fix2(n)} M`] };
+          `溶質質量 = ${trimNum(mass)} × ${trimNum(p)}% = ${fix2(solute)} g`, `n = ${fix2(solute)} ÷ ${trimNum(M)} = ${fix2(n)} mol，CM = ${fix2(n)} M`] };
     },
     CM2pct(rng) {
       const so = pick(rng, SOLUTES), id = so.s, M = molarMass(id);
@@ -317,7 +317,7 @@ const UC = (() => {
       return { html: `${pick(rng, so.ctx)}：將 ${massStr(w1)} g 的${nameF(id)}溶於 ${w2} g 的水中，所得溶液的密度為 ${d.toFixed(2)} g/mL，其體積莫耳濃度（C<sub>M</sub>）為多少 M？`,
         route: ['g', 'mol', 'CM'], kind: 'plain', unit: 'M', ans: CM, alt, els: els(id),
         steps: [molarMassLine(id), `n = ${massStr(w1)} ÷ ${trimNum(M)} = ${fix2(n)} mol`,
-          `溶液體積 = (${massStr(w1)} + ${w2}) ÷ ${d.toFixed(2)} = ${fix2(V)} mL`, `C_M = ${fix2(n)} ÷ ${trimNum(V / 1000)} L = ${fix2(CM)} M`] };
+          `溶液體積 = (${massStr(w1)} + ${w2}) ÷ ${d.toFixed(2)} = ${fix2(V)} mL`, `CM = ${fix2(n)} ÷ ${trimNum(V / 1000)} L = ${fix2(CM)} M`] };
     }
   };
   const LEVEL_TYPES = [
@@ -459,10 +459,15 @@ const UC = (() => {
     }).join('');
     const nodes = Object.entries(NODES).map(([k, n]) => `<g class="node${on.has(k) ? ' on' : ''}">
       <rect x="${n.x - W / 2}" y="${n.y - H / 2}" width="${W}" height="${H}" rx="10"/>
-      <text x="${n.x}" y="${n.y + 5}" text-anchor="middle">${n.label}</text></g>`).join('');
+      <text x="${n.x}" y="${n.y + 5}" text-anchor="middle">${svgLabel(n.label)}</text></g>`).join('');
     return `<svg class="umap" viewBox="20 8 400 412" role="img" aria-label="單位換算地圖">${lines}${nodes}</svg>`;
   }
   const routeText = route => route.map(k => NODES[k].label).join(' → ');
+  // 體積莫耳濃度 C_M 的 M 要下標：SVG 用 tspan、HTML 用 <sub>
+  const svgLabel = s => String(s).replace(/\bCM\b/g, 'C<tspan baseline-shift="sub" font-size="10">M</tspan>');
+  // 純文字 → 安全的 HTML，並把 CM 顯示成 C<sub>M</sub>
+  const richText = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+    .replace(/\bCM\b/g, 'C<sub>M</sub>');
 
   /* ---------- Firebase ---------- */
   const studentId = (cls, seat) => `${normalizeClass(cls)}_${Number(seat)}`.replace(/[.$#\[\]\/\x00-\x1F\x7F]/g, '_');
@@ -492,7 +497,7 @@ const UC = (() => {
     generate, forStudent, normalizeClass,
     qText, ansText, ansHTML, atomicHTML, sci, fix2,
     parseAnswer, isCorrect, formatAnswerStr,
-    mapSVG, routeText,
+    mapSVG, routeText, richText,
     studentId, fetchRecord, fetchAll, saveRecord, toArray, escapeHtml
   };
 })();

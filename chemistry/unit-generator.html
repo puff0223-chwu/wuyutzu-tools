@@ -143,7 +143,7 @@
   </section>
 </div>
 
-<script src="unit-core.js?v=20261003b"></script>
+<script src="unit-core.js?v=20261003c"></script>
 <script>
 const $ = id => document.getElementById(id);
 let S = null;
@@ -283,9 +283,9 @@ function showRoute(i) {
   if (!S.parsed.hint) return;
   const q = S.qs[i];
   $('rt' + i).classList.remove('hidden');
-  $('rt' + i).textContent = `🗺️ 路線提示：${UC.routeText(q.route)}`;
+  $('rt' + i).innerHTML = `🗺️ 路線提示：${UC.richText(UC.routeText(q.route))}`;
   $('map').innerHTML = UC.mapSVG(q.route, S.parsed.formula);
-  $('map-cap').textContent = `第 ${i + 1} 頁的路線：${UC.routeText(q.route)}`;
+  $('map-cap').innerHTML = `第 ${i + 1} 頁的路線：${UC.richText(UC.routeText(q.route))}`;
 }
 
 /* ---------- 即時對錯 ---------- */

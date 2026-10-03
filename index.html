@@ -206,6 +206,8 @@ const DRAWERS = [
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// 顯示用：跳脫後把體積莫耳濃度 CM 的 M 改成下標
+const rich = s => esc(s).replace(/\bCM\b/g, 'C<sub>M</sub>');
 let filterDrawer = -1;
 
 // 卷宗編號：抽屜代號＋序號，例如 I-03
@@ -239,7 +241,7 @@ function cardHTML(t) {
   const pill = t.case ? `<span class="pill case">${esc(t.case)}</span>` : t.teacher ? `<span class="pill lock">🔒 老師專用</span>` : '';
   return `<button class="card" data-id="${t.id}" type="button" style="--accent:${d.color};--soft:${d.soft}">
     <span class="icon" aria-hidden="true">${t.icon}</span>
-    <span><span class="name">${esc(t.name)}</span><br><span class="brief">${esc(t.brief)}</span>${pill ? '<br>' + pill : ''}</span>
+    <span><span class="name">${esc(t.name)}</span><br><span class="brief">${rich(t.brief)}</span>${pill ? '<br>' + pill : ''}</span>
   </button>`;
 }
 function render() {
@@ -273,11 +275,11 @@ function openDossier(id) {
       <button class="close" id="d-close" aria-label="關閉">✕</button>
       <div class="no">${t.no}${t.case ? ' · ' + esc(t.case) : ''} · ${esc(d.name)}</div>
       <h3 id="d-title"><span aria-hidden="true">${t.icon}</span>${esc(t.title)}</h3>
-      <div class="sub">${esc(t.sub)}</div>
+      <div class="sub">${rich(t.sub)}</div>
     </div>
     <div class="d-body">
       ${t.teacher ? `<div class="warn">🔒 老師專用頁面，含答案與管理功能，請勿提供給學生。</div>` : ''}
-      <ul>${t.features.map(f => `<li>${esc(f)}</li>`).join('')}</ul>
+      <ul>${t.features.map(f => `<li>${rich(f)}</li>`).join('')}</ul>
       <a class="go" href="${esc(t.href)}" target="_blank" rel="noopener">${t.teacher ? '🔒 ' : ''}${esc(t.btn)} →</a>
       ${t.note ? `<p class="note">${esc(t.note)}</p>` : ''}
     </div>`;

@@ -251,7 +251,7 @@
   <div class="url" id="ov-url"></div>
 </div>
 
-<script src="unit-core.js?v=20261003b"></script>
+<script src="unit-core.js?v=20261003c"></script>
 <script>
 const $ = id => document.getElementById(id);
 const esc = UC.escapeHtml;
@@ -405,7 +405,7 @@ function renderProjection() {
       <div class="ptext">${q.html}</div>
       ${UC.atomicHTML(q) ? `<div class="atomic">原子量：${UC.atomicHTML(q)}</div><br>` : ''}
       <button class="btn ghost" data-i="${i}">顯示答案</button>
-      <div class="sol hidden" id="sol${i}"><div style="color:var(--route);font-weight:700">🗺️ ${esc(UC.routeText(q.route))}</div>${q.steps.map(esc).join('<br>')}<div class="ans">${UC.ansHTML(q)}</div></div>
+      <div class="sol hidden" id="sol${i}"><div style="color:var(--route);font-weight:700">🗺️ ${UC.richText(UC.routeText(q.route))}</div>${q.steps.map(UC.richText).join('<br>')}<div class="ans">${UC.ansHTML(q)}</div></div>
     </div>`;
   }).join('');
   $('proj-list').querySelectorAll('button[data-i]').forEach(b => b.onclick = () => {
@@ -440,7 +440,7 @@ $('btn-print').onclick = () => {
     html += `<h3 style="margin-bottom:8px">解答表｜${esc(cls)} 班｜題組碼 ${UC.prettyCode(current.code)}</h3>
       <table class="keytable"><tr><th>座號</th><th>題目與解法</th></tr>` +
       seats.map(seat => `<tr><td>${seat}</td><td>${UC.forStudent(current, cls, seat).map((q, i) =>
-        `${i + 1}. ${esc(UC.qText(q))} → <b>${UC.ansHTML(q)}</b><br><span style="color:#555">${q.steps.map(esc).join('；')}</span>`).join('<br>')}</td></tr>`).join('') +
+        `${i + 1}. ${q.html} → <b>${UC.ansHTML(q)}</b><br><span style="color:#555">${q.steps.map(UC.richText).join('；')}</span>`).join('<br>')}</td></tr>`).join('') +
       `</table>`;
   }
   if (!html) return alertBox('請至少勾選一種要列印的內容');
@@ -497,7 +497,7 @@ async function refreshBoard() {
     ${x.qs.map((q, i) => {
       const a = x.answers[i].trim();
       const cls2 = a ? (x.correct[i] ? 'ok' : 'bad') : '';
-      return `<td class="qcell" title="${esc(UC.qText(q))}"><div class="qtxt">${UC.LEVELS[q.level].stars} ${esc(UC.routeText(q.route))}</div><div class="key">解 ${UC.ansHTML(q)}</div>
+      return `<td class="qcell" title="${esc(UC.qText(q))}"><div class="qtxt">${UC.LEVELS[q.level].stars} ${UC.richText(UC.routeText(q.route))}</div><div class="key">解 ${UC.ansHTML(q)}</div>
         <div class="stu ${cls2}">${a ? esc(UC.formatAnswerStr(a)) + (x.correct[i] ? ' ✓' : ' ✗') : (x.r ? '—' : '')}</div>
         ${instant && x.attempts[i] ? `<div class="tries">試 ${x.attempts[i]} 次</div>` : ''}</td>`;
     }).join('')}
