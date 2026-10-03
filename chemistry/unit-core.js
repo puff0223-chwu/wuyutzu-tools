@@ -333,16 +333,17 @@ const UC = (() => {
   for (let x = 0; x <= 5; x++) for (let y = 0; y <= 5 - x; y++) for (let z = 0; z <= 5 - x - y; z++)
     DISTS.push([x, y, z, 5 - x - y - z]);
   const ROUNDS = 32 ** 4;
-  const checksum = vals => (vals.reduce((s, v, i) => s + (i + 1) * v, 0) + CONFIG.CODE_SALT) % 32;
+  // 檢查碼的 salt 同時記錄「地圖是否顯示換算公式」：CODE_SALT＝顯示（舊題組碼都是這種）、CODE_SALT+1＝不顯示
+  const checksum = (vals, salt) => (vals.reduce((s, v, i) => s + (i + 1) * v, 0) + salt) % 32;
 
-  function makeCode({ dist, instant, hint, round }) {
+  function makeCode({ dist, instant, hint, formula = true, round }) {
     const di = DISTS.findIndex(d => d.join() === dist.join());
     if (di < 0) throw new Error('難度分配加總必須是 5');
     if (round === undefined) round = Math.floor(Math.random() * ROUNDS);
     let P = (round * DISTS.length + di) * 4 + (instant ? 1 : 0) + (hint ? 2 : 0);
     const vals = [];
     for (let i = 0; i < 6; i++) { vals.unshift(P % 32); P = Math.floor(P / 32); }
-    vals.push(checksum(vals));
+    vals.push(checksum(vals, CONFIG.CODE_SALT + (formula ? 0 : 1)));
     return vals.map(v => ALPHA[v]).join('');
   }
   const normalizeCode = str => String(str || '').toUpperCase().replace(/[^0-9A-Z]/g, '');
@@ -350,11 +351,15 @@ const UC = (() => {
     const code = normalizeCode(str);
     if (code.length !== 7) return null;
     const vals = [...code].map(ch => ALPHA.indexOf(ch));
-    if (vals.some(v => v < 0) || checksum(vals.slice(0, 6)) !== vals[6]) return null;
+    if (vals.some(v => v < 0)) return null;
+    let formula;
+    if (checksum(vals.slice(0, 6), CONFIG.CODE_SALT) === vals[6]) formula = true;
+    else if (checksum(vals.slice(0, 6), CONFIG.CODE_SALT + 1) === vals[6]) formula = false;
+    else return null;
     let P = 0;
     for (let i = 0; i < 6; i++) P = P * 32 + vals[i];
     const flags = P % 4; P = Math.floor(P / 4);
-    return { code, round: Math.floor(P / DISTS.length), dist: DISTS[P % DISTS.length].slice(), instant: !!(flags & 1), hint: !!(flags & 2) };
+    return { code, round: Math.floor(P / DISTS.length), dist: DISTS[P % DISTS.length].slice(), instant: !!(flags & 1), hint: !!(flags & 2), formula };
   }
   const prettyCode = code => code.slice(0, 3) + '-' + code.slice(3);
 
@@ -441,7 +446,8 @@ const UC = (() => {
     ['g', 'ppm', '溶液質量 ×10⁶', 200, 384, 'middle']
   ];
   const edgeKey = (a, b) => [a, b].sort().join('-');
-  function mapSVG(route) {
+  // showFormula=false：只畫單位方塊和連線，不顯示「× 分子量 M」這類換算公式
+  function mapSVG(route, showFormula = true) {
     const on = new Set(route || []);
     const onEdges = new Set();
     (route || []).forEach((n, i) => { if (i) onEdges.add(edgeKey(route[i - 1], n)); });
@@ -449,7 +455,7 @@ const UC = (() => {
     const lines = EDGES.map(([a, b, lab, lx, ly, anchor]) => {
       const A = NODES[a], B = NODES[b];
       return `<g class="edge${onEdges.has(edgeKey(a, b)) ? ' on' : ''}"><line x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}"/>
-        <text x="${lx}" y="${ly}" text-anchor="${anchor}">${lab}</text></g>`;
+        ${showFormula ? `<text x="${lx}" y="${ly}" text-anchor="${anchor}">${lab}</text>` : ''}</g>`;
     }).join('');
     const nodes = Object.entries(NODES).map(([k, n]) => `<g class="node${on.has(k) ? ' on' : ''}">
       <rect x="${n.x - W / 2}" y="${n.y - H / 2}" width="${W}" height="${H}" rx="10"/>

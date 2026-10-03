@@ -160,6 +160,7 @@
     </div>
     <h3>其他</h3>
     <label class="opt" style="max-width:560px"><input type="checkbox" id="opt-log" checked><div><b>顯示「單位換算地圖」與路線提示</b><div class="hint">學生頁上方顯示換算地圖；即時對錯模式下答錯時，會亮出該題要走的路線（不給答案）。</div></div></label>
+    <label class="opt" id="opt-formula-box" style="max-width:560px;margin-left:28px"><input type="checkbox" id="opt-formula" checked><div><b>地圖上顯示換算公式</b><div class="hint">例如「× / ÷ 分子量 M」「溶液體積 V(L)」「密度」。取消勾選時，地圖只有單位方塊和路線，學生要自己想怎麼算。</div></div></label>
 
     <div class="row" style="margin-top:16px">
       <button class="btn" id="btn-new">✨ 產生新題組碼</button>
@@ -262,6 +263,12 @@ function showTab(t) {
 }
 
 /* ---------- ① 出題設定 ---------- */
+function syncFormulaBox() {
+  const on = $('opt-log').checked;
+  $('opt-formula').disabled = !on;
+  $('opt-formula-box').style.opacity = on ? 1 : 0.45;
+}
+$('opt-log').addEventListener('change', syncFormulaBox);
 function renderLevels() {
   $('levels').innerHTML = UC.LEVELS.map((lv, i) => `<div class="lv">
     <div class="stars">${lv.stars}</div><div class="name">${lv.name}</div><div class="desc">${lv.desc}</div>
@@ -282,7 +289,8 @@ $('btn-new').onclick = () => {
   const code = UC.makeCode({
     dist: dist.slice(),
     instant: document.querySelector('input[name=mode]:checked').value === 'instant',
-    hint: $('opt-log').checked
+    hint: $('opt-log').checked,
+    formula: $('opt-formula').checked
   });
   useCode(code, true);
 };
@@ -300,6 +308,8 @@ function useCode(code, remember) {
   current.dist.forEach((v, i) => dist[i] = v);
   document.querySelector(`input[name=mode][value=${current.instant ? 'instant' : 'graded'}]`).checked = true;
   $('opt-log').checked = current.hint;
+  $('opt-formula').checked = current.formula;
+  syncFormulaBox();
   renderLevels();
   if (remember) rememberCode(code);
   try { localStorage.setItem('unit-teacher-current', code); } catch (e) {}
@@ -318,7 +328,7 @@ const studentLink = () => `${STUDENT_PAGE}?code=${current.code}`;
 
 function describe(p) {
   const parts = UC.LEVELS.map((lv, i) => p.dist[i] ? `${lv.name}${p.dist[i]}` : '').filter(Boolean).join('、');
-  return `${parts}｜${p.instant ? '即時對錯' : '交卷批改'}｜${p.hint ? '顯示地圖與路線提示' : '不顯示地圖'}`;
+  return `${parts}｜${p.instant ? '即時對錯' : '交卷批改'}｜${p.hint ? (p.formula ? '地圖＋路線＋公式' : '地圖＋路線（不顯示公式）') : '不顯示地圖'}`;
 }
 function renderCurrent() {
   $('current').innerHTML = current

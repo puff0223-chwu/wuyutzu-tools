@@ -224,7 +224,7 @@ function render() {
     `<span class="chip">${p.instant ? '✅ 即時對錯' : '📝 交卷後由老師批改'}</span>`;
   $('mapbox').classList.toggle('hidden', !p.hint);
   if (p.hint) {
-    $('map').innerHTML = UC.mapSVG([]);
+    $('map').innerHTML = UC.mapSVG([], p.formula);
     if (!p.instant) $('map-cap').textContent = '先想清楚要從哪個單位走到哪個單位，再動手計算。';
   }
 
@@ -278,7 +278,7 @@ function showRoute(i) {
   const q = S.qs[i];
   $('rt' + i).classList.remove('hidden');
   $('rt' + i).textContent = `🗺️ 路線提示：${UC.routeText(q.route)}`;
-  $('map').innerHTML = UC.mapSVG(q.route);
+  $('map').innerHTML = UC.mapSVG(q.route, S.parsed.formula);
   $('map-cap').textContent = `第 ${i + 1} 題的路線：${UC.routeText(q.route)}`;
 }
 
@@ -300,7 +300,7 @@ function check(i) {
   if (S.history.length > 100) S.history = S.history.slice(-100);
   if (!ok) { const box = $('q' + i); box.classList.add('bad'); box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake'); }
   paintQuestion(i);
-  if (ok && S.parsed.hint) { $('map').innerHTML = UC.mapSVG([]); $('map-cap').textContent = '答錯時，這張地圖會亮出該題要走的路線。'; }
+  if (ok && S.parsed.hint) { $('map').innerHTML = UC.mapSVG([], S.parsed.formula); $('map-cap').textContent = '答錯時，這張地圖會亮出該題要走的路線。'; }
   renderFoot();
   save();
 }
