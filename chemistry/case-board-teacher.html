@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>📌 No.940 案件委託公告欄｜老師頁</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --wall: #1f2b33; --wall-2: #2a3943; --card: #fbf6ea; --line: #e6dcc6;
+    --pin: #d1495b; --amber: #f2b134; --green: #3a9d6a; --ink: #22303a; --muted: #7d8a93; --soft: #9fb0ba;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif; background: var(--wall); color: var(--card); min-height: 100vh; padding: 16px; }
+  .wrap { max-width: 1280px; margin: 0 auto; }
+  .hidden { display: none !important; }
+  .eyebrow { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.2em; color: var(--pin); }
+  h1 { font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: 1.9em; }
+  h1 small { font-family: 'Noto Sans TC', sans-serif; font-size: 0.45em; color: var(--soft); font-weight: 400; margin-left: 8px; }
+
+  .current { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 12px 0; background: var(--wall-2); border-radius: 12px; padding: 10px 14px; }
+  .current .code { font-family: 'Bebas Neue', sans-serif; font-size: 1.7em; color: var(--amber); letter-spacing: 0.15em; }
+  .current .meta { color: var(--soft); font-size: 0.9em; }
+  .current .state { margin-left: auto; font-size: 0.85em; }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .tabs button { font: inherit; border: none; padding: 9px 16px; border-radius: 999px; cursor: pointer; background: var(--wall-2); color: var(--soft); }
+  .tabs button.on { background: var(--amber); color: #2a2000; font-weight: 700; }
+
+  .paper { background: var(--card); color: var(--ink); border-radius: 14px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+  .paper h2 { font-size: 1.15em; margin-bottom: 10px; }
+  .paper h3 { font-size: 1em; margin: 18px 0 8px; }
+  .hint { color: #6b6248; font-size: 0.88em; line-height: 1.6; }
+  label.l { font-size: 0.82em; color: #6b6248; font-weight: 700; display: block; margin-bottom: 4px; }
+  input[type=text], input[type=number] { font: inherit; padding: 9px 11px; border-radius: 9px; border: 2px solid var(--line); background: #fff; color: var(--ink); outline: none; }
+  input:focus { border-color: var(--amber); }
+  .btn { font: inherit; font-weight: 700; border: none; border-radius: 10px; padding: 10px 16px; cursor: pointer; background: var(--amber); color: #2a2000; }
+  .btn.dark { background: var(--ink); color: #fff; }
+  .btn.red { background: var(--pin); color: #fff; }
+  .btn.green { background: var(--green); color: #fff; }
+  .btn.ghost { background: #fff; border: 2px solid var(--line); color: var(--ink); }
+  .btn:disabled { opacity: 0.4; cursor: default; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+
+  .result { margin-top: 16px; display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: center; background: #fff; border-radius: 12px; padding: 16px; border: 2px dashed var(--amber); }
+  .bigcode { font-family: 'Bebas Neue', sans-serif; font-size: 3em; letter-spacing: 0.15em; color: var(--ink); }
+  .linkbox { font-family: monospace; font-size: 0.8em; word-break: break-all; color: #555; margin: 4px 0 10px; }
+  .qr { width: 150px; height: 150px; }
+  .qr img, .qr canvas { width: 100% !important; height: 100% !important; }
+  .recent { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .recent .rc { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #fff; }
+  .recent .rc button { font: inherit; font-size: 0.85em; border: none; background: #fff; padding: 5px 9px; cursor: pointer; color: var(--ink); }
+  .recent .rc .del { color: #b33; border-left: 1px solid var(--line); }
+  .recent .clear { font: inherit; font-size: 0.85em; border: none; background: none; color: #b33; cursor: pointer; }
+
+  /* ===== 投影牆 ===== */
+  #wall { background: var(--wall); border-radius: 14px; }
+  #wall:fullscreen { padding: 22px; overflow: auto; }
+  .wall-head { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+  .wall-head .title { font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: 1.8em; }
+  .wall-head .sub { color: var(--soft); }
+  .wall-head .join { margin-left: auto; display: flex; align-items: center; gap: 12px; background: var(--wall-2); border-radius: 12px; padding: 8px 12px; }
+  .wall-head .join .qr { width: 86px; height: 86px; background: #fff; padding: 5px; border-radius: 8px; }
+  .wall-head .join .c { font-family: 'Bebas Neue', sans-serif; font-size: 2.2em; letter-spacing: 0.15em; color: var(--amber); line-height: 1; }
+  .wall-tools { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+  .wall-tools .sync { margin-left: auto; font-size: 0.85em; }
+  .cols { display: grid; grid-template-columns: 1.15fr 1.15fr 0.8fr; gap: 14px; align-items: start; }
+  .col { background: rgba(255,255,255,0.04); border-radius: 14px; padding: 12px; min-height: 300px; }
+  .col h3 { display: flex; align-items: center; gap: 8px; font-size: 1.25em; margin-bottom: 12px; }
+  .col h3 .n { font-family: 'Bebas Neue', sans-serif; font-size: 1.3em; background: var(--wall-2); border-radius: 8px; padding: 0 10px; }
+  .card { position: relative; background: var(--card); color: var(--ink); border-radius: 6px; padding: 14px 14px 12px 16px; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; }
+  .card::before { content: ''; position: absolute; top: -6px; left: 16px; width: 15px; height: 15px; border-radius: 50%; background: var(--pin); box-shadow: 0 2px 3px rgba(0,0,0,0.35); }
+  .col.taken .card::before { background: var(--amber); }
+  .col.done .card::before { background: var(--green); }
+  .card .src { font-weight: 900; font-size: 1.3em; line-height: 1.35; }
+  .card .q { color: #4b4436; margin-top: 4px; font-size: 1em; }
+  .card .who { margin-top: 8px; font-size: 1.05em; }
+  .card .who b { color: var(--ink); }
+  .card .time { position: absolute; right: 12px; top: 10px; font-size: 0.85em; color: var(--muted); }
+  .card.old .time { color: var(--pin); font-weight: 700; }
+  .col.done .card { padding: 10px 12px; cursor: default; }
+  .col.done .card .src { font-size: 1em; }
+  .col.done .card .who { font-size: 0.9em; margin-top: 4px; }
+  .empty { color: var(--soft); text-align: center; padding: 30px 6px; }
+
+  /* ===== 統計 ===== */
+  .summary { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 6px 0 14px; }
+  .summary > div { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 10px; text-align: center; }
+  .summary .n { font-family: 'Bebas Neue', sans-serif; font-size: 2em; line-height: 1; }
+  .summary .k { font-size: 0.8em; color: var(--muted); }
+  .table-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.92em; background: #fff; }
+  th, td { border: 1px solid var(--line); padding: 7px 8px; text-align: center; }
+  th { background: #efe9d8; cursor: pointer; white-space: nowrap; }
+  td.l { text-align: left; }
+
+  /* 彈窗 */
+  .overlay { position: fixed; inset: 0; background: rgba(10,16,20,0.6); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
+  .overlay.on { display: flex; }
+  .modal { background: var(--card); color: var(--ink); border-radius: 14px; padding: 20px; width: min(440px, 100%); }
+  .modal h3 { margin-bottom: 6px; }
+  .modal .acts { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+  .big-overlay { position: fixed; inset: 0; background: var(--wall); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 20px; text-align: center; }
+  .big-overlay .qr { width: min(44vh, 70vw); height: min(44vh, 70vw); background: #fff; padding: 14px; border-radius: 14px; }
+  .big-overlay .c { font-family: 'Bebas Neue', sans-serif; font-size: min(15vw, 9em); letter-spacing: 0.12em; color: var(--amber); line-height: 1; }
+  .big-overlay .close { position: absolute; top: 16px; right: 20px; }
+
+  @media (max-width: 900px) { .cols { grid-template-columns: 1fr; } .summary { grid-template-columns: repeat(2, 1fr); } .result { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Case Request Board · No.940</div>
+  <h1>案件委託公告欄 <small>老師頁 · 請勿提供給學生</small></h1>
+  <div class="current" id="current"></div>
+
+  <div class="tabs" id="tabs">
+    <button data-t="setup" class="on">① 開設公告欄</button>
+    <button data-t="wall">② 投影公告欄</button>
+    <button data-t="stats">③ 統計與獎勵</button>
+  </div>
+
+  <!-- ① 開設 -->
+  <section class="paper" id="t-setup">
+    <h2>開設新的公告欄</h2>
+    <p class="hint">每一場解題時間開一個公告欄，例如「101 期中考前解題」。學生用代碼或掃 QR Code 加入。</p>
+    <div class="row" style="margin-top:12px">
+      <div style="flex:1;min-width:220px"><label class="l">公告欄名稱</label><input type="text" id="in-title" maxlength="40" placeholder="例：101 期中考前解題時間" style="width:100%"></div>
+      <button class="btn" id="btn-new">📌 開設公告欄</button>
+    </div>
+    <h3>或打開以前的公告欄</h3>
+    <div class="row">
+      <input type="text" id="in-load" placeholder="例：A7K-3QX" style="width:160px;text-transform:uppercase">
+      <button class="btn dark" id="btn-load">打開</button>
+    </div>
+    <div class="recent" id="recent"></div>
+    <div class="result hidden" id="result">
+      <div class="qr" id="qr-small"></div>
+      <div>
+        <div class="hint" id="res-title"></div>
+        <div class="bigcode" id="res-code"></div>
+        <div class="linkbox" id="res-link"></div>
+        <div class="row">
+          <button class="btn" id="btn-copy">📋 複製學生連結</button>
+          <button class="btn dark" id="btn-show">🖥️ 全螢幕顯示 QR Code</button>
+          <button class="btn green" id="btn-go-wall">打開投影公告欄 →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ② 投影牆 -->
+  <section id="t-wall" class="hidden">
+    <div id="wall">
+      <div class="wall-head">
+        <div><div class="title" id="w-title">案件委託公告欄</div><div class="sub">有問題就發委託，會的人就來接案！</div></div>
+        <div class="join"><div class="qr" id="qr-wall"></div><div><div class="sub">掃碼或輸入代碼</div><div class="c" id="w-code"></div></div></div>
+      </div>
+      <div class="wall-tools">
+        <button class="btn" id="btn-fs">⛶ 全螢幕投影</button>
+        <button class="btn ghost" id="btn-toggle-open"></button>
+        <span class="hint" style="color:var(--soft)">點卡片可以「老師承接」或移除不適當的委託</span>
+        <span class="sync" id="sync"></span>
+      </div>
+      <div class="cols">
+        <div class="col open"><h3>📌 待承接 <span class="n" id="n-open">0</span></h3><div id="c-open"></div></div>
+        <div class="col taken"><h3>🔍 偵辦中 <span class="n" id="n-taken">0</span></h3><div id="c-taken"></div></div>
+        <div class="col done"><h3>✅ 已破案 <span class="n" id="n-done">0</span></h3><div id="c-done"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ③ 統計 -->
+  <section class="paper hidden" id="t-stats">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <h2 style="margin:0">統計與獎勵</h2>
+      <button class="btn dark" id="btn-xlsx">📥 匯出 Excel</button>
+    </div>
+    <div class="summary" id="summary"></div>
+    <p class="hint">「破案數」＝承接並被委託人按完成的案件數，每案 1 點。平均星數老師隨時看得到；學生自己要累積 5 個評價後才會看到平均。點欄位標題可以排序。</p>
+    <div class="table-wrap" id="st-table" style="margin-top:10px"></div>
+  </section>
+</div>
+
+<!-- 卡片動作 -->
+<div class="overlay" id="ov-card"><div class="modal" id="card-modal"></div></div>
+<!-- 全螢幕 QR -->
+<div class="big-overlay hidden" id="big">
+  <button class="btn dark close" id="btn-big-close">✕ 關閉</button>
+  <div style="font-size:1.4em">📌 No.940 案件委託公告欄｜掃碼或輸入代碼加入</div>
+  <div class="qr" id="qr-big"></div>
+  <div class="c" id="big-code"></div>
+  <div style="color:var(--soft);word-break:break-all" id="big-url"></div>
+</div>
+
+<script src="case-board-core.js?v=20261005a"></script>
+<script>
+const $ = id => document.getElementById(id);
+const esc = CB.esc;
+const STUDENT_PAGE = new URL('case-board.html', location.href).href;
+let CODE = null, SUB = null, STATE = {}, sortKey = 'seat', sortDir = 1;
+
+/* ---------- 分頁 ---------- */
+document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => showTab(b.dataset.t));
+function showTab(t) {
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+  ['setup', 'wall', 'stats'].forEach(x => $('t-' + x).classList.toggle('hidden', x !== t));
+  render();
+}
+
+/* ---------- 開設與打開 ---------- */
+$('btn-new').onclick = async () => {
+  const title = $('in-title').value.trim() || `解題時間 ${new Date().toLocaleDateString('zh-TW')}`;
+  const code = CB.makeCode();
+  try { await CB.putMeta(code, { title, createdAt: Date.now(), open: true }); }
+  catch (e) { console.error(e); return note('⚠️ 開設失敗：請檢查網路，或確認 Firebase 規則已更新'); }
+  $('in-title').value = '';
+  useCode(code, title);
+};
+$('btn-load').onclick = async () => {
+  const code = CB.normalizeCode($('in-load').value);
+  if (!CB.validCode(code)) return note('代碼是 6 個字，請再確認');
+  const meta = await CB.getMeta(code).catch(() => null);
+  if (!meta) return note('找不到這個公告欄');
+  $('in-load').value = '';
+  useCode(code, meta.title);
+};
+
+function useCode(code, title) {
+  CODE = code;
+  rememberCode(code, title);
+  try { localStorage.setItem('case-board-teacher-current', code); } catch (e) {}
+  const link = `${STUDENT_PAGE}?code=${code}`;
+  $('result').classList.remove('hidden');
+  $('res-title').textContent = title || '';
+  $('res-code').textContent = CB.prettyCode(code);
+  $('res-link').textContent = link;
+  drawQR('qr-small', link, 150);
+  drawQR('qr-wall', link, 120);
+  $('w-code').textContent = CB.prettyCode(code);
+  if (SUB) SUB.close();
+  STATE = {};
+  SUB = CB.subscribe(code, s => { STATE = s; render(); }, setSync);
+  render();
+}
+const link = () => `${STUDENT_PAGE}?code=${CODE}`;
+
+function loadRecent() { try { return JSON.parse(localStorage.getItem('case-board-teacher-recent') || '[]'); } catch (e) { return []; } }
+function saveRecent(l) { try { localStorage.setItem('case-board-teacher-recent', JSON.stringify(l)); } catch (e) {} }
+function rememberCode(code, title) {
+  saveRecent([{ code, title: title || '', t: Date.now() }, ...loadRecent().filter(x => x.code !== code)].slice(0, 20));
+  renderRecent();
+}
+// 只從清單移除；Firebase 裡的資料仍保留（要刪請到 Firebase 後台刪 case-board/<代碼>）
+function renderRecent() {
+  const list = loadRecent();
+  $('recent').innerHTML = list.length ? '<span class="hint">最近用過：</span>' + list.map(x => {
+    const d = new Date(x.t);
+    return `<span class="rc"><button class="use" data-c="${x.code}" title="${esc(x.title)}">${CB.prettyCode(x.code)}・${esc(x.title).slice(0, 14)}・${d.getMonth() + 1}/${d.getDate()}</button><button class="del" data-c="${x.code}" title="從清單移除">✕</button></span>`;
+  }).join('') + '<button class="clear" id="btn-clear">🗑️ 全部清除</button>' : '';
+  $('recent').querySelectorAll('.use').forEach(b => b.onclick = () => { const x = loadRecent().find(r => r.code === b.dataset.c); useCode(b.dataset.c, x && x.title); });
+  $('recent').querySelectorAll('.del').forEach(b => b.onclick = () => { saveRecent(loadRecent().filter(r => r.code !== b.dataset.c)); renderRecent(); });
+  const c = $('btn-clear');
+  if (c) c.onclick = () => { if (confirm('確定清除全部「最近用過」嗎？（學生資料不會被刪）')) { saveRecent([]); renderRecent(); } };
+}
+
+$('btn-copy').onclick = async () => {
+  try { await navigator.clipboard.writeText(link()); $('btn-copy').textContent = '✔ 已複製'; } catch (e) { $('btn-copy').textContent = '請手動複製上方連結'; }
+  setTimeout(() => $('btn-copy').textContent = '📋 複製學生連結', 1800);
+};
+$('btn-go-wall').onclick = () => showTab('wall');
+$('btn-show').onclick = () => {
+  if (!CODE) return;
+  $('big').classList.remove('hidden');
+  $('big-code').textContent = CB.prettyCode(CODE); $('big-url').textContent = link();
+  drawQR('qr-big', link(), 512);
+};
+$('btn-big-close').onclick = () => $('big').classList.add('hidden');
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { $('big').classList.add('hidden'); $('ov-card').classList.remove('on'); } });
+
+function drawQR(id, text, size) {
+  const box = $(id); box.innerHTML = '';
+  if (typeof QRCode === 'undefined') { box.innerHTML = '<div class="hint">（QR 載入失敗）</div>'; return; }
+  new QRCode(box, { text, width: size, height: size, correctLevel: QRCode.CorrectLevel.M });
+}
+function note(msg) { $('current').innerHTML = `<span style="color:#ffb4a8">⚠️ ${esc(msg)}</span>`; setTimeout(render, 2500); }
+let lastSync = '';
+function setSync(s) {
+  lastSync = s || lastSync; s = lastSync;
+  $('sync').textContent = { live: '● 即時同步中', poll: '● 同步中', reconnect: '○ 重新連線中…', offline: '○ 連線中斷' }[s] || '';
+  $('sync').style.color = s === 'live' || s === 'poll' ? '#5fd394' : '#ff8a96';
+}
+
+/* ---------- 畫面 ---------- */
+function render() {
+  const meta = STATE.meta;
+  $('current').innerHTML = CODE
+    ? `<span>目前公告欄</span><span class="code">${CB.prettyCode(CODE)}</span><span class="meta">${esc(meta ? meta.title : '')}</span>
+       <span class="state">${meta && meta.open === false ? '⛔ 已停止收件' : '🟢 收件中'}</span>`
+    : `<span class="meta">尚未選擇公告欄：請先開設或打開一個</span>`;
+  if (!CODE) return;
+  renderWall(); renderStats();
+}
+
+function renderWall() {
+  const meta = STATE.meta || {};
+  $('w-title').textContent = meta.title || '案件委託公告欄';
+  $('btn-toggle-open').textContent = meta.open === false ? '▶️ 重新開放收件' : '⏸️ 停止收件';
+  const all = CB.taskList(STATE), now = Date.now();
+  const open = all.filter(t => t.status === 'open').sort((a, b) => a.createdAt - b.createdAt);
+  const taken = all.filter(t => t.status === 'taken').sort((a, b) => a.takenAt - b.takenAt);
+  const done = all.filter(t => t.status === 'done').sort((a, b) => b.doneAt - a.doneAt);
+  $('n-open').textContent = open.length; $('n-taken').textContent = taken.length; $('n-done').textContent = done.length;
+  // 同一個公告欄有好幾班時，名字前面加上班級
+  const multi = new Set(Object.values(STATE.members || {}).map(m => m.cls)).size > 1;
+  const cls = t => multi ? `${esc(t.cls)} 班 ` : '';
+  $('c-open').innerHTML = open.length ? open.map(t => `<div class="card${now - t.createdAt > 10 * 60000 ? ' old' : ''}" data-id="${t.id}">
+      <span class="time">⏱ ${CB.ago(t.createdAt, now)}</span>
+      <div class="src">${esc(CB.sourceText(t))}</div>
+      ${t.note ? `<div class="q">💬 ${esc(t.note)}</div>` : ''}
+      <div class="who">委託人 <b>${cls(t)}${esc(CB.who(t.seat, t.name))}</b>${t.reopened ? `　<span style="color:var(--pin)">↩ 重新委託 ${t.reopened} 次</span>` : ''}</div>
+    </div>`).join('') : '<div class="empty">目前沒有待承接的委託</div>';
+  $('c-taken').innerHTML = taken.length ? taken.map(t => `<div class="card" data-id="${t.id}">
+      <span class="time">⏱ ${CB.ago(t.takenAt, now)}</span>
+      <div class="src">${esc(CB.sourceText(t))}</div>
+      <div class="who">🔍 <b>${t.solver === 'TEACHER' ? '老師' : esc(CB.who(t.solverSeat, t.solverName))}</b> → <b>${esc(CB.who(t.seat, t.name))}</b></div>
+    </div>`).join('') : '<div class="empty">還沒有人在偵辦</div>';
+  $('c-done').innerHTML = done.length ? done.slice(0, 12).map(t => `<div class="card">
+      <div class="src">${esc(CB.sourceText(t))}</div>
+      <div class="who">🏅 ${t.solver === 'TEACHER' ? '老師' : esc(CB.who(t.solverSeat, t.solverName))}　幫　${esc(CB.who(t.seat, t.name))}</div>
+    </div>`).join('') + (done.length > 12 ? `<div class="empty" style="padding:6px">…還有 ${done.length - 12} 件</div>` : '') : '<div class="empty">還沒有破案紀錄</div>';
+  document.querySelectorAll('#c-open .card, #c-taken .card').forEach(c => c.onclick = () => cardMenu(c.dataset.id));
+}
+
+/* 老師對卡片的操作 */
+function cardMenu(id) {
+  const t = (STATE.tasks || {})[id]; if (!t) return;
+  const taken = t.status === 'taken';
+  $('card-modal').innerHTML = `<h3>${esc(CB.sourceText(t))}</h3>
+    <div class="hint">委託人：${esc(CB.who(t.seat, t.name))}${taken ? `　·　偵探：${t.solver === 'TEACHER' ? '老師' : esc(CB.who(t.solverSeat, t.solverName))}` : ''}</div>
+    ${t.note ? `<div class="hint">💬 ${esc(t.note)}</div>` : ''}
+    <div class="acts">
+      ${t.status === 'open' ? '<button class="btn green" data-a="take">👩‍🏫 老師承接這個委託</button>' : ''}
+      ${taken ? '<button class="btn" data-a="reopen">↩️ 放回待承接</button>' : ''}
+      <button class="btn red" data-a="remove">🗑️ 移除這個委託</button>
+      <button class="btn ghost" data-a="close">取消</button>
+    </div>`;
+  $('ov-card').classList.add('on');
+  $('card-modal').querySelectorAll('[data-a]').forEach(b => b.onclick = async () => {
+    const a = b.dataset.a; $('ov-card').classList.remove('on');
+    if (a === 'close') return;
+    const cur = { ...(STATE.tasks || {})[id] };
+    if (a === 'take' && cur.status === 'open') Object.assign(cur, { status: 'taken', solver: 'TEACHER', solverName: '老師', solverSeat: '', takenAt: Date.now() });
+    else if (a === 'reopen' && cur.status === 'taken') {
+      const tries = (Array.isArray(cur.tries) ? cur.tries : Object.values(cur.tries || {})).slice(-10);
+      tries.push({ solver: cur.solver, name: cur.solverName, seat: cur.solverSeat, cls: cur.solverCls || '', at: Date.now(), by: 'teacher' });
+      ['solver', 'solverName', 'solverSeat', 'solverCls', 'takenAt'].forEach(k => delete cur[k]);
+      Object.assign(cur, { status: 'open', tries, reopened: (cur.reopened || 0) + 1 });
+    } else if (a === 'remove') { if (!confirm('確定移除這個委託嗎？')) return; Object.assign(cur, { status: 'removed', removedAt: Date.now() }); }
+    else return;
+    try { await CB.putTask(CODE, id, cur); SUB.refresh(); } catch (e) { console.error(e); note('操作失敗，請再試一次（可能狀態剛被學生改變）'); SUB.refresh(); }
+  });
+}
+$('ov-card').addEventListener('click', e => { if (e.target === $('ov-card')) $('ov-card').classList.remove('on'); });
+
+$('btn-toggle-open').onclick = async () => {
+  const meta = { ...(STATE.meta || {}) };
+  meta.open = meta.open === false;
+  try { await CB.putMeta(CODE, meta); SUB.refresh(); } catch (e) { note('切換失敗'); }
+};
+$('btn-fs').onclick = () => {
+  const w = $('wall');
+  if (document.fullscreenElement) document.exitFullscreen(); else if (w.requestFullscreen) w.requestFullscreen();
+};
+setInterval(() => { if (CODE && !$('t-wall').classList.contains('hidden')) renderWall(); }, 20000);
+
+/* ---------- 統計 ---------- */
+function renderStats() {
+  const rows = CB.stats(STATE), all = CB.taskList(STATE).filter(t => t.status !== 'removed');
+  $('summary').innerHTML = `
+    <div><div class="n">${rows.length}</div><div class="k">參與人數</div></div>
+    <div><div class="n">${all.filter(t => t.status !== 'cancelled').length}</div><div class="k">委託總數</div></div>
+    <div><div class="n">${all.filter(t => t.status === 'done').length}</div><div class="k">已破案</div></div>
+    <div><div class="n">${all.filter(t => t.status === 'open' || t.status === 'taken').length}</div><div class="k">尚未破案</div></div>
+    <div><div class="n">${all.filter(t => t.status === 'done' && t.solver === 'TEACHER').length}</div><div class="k">老師出馬</div></div>`;
+  const cols = [
+    ['cls', '班級'], ['seat', '座號'], ['name', '姓名'], ['posted', '發布委託'], ['solvedMine', '已被解決'],
+    ['cases', '破案數'], ['points', '獎勵點數'], ['avg', '平均星數'], ['nstars', '評價數'], ['tried', '放回次數']
+  ];
+  const data = rows.map(r => ({ ...r, nstars: r.stars.length }));
+  data.sort((a, b) => {
+    const x = a[sortKey], y = b[sortKey];
+    if (x === y) return Number(a.seat) - Number(b.seat);
+    if (x === null || x === undefined || x === '') return 1;
+    if (y === null || y === undefined || y === '') return -1;
+    return (typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'zh-Hant', { numeric: true })) * sortDir;
+  });
+  $('st-table').innerHTML = data.length ? `<table><tr>${cols.map(([k, l]) => `<th data-k="${k}">${l}${sortKey === k ? (sortDir > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('')}</tr>` +
+    data.map(r => `<tr><td>${esc(r.cls)}</td><td>${esc(r.seat)}</td><td class="l">${esc(r.name)}</td><td>${r.posted}</td><td>${r.solvedMine}</td>
+      <td><b>${r.cases}</b></td><td>${r.points}</td><td>${r.avg === null ? '—' : '⭐ ' + r.avg.toFixed(2)}</td><td>${r.stars.length}</td><td>${r.tried}</td></tr>`).join('') + '</table>'
+    : '<p class="hint">還沒有學生加入。</p>';
+  $('st-table').querySelectorAll('th').forEach(th => th.onclick = () => {
+    const k = th.dataset.k;
+    if (sortKey === k) sortDir = -sortDir; else { sortKey = k; sortDir = ['cls', 'seat', 'name'].includes(k) ? 1 : -1; }
+    renderStats();
+  });
+}
+
+$('btn-xlsx').onclick = () => {
+  if (!CODE) return;
+  if (typeof XLSX === 'undefined') return note('Excel 元件載入失敗，請重新整理');
+  const meta = STATE.meta || {};
+  const rows = CB.stats(STATE).map(r => ({ 班級: r.cls, 座號: r.seat, 姓名: r.name, 發布委託: r.posted, 已被解決: r.solvedMine,
+    破案數: r.cases, 獎勵點數: r.points, 平均星數: r.avg === null ? '' : Number(r.avg.toFixed(2)), 評價數: r.stars.length, 放回次數: r.tried }));
+  const fmt = ts => ts ? new Date(ts).toLocaleString('zh-TW') : '';
+  const tasks = CB.taskList(STATE).sort((a, b) => a.createdAt - b.createdAt).map(t => ({
+    狀態: (CB.STATUS[t.status] || {}).label || t.status, 出處: CB.sourceText(t), 卡在哪裡: t.note || '',
+    委託人班級: t.cls, 委託人座號: t.seat, 委託人: t.name,
+    偵探: t.solver === 'TEACHER' ? '老師' : (t.solverName || ''), 偵探座號: t.solverSeat || '',
+    星數: t.stars || '', 重新委託次數: t.reopened || 0, 發布時間: fmt(t.createdAt), 承接時間: fmt(t.takenAt), 破案時間: fmt(t.doneAt)
+  }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows.length ? rows : [{ 說明: '尚無資料' }]), '學生統計');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(tasks.length ? tasks : [{ 說明: '尚無委託' }]), '委託紀錄');
+  XLSX.writeFile(wb, `No940委託公告欄_${(meta.title || CODE).replace(/[\\/:*?"<>|]/g, '_')}.xlsx`);
+};
+
+/* ---------- 啟動 ---------- */
+renderRecent();
+try {
+  const c = localStorage.getItem('case-board-teacher-current');
+  if (c) { const x = loadRecent().find(r => r.code === c); useCode(c, x && x.title); }
+} catch (e) {}
+render();
+</script>
+</body>
+</html>

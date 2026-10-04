@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>📌 No.940 案件委託公告欄</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --wall: #1f2b33; --wall-2: #2a3943; --card: #fbf6ea; --line: #e6dcc6;
+    --pin: #d1495b; --amber: #f2b134; --green: #3a9d6a; --ink: #22303a; --muted: #7d8a93; --soft: #9fb0ba;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif; background: var(--wall); color: var(--card); min-height: 100vh; padding: 14px 14px 90px; }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  .hidden { display: none !important; }
+  .eyebrow { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.2em; color: var(--pin); }
+  h1 { font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: clamp(1.6em, 6vw, 2.2em); letter-spacing: 0.04em; }
+  .sub { color: var(--soft); font-size: 0.92em; margin: 4px 0 14px; line-height: 1.6; }
+
+  .paper { background: var(--card); color: var(--ink); border-radius: 12px; padding: 18px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  label.l { font-size: 0.8em; color: #6b6248; font-weight: 700; display: block; margin: 10px 0 4px; }
+  input[type=text], input[type=number], select, textarea {
+    width: 100%; font: inherit; font-size: 1em; padding: 10px 12px; border-radius: 10px;
+    border: 2px solid var(--line); background: #fff; color: var(--ink); outline: none;
+  }
+  textarea { resize: vertical; min-height: 64px; }
+  input:focus, select:focus, textarea:focus { border-color: var(--amber); }
+  .grid { display: grid; grid-template-columns: 1.2fr 1fr 0.7fr 1.3fr; gap: 0 10px; }
+  .code-input { font-family: 'Bebas Neue', monospace; font-size: 1.3em !important; letter-spacing: 0.2em; text-transform: uppercase; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+
+  .btn { font: inherit; font-weight: 900; border: none; border-radius: 10px; padding: 11px 16px; cursor: pointer; background: var(--amber); color: #2a2000; box-shadow: 0 3px 0 #b97d0b; }
+  .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #b97d0b; }
+  .btn:disabled { opacity: 0.4; cursor: default; transform: none; }
+  .btn.red { background: var(--pin); color: #fff; box-shadow: 0 3px 0 #8c2433; }
+  .btn.green { background: var(--green); color: #fff; box-shadow: 0 3px 0 #22663f; }
+  .btn.ghost { background: #fff; color: var(--ink); border: 2px solid var(--line); box-shadow: none; }
+  .btn.small { padding: 7px 12px; font-size: 0.9em; }
+  .btn.wide { width: 100%; margin-top: 14px; font-size: 1.05em; }
+  .err { color: var(--pin); font-size: 0.9em; min-height: 1.3em; margin-top: 8px; }
+
+  /* 個人資訊列 */
+  .me { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .chip { background: var(--wall-2); border: 1px solid rgba(255,255,255,0.1); border-radius: 999px; padding: 5px 12px; font-size: 0.86em; }
+  .chip b { color: var(--amber); }
+  .sync { font-size: 0.78em; color: var(--muted); margin-left: auto; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+  .stat { background: var(--wall-2); border-radius: 10px; padding: 8px 6px; text-align: center; }
+  .stat .n { font-family: 'Bebas Neue', sans-serif; font-size: 1.7em; color: var(--card); line-height: 1.1; }
+  .stat .k { font-size: 0.72em; color: var(--soft); }
+  .stat.star .n { color: var(--amber); font-size: 1.25em; padding: 4px 0; }
+
+  /* 正在承接的案件 */
+  .active { background: var(--amber); color: #2a2000; border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; box-shadow: 0 6px 18px rgba(0,0,0,0.3); }
+  .active .t { font-weight: 900; }
+  .active .d { margin: 4px 0 8px; font-size: 0.95em; }
+
+  /* 分頁 */
+  .tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+  .tabs button { flex: 1; font: inherit; font-weight: 700; border: none; padding: 10px 6px; border-radius: 10px; cursor: pointer; background: var(--wall-2); color: var(--soft); }
+  .tabs button.on { background: var(--card); color: var(--ink); }
+  .tabs .badge { display: inline-block; min-width: 20px; padding: 0 6px; border-radius: 999px; background: var(--pin); color: #fff; font-size: 0.8em; margin-left: 4px; }
+
+  /* 委託卡 */
+  .note { position: relative; background: var(--card); color: var(--ink); border-radius: 6px; padding: 14px 14px 12px 16px; margin-bottom: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
+  .note::before { content: ''; position: absolute; top: -6px; left: 16px; width: 14px; height: 14px; border-radius: 50%; background: var(--pin); box-shadow: 0 2px 3px rgba(0,0,0,0.35); }
+  .note.taken::before { background: var(--amber); }
+  .note.done::before { background: var(--green); }
+  .note.cancelled, .note.removed { opacity: 0.55; }
+  .note .src { font-weight: 900; font-size: 1.08em; }
+  .note .q { color: #4b4436; font-size: 0.92em; margin-top: 4px; line-height: 1.55; }
+  .note .meta { display: flex; justify-content: space-between; gap: 8px; align-items: center; margin-top: 10px; font-size: 0.85em; color: var(--muted); flex-wrap: wrap; }
+  .note .who { font-weight: 700; color: var(--ink); }
+  .note .acts { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag { display: inline-block; font-size: 0.75em; font-weight: 700; border-radius: 999px; padding: 1px 8px; margin-left: 6px; vertical-align: 2px; }
+  .tag.open { background: #fde3e6; color: var(--pin); }
+  .tag.taken { background: #fff1cc; color: #8a6200; }
+  .tag.done { background: #dff2e6; color: #1f7a45; }
+  .tag.cancelled, .tag.removed { background: #eee; color: #888; }
+  .empty { text-align: center; color: var(--soft); padding: 30px 10px; line-height: 1.8; }
+  .section-h { font-size: 0.85em; color: var(--soft); margin: 14px 0 8px; font-weight: 700; }
+
+  .src-pick { display: flex; flex-wrap: wrap; gap: 6px; }
+  .src-pick button { font: inherit; border: 2px solid var(--line); background: #fff; color: var(--ink); border-radius: 999px; padding: 6px 14px; cursor: pointer; font-weight: 700; }
+  .src-pick button.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  /* 彈窗與提示 */
+  .overlay { position: fixed; inset: 0; background: rgba(10,16,20,0.6); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
+  .overlay.on { display: flex; }
+  .modal { background: var(--card); color: var(--ink); border-radius: 14px; padding: 20px; width: min(420px, 100%); text-align: center; }
+  .modal h3 { margin-bottom: 6px; }
+  .modal .hint { font-size: 0.82em; color: var(--muted); margin: 6px 0 12px; line-height: 1.6; }
+  .stars { display: flex; justify-content: center; gap: 10px; margin: 10px 0; }
+  .stars button { font-size: 2.4em; background: none; border: none; cursor: pointer; filter: grayscale(1); opacity: 0.35; transition: transform 0.1s; }
+  .stars button.on { filter: none; opacity: 1; transform: scale(1.08); }
+  .modal .row { display: flex; gap: 8px; justify-content: center; margin-top: 10px; }
+  .toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 12px 18px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 60; max-width: 92vw; font-weight: 700; display: none; }
+  .toast.on { display: block; animation: up 0.2s ease; }
+  @keyframes up { from { transform: translate(-50%, 10px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+
+  @media (max-width: 560px) {
+    .grid { grid-template-columns: 1fr 1fr; }
+    .grid .wide { grid-column: 1 / -1; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Case Request Board · No.940</div>
+  <h1>案件委託公告欄</h1>
+  <p class="sub" id="intro">有不會的題目就發布委託，會的同學就來接案！在教室裡面對面講解，破案後由委託人按「完成」並給偵探評價。</p>
+
+  <!-- 加入 -->
+  <section id="join" class="paper">
+    <div class="grid">
+      <div class="wide"><label class="l" for="in-code">公告欄代碼</label><input id="in-code" class="code-input" type="text" maxlength="8" placeholder="例：A7K-3QX" autocomplete="off"></div>
+      <div><label class="l" for="in-cls">班級</label><input id="in-cls" type="text" maxlength="10" placeholder="例：101"></div>
+      <div><label class="l" for="in-seat">座號</label><input id="in-seat" type="number" min="1" max="99" placeholder="例：7"></div>
+      <div class="wide"><label class="l" for="in-name">姓名</label><input id="in-name" type="text" maxlength="12" placeholder="你的名字"></div>
+    </div>
+    <div class="err" id="join-err"></div>
+    <button class="btn wide" id="btn-join">進入公告欄 📌</button>
+  </section>
+
+  <!-- 主畫面 -->
+  <section id="main" class="hidden">
+    <div class="me" id="me"></div>
+    <div class="stats" id="stats"></div>
+    <div class="active hidden" id="active"></div>
+
+    <div class="tabs">
+      <button data-t="board" class="on">📌 公告欄 <span class="badge hidden" id="b-board"></span></button>
+      <button data-t="mine">🗂️ 我的委託 <span class="badge hidden" id="b-mine"></span></button>
+      <button data-t="post">✏️ 發布委託</button>
+    </div>
+
+    <div id="t-board"></div>
+    <div id="t-mine" class="hidden"></div>
+    <div id="t-post" class="hidden">
+      <div class="paper">
+        <div class="hidden err" id="closed-msg" style="margin:0 0 8px">⛔ 老師已經停止收件，暫時不能發布新委託。</div>
+        <label class="l" style="margin-top:0">題目出處</label>
+        <div class="src-pick" id="src-pick"></div>
+        <label class="l" id="vol-l" for="f-vol">冊別</label>
+        <input id="f-vol" type="text" maxlength="20">
+        <div class="row2">
+          <div id="page-box"><label class="l" for="f-page">頁數</label><input id="f-page" type="text" maxlength="6" inputmode="numeric" placeholder="例：45"></div>
+          <div><label class="l" for="f-num">題號</label><input id="f-num" type="text" maxlength="10" placeholder="例：3、多選 5"></div>
+        </div>
+        <label class="l" for="f-note">卡在哪裡？（選填）</label>
+        <textarea id="f-note" maxlength="80" placeholder="例：不知道為什麼要乘以 2"></textarea>
+        <div class="err" id="post-err"></div>
+        <button class="btn wide red" id="btn-post">發布委託 📌</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- 完成並評價 -->
+<div class="overlay" id="ov-done">
+  <div class="modal">
+    <h3>🎉 問題解決了嗎？</h3>
+    <div id="done-who"></div>
+    <div class="stars" id="stars">
+      <button data-s="1" aria-label="1 顆星">⭐</button><button data-s="2" aria-label="2 顆星">⭐</button><button data-s="3" aria-label="3 顆星">⭐</button>
+    </div>
+    <div class="hint">請給偵探 1～3 顆星。偵探只會看到自己的<b>平均</b>星數，而且要累積 5 個評價後才會顯示，不會知道是誰給的。</div>
+    <div class="row"><button class="btn green" id="btn-done-ok" disabled>確認破案</button><button class="btn ghost" id="btn-done-no">取消</button></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="case-board-core.js?v=20261005a"></script>
+<script>
+const $ = id => document.getElementById(id);
+const esc = CB.esc;
+let ME = null, CODE = null, SUB = null, STATE = {}, META = null, tab = 'board';
+let prevStatus = {}, firstLoad = true, doneTarget = null, doneStars = 0;
+
+/* ---------- 加入 ---------- */
+const urlCode = new URLSearchParams(location.search).get('code');
+if (urlCode) $('in-code').value = CB.prettyCode(CB.normalizeCode(urlCode));
+try {
+  const s = JSON.parse(localStorage.getItem('case-board-student') || 'null');
+  if (s) { $('in-cls').value = s.cls || ''; $('in-seat').value = s.seat || ''; $('in-name').value = s.name || ''; }
+} catch (e) {}
+
+$('btn-join').onclick = async () => {
+  const code = CB.normalizeCode($('in-code').value);
+  const cls = CB.normalizeClass($('in-cls').value);
+  const seat = parseInt($('in-seat').value, 10);
+  const name = $('in-name').value.trim();
+  if (!CB.validCode(code)) return joinErr('公告欄代碼是 6 個字，請再確認一次');
+  if (!cls || !(seat >= 1) || !name) return joinErr('請把班級、座號、姓名都填好喔！');
+  $('btn-join').disabled = true; joinErr('');
+  try {
+    META = await CB.getMeta(code);
+    if (!META) { $('btn-join').disabled = false; return joinErr('找不到這個公告欄，請確認代碼'); }
+    ME = { sid: CB.studentId(cls, seat), cls, seat, name };
+    CODE = code;
+    await CB.putMember(code, ME.sid, { cls, seat, name, joinedAt: Date.now() });
+    try { localStorage.setItem('case-board-student', JSON.stringify({ cls, seat, name })); } catch (e) {}
+  } catch (e) {
+    console.error(e); $('btn-join').disabled = false;
+    return joinErr('連線失敗，請檢查網路後再試一次');
+  }
+  $('join').classList.add('hidden'); $('main').classList.remove('hidden');
+  $('intro').textContent = META.title ? `📋 ${META.title}` : $('intro').textContent;
+  SUB = CB.subscribe(CODE, s => { STATE = s; META = s.meta || META; render(); }, setSync);
+  setInterval(render, 20000);   // 更新「等了幾分鐘」
+};
+function joinErr(m) { $('join-err').textContent = m; }
+let lastSync = '';
+function setSync(s) {
+  lastSync = s || lastSync;
+  const el = $('sync'); if (!el) return; s = lastSync;
+  el.textContent = { live: '● 即時同步中', poll: '● 同步中', reconnect: '○ 重新連線中…', offline: '○ 連線中斷' }[s] || '';
+  el.style.color = s === 'live' || s === 'poll' ? '#3a9d6a' : '#d1495b';
+}
+
+/* ---------- 分頁 ---------- */
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  tab = b.dataset.t;
+  document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
+  ['board', 'mine', 'post'].forEach(t => $('t-' + t).classList.toggle('hidden', t !== tab));
+});
+
+/* ---------- 畫面 ---------- */
+const tasks = () => CB.taskList(STATE);
+const myActive = () => tasks().find(t => t.status === 'taken' && t.solver === ME.sid);
+
+function render() {
+  if (!ME) return;
+  const all = tasks();
+  notify(all);
+
+  // 個人資訊與統計
+  const st = CB.stats(STATE).find(s => s.sid === ME.sid) || { posted: 0, solvedMine: 0, cases: 0, points: 0, stars: [], avg: null };
+  $('me').innerHTML = `<span class="chip">${esc(ME.cls)} 班 <b>${esc(CB.who(ME.seat, ME.name))}</b></span>
+    <span class="chip">代碼 ${CB.prettyCode(CODE)}</span><span class="sync" id="sync"></span>`;
+  setSync();
+  const n = st.stars.length, need = CB.CONFIG.STAR_MIN_COUNT;
+  const starTxt = n >= need ? `⭐ ${st.avg.toFixed(1)}` : `${n}/${need}`;
+  $('stats').innerHTML = `
+    <div class="stat"><div class="n">${st.posted}</div><div class="k">我發布的委託</div></div>
+    <div class="stat"><div class="n">${st.solvedMine}</div><div class="k">已被解決</div></div>
+    <div class="stat"><div class="n">${st.cases}</div><div class="k">我破的案（${st.points} 點）</div></div>
+    <div class="stat star"><div class="n">${starTxt}</div><div class="k">${n >= need ? '平均評價' : '累積 5 個評價後顯示'}</div></div>`;
+
+  // 正在承接
+  const act = myActive();
+  if (act) {
+    $('active').classList.remove('hidden');
+    $('active').innerHTML = `<div class="t">🔍 你正在偵辦這個案件</div>
+      <div class="d">請去找 <b>${esc(act.cls)} 班 ${esc(CB.who(act.seat, act.name))}</b>，講解：${esc(CB.sourceText(act))}</div>
+      <button class="btn small ghost" id="btn-giveup">放棄承接</button>`;
+    $('btn-giveup').onclick = () => giveUp(act);
+  } else $('active').classList.add('hidden');
+
+  // 公告欄：別人待承接的委託
+  const open = all.filter(t => t.status === 'open').sort((a, b) => a.createdAt - b.createdAt);
+  const others = open.filter(t => t.sid !== ME.sid);
+  const taking = all.filter(t => t.status === 'taken').length;
+  $('b-board').textContent = others.length; $('b-board').classList.toggle('hidden', !others.length);
+  $('t-board').innerHTML =
+    (others.length ? others.map(t => noteHTML(t, 'board')).join('') :
+      `<div class="empty">目前沒有待承接的委託 🎉<br>有不會的題目，就到「發布委託」吧！</div>`) +
+    `<div class="section-h">偵辦中 ${taking} 件　·　已破案 ${all.filter(t => t.status === 'done').length} 件</div>`;
+  $('t-board').querySelectorAll('[data-take]').forEach(b => b.onclick = () => take(b.dataset.take));
+
+  // 我的委託
+  const mine = all.filter(t => t.sid === ME.sid && t.status !== 'removed').sort((a, b) => b.createdAt - a.createdAt);
+  const waiting = mine.filter(t => t.status === 'taken').length;
+  $('b-mine').textContent = waiting; $('b-mine').classList.toggle('hidden', !waiting);
+  $('t-mine').innerHTML = mine.length ? mine.map(t => noteHTML(t, 'mine')).join('') :
+    `<div class="empty">你還沒有發布委託</div>`;
+  $('t-mine').querySelectorAll('[data-act]').forEach(b => b.onclick = () => mineAction(b.dataset.act, b.dataset.id));
+
+  const closed = META && META.open === false;
+  $('closed-msg').classList.toggle('hidden', !closed);
+  $('btn-post').disabled = closed;
+}
+
+function noteHTML(t, where) {
+  const s = CB.STATUS[t.status] || CB.STATUS.open;
+  let acts = '', info = '';
+  if (where === 'board') {
+    const busy = !!myActive();
+    acts = `<button class="btn small" data-take="${t.id}" ${busy ? 'disabled title="你已經在偵辦一個案件"' : ''}>承接 🔍</button>`;
+    info = `委託人 <span class="who">${esc(CB.who(t.seat, t.name))}</span>　·　等了 ${CB.ago(t.createdAt)}`;
+  } else {
+    if (t.status === 'open') { acts = `<button class="btn small ghost" data-act="cancel" data-id="${t.id}">撤回委託</button>`; info = `等待偵探承接…（${CB.ago(t.createdAt)}）`; }
+    if (t.status === 'taken') {
+      info = `偵探 <span class="who">${esc(CB.who(t.solverSeat, t.solverName))}</span> 正在幫你`;
+      acts = `<button class="btn small green" data-act="done" data-id="${t.id}">完成 ✅</button>
+              <button class="btn small ghost" data-act="reopen" data-id="${t.id}">沒解決，重新委託</button>`;
+    }
+    if (t.status === 'done') info = `由 <span class="who">${esc(CB.who(t.solverSeat, t.solverName))}</span> 破案`;
+    if (t.status === 'cancelled') info = '已撤回';
+  }
+  return `<div class="note ${t.status}">
+    <div class="src">${esc(CB.sourceText(t))}${where === 'mine' ? `<span class="tag ${t.status}">${s.icon} ${s.label}</span>` : ''}</div>
+    ${t.note ? `<div class="q">💬 ${esc(t.note)}</div>` : ''}
+    <div class="meta"><span>${info}</span><span class="acts">${acts}</span></div>
+  </div>`;
+}
+
+/* ---------- 狀態變化通知 ---------- */
+function notify(all) {
+  const now = {};
+  all.forEach(t => { now[t.id] = t.status + '|' + (t.solver || ''); });
+  if (!firstLoad) {
+    all.forEach(t => {
+      const before = prevStatus[t.id];
+      if (!before || before === now[t.id]) return;
+      if (t.sid === ME.sid && t.status === 'taken') toast(`🔍 ${CB.who(t.solverSeat, t.solverName)} 接下了你的委託，請等他過來！`);
+      if (before.startsWith('taken|' + ME.sid) && t.status === 'open' && t.solver !== ME.sid) toast('↩️ 委託人表示問題還沒解決，案件已放回公告欄');
+      if (before.startsWith('taken|' + ME.sid) && t.status === 'done') toast('🎉 破案成功！你獲得 1 點獎勵');
+    });
+  }
+  prevStatus = now; firstLoad = false;
+}
+let toastTimer = null;
+function toast(msg) {
+  $('toast').textContent = msg; $('toast').classList.add('on');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => $('toast').classList.remove('on'), 4500);
+}
+
+/* ---------- 動作 ---------- */
+const getTask = id => { const t = (STATE.tasks || {})[id]; return t ? { ...t } : null; };
+async function save(id, t, failMsg) {
+  try { await CB.putTask(CODE, id, t); SUB.refresh(); return true; }
+  catch (e) { console.error(e); toast(failMsg || '⚠️ 送出失敗，請再試一次'); SUB.refresh(); return false; }
+}
+const trimTries = t => (Array.isArray(t.tries) ? t.tries : Object.values(t.tries || {})).slice(-10);
+
+async function take(id) {
+  if (myActive()) return toast('你已經在偵辦一個案件，完成或放棄後才能再接');
+  const t = getTask(id);
+  if (!t || t.status !== 'open') return toast('這個委託已經被接走了');
+  if (t.sid === ME.sid) return toast('不能承接自己的委託喔');
+  Object.assign(t, { status: 'taken', solver: ME.sid, solverName: ME.name, solverSeat: ME.seat, solverCls: ME.cls, takenAt: Date.now() });
+  if (await save(id, t, '😮 慢了一步，這個委託被別人接走了')) toast(`🔍 接案成功！請去找 ${CB.who(t.seat, t.name)}`);
+}
+async function release(t0, by) {
+  const t = getTask(t0.id); if (!t || t.status !== 'taken') return;
+  const tries = trimTries(t);
+  tries.push({ solver: t.solver, name: t.solverName, seat: t.solverSeat, cls: t.solverCls || '', at: Date.now(), by });
+  ['solver', 'solverName', 'solverSeat', 'solverCls', 'takenAt'].forEach(k => delete t[k]);
+  Object.assign(t, { status: 'open', tries, reopened: (t.reopened || 0) + 1 });
+  return save(t0.id, t);
+}
+async function giveUp(t) {
+  if (await release(t, 'solver')) toast('已放棄承接，案件回到公告欄');
+}
+async function mineAction(act, id) {
+  const t = getTask(id); if (!t) return;
+  if (act === 'cancel') {
+    if (t.status !== 'open') return toast('已經有偵探接案了，無法撤回');
+    t.status = 'cancelled'; t.cancelledAt = Date.now();
+    if (await save(id, t)) toast('已撤回委託');
+  }
+  if (act === 'reopen') { if (await release({ ...t, id }, 'requester')) toast('📌 已重新委託，等待其他偵探承接'); }
+  if (act === 'done') {
+    doneTarget = id; doneStars = 0;
+    $('done-who').innerHTML = `幫你解題的偵探：<b>${esc(CB.who(t.solverSeat, t.solverName))}</b>`;
+    paintStars(); $('ov-done').classList.add('on');
+  }
+}
+function paintStars() {
+  document.querySelectorAll('#stars button').forEach(b => b.classList.toggle('on', +b.dataset.s <= doneStars));
+  $('btn-done-ok').disabled = !doneStars;
+}
+document.querySelectorAll('#stars button').forEach(b => b.onclick = () => { doneStars = +b.dataset.s; paintStars(); });
+$('btn-done-no').onclick = () => $('ov-done').classList.remove('on');
+$('btn-done-ok').onclick = async () => {
+  const t = getTask(doneTarget);
+  $('ov-done').classList.remove('on');
+  if (!t || t.status !== 'taken') return toast('這個案件的狀態已經改變了');
+  Object.assign(t, { status: 'done', stars: doneStars, doneAt: Date.now() });
+  if (await save(doneTarget, t)) toast('✅ 已破案，謝謝你的評價！');
+};
+
+/* ---------- 發布委託 ---------- */
+let src = 'book';
+function renderSrc() {
+  $('src-pick').innerHTML = CB.SOURCES.map(s => `<button type="button" data-k="${s.key}" class="${s.key === src ? 'on' : ''}">${s.label}</button>`).join('');
+  $('src-pick').querySelectorAll('button').forEach(b => b.onclick = () => { src = b.dataset.k; renderSrc(); });
+  const s = CB.SOURCES.find(x => x.key === src);
+  $('vol-l').textContent = s.vol; $('f-vol').placeholder = s.volPh;
+  $('page-box').classList.toggle('hidden', !s.page);
+}
+renderSrc();
+$('btn-post').onclick = async () => {
+  if (META && META.open === false) return;
+  const s = CB.SOURCES.find(x => x.key === src);
+  const vol = $('f-vol').value.trim(), page = s.page ? $('f-page').value.trim() : '', num = $('f-num').value.trim(), note = $('f-note').value.trim();
+  if (s.page && !page) return $('post-err').textContent = '請填頁數';
+  if (!s.page && !vol) return $('post-err').textContent = '請填寫是哪一份考卷或出處';
+  if (!num) return $('post-err').textContent = '請填題號';
+  $('post-err').textContent = '';
+  const id = CB.newTaskId();
+  const t = { sid: ME.sid, cls: ME.cls, seat: ME.seat, name: ME.name, src, status: 'open', createdAt: Date.now() };
+  if (vol) t.vol = vol; if (page) t.page = page; t.num = num; if (note) t.note = note;
+  $('btn-post').disabled = true;
+  const ok = await save(id, t);
+  $('btn-post').disabled = false;
+  if (ok) {
+    ['f-page', 'f-num', 'f-note'].forEach(k => $(k).value = '');
+    toast('📌 委託已發布到公告欄！');
+    document.querySelector('.tabs button[data-t="mine"]').click();
+  }
+};
+</script>
+</body>
+</html>

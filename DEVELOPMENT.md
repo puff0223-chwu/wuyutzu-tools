@@ -51,7 +51,10 @@ wuyutzu-tools/
 │   ├── ph-generator-teacher.html # pH 練習：老師頁（首頁卡片連到這裡，請勿給學生）
 │   ├── unit-core.js              # 📜 失落的配方（單位換算）：共用核心（物質庫、題型、題組碼、判分、換算地圖）
 │   ├── unit-generator.html       # 單位換算：學生作答頁
-│   └── unit-generator-teacher.html # 單位換算：老師頁（首頁卡片連到這裡）
+│   ├── unit-generator-teacher.html # 單位換算：老師頁（首頁卡片連到這裡）
+│   ├── case-board-core.js        # 📌 No.940 案件委託公告欄：共用核心（代碼、即時同步、統計）
+│   ├── case-board.html           # 案件委託公告欄：學生頁
+│   └── case-board-teacher.html   # 案件委託公告欄：老師頁（開設、投影牆、統計）
 │
 ├── gamification/                 # 🎲 課堂遊戲化
 │   ├── system.html               # 選人系統＋陣亡詛咒系統
@@ -100,7 +103,7 @@ wuyutzu-tools/
 | **不存資料** | 詩籤、金曲歌王、真心話、抽籤、形容詞 | 打開就能用，最單純 |
 | **瀏覽器 localStorage** | 座位、打掃徵才管理頁、選人 | 只存在那一台電腦的瀏覽器，換電腦就沒了；常搭配 Excel 匯出備份 |
 | **Google 表單無聲送出** | DISC、貝爾賓、打掃徵才學生頁 | 學生送出→進老師的 Google 表單；只能「寫入」，網頁讀不回來 |
-| **Firebase Realtime Database** | 消失的實驗器材（排行榜）、pH 練習與單位換算練習（作答紀錄） | 可寫可讀、即時；全班共用 |
+| **Firebase Realtime Database** | 消失的實驗器材（排行榜）、pH 練習與單位換算練習（作答紀錄）、No.940 案件委託公告欄（委託與成員） | 可寫可讀、即時；全班共用 |
 | **固定亂數（不存資料）** | pH 練習、單位換算練習的出題 | 同一個「題組碼＋班級＋座號」永遠算出同一組題目，老師頁可重算全班題目與答案 |
 
 ### Firebase 設定
@@ -121,8 +124,16 @@ wuyutzu-tools/
         └── <班級_座號>: { cls, seat, name, answers[5], attempts[5], history[[題號,作答,對錯,時間]…], submitted, firstTs, ts }
             （不存正確答案，老師頁用固定亂數重算後比對）
 └── unit-convert/
-    └── <題組碼 7 碼>/
-        └── <班級_座號>: 格式同 ph-generator；科學記號答案存成 "3.01e23"
+│   └── <題組碼 7 碼>/
+│       └── <班級_座號>: 格式同 ph-generator；科學記號答案存成 "3.01e23"
+└── case-board/
+    └── <公告欄代碼 6 碼>/
+        ├── meta: { title, createdAt, open }                    ← 老師頁寫入；open=false 停止收件
+        ├── members/<班級_座號>: { cls, seat, name, joinedAt }
+        └── tasks/<委託 id>: { sid, cls, seat, name, src, vol, page, num, note, status,
+                              solver, solverName, solverSeat, solverCls, stars, tries[], reopened,
+                              createdAt, takenAt, doneAt }
+              status：open 待承接 → taken 偵辦中 → done 已破案；另有 cancelled（委託人撤回）、removed（老師移除）
 ```
 
 - **安全規則**（2026-10-03 發布）：根目錄全部上鎖。
@@ -201,6 +212,23 @@ wuyutzu-tools/
   - 老師投影頁的地圖一律顯示公式
 - 學生頁、老師頁載入核心檔時加了版本號（`unit-core.js?v=…`、`ph-core.js?v=…`，目前 ph-core 為 `20261004a`），**改核心檔後記得一起改版本號**，避免瀏覽器用到舊的快取
 
+### 📌 No.940 案件委託公告欄（chemistry/case-board*.html，2026-10-05 新增）
+
+- 用途：期中／期末考前的解題時間，同儕互助解題（老師一人無法回答所有問題）
+- 流程：老師開設公告欄（6 碼代碼＋QR）→ 學生加入 → 發布委託（出處：課本／習作／講義／考卷／其他＋冊別、頁數、題號、卡在哪裡）→ 會的同學承接，教室內面對面講解 → 委託人按「完成」給 1～3 顆星
+- 規則：
+  - 一人同時只能承接 1 案（學生頁檢查）；不能承接自己的委託（規則檢查）
+  - 兩人同時搶同一案：Firebase 規則只允許「待承接 → 偵辦中」一次，慢的人會被拒絕並看到「慢了一步」
+  - 委託人可以「沒解決，重新委託」，接案者可以「放棄承接」，都會記錄在 `tries`（老師統計的「放回次數」）
+  - 委託人可撤回尚未被接的委託；老師可在投影牆點卡片「老師承接」、「放回待承接」或「移除」
+  - 老師可「停止收件」（meta.open=false），學生就不能再發布新委託
+- 獎勵：每破一案 1 點（`CONFIG.POINTS_PER_CASE`）；星數 1～3，學生自己要累積 5 個評價（`CONFIG.STAR_MIN_COUNT`）才看得到平均，老師隨時看得到
+- 投影牆不顯示星數（避免尷尬）；同一公告欄有多班時名字前自動加班級
+- 即時同步：Firebase REST 的 EventSource 串流；連不上時改成每 4 秒輪詢；每次自己寫入後也會立刻重抓一次
+- 老師統計：參與人數、委託總數、已破案、尚未破案、老師出馬；每人的發布委託、已被解決、破案數、點數、平均星數、評價數、放回次數（可排序）；Excel 兩張表「學生統計」「委託紀錄」
+- 限制：沒有登入機制，學生理論上能冒用別人座號；星數存在資料庫中、懂技術的學生可讀到；屬課堂互助工具
+- 第一版不支援拍照上傳（老師決定用順了再升級）
+
 ### 🧹 打掃徵才 v4
 
 - 老師在管理頁產生學生登記連結；學生資料透過 Google 表單送出
@@ -222,10 +250,9 @@ wuyutzu-tools/
 
 ---
 
-## 附錄：Firebase 安全規則全文（2026-10-03，含單位換算）
+## 附錄：Firebase 安全規則全文（2026-10-05，含 No.940 案件委託公告欄）
 
-```json
-{
+```json{
   "rules": {
     ".read": false,
     ".write": false,
@@ -253,6 +280,27 @@ wuyutzu-tools/
         "$sid": {
           ".write": "newData.exists() && $code.matches(/^[2-9A-HJ-NP-Z]{7}$/) && data.child('submitted').val() != true",
           ".validate": "newData.hasChildren(['cls','seat','name','ts']) && newData.child('cls').isString() && newData.child('cls').val().length <= 10 && newData.child('seat').isNumber() && newData.child('name').isString() && newData.child('name').val().length <= 12"
+        }
+      }
+    },
+    "case-board": {
+      "$code": {
+        ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)",
+        "meta": {
+          ".write": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && newData.exists()",
+          ".validate": "newData.hasChildren(['title','createdAt']) && newData.child('title').isString() && newData.child('title').val().length <= 40"
+        },
+        "members": {
+          "$sid": {
+            ".write": "newData.exists() && root.child('case-board').child($code).child('meta').exists()",
+            ".validate": "newData.hasChildren(['cls','seat','name']) && newData.child('cls').isString() && newData.child('cls').val().length <= 10 && newData.child('name').isString() && newData.child('name').val().length <= 12"
+          }
+        },
+        "tasks": {
+          "$tid": {
+            ".write": "newData.exists() && root.child('case-board').child($code).child('meta').exists() && (data.exists() || (newData.child('status').val() == 'open' && root.child('case-board').child($code).child('meta').child('open').val() != false))",
+            ".validate": "newData.hasChildren(['sid','name','seat','status','createdAt']) && newData.child('status').val().matches(/^(open|taken|done|cancelled|removed)$/) && (!data.exists() || newData.child('sid').val() == data.child('sid').val()) && (!(data.child('status').val() == 'taken' && newData.child('status').val() == 'taken') || newData.child('solver').val() == data.child('solver').val()) && (data.child('status').val() != 'done' || newData.child('status').val() == 'done' || newData.child('status').val() == 'removed') && (newData.child('status').val() != 'taken' || (newData.child('solver').isString() && newData.child('solver').val() != newData.child('sid').val())) && (newData.child('status').val() != 'done' || (newData.child('stars').isNumber() && newData.child('stars').val() >= 1 && newData.child('stars').val() <= 3)) && (!newData.child('note').exists() || (newData.child('note').isString() && newData.child('note').val().length <= 80))"
+          }
         }
       }
     }
