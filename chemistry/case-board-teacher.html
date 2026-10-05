@@ -66,6 +66,8 @@
   .wall-head .join .c { font-family: 'Bebas Neue', sans-serif; font-size: 2.2em; letter-spacing: 0.15em; color: var(--amber); line-height: 1; }
   .wall-tools { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
   .wall-tools .sync { margin-left: auto; font-size: 0.85em; }
+  #btn-awake.on { background: #fff6d6; border-color: var(--amber); }
+  #btn-awake.warn { background: #ffe1dc; border-color: var(--pin); }
   .cols { display: grid; grid-template-columns: 1.15fr 1.15fr 0.8fr; gap: 14px; align-items: start; }
   .col { background: rgba(255,255,255,0.04); border-radius: 14px; padding: 12px; min-height: 300px; }
   .col h3 { display: flex; align-items: center; gap: 8px; font-size: 1.25em; margin-bottom: 12px; }
@@ -161,6 +163,7 @@
       <div class="wall-tools">
         <button class="btn" id="btn-fs">⛶ 全螢幕投影</button>
         <button class="btn ghost" id="btn-toggle-open"></button>
+        <button class="btn ghost" id="btn-awake" title="讓平板／電腦在投影時不會暗掉、不會休眠">☀️ 螢幕常亮</button>
         <span class="hint" style="color:var(--soft)">點卡片可以「老師承接」或移除不適當的委託</span>
         <span class="sync" id="sync"></span>
       </div>
@@ -207,6 +210,7 @@ document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => showTab
 function showTab(t) {
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
   ['setup', 'wall', 'stats'].forEach(x => $('t-' + x).classList.toggle('hidden', x !== t));
+  if (t === 'wall' && awakeWanted) Awake.on();   // 一打開投影牆就自動讓螢幕常亮
   render();
 }
 
@@ -373,7 +377,67 @@ $('btn-toggle-open').onclick = async () => {
 $('btn-fs').onclick = () => {
   const w = $('wall');
   if (document.fullscreenElement) document.exitFullscreen(); else if (w.requestFullscreen) w.requestFullscreen();
+  if (awakeWanted) Awake.on();
 };
+
+/* ---------- 螢幕常亮（投影時平板不會暗掉、不會休眠） ----------
+   1. 優先用瀏覽器內建的 Screen Wake Lock（iPad Safari 16.4+、Android Chrome、電腦 Chrome/Edge 都支援）
+   2. 不支援的舊裝置：偷偷播放一段看不見的靜音影片，讓系統以為正在看影片
+   3. 切到別的 App 再回來時，鎖會被系統收回，所以回到畫面時自動重新申請 */
+let awakeWanted = true;
+const Awake = (() => {
+  let lock = null, video = null, mode = '';
+  async function on() {
+    if (!awakeWanted || document.visibilityState !== 'visible') return show();
+    if ('wakeLock' in navigator) {
+      try {
+        if (!lock || lock.released) {
+          lock = await navigator.wakeLock.request('screen');
+          lock.addEventListener('release', () => show());
+        }
+        mode = 'lock'; return show();
+      } catch (e) { console.warn('wakeLock', e); }
+    }
+    try {   // 後備方案：看不見的靜音小影片
+      if (!video) {
+        const c = document.createElement('canvas'); c.width = c.height = 2;
+        const g = c.getContext('2d');
+        setInterval(() => { g.fillStyle = Date.now() % 2000 < 1000 ? '#000' : '#010101'; g.fillRect(0, 0, 2, 2); }, 1000);
+        video = document.createElement('video');
+        Object.assign(video, { muted: true, loop: true, playsInline: true });
+        video.setAttribute('playsinline', ''); video.setAttribute('muted', '');
+        video.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0.01;pointer-events:none;bottom:0;left:0';
+        video.srcObject = c.captureStream(1);
+        document.body.appendChild(video);
+      }
+      await video.play(); mode = 'video';
+    } catch (e) { console.warn('video', e); mode = 'fail'; }
+    show();
+  }
+  async function off() {
+    try { if (lock) await lock.release(); } catch (e) {}
+    lock = null; if (video) video.pause(); mode = ''; show();
+  }
+  function active() { return (mode === 'lock' && lock && !lock.released) || (mode === 'video' && video && !video.paused); }
+  function show() {
+    const b = $('btn-awake'); if (!b) return;
+    b.classList.remove('on', 'warn');
+    if (!awakeWanted) b.textContent = '🌙 螢幕常亮：關';
+    else if (active()) { b.textContent = '☀️ 螢幕常亮：開'; b.classList.add('on'); }
+    else if (mode === 'fail') { b.textContent = '⚠️ 無法常亮（請改裝置設定）'; b.classList.add('warn'); }
+    else { b.textContent = '☀️ 點我開啟螢幕常亮'; b.classList.add('warn'); }
+  }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && awakeWanted) on(); });
+  document.addEventListener('fullscreenchange', () => { if (awakeWanted) on(); });
+  return { on, off, show };
+})();
+$('btn-awake').onclick = () => {
+  awakeWanted = !awakeWanted;
+  try { localStorage.setItem('case-board-awake', awakeWanted ? '1' : '0'); } catch (e) {}
+  awakeWanted ? Awake.on() : Awake.off();
+};
+try { awakeWanted = localStorage.getItem('case-board-awake') !== '0'; } catch (e) {}
+Awake.show();
 setInterval(() => { if (CODE && !$('t-wall').classList.contains('hidden')) renderWall(); }, 20000);
 
 /* ---------- 統計 ---------- */
