@@ -2,7 +2,7 @@
 
 > 給未來的自己（和 Claude）看的說明書：這個網站怎麼組成、資料放哪裡、要新增工具時怎麼接進來。
 > **每次開發的過程與決定記在 [CHANGELOG.md](CHANGELOG.md)（開發歷程）**，每次開發結束都要同步更新本檔與 CHANGELOG。
-> 最後更新：2026-10-03
+> 最後更新：2026-10-06
 
 ---
 
@@ -141,6 +141,7 @@ wuyutzu-tools/
   - `ph-generator/<題組碼>`、`unit-convert/<題組碼>`：可讀；題組碼必須是 7 碼合法字元；可新增或更新，但**交卷（submitted=true）後就不能再改**，不能刪除。
   - 規則全文見本檔最後的附錄。
 - ⚠️ **之後新工具要用 Firebase**：要在規則裡為它新增一個抽屜的規則，否則會被擋（HTTP 401/403）。
+- **`fp/` 抽屜（集點小金庫，2026-10-06）**：唯一使用 Firebase Authentication（登入）的工具，規則依登入身分判斷（admins／users／kids／config／ledger），詳見第 6 節「集點小金庫」與附錄規則。
 - 與「科學任務偵探所」的 Supabase 完全分開：**Supabase 給大系統、Firebase 給輕量小工具**。
 
 ---
@@ -236,6 +237,40 @@ wuyutzu-tools/
   - 需要 HTTPS（GitHub Pages 符合）；iPad 需 iPadOS 16.4 以上
   - 之後其他投影頁（如 pH／單位換算的投影解法）若也需要，可把 `Awake` 搬到共用檔
 
+### 💰 集點小金庫（family-points/index.html，2026-10-06 新增，**隱藏頁面**）
+
+- 用途：家庭用的集點系統（爸爸＝管理員、小孩＝使用者）。孩子回報表現得點、兌換獎品；爸爸審核。
+- **不放連結**：首頁與任何學生頁都不連到它，只能直接輸入網址 `https://puff0223-chwu.github.io/wuyutzu-tools/family-points/`；頁面有 `noindex`，搜尋引擎不收錄。
+- 資料夾內三個檔：`index.html`（整個系統，單檔）、`firebase-rules-merged.json`（合併後的完整規則）、`SETUP.md`（Firebase 後台設定步驟）。
+- **與其他工具最大的差別：用 Firebase Authentication 登入**，並載入 Firebase SDK（ES module）；其他工具都是 REST 免登入。
+  - 爸爸：Email＋密碼（Firebase 後台手動建立帳號，再把 UID 登記到 `fp/admins/<UID> = true`）。
+  - 小孩：爸爸在「人員」分頁建立「登入名稱＋6 位數 PIN」，系統在背後用第二個 Firebase app（`"secondary"`）建帳號，這樣建立小孩帳號時爸爸不會被登出。孩子忘記 PIN 可由爸爸換發，點數紀錄會接回來。
+  - 瀏覽器會記住登入狀態。
+- firebaseConfig：與既有頁面同一個專案（Point-Collection Stash，`point-collection-stash`，新加坡 asia-southeast1）。既有頁面只用 `databaseURL`（REST），沒有 apiKey 等欄位可對照；`databaseURL` 一致，未做修改。
+- **資料結構（`fp/` 抽屜）**：
+
+```
+fp/
+├── admins/<uid>: true                      管理員名單（布林值 true，不是字串）
+├── users/<uid>: { kidId, loginName }       登入帳號 → 小孩的對應
+├── kids/<kidId>: { name }                  小孩基本資料（與登入帳號分開，之後做會員網站可沿用）
+├── config/{ behaviors, rewards, diceFaces } 表現行為、獎品、骰子倍數（第一次進入自動建立示範資料）
+└── ledger/<kidId>/<entryId>: { kidId, kind, refName, basePoints?, multiplier?, amount, status, createdAt, resolvedAt? }
+      kind：earn（孩子回報）／redeem（兌換）／adjust（爸爸手動加扣）
+      status：pending → approved／rejected
+```
+
+- **規則設計（`fp` 區塊，併入原有規則，其他抽屜不動）**：
+  - `fp/admins/<uid>`：只有本人能讀，**沒有任何人能寫**（只能在 Firebase 後台手動加，避免被提權）。
+  - `fp/users`：管理員可讀全部、可寫；每個人只能讀自己的 `<uid>`。
+  - `fp/kids`：管理員可讀寫；小孩只能讀 `users/<自己uid>/kidId` 對應的那一筆。
+  - `fp/config`：管理員與已登記的小孩可讀；只有管理員能寫。
+  - `fp/ledger/<kidId>`：管理員可讀寫全部；小孩只能讀自己的；小孩**只能新增**自己的紀錄，且必須 `status=pending`、`kind` 為 earn 或 redeem、`amount > 0`，不能改、不能刪、不能自己核准。`.validate` 要求必填欄位、`kidId` 與路徑一致、`refName` 為字串且 < 60 字、`status` 只能是三種之一。
+  - 根目錄仍全部上鎖；**不要再用 `.read/.write: true` 全開規則**。
+- ⚠️ 規則是**合併**進現有規則，不是整份取代；後台貼上時要保留原有 missing-equipment、ph-generator、unit-convert、case-board 區塊。
+- ⚠️ 需要在 Firebase 後台手動做（程式碼無法代勞）：啟用 Email/Password 登入、建立爸爸帳號、登記 `fp/admins/<UID>`、貼上並發布規則。步驟見 `family-points/SETUP.md`。
+- 備份：「備份/帳號」分頁可匯出 CSV。
+
 ### 🧹 打掃徵才 v4
 
 - 老師在管理頁產生學生登記連結；學生資料透過 Google 表單送出
@@ -257,9 +292,10 @@ wuyutzu-tools/
 
 ---
 
-## 附錄：Firebase 安全規則全文（2026-10-05，含 No.940 案件委託公告欄）
+## 附錄：Firebase 安全規則全文（2026-10-06，含集點小金庫 fp）
 
-```json{
+```json
+{
   "rules": {
     ".read": false,
     ".write": false,
@@ -307,6 +343,41 @@ wuyutzu-tools/
           "$tid": {
             ".write": "newData.exists() && root.child('case-board').child($code).child('meta').exists() && (data.exists() || (newData.child('status').val() == 'open' && root.child('case-board').child($code).child('meta').child('open').val() != false))",
             ".validate": "newData.hasChildren(['sid','name','seat','status','createdAt']) && newData.child('status').val().matches(/^(open|taken|done|cancelled|removed)$/) && (!data.exists() || newData.child('sid').val() == data.child('sid').val()) && (!(data.child('status').val() == 'taken' && newData.child('status').val() == 'taken') || newData.child('solver').val() == data.child('solver').val()) && (data.child('status').val() != 'done' || newData.child('status').val() == 'done' || newData.child('status').val() == 'removed') && (newData.child('status').val() != 'taken' || (newData.child('solver').isString() && newData.child('solver').val() != newData.child('sid').val())) && (newData.child('status').val() != 'done' || (newData.child('stars').isNumber() && newData.child('stars').val() >= 1 && newData.child('stars').val() <= 3)) && (!newData.child('note').exists() || (newData.child('note').isString() && newData.child('note').val().length <= 80))"
+          }
+        }
+      }
+    },
+    "fp": {
+      "admins": {
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid"
+        }
+      },
+      "users": {
+        ".read": "auth != null && root.child('fp/admins').child(auth.uid).val() === true",
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && root.child('fp/admins').child(auth.uid).val() === true"
+        }
+      },
+      "kids": {
+        ".read": "auth != null && root.child('fp/admins').child(auth.uid).val() === true",
+        "$kid": {
+          ".read": "auth != null && root.child('fp/users').child(auth.uid).child('kidId').val() === $kid",
+          ".write": "auth != null && root.child('fp/admins').child(auth.uid).val() === true"
+        }
+      },
+      "config": {
+        ".read": "auth != null && (root.child('fp/admins').child(auth.uid).val() === true || root.child('fp/users').child(auth.uid).exists())",
+        ".write": "auth != null && root.child('fp/admins').child(auth.uid).val() === true"
+      },
+      "ledger": {
+        ".read": "auth != null && root.child('fp/admins').child(auth.uid).val() === true",
+        "$kid": {
+          ".read": "auth != null && root.child('fp/users').child(auth.uid).child('kidId').val() === $kid",
+          "$entry": {
+            ".write": "auth != null && (root.child('fp/admins').child(auth.uid).val() === true || (root.child('fp/users').child(auth.uid).child('kidId').val() === $kid && !data.exists() && newData.exists() && newData.child('status').val() === 'pending' && (newData.child('kind').val() === 'earn' || newData.child('kind').val() === 'redeem') && newData.child('amount').val() > 0))",
+            ".validate": "newData.hasChildren(['kidId', 'kind', 'refName', 'amount', 'status', 'createdAt']) && newData.child('kidId').val() === $kid && newData.child('amount').isNumber() && newData.child('refName').isString() && newData.child('refName').val().length < 60 && (newData.child('status').val() === 'pending' || newData.child('status').val() === 'approved' || newData.child('status').val() === 'rejected')"
           }
         }
       }

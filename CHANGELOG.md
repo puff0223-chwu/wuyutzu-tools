@@ -6,6 +6,15 @@
 
 ---
 
+## 2026-10-06（週二）— 集點小金庫（隱藏頁面）
+
+- 新增 `family-points/`（index.html、firebase-rules-merged.json、SETUP.md），網址不放在首頁或任何頁面，需直接輸入。
+- 家庭集點系統：爸爸（Email＋密碼）與小孩（登入名稱＋PIN）以 Firebase Authentication 登入；資料放 Realtime Database `fp/`（admins／users／kids／config／ledger）。
+- 規則：小孩只能新增自己的 pending 紀錄，不能自己核准；admins 只能在 Firebase 後台手動登記。設計細節見 DEVELOPMENT.md 第 6 節與附錄。
+- firebaseConfig 與既有頁面核對：databaseURL 一致，未修改。
+
+---
+
 ## 2026-10-05（週一）— No.940 案件委託公告欄
 
 ### 起因

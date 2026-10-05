@@ -1,0 +1,710 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>集點小金庫</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F6F1E4;--card:#fff;--line:#E7E2D6;--ink:#3D3626;--muted:#8A8371;--brand:#5B4A17;--gold:#D9A441;--ok:#0F6E56;--bad:#993C1D;--soft:#FBF1DC}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter','Noto Sans TC','PingFang TC','Microsoft JhengHei',system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+#app{max-width:720px;margin:0 auto;padding:18px 14px 70px}
+h1,.display{font-family:'Baloo 2','Noto Sans TC','PingFang TC',sans-serif;color:var(--brand)}
+h1{font-size:22px;margin:0}
+button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:10px 16px;font-weight:600;font-size:14px;transition:transform .1s ease,opacity .15s}
+button:active{transform:scale(.97)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.b-primary{background:var(--brand);color:#FBF1DC}
+.b-ok{background:var(--ok);color:#fff}
+.b-bad{background:var(--bad);color:#fff}
+.b-gold{background:var(--gold);color:#4A3A0C}
+.b-ghost{background:#fff;color:var(--brand);border:1px solid var(--line)}
+.b-icon{padding:8px 11px}
+input,select,textarea{font:inherit;border:1px solid #D8D2C2;border-radius:8px;padding:9px 10px;font-size:15px;background:#FFFDF9;width:100%;color:var(--ink)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.stack{display:flex;flex-direction:column;gap:10px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row>input,.row>select{flex:1;min-width:120px;width:auto}
+.row>.s{flex:none;width:96px;min-width:0}
+.between{justify-content:space-between;flex-wrap:nowrap}
+.muted{color:var(--muted);font-size:13px}
+.title{font-weight:600;font-size:15px}
+.sec{font-family:'Baloo 2','Noto Sans TC',sans-serif;font-weight:700;font-size:16px;color:var(--brand);margin-bottom:8px}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 4px;margin-bottom:14px}
+.tab{padding:8px 12px;font-size:13px;white-space:nowrap;background:#fff;color:var(--brand);border:1px solid var(--line)}
+.tab.on{background:var(--brand);color:#FBF1DC;border-color:var(--brand)}
+.pill{font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.hero{display:flex;align-items:center;justify-content:space-between;background:var(--soft);border:1px solid #EFDBA0;border-radius:14px;padding:18px 20px;margin-bottom:14px}
+.big{font-family:'Baloo 2',sans-serif;font-size:42px;font-weight:700;color:var(--brand);line-height:1.1}
+.grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.center{text-align:center}
+.logo{width:58px;height:58px;border-radius:50%;background:#F2D48A;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;margin:0 auto 6px;font-size:28px}
+.toast{position:fixed;left:50%;top:14px;transform:translateX(-50%);background:var(--ink);color:#FBF1DC;padding:9px 16px;border-radius:10px;font-size:14px;z-index:99;max-width:90vw}
+.mbg{position:fixed;inset:0;background:rgba(61,54,38,.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal{background:#FFFDF9;border:1px solid var(--line);border-radius:16px;padding:22px 20px;width:100%;max-width:340px}
+.dice{width:88px;height:88px;border-radius:16px;background:var(--gold);color:#4A3A0C;display:flex;align-items:center;justify-content:center;font-family:'Baloo 2',sans-serif;font-weight:700;font-size:28px;margin:6px auto 16px}
+.dice.rolling{animation:spin .4s linear infinite}
+.dice.done{animation:pop .25s ease}
+.err{color:#C4402F;font-size:13px;margin:6px 0 0}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+</style>
+</head>
+<body>
+<div id="app"><p class="center muted" style="margin-top:90px">載入中…</p></div>
+
+<script type="module">
+import { html, render, useState, useEffect, useRef } from "https://cdn.jsdelivr.net/npm/htm@3.1.1/preact/standalone.module.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {
+  getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut,
+  createUserWithEmailAndPassword, sendPasswordResetEmail, updatePassword,
+  reauthenticateWithCredential, EmailAuthProvider
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getDatabase, ref, onValue, push, set, update, get } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
+
+/* ===== Firebase 設定（請與 Firebase 專案設定頁的 firebaseConfig 核對） ===== */
+const firebaseConfig = {
+  apiKey: "AIzaSyCRrmtcQ8INfbK0XgwkAZCx8V5wXCwU1lg",
+  authDomain: "point-collection-stash.firebaseapp.com",
+  databaseURL: "https://point-collection-stash-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "point-collection-stash",
+  storageBucket: "point-collection-stash.firebasestorage.app",
+  messagingSenderId: "391627703615",
+  appId: "1:391627703615:web:f9b8c358f147949a1d7f8a"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+// 第二個 app 只用來「幫孩子建立帳號」，這樣爸爸不會被登出
+const auth2 = getAuth(initializeApp(firebaseConfig, "secondary"));
+
+const EMAIL_DOMAIN = "fp.wuyutzu.family";
+const kidEmail = (name) => `${name.toLowerCase()}@${EMAIL_DOMAIN}`;
+
+const DEFAULT_CONFIG = {
+  behaviors: {
+    b1: { name: "主動完成功課", points: 5, random: false },
+    b2: { name: "整理房間", points: 3, random: false },
+    b3: { name: "幫忙做家事", points: 2, random: true },
+    b4: { name: "閱讀 30 分鐘", points: 4, random: true }
+  },
+  rewards: {
+    r1: { name: "看電視 30 分鐘", cost: 10 },
+    r2: { name: "選擇今天的晚餐", cost: 20 },
+    r3: { name: "買一個小玩具", cost: 50 }
+  },
+  diceFaces: [1, 1, 2, 2, 3, 5]
+};
+
+/* ===== 小工具 ===== */
+const toList = (obj) => Object.entries(obj || {}).map(([id, v]) => ({ id, ...v }));
+const calcPoints = (entries) => entries.reduce((s, e) => {
+  if (e.status !== "approved") return s;
+  return e.kind === "redeem" ? s - e.amount : s + e.amount;
+}, 0);
+const pendingRedeem = (entries) => entries
+  .filter((e) => e.status === "pending" && e.kind === "redeem")
+  .reduce((s, e) => s + e.amount, 0);
+const fmt = (ms) => ms ? new Date(ms).toLocaleString("zh-TW", { hour12: false, month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
+const STATUS = {
+  pending: ["待審核", "#FBF1DC", "#8A5A0B"],
+  approved: ["已通過", "#E1F2EE", "#0F6E56"],
+  rejected: ["已退回", "#FBE8E4", "#993C1D"]
+};
+
+function authMsg(e) {
+  const c = (e && e.code) || "";
+  const m = (e && e.message) || "";
+  if (/invalid-credential|wrong-password|user-not-found|invalid-email/.test(c)) return "帳號或密碼不對，再試一次";
+  if (/too-many-requests/.test(c)) return "試太多次了，請等幾分鐘再試";
+  if (/network/.test(c)) return "網路好像斷了，請檢查連線";
+  if (/weak-password/.test(c)) return "密碼太簡單（至少 6 碼）";
+  if (/email-already-in-use/.test(c)) return "這個登入名稱已經有人用了，換一個";
+  if (/requires-recent-login/.test(c)) return "請登出再登入一次後再試";
+  if (/PERMISSION_DENIED/i.test(m + c)) return "沒有權限執行這個動作";
+  return "發生錯誤：" + (c || m || "未知");
+}
+
+/* 即時監聽某個資料位置 */
+function useValue(path) {
+  const [st, setSt] = useState({ loading: true, value: null, error: null });
+  useEffect(() => {
+    setSt({ loading: true, value: null, error: null });
+    const unsub = onValue(ref(db, path),
+      (snap) => setSt({ loading: false, value: snap.val(), error: null }),
+      (error) => setSt({ loading: false, value: null, error }));
+    return () => unsub();
+  }, [path]);
+  return st;
+}
+
+/* ===== 共用元件 ===== */
+const Loading = () => html`<p class="center muted" style="margin-top:80px">載入中…</p>`;
+const Empty = ({ text }) => html`<div class="center muted" style="padding:24px 12px">${text}</div>`;
+const Pill = ({ status }) => {
+  const [t, bg, c] = STATUS[status] || STATUS.pending;
+  return html`<span class="pill" style=${{ background: bg, color: c }}>${t}</span>`;
+};
+
+function Tabs({ tabs, active, onChange }) {
+  return html`<div class="tabs">${tabs.map((t) => html`
+    <button key=${t.id} class=${"tab" + (active === t.id ? " on" : "")} onClick=${() => onChange(t.id)}>${t.label}</button>`)}
+  </div>`;
+}
+
+function TopBar({ title, onPw, onLogout }) {
+  return html`<div class="row between" style="margin-bottom:14px">
+    <h1>${title}</h1>
+    <div class="row" style="flex-wrap:nowrap">
+      <button class="b-ghost" onClick=${onPw}>改密碼</button>
+      <button class="b-ghost" onClick=${onLogout}>登出</button>
+    </div>
+  </div>`;
+}
+
+function ChangePw({ user, onClose, notify }) {
+  const [o, setO] = useState(""), [a, setA] = useState(""), [b, setB] = useState("");
+  const [busy, setBusy] = useState(false);
+  const go = async () => {
+    if (a.length < 6) { notify("新密碼至少 6 碼"); return; }
+    if (a !== b) { notify("兩次輸入的新密碼不一樣"); return; }
+    setBusy(true);
+    try {
+      await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, o));
+      await updatePassword(user, a);
+      notify("密碼已更新");
+      onClose();
+    } catch (e) { notify(authMsg(e)); }
+    setBusy(false);
+  };
+  return html`<div class="mbg"><div class="modal stack">
+    <div class="sec">修改密碼 / PIN</div>
+    <input type="password" placeholder="目前的密碼" value=${o} onInput=${(e) => setO(e.target.value)} />
+    <input type="password" placeholder="新密碼（至少 6 碼）" value=${a} onInput=${(e) => setA(e.target.value)} />
+    <input type="password" placeholder="再輸入一次新密碼" value=${b} onInput=${(e) => setB(e.target.value)} />
+    <div class="row"><button class="b-ghost" style="flex:1" onClick=${onClose}>取消</button>
+    <button class="b-primary" style="flex:1" disabled=${busy} onClick=${go}>更新</button></div>
+  </div></div>`;
+}
+
+function HistoryRow({ e, kidName }) {
+  const earn = e.kind !== "redeem";
+  const sign = e.kind === "redeem" ? "-" : (e.amount >= 0 ? "+" : "");
+  return html`<div class="card row between" style="padding:12px 16px">
+    <div>
+      <div class="title">${e.kind === "redeem" ? "🎁 " : "⭐ "}${kidName ? kidName + "・" : ""}${e.refName}${e.multiplier > 1 ? html` <span style="color:#B5892B">×${e.multiplier}</span>` : ""}</div>
+      <div class="muted">${fmt(e.createdAt)}</div>
+    </div>
+    <div class="row" style="flex-wrap:nowrap;gap:10px">
+      <b style=${{ color: earn ? "#0F6E56" : "#993C1D" }}>${sign}${e.amount}</b>
+      <${Pill} status=${e.status} />
+    </div>
+  </div>`;
+}
+
+function DiceModal({ b, faces, onClose, onConfirm, busy }) {
+  const [rolling, setRolling] = useState(false);
+  const [res, setRes] = useState(null);
+  const [shown, setShown] = useState(faces[0]);
+  const timer = useRef(null);
+  useEffect(() => () => clearInterval(timer.current), []);
+  const roll = () => {
+    setRolling(true); setRes(null);
+    let t = 0;
+    timer.current = setInterval(() => {
+      const f = faces[Math.floor(Math.random() * faces.length)];
+      setShown(f); t++;
+      if (t > 10) { clearInterval(timer.current); setRes(f); setRolling(false); }
+    }, 80);
+  };
+  return html`<div class="mbg"><div class="modal">
+    <div class="muted">回報項目</div>
+    <div class="display" style="font-size:19px;font-weight:700;margin-bottom:6px">${b.name}</div>
+    <div class=${"dice" + (rolling ? " rolling" : res ? " done" : "")}>× ${shown}</div>
+    ${res === null && html`<div class="stack">
+      <button class="b-gold" disabled=${rolling} onClick=${roll}>${rolling ? "骰子轉轉轉…" : "🎲 擲骰子！"}</button>
+      <button class="b-ghost" disabled=${rolling} onClick=${onClose}>取消</button></div>`}
+    ${res !== null && html`
+      <p class="center" style="margin:0 0 12px">基本 ${b.points} 點 × ${res} 倍 = <b>${b.points * res} 點</b></p>
+      <button class="b-ok" style="width:100%" disabled=${busy} onClick=${() => onConfirm(res)}>送出給爸爸審核</button>`}
+  </div></div>`;
+}
+
+/* ===== 登入畫面 ===== */
+function Login({ notify }) {
+  const [mode, setMode] = useState("kid");
+  const [name, setName] = useState(""), [pin, setPin] = useState("");
+  const [email, setEmail] = useState(""), [pw, setPw] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const go = async () => {
+    setBusy(true);
+    try {
+      if (mode === "kid") {
+        const n = name.trim().toLowerCase();
+        if (!/^[a-z0-9]{2,12}$/.test(n)) { notify("登入名稱是 2–12 個英文字母或數字"); setBusy(false); return; }
+        await signInWithEmailAndPassword(auth, kidEmail(n), pin);
+      } else {
+        await signInWithEmailAndPassword(auth, email.trim(), pw);
+      }
+    } catch (e) { notify(authMsg(e)); }
+    setBusy(false);
+  };
+  const forgot = async () => {
+    if (!email.trim()) { notify("請先輸入你的 Email"); return; }
+    try { await sendPasswordResetEmail(auth, email.trim()); notify("重設密碼信已寄出，請到信箱查看"); }
+    catch (e) { notify(authMsg(e)); }
+  };
+  const enter = (e) => { if (e.key === "Enter") go(); };
+
+  return html`<div style="max-width:380px;margin:30px auto 0">
+    <div class="center" style="margin-bottom:22px">
+      <div class="logo">🪙</div>
+      <h1 style="font-size:26px">集點小金庫</h1>
+      <div class="muted" style="margin-top:4px">表現得好，就存進金庫裡</div>
+    </div>
+    <${Tabs} tabs=${[{ id: "kid", label: "我是小孩" }, { id: "admin", label: "爸爸登入" }]} active=${mode} onChange=${setMode} />
+    <div class="card stack">
+      ${mode === "kid" ? html`
+        <input placeholder="我的登入名稱" autocapitalize="none" autocomplete="username" value=${name} onInput=${(e) => setName(e.target.value)} onKeyDown=${enter} />
+        <input type="password" inputmode="numeric" placeholder="我的 PIN（6 位數字）" autocomplete="current-password" value=${pin} onInput=${(e) => setPin(e.target.value)} onKeyDown=${enter} />`
+      : html`
+        <input type="email" placeholder="Email" autocomplete="username" value=${email} onInput=${(e) => setEmail(e.target.value)} onKeyDown=${enter} />
+        <input type="password" placeholder="密碼" autocomplete="current-password" value=${pw} onInput=${(e) => setPw(e.target.value)} onKeyDown=${enter} />`}
+      <button class="b-primary" disabled=${busy} onClick=${go}>${busy ? "登入中…" : "登入"}</button>
+      ${mode === "admin" && html`<button class="b-ghost" onClick=${forgot}>忘記密碼？寄重設信</button>`}
+    </div>
+  </div>`;
+}
+
+/* ===== 孩子畫面 ===== */
+function KidApp({ user, kidId, notify, onPw, onLogout }) {
+  const cfg = useValue("fp/config");
+  const me = useValue(`fp/kids/${kidId}`);
+  const led = useValue(`fp/ledger/${kidId}`);
+  const [tab, setTab] = useState("tasks");
+  const [dice, setDice] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  if (cfg.loading || me.loading || led.loading) return html`<${Loading} />`;
+  if (cfg.error || led.error) return html`<${Empty} text="讀不到資料，請確認網路，或請爸爸檢查設定" />`;
+
+  const c = cfg.value || {};
+  const kid = me.value || { name: "我" };
+  const entries = toList(led.value).sort((a, b) => b.createdAt - a.createdAt);
+  const points = calcPoints(entries);
+  const available = points - pendingRedeem(entries);
+  const behaviors = toList(c.behaviors);
+  const rewards = toList(c.rewards).sort((a, b) => a.cost - b.cost);
+  const faces = Array.isArray(c.diceFaces) && c.diceFaces.length ? c.diceFaces : [1];
+  const pendingNames = new Set(entries.filter((e) => e.status === "pending" && e.kind === "earn").map((e) => e.refName));
+
+  const send = async (entry, okMsg) => {
+    setBusy(true);
+    try {
+      await set(push(ref(db, `fp/ledger/${kidId}`)), { kidId, status: "pending", createdAt: Date.now(), ...entry });
+      notify(okMsg);
+      setDice(null);
+    } catch (e) { notify(authMsg(e)); }
+    setBusy(false);
+  };
+  const report = (b, m) => send(
+    { kind: "earn", refName: b.name, basePoints: b.points, multiplier: m, amount: b.points * m },
+    `已回報「${b.name}」，等爸爸審核囉！`);
+  const redeem = (r) => {
+    if (available < r.cost) { notify("點數還不夠喔，再加油！"); return; }
+    send({ kind: "redeem", refName: r.name, amount: r.cost }, `已申請兌換「${r.name}」，等爸爸確認囉！`);
+  };
+
+  return html`<div>
+    <${TopBar} title=${kid.name + " 的金庫"} onPw=${onPw} onLogout=${onLogout} />
+    <div class="hero">
+      <div>
+        <div class="muted">目前總點數</div>
+        <div class="big">${points} <span style="font-size:16px;font-weight:500">點</span></div>
+        ${available !== points && html`<div class="muted">申請兌換中，可用 ${available} 點</div>`}
+      </div>
+      <div style="font-size:42px">🪙</div>
+    </div>
+    <${Tabs} tabs=${[{ id: "tasks", label: "回報表現" }, { id: "shop", label: "兌換獎品" }, { id: "history", label: "我的紀錄" }]} active=${tab} onChange=${setTab} />
+
+    ${tab === "tasks" && html`<div class="stack">
+      ${behaviors.length === 0 && html`<${Empty} text="爸爸還沒有設定表現項目喔" />`}
+      ${behaviors.map((b) => html`<div key=${b.id} class="card row between">
+        <div>
+          <div class="title">${b.name}</div>
+          <div class="muted">基本 ${b.points} 點${b.random ? "・完成後可以擲骰子加倍！" : ""}</div>
+        </div>
+        ${pendingNames.has(b.name)
+          ? html`<span class="pill" style=${{ background: "#FBF1DC", color: "#8A5A0B" }}>等審核中</span>`
+          : html`<button class=${b.random ? "b-gold" : "b-primary"} disabled=${busy} onClick=${() => (b.random ? setDice(b) : report(b, 1))}>${b.random ? "🎲 擲骰回報" : "回報完成"}</button>`}
+      </div>`)}
+    </div>`}
+
+    ${tab === "shop" && html`<div class="stack">
+      ${rewards.length === 0 && html`<${Empty} text="爸爸還沒有設定獎品喔" />`}
+      ${rewards.map((r) => html`<div key=${r.id} class="card row between">
+        <div><div class="title">${r.name}</div><div class="muted">需要 ${r.cost} 點</div></div>
+        <button class=${available >= r.cost ? "b-ok" : "b-ghost"} disabled=${busy || available < r.cost} onClick=${() => redeem(r)}>${available >= r.cost ? "申請兌換" : "點數不夠"}</button>
+      </div>`)}
+    </div>`}
+
+    ${tab === "history" && html`<div class="stack">
+      ${entries.length === 0 && html`<${Empty} text="還沒有任何紀錄，快去完成一件事吧！" />`}
+      ${entries.map((e) => html`<${HistoryRow} key=${e.id} e=${e} />`)}
+    </div>`}
+
+    ${dice && html`<${DiceModal} b=${dice} faces=${faces} busy=${busy} onClose=${() => setDice(null)} onConfirm=${(m) => report(dice, m)} />`}
+  </div>`;
+}
+
+/* ===== 爸爸：各分頁 ===== */
+function Overview({ kids, entries, cfg, notify }) {
+  const rewards = toList(cfg.rewards);
+  const [k1, setK1] = useState(""), [amt, setAmt] = useState(""), [note, setNote] = useState("");
+  const [k2, setK2] = useState(""), [rw, setRw] = useState("");
+  const adjKid = k1 || (kids[0] && kids[0].id) || "";
+  const redKid = k2 || (kids[0] && kids[0].id) || "";
+  const redRw = rw || (rewards[0] && rewards[0].id) || "";
+  const nameOf = (id) => (kids.find((k) => k.id === id) || {}).name || "（已刪除）";
+  const pts = (id) => calcPoints(entries.filter((e) => e.kidId === id));
+
+  const adjust = async (sign) => {
+    const n = Math.round(Number(amt));
+    if (!adjKid) { notify("請先到「人員」新增小孩"); return; }
+    if (!n || n <= 0) { notify("請輸入大於 0 的點數"); return; }
+    try {
+      const now = Date.now();
+      await set(push(ref(db, `fp/ledger/${adjKid}`)), {
+        kidId: adjKid, kind: "adjust", refName: note.trim() || (sign > 0 ? "爸爸加點" : "爸爸扣點"),
+        amount: sign * n, status: "approved", createdAt: now, resolvedAt: now
+      });
+      setAmt(""); setNote(""); notify(sign > 0 ? "已加點" : "已扣點");
+    } catch (e) { notify(authMsg(e)); }
+  };
+  const redeemNow = async () => {
+    const r = rewards.find((x) => x.id === redRw);
+    if (!r || !redKid) { notify("請先選好小孩與獎品"); return; }
+    if (pts(redKid) < r.cost) { notify("這個小孩的點數不夠喔"); return; }
+    try {
+      const now = Date.now();
+      await set(push(ref(db, `fp/ledger/${redKid}`)), { kidId: redKid, kind: "redeem", refName: r.name, amount: r.cost, status: "approved", createdAt: now, resolvedAt: now });
+      notify("已完成兌換");
+    } catch (e) { notify(authMsg(e)); }
+  };
+  const recent = entries.filter((e) => e.status !== "pending").sort((a, b) => b.createdAt - a.createdAt).slice(0, 15);
+
+  return html`<div class="stack">
+    <div class="grid">
+      ${kids.map((k) => html`<div key=${k.id} class="card center">
+        <div class="muted">${k.name}</div><div class="big" style="font-size:30px">${pts(k.id)} 點</div></div>`)}
+    </div>
+    ${kids.length === 0 && html`<${Empty} text="還沒有小孩，請到「人員」分頁新增" />`}
+    <div class="card">
+      <div class="sec">🪙 手動加點 / 扣點</div>
+      <div class="row">
+        <select value=${adjKid} onChange=${(e) => setK1(e.target.value)}>${kids.map((k) => html`<option key=${k.id} value=${k.id}>${k.name}</option>`)}</select>
+        <input class="s" type="number" inputmode="numeric" min="1" placeholder="點數" value=${amt} onInput=${(e) => setAmt(e.target.value)} />
+        <input placeholder="原因（選填）" value=${note} onInput=${(e) => setNote(e.target.value)} />
+        <button class="b-ok" onClick=${() => adjust(1)}>加點</button>
+        <button class="b-bad" onClick=${() => adjust(-1)}>扣點</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="sec">🎁 直接完成一筆兌換（孩子當面要求時）</div>
+      <div class="row">
+        <select value=${redKid} onChange=${(e) => setK2(e.target.value)}>${kids.map((k) => html`<option key=${k.id} value=${k.id}>${k.name}</option>`)}</select>
+        <select value=${redRw} onChange=${(e) => setRw(e.target.value)}>${rewards.map((r) => html`<option key=${r.id} value=${r.id}>${r.name}（${r.cost} 點）</option>`)}</select>
+        <button class="b-primary" onClick=${redeemNow}>確認兌換</button>
+      </div>
+    </div>
+    <div class="sec" style="margin-top:6px">最近紀錄</div>
+    ${recent.length === 0 && html`<${Empty} text="還沒有紀錄" />`}
+    ${recent.map((e) => html`<${HistoryRow} key=${e.kidId + e.id} e=${e} kidName=${nameOf(e.kidId)} />`)}
+  </div>`;
+}
+
+function Pending({ kids, entries, notify }) {
+  const list = entries.filter((e) => e.status === "pending").sort((a, b) => b.createdAt - a.createdAt);
+  const nameOf = (id) => (kids.find((k) => k.id === id) || {}).name || "（已刪除）";
+  const resolve = async (e, status) => {
+    if (status === "approved" && e.kind === "redeem") {
+      const bal = calcPoints(entries.filter((x) => x.kidId === e.kidId));
+      if (bal < e.amount) { notify("點數不夠，沒辦法核准這筆兌換"); return; }
+    }
+    try {
+      await update(ref(db, `fp/ledger/${e.kidId}/${e.id}`), { status, resolvedAt: Date.now() });
+      notify(status === "approved" ? "已核准" : "已退回");
+    } catch (err) { notify(authMsg(err)); }
+  };
+  return html`<div class="stack">
+    ${list.length === 0 && html`<${Empty} text="目前沒有待審核的項目 👍" />`}
+    ${list.map((e) => html`<div key=${e.kidId + e.id} class="card row between">
+      <div>
+        <div class="title">${nameOf(e.kidId)}・${e.kind === "earn" ? "完成表現" : "申請兌換"}</div>
+        <div class="muted">${e.refName}${e.multiplier > 1 ? `（骰出 ×${e.multiplier}）` : ""}・${e.kind === "earn" ? "+" : "-"}${e.amount} 點・${fmt(e.createdAt)}</div>
+      </div>
+      <div class="row" style="flex-wrap:nowrap">
+        <button class="b-ok b-icon" onClick=${() => resolve(e, "approved")}>✔ 通過</button>
+        <button class="b-bad b-icon" onClick=${() => resolve(e, "rejected")}>✖</button>
+      </div>
+    </div>`)}
+  </div>`;
+}
+
+function BehaviorsEditor({ cfg, notify }) {
+  const list = toList(cfg.behaviors);
+  const [name, setName] = useState(""), [pts, setPts] = useState(""), [rnd, setRnd] = useState(false);
+  const save = async (fn) => { try { await fn(); } catch (e) { notify(authMsg(e)); } };
+  const add = () => {
+    const p = Math.round(Number(pts));
+    if (!name.trim() || !p || p <= 0) { notify("請輸入名稱和大於 0 的點數"); return; }
+    save(async () => { await set(push(ref(db, "fp/config/behaviors")), { name: name.trim(), points: p, random: rnd }); setName(""); setPts(""); setRnd(false); });
+  };
+  const upd = (id, patch) => save(() => update(ref(db, `fp/config/behaviors/${id}`), patch));
+  const del = (id) => { if (confirm("確定要刪除這個表現行為嗎？（已有的紀錄不受影響）")) save(() => set(ref(db, `fp/config/behaviors/${id}`), null)); };
+  return html`<div class="stack">
+    <div class="card"><div class="sec">＋ 新增表現行為</div><div class="row">
+      <input placeholder="例如：主動收拾書包" value=${name} onInput=${(e) => setName(e.target.value)} />
+      <input class="s" type="number" inputmode="numeric" placeholder="點數" value=${pts} onInput=${(e) => setPts(e.target.value)} />
+      <label class="muted" style="display:flex;gap:6px;align-items:center"><input type="checkbox" style="width:auto" checked=${rnd} onChange=${(e) => setRnd(e.target.checked)} />可擲骰加倍</label>
+      <button class="b-primary" onClick=${add}>新增</button></div></div>
+    ${list.length === 0 && html`<${Empty} text="還沒有設定任何表現行為" />`}
+    ${list.map((b) => html`<div key=${b.id} class="card row">
+      <input defaultValue=${b.name} onBlur=${(e) => e.target.value.trim() && e.target.value !== b.name && upd(b.id, { name: e.target.value.trim() })} />
+      <input class="s" type="number" defaultValue=${b.points} onBlur=${(e) => { const v = Math.round(Number(e.target.value)); if (v > 0 && v !== b.points) upd(b.id, { points: v }); }} />
+      <label class="muted" style="display:flex;gap:6px;align-items:center"><input type="checkbox" style="width:auto" checked=${!!b.random} onChange=${(e) => upd(b.id, { random: e.target.checked })} />骰子</label>
+      <button class="b-ghost b-icon" onClick=${() => del(b.id)}>🗑</button>
+    </div>`)}
+    <div class="muted">直接修改文字或點數，離開輸入框就會自動儲存。</div>
+  </div>`;
+}
+
+function RewardsEditor({ cfg, notify }) {
+  const list = toList(cfg.rewards).sort((a, b) => a.cost - b.cost);
+  const [name, setName] = useState(""), [cost, setCost] = useState("");
+  const save = async (fn) => { try { await fn(); } catch (e) { notify(authMsg(e)); } };
+  const add = () => {
+    const p = Math.round(Number(cost));
+    if (!name.trim() || !p || p <= 0) { notify("請輸入名稱和大於 0 的點數"); return; }
+    save(async () => { await set(push(ref(db, "fp/config/rewards")), { name: name.trim(), cost: p }); setName(""); setCost(""); });
+  };
+  const upd = (id, patch) => save(() => update(ref(db, `fp/config/rewards/${id}`), patch));
+  const del = (id) => { if (confirm("確定要刪除這個獎品嗎？")) save(() => set(ref(db, `fp/config/rewards/${id}`), null)); };
+  return html`<div class="stack">
+    <div class="card"><div class="sec">＋ 新增獎品</div><div class="row">
+      <input placeholder="例如：全家出遊選地點" value=${name} onInput=${(e) => setName(e.target.value)} />
+      <input class="s" type="number" inputmode="numeric" placeholder="所需點數" value=${cost} onInput=${(e) => setCost(e.target.value)} />
+      <button class="b-primary" onClick=${add}>新增</button></div></div>
+    ${list.length === 0 && html`<${Empty} text="還沒有設定任何獎品" />`}
+    ${list.map((r) => html`<div key=${r.id} class="card row">
+      <input defaultValue=${r.name} onBlur=${(e) => e.target.value.trim() && e.target.value !== r.name && upd(r.id, { name: e.target.value.trim() })} />
+      <input class="s" type="number" defaultValue=${r.cost} onBlur=${(e) => { const v = Math.round(Number(e.target.value)); if (v > 0 && v !== r.cost) upd(r.id, { cost: v }); }} />
+      <button class="b-ghost b-icon" onClick=${() => del(r.id)}>🗑</button>
+    </div>`)}
+    <div class="muted">直接修改文字或點數，離開輸入框就會自動儲存。</div>
+  </div>`;
+}
+
+function DiceEditor({ cfg, notify }) {
+  const cur = Array.isArray(cfg.diceFaces) ? cfg.diceFaces : [1];
+  const [txt, setTxt] = useState(cur.join(", "));
+  const save = async () => {
+    const arr = txt.split(/[,，\s]+/).map(Number).filter((n) => n > 0 && n <= 100);
+    if (!arr.length) { notify("請輸入至少一個倍數，例如 1, 2, 3"); return; }
+    try { await set(ref(db, "fp/config/diceFaces"), arr); setTxt(arr.join(", ")); notify("骰子倍數已儲存"); }
+    catch (e) { notify(authMsg(e)); }
+  };
+  return html`<div class="card stack">
+    <div class="sec">🎲 隨機骰子倍數表</div>
+    <div class="muted">孩子完成「可擲骰加倍」的項目時，會從這張表隨機抽一個倍數。用逗號分隔；同一個數字寫越多次，抽中機率越高。</div>
+    <div class="row"><input value=${txt} onInput=${(e) => setTxt(e.target.value)} placeholder="1, 1, 2, 2, 3, 5" /><button class="b-primary" onClick=${save}>儲存</button></div>
+    <div class="row">${cur.map((f, i) => html`<span key=${i} class="pill" style=${{ background: "#FBF1DC", color: "#8A5A0B" }}>×${f}</span>`)}</div>
+  </div>`;
+}
+
+function KidsManager({ kids, users, notify }) {
+  const [dn, setDn] = useState(""), [ln, setLn] = useState(""), [pin, setPin] = useState("");
+  const [relink, setRelink] = useState(null);
+  const [ln2, setLn2] = useState(""), [pin2, setPin2] = useState("");
+  const [busy, setBusy] = useState(false);
+  const accounts = toList(users);
+
+  const makeAccount = async (login, p) => {
+    const cred = await createUserWithEmailAndPassword(auth2, kidEmail(login), p);
+    await signOut(auth2);
+    return cred.user.uid;
+  };
+  const check = (login, p) => {
+    if (!/^[a-z0-9]{2,12}$/.test(login)) { notify("登入名稱要是 2–12 個英文字母或數字"); return false; }
+    if (!/^\d{6}$/.test(p)) { notify("PIN 要是 6 位數字"); return false; }
+    return true;
+  };
+  const addKid = async () => {
+    const name = dn.trim(), login = ln.trim().toLowerCase();
+    if (!name) { notify("請輸入小孩的名字"); return; }
+    if (!check(login, pin)) return;
+    setBusy(true);
+    try {
+      const uid = await makeAccount(login, pin);
+      const kidId = push(ref(db, "fp/kids")).key;
+      const now = Date.now();
+      await update(ref(db, "fp"), { [`kids/${kidId}`]: { name, createdAt: now }, [`users/${uid}`]: { kidId, loginName: login, createdAt: now } });
+      setDn(""); setLn(""); setPin(""); notify(`已新增 ${name}，登入名稱：${login}`);
+    } catch (e) { notify(authMsg(e)); }
+    setBusy(false);
+  };
+  const doRelink = async (kidId) => {
+    const login = ln2.trim().toLowerCase();
+    if (!check(login, pin2)) return;
+    setBusy(true);
+    try {
+      const uid = await makeAccount(login, pin2);
+      const patch = { [`users/${uid}`]: { kidId, loginName: login, createdAt: Date.now() } };
+      accounts.filter((a) => a.kidId === kidId).forEach((a) => { patch[`users/${a.id}`] = null; });
+      await update(ref(db, "fp"), patch);
+      setRelink(null); setLn2(""); setPin2(""); notify("已發新的登入帳號，點數紀錄都還在");
+    } catch (e) { notify(authMsg(e)); }
+    setBusy(false);
+  };
+  const rename = async (id, name) => { try { await update(ref(db, `fp/kids/${id}`), { name }); } catch (e) { notify(authMsg(e)); } };
+
+  return html`<div class="stack">
+    <div class="card stack"><div class="sec">＋ 新增小孩</div>
+      <input placeholder="顯示的名字（例如：小明）" value=${dn} onInput=${(e) => setDn(e.target.value)} />
+      <div class="row">
+        <input placeholder="登入名稱（英數字，例如 ming）" autocapitalize="none" value=${ln} onInput=${(e) => setLn(e.target.value)} />
+        <input placeholder="PIN（6 位數字）" inputmode="numeric" value=${pin} onInput=${(e) => setPin(e.target.value)} />
+      </div>
+      <button class="b-primary" disabled=${busy} onClick=${addKid}>建立小孩與登入帳號</button>
+    </div>
+    ${kids.map((k) => html`<div key=${k.id} class="card stack">
+      <div class="row"><input defaultValue=${k.name} onBlur=${(e) => e.target.value.trim() && e.target.value !== k.name && rename(k.id, e.target.value.trim())} />
+        <button class="b-ghost" onClick=${() => setRelink(relink === k.id ? null : k.id)}>忘記 PIN / 換登入帳號</button></div>
+      <div class="muted">登入名稱：${accounts.filter((a) => a.kidId === k.id).map((a) => a.loginName).join("、") || "（無）"}</div>
+      ${relink === k.id && html`<div class="stack" style="background:var(--soft);border-radius:10px;padding:12px">
+        <div class="muted">會建立一組新的登入帳號並接回原本的點數紀錄，舊帳號就不能再登入。</div>
+        <div class="row"><input placeholder="新的登入名稱" autocapitalize="none" value=${ln2} onInput=${(e) => setLn2(e.target.value)} />
+          <input placeholder="新 PIN（6 位數字）" inputmode="numeric" value=${pin2} onInput=${(e) => setPin2(e.target.value)} /></div>
+        <button class="b-primary" disabled=${busy} onClick=${() => doRelink(k.id)}>確認換發</button></div>`}
+    </div>`)}
+    <div class="muted">孩子第一次在自己的裝置登入後，瀏覽器會記住，之後直接打開就能用。</div>
+  </div>`;
+}
+
+function Account({ user, kids, entries, notify, onPw }) {
+  const exportCSV = () => {
+    const nameOf = (id) => (kids.find((k) => k.id === id) || {}).name || id;
+    const kindTxt = { earn: "獲得", redeem: "兌換", adjust: "手動調整" };
+    const rows = [["時間", "小孩", "類型", "項目", "點數", "狀態"]];
+    entries.slice().sort((a, b) => a.createdAt - b.createdAt).forEach((e) => rows.push([
+      new Date(e.createdAt).toLocaleString("zh-TW", { hour12: false }), nameOf(e.kidId), kindTxt[e.kind] || e.kind,
+      e.refName, e.kind === "redeem" ? -e.amount : e.amount, (STATUS[e.status] || [e.status])[0]]));
+    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = `集點紀錄_${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+  return html`<div class="stack">
+    <div class="card stack"><div class="sec">備份紀錄</div>
+      <div class="muted">把所有點數紀錄匯出成 CSV，可用 Excel 或 Google 試算表開啟留底。</div>
+      <button class="b-primary" onClick=${exportCSV}>⬇ 匯出 CSV</button></div>
+    <div class="card stack"><div class="sec">我的帳號</div>
+      <div class="muted">${user.email}</div>
+      <button class="b-ghost" onClick=${onPw}>修改密碼</button></div>
+  </div>`;
+}
+
+/* ===== 爸爸主畫面 ===== */
+function AdminApp({ user, notify, onPw, onLogout }) {
+  const cfg = useValue("fp/config");
+  const kidsS = useValue("fp/kids");
+  const usersS = useValue("fp/users");
+  const led = useValue("fp/ledger");
+  const [tab, setTab] = useState("overview");
+
+  useEffect(() => {
+    if (!cfg.loading && !cfg.error && cfg.value === null) set(ref(db, "fp/config"), DEFAULT_CONFIG).catch(() => {});
+  }, [cfg.loading, cfg.value]);
+
+  if (cfg.loading || kidsS.loading || usersS.loading || led.loading) return html`<${Loading} />`;
+  if (cfg.error || kidsS.error || led.error) return html`<${Empty} text="讀不到資料，請確認 Firebase 規則是否已發布" />`;
+
+  const c = cfg.value || {};
+  const kids = toList(kidsS.value).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+  const entries = Object.entries(led.value || {}).flatMap(([kidId, m]) => toList(m).map((e) => ({ ...e, kidId })));
+  const pendingN = entries.filter((e) => e.status === "pending").length;
+
+  return html`<div>
+    <${TopBar} title="管理員控制台" onPw=${onPw} onLogout=${onLogout} />
+    <${Tabs} active=${tab} onChange=${setTab} tabs=${[
+      { id: "overview", label: "總覽" },
+      { id: "pending", label: "待審核" + (pendingN ? `（${pendingN}）` : "") },
+      { id: "behaviors", label: "表現行為" },
+      { id: "rewards", label: "獎品" },
+      { id: "dice", label: "骰子" },
+      { id: "kids", label: "人員" },
+      { id: "account", label: "備份/帳號" }]} />
+    ${tab === "overview" && html`<${Overview} kids=${kids} entries=${entries} cfg=${c} notify=${notify} />`}
+    ${tab === "pending" && html`<${Pending} kids=${kids} entries=${entries} notify=${notify} />`}
+    ${tab === "behaviors" && html`<${BehaviorsEditor} cfg=${c} notify=${notify} />`}
+    ${tab === "rewards" && html`<${RewardsEditor} cfg=${c} notify=${notify} />`}
+    ${tab === "dice" && html`<${DiceEditor} cfg=${c} notify=${notify} />`}
+    ${tab === "kids" && html`<${KidsManager} kids=${kids} users=${usersS.value} notify=${notify} />`}
+    ${tab === "account" && html`<${Account} user=${user} kids=${kids} entries=${entries} notify=${notify} onPw=${onPw} />`}
+  </div>`;
+}
+
+/* ===== 根元件 ===== */
+function App() {
+  const [user, setUser] = useState(undefined);
+  const [prof, setProf] = useState(null);
+  const [toast, setToast] = useState("");
+  const [pwOpen, setPwOpen] = useState(false);
+  const tRef = useRef(null);
+  const notify = (m) => { setToast(m); clearTimeout(tRef.current); tRef.current = setTimeout(() => setToast(""), 2600); };
+
+  useEffect(() => onAuthStateChanged(auth, (u) => { setProf(null); setUser(u); }), []);
+
+  useEffect(() => {
+    if (!user) return;
+    let alive = true;
+    (async () => {
+      try {
+        const a = await get(ref(db, `fp/admins/${user.uid}`));
+        if (a.val() === true) { alive && setProf({ role: "admin" }); return; }
+        const k = await get(ref(db, `fp/users/${user.uid}`));
+        alive && setProf(k.exists() && k.val().kidId ? { role: "kid", kidId: k.val().kidId } : { role: "none" });
+      } catch (e) { alive && setProf({ role: "error" }); }
+    })();
+    return () => { alive = false; };
+  }, [user]);
+
+  const logout = () => signOut(auth);
+  let body;
+  if (user === undefined) body = html`<${Loading} />`;
+  else if (!user) body = html`<${Login} notify=${notify} />`;
+  else if (!prof) body = html`<${Loading} />`;
+  else if (prof.role === "admin") body = html`<${AdminApp} user=${user} notify=${notify} onPw=${() => setPwOpen(true)} onLogout=${logout} />`;
+  else if (prof.role === "kid") body = html`<${KidApp} key=${prof.kidId} user=${user} kidId=${prof.kidId} notify=${notify} onPw=${() => setPwOpen(true)} onLogout=${logout} />`;
+  else body = html`<div class="card center stack" style="margin-top:40px">
+    <div>${prof.role === "error" ? "讀取帳號資料失敗，請確認網路與 Firebase 規則。" : "這個帳號還沒有被授權使用喔，請找爸爸幫忙。"}</div>
+    <button class="b-ghost" onClick=${logout}>登出</button></div>`;
+
+  return html`<div>
+    ${toast && html`<div class="toast">${toast}</div>`}
+    ${body}
+    ${pwOpen && user && html`<${ChangePw} user=${user} notify=${notify} onClose=${() => setPwOpen(false)} />`}
+  </div>`;
+}
+
+render(html`<${App} />`, document.getElementById("app"));
+</script>
+</body>
+</html>
