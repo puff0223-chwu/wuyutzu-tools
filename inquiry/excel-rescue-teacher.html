@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>消失的實驗數據｜老師答案卷宗</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="excel-rescue-core.js"></script>
+<style>
+:root{--ink:#1c2230;--paper:#f3ead6;--paper2:#e9dcc0;--line:#cbb88f;--brass:#c39a3d;--stamp:#b3312c;--ok:#2f7d4f;--muted:#6b6250;--text:#2a2418}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:"Noto Sans TC",system-ui,sans-serif;color:var(--text);background:var(--ink);min-height:100vh;line-height:1.6}
+.wrap{max-width:1200px;margin:0 auto;padding:24px 16px 60px}
+h1,h2{font-family:"Noto Serif TC",serif;margin:0}
+.mono{font-family:"JetBrains Mono",monospace}
+.paper{background:var(--paper);border-radius:6px;box-shadow:0 14px 30px rgba(0,0,0,.35),inset 0 0 0 1px var(--line);padding:22px 24px;margin-bottom:18px}
+.head{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.head h1{font-size:1.6rem;color:var(--ink)}
+.sem{font-weight:700;color:var(--muted)}
+.sem b{color:var(--stamp)}
+h2{font-size:1.15rem;color:var(--ink);margin-bottom:10px}
+textarea,input{font:inherit;padding:10px 12px;border:2px solid var(--line);border-radius:6px;background:#fffaf0;width:100%}
+textarea{min-height:120px;font-family:"JetBrains Mono",monospace}
+.btn{display:inline-flex;gap:6px;align-items:center;padding:10px 18px;border-radius:6px;border:0;font:inherit;font-weight:700;background:var(--ink);color:var(--paper);cursor:pointer}
+.btn.brass{background:var(--brass);color:var(--ink)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.cols{display:grid;grid-template-columns:2fr 1fr;gap:18px}
+.note{color:var(--muted);font-size:.9rem;margin:6px 0 0}
+.verify .out{margin-top:10px;font-weight:700;min-height:1.6em}
+.good{color:var(--ok)} .bad{color:var(--stamp)}
+.tablebox{overflow-x:auto}
+table{border-collapse:collapse;font-size:.88rem;white-space:nowrap;width:100%}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:center}
+thead th{background:var(--ink);color:var(--paper);position:sticky;top:0}
+thead tr.grp th{background:#2b3346;color:var(--brass)}
+tbody tr:nth-child(even){background:var(--paper2)}
+td.code{font-family:"JetBrains Mono",monospace;font-weight:700;color:var(--stamp)}
+td.h{background:#efe6f7}
+td .dl{border:0;background:none;cursor:pointer;font-size:1rem}
+.share{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.qr{width:140px;height:140px;background:#fff;padding:8px;border-radius:8px;flex:none}
+.qr img,.qr canvas{width:100%!important;height:100%!important}
+.linkbox{font-family:"JetBrains Mono",monospace;background:#fffaf0;border:2px dashed var(--line);border-radius:6px;padding:8px 12px;word-break:break-all;font-size:.92rem}
+.btn.ghost{background:transparent;color:var(--ink);border:2px solid var(--ink)}
+.proj{position:fixed;inset:0;background:var(--ink);display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:30;padding:20px;text-align:center}
+.proj.on{display:flex}
+.proj h2{color:var(--paper);font-size:clamp(1.6rem,4vw,2.6rem)}
+.proj .qr{width:min(52vh,78vw);height:min(52vh,78vw);padding:16px;border-radius:14px}
+.proj .linkbox{background:transparent;color:var(--brass);border-color:#59627c;font-size:clamp(.9rem,2.2vw,1.3rem)}
+@media (max-width:760px){.cols{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="paper head">
+    <div><h1>🗂️ 消失的實驗數據｜老師答案卷宗</h1><div class="note">🔒 本頁含全班答案，請勿提供給學生；學生請用下方的學生連結</div></div>
+    <div class="sem">目前學期代碼：<b class="mono" id="sem"></b></div>
+  </div>
+
+  <div class="paper">
+    <h2>📮 學生連結</h2>
+    <div class="share">
+      <div class="qr" id="qrSmall"></div>
+      <div style="flex:1;min-width:240px">
+        <div class="linkbox" id="link"></div>
+        <div class="row">
+          <button class="btn" id="btnCopy">📋 複製學生連結</button>
+          <button class="btn ghost" id="btnProj">🖥️ 全螢幕投影 QR</button>
+        </div>
+        <p class="note">學生掃碼後輸入學號就會拿到專屬數據，不需要題組碼。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="cols">
+    <div class="paper">
+      <h2>① 貼上學號清單，產生全班答案</h2>
+      <textarea id="ids" placeholder="一行一位，可以是「學號」或「學號 姓名」（中間空白或 Tab 都行），直接從 Excel 複製兩欄貼上也可以"></textarea>
+      <div class="row">
+        <button class="btn" id="btnGen">產生答案表</button>
+        <button class="btn brass" id="btnXlsx">📥 匯出答案表 Excel</button>
+      </div>
+    </div>
+    <div class="paper verify">
+      <h2>② 驗證結案代碼</h2>
+      <input id="vId" placeholder="學號">
+      <input id="vCode" placeholder="學生截圖上的代碼" style="margin-top:8px">
+      <div class="row"><button class="btn" id="btnVerify">驗證</button></div>
+      <div class="out" id="vOut"></div>
+      <p class="note">結案代碼與隱藏徽章代碼都可以驗。</p>
+    </div>
+  </div>
+
+  <div class="paper">
+    <h2>③ 全班答案表</h2>
+    <p class="note">斜率、R² 顯示到小數第 4 位（跟 Excel 趨勢線預設一致）。點 📄 可下載該生的專屬數據檔，方便你自己試做或幫學生補檔。</p>
+    <div class="tablebox" id="tbl"><p class="note">還沒產生，先在 ① 貼上學號。</p></div>
+  </div>
+</div>
+
+<div class="proj" id="proj">
+  <h2>🔍 消失的實驗數據｜掃碼開始調查</h2>
+  <div class="qr" id="qrBig"></div>
+  <div class="linkbox" id="linkBig"></div>
+  <button class="btn ghost" id="btnProjClose" style="color:var(--paper);border-color:var(--paper)">關閉（Esc）</button>
+</div>
+
+<script>
+(function(){
+  var X = window.ExcelRescue, $ = function(id){ return document.getElementById(id); };
+  $('sem').textContent = X.CONFIG.SEMESTER;
+  var list = [];
+
+  // ---------- 學生連結與 QR Code ----------
+  var link = new URL('excel-rescue.html', location.href).href;
+  $('link').textContent = link; $('linkBig').textContent = link;
+  function drawQR(id, size){
+    var box = $(id); box.innerHTML = '';
+    if (typeof QRCode === 'undefined') { box.innerHTML = '<div class="note">（QR Code 載入失敗）</div>'; return; }
+    new QRCode(box, { text: link, width: size, height: size, correctLevel: QRCode.CorrectLevel.M });
+  }
+  drawQR('qrSmall', 140);
+  $('btnCopy').onclick = function(){
+    var done = function(){ $('btnCopy').textContent = '✅ 已複製'; setTimeout(function(){ $('btnCopy').textContent = '📋 複製學生連結'; }, 1500); };
+    if (navigator.clipboard) navigator.clipboard.writeText(link).then(done, function(){ prompt('請手動複製：', link); });
+    else prompt('請手動複製：', link);
+  };
+  $('btnProj').onclick = function(){ $('proj').classList.add('on'); drawQR('qrBig', 512); };
+  $('btnProjClose').onclick = function(){ $('proj').classList.remove('on'); };
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') $('proj').classList.remove('on'); });
+
+  function f(n, d){ return Number(n).toFixed(d); }
+  function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+
+  function rowsFor(id, name){
+    var d = X.generate(id), a1=d.L1.answers, a2=d.L2.answers, a3=d.L3.answers, a4=d.L4.answers, h=d.L4.hidden, a5=d.L5.answers, a6=d.L6.answers;
+    return [
+      d.id, name||'', X.closeCode(d.id), X.hiddenCode(d.id),
+      '第'+d.L1.k+'多：'+a1.rankCode, f(a1.diff,1),
+      a2.mp, a2.bp, a2.boilStart,
+      a3.largest, d.L3.target+' '+f(a3.targetPct,1)+'%',
+      f(a4.slope,4), f(a4.r2,4), f(a4.conc,2),
+      f(a5.avg,2), a5.max, a5.min, a5.large3, a5.small2, f(a5.stdevS,2)+' / '+f(a5.stdevP,2),
+      a6.count, a6.worst,
+      h.outlierConc+' ppm', f(h.slope,4), f(h.r2,4), f(h.conc,2)
+    ];
+  }
+  var HEAD = ['學號','姓名','結案代碼','隱藏徽章',
+    'L1 排名','L1 差值','L2 熔點','L2 沸點','L2 沸騰起始(分)',
+    'L3 最大成分','L3 指定成分%',
+    'L4 斜率','L4 R²','L4 未知濃度',
+    'L5 平均','L5 最大','L5 最小','L5 第三大','L5 第二小','L5 標準差 S / P',
+    'L6 超標數','L6 最高點',
+    '隱藏 污染點','隱藏 新斜率','隱藏 新R²','隱藏 新濃度'];
+
+  function parse(){
+    return $('ids').value.split(/\r?\n/).map(function(l){ return l.trim(); }).filter(Boolean).map(function(l){
+      var p = l.split(/[\s,，\t]+/); return { id: X.normId(p[0]), name: p.slice(1).join(' ') };
+    }).filter(function(o){ return /^[A-Z0-9]{3,12}$/.test(o.id); });
+  }
+
+  $('btnGen').onclick = function(){
+    list = parse();
+    if (!list.length) { $('tbl').innerHTML = '<p class="note bad">沒有讀到有效的學號。</p>'; return; }
+    var h = '<table><thead><tr class="grp"><th colspan="4">調查員</th><th colspan="2">1 長條圖</th><th colspan="3">2 折線圖</th><th colspan="2">3 圓餅圖</th><th colspan="3">4 散佈圖</th><th colspan="6">5 函數</th><th colspan="2">6 格式化條件</th><th colspan="4">🕵️ 隱藏關卡</th><th></th></tr><tr>'+
+      HEAD.map(function(x){ return '<th>'+x+'</th>'; }).join('')+'<th>數據檔</th></tr></thead><tbody>';
+    list.forEach(function(o){
+      var r = rowsFor(o.id, o.name);
+      h += '<tr>'+r.map(function(c,i){ return '<td class="'+(i===2||i===3?'code':'')+(i>=22?' h':'')+'">'+esc(c)+'</td>'; }).join('')+
+           '<td><button class="dl" data-id="'+o.id+'" title="下載此生數據檔">📄</button></td></tr>';
+    });
+    $('tbl').innerHTML = h + '</tbody></table>';
+    Array.prototype.forEach.call(document.querySelectorAll('.dl'), function(b){ b.onclick = function(){ dlStudent(b.getAttribute('data-id')); }; });
+  };
+
+  $('btnXlsx').onclick = function(){
+    if (!list.length) $('btnGen').click();
+    if (!list.length || !window.XLSX) return;
+    var aoa = [HEAD].concat(list.map(function(o){ return rowsFor(o.id, o.name); }));
+    var ws = XLSX.utils.aoa_to_sheet(aoa), wb = XLSX.utils.book_new();
+    ws['!cols'] = HEAD.map(function(){ return { wch: 13 }; });
+    XLSX.utils.book_append_sheet(wb, ws, '答案表');
+    XLSX.writeFile(wb, '消失的實驗數據_答案表_' + X.CONFIG.SEMESTER + '.xlsx');
+  };
+
+  function dlStudent(id){
+    if (!window.XLSX) return;
+    var d = X.generate(id), wb = XLSX.utils.book_new();
+    X.sheets(d).forEach(function(s){ var ws = XLSX.utils.aoa_to_sheet(s.aoa); ws['!cols'] = s.cols.map(function(w){ return { wch:w }; }); XLSX.utils.book_append_sheet(wb, ws, s.name); });
+    XLSX.writeFile(wb, '消失的實驗數據_' + d.id + '.xlsx');
+  }
+
+  $('btnVerify').onclick = function(){
+    var id = X.normId($('vId').value), code = $('vCode').value.trim().toUpperCase().replace(/\s/g,''), out = $('vOut');
+    if (!id || !code) { out.className='out bad'; out.textContent='學號和代碼都要填'; return; }
+    if (code === X.closeCode(id)) { out.className='out good'; out.textContent='✅ 正確！這是 '+id+' 的結案代碼（六關全破）'; }
+    else if (code === X.hiddenCode(id)) { out.className='out good'; out.textContent='🕵️ 正確！這是 '+id+' 的隱藏關卡徽章'; }
+    else { out.className='out bad'; out.textContent='❌ 對不上。可能打錯字、學號不對，或是拿別人的代碼'; }
+  };
+})();
+</script>
+</body>
+</html>

@@ -145,7 +145,7 @@
     <div>
       <div class="eyebrow">The Casebook of Wu Yu-Zi</div>
       <h1>巫魚子<span class="hl">教課事務所</span></h1>
-      <p class="tagline">班級事務 · 化學實驗室 · 遊戲研究——每個工具都是一份待破解的卷宗</p>
+      <p class="tagline">班級事務 · 化學實驗室 · 遊戲研究 · 探究實作——每個工具都是一份待破解的卷宗</p>
     </div>
   </header>
 
@@ -174,7 +174,7 @@
 <script>
 /* =========================================================
    工具清單：新增工具只要在這裡加一筆資料，卡片和說明卷宗會自動產生
-   drawer：0 班級事務、1 化學實驗室 No.307、2 遊戲研究室
+   drawer：0 班級事務、1 化學實驗室 No.307、2 遊戲研究室、3 探究與實作
    shelf：抽屜裡的小分類
    teacher：true 表示連到老師專用頁（顯示「🔒 老師專用」）
    case：系列案件編號（顯示紅色 CASE 標籤）
@@ -196,13 +196,15 @@ const TOOLS = [
   {"id": "curse", "drawer": 1, "shelf": "課堂遊戲化", "icon": "💀", "name": "陣亡詛咒系統", "brief": "角色血量歸零時隨機抽取懲罰", "title": "陣亡詛咒系統", "sub": "遊戲化教學 · 懲罰抽取", "features": ["角色血量歸零時觸發", "9種詛咒等機率隨機抽取", "記錄所有陣亡歷史", "增加課堂遊戲化趣味"], "href": "gamification/system.html", "btn": "開始使用"},
   {"id": "poke", "drawer": 1, "shelf": "課堂遊戲化", "icon": "🎁", "name": "戳戳樂", "brief": "6×6格子，隨機獎品，即時開獎音效", "title": "戳戳樂", "sub": "6×6格子 · 即時開獎", "features": ["上傳背景圖片，36格覆蓋展示", "老師自訂獎品內容與數量", "學生輸入座號，點格即時開獎", "中獎金色閃亮，銘謝惠顧灰底", "下載完整中獎名單 Excel"], "href": "gamification/poke-game.html", "btn": "開始使用"},
   {"id": "truthdare", "drawer": 1, "shelf": "課堂遊戲化", "icon": "🎲", "name": "真心話大冒險", "brief": "真心話開放式提問・大冒險拉霸機", "title": "真心話大冒險", "sub": "班級互動遊戲 · 兩種模式", "features": ["真心話：7大類70題，開放式問法", "大冒險：拉霸機決定任務，保證合理有趣", "對象機率：自己60%・同學30%・老師10%", "無傷大雅，適合課堂使用"], "href": "gamification/truth-or-dare.html", "btn": "開始使用"},
-  {"id": "bartle", "drawer": 2, "shelf": "玩家研究", "icon": "🃏", "name": "巴圖玩家類型", "brief": "♦♠♥♣ 四種玩家風格，12題精簡或30題完整版", "title": "巴圖玩家類型測驗", "sub": "遊戲設計思考 · 玩家心理探索", "features": ["精簡版 12 題（約2分鐘）／完整版 30 題（約6分鐘）", "四種玩家類型：♦成就型・♠探索型・♥社交型・♣殺手型", "每題二選一，操作簡單直覺", "結果含四維度分數、座標軸位置圖、與其他類型的關係", "理論來源：Richard Bartle（1996）"], "href": "classroom/bartle.html", "btn": "開始測驗"}
+  {"id": "bartle", "drawer": 2, "shelf": "玩家研究", "icon": "🃏", "name": "巴圖玩家類型", "brief": "♦♠♥♣ 四種玩家風格，12題精簡或30題完整版", "title": "巴圖玩家類型測驗", "sub": "遊戲設計思考 · 玩家心理探索", "features": ["精簡版 12 題（約2分鐘）／完整版 30 題（約6分鐘）", "四種玩家類型：♦成就型・♠探索型・♥社交型・♣殺手型", "每題二選一，操作簡單直覺", "結果含四維度分數、座標軸位置圖、與其他類型的關係", "理論來源：Richard Bartle（1996）"], "href": "classroom/bartle.html", "btn": "開始測驗"},
+  {"id": "excelrescue", "drawer": 3, "shelf": "Excel 數據處理", "icon": "📊", "name": "消失的實驗數據", "brief": "Excel 作圖與函數 Ending 作業，每人專屬數據", "title": "消失的實驗數據", "sub": "Excel 數據救援任務 · 學號產生專屬數據，抄答案對不上", "features": ["學生輸入學號，下載自己的專屬 Excel 數據檔", "六關：長條圖、折線圖、圓餅圖、散佈圖、函數、格式化條件", "從圖表讀出答案回報，答對得密碼碎片，六關全破拿結案代碼", "隱藏關卡：散佈圖過關後解鎖，找出被污染的標準品重算 R²", "老師頁：全班答案表匯出 Excel、驗證結案代碼、下載任一學生數據檔"], "href": "inquiry/excel-rescue-teacher.html", "btn": "開啟老師頁", "note": "學生連結與 QR Code 在老師頁上方", "teacher": true},
 ];
 
 const DRAWERS = [
   { name: '班級事務', tag: 'Drawer I',   desc: '行政、認識學生、班級氣氛', color: '#1f9e8f', soft: '#e3f4f1' },
   { name: '化學實驗室 No.307', tag: 'Drawer II', desc: '懸案系列與課堂遊戲化', color: '#e4572e', soft: '#fde8e1' },
-  { name: '遊戲研究室', tag: 'Drawer III', desc: '遊戲設計思考課程', color: '#7b5ea7', soft: '#eee8f6' }
+  { name: '遊戲研究室', tag: 'Drawer III', desc: '遊戲設計思考課程', color: '#7b5ea7', soft: '#eee8f6' },
+  { name: '探究與實作', tag: 'Drawer IV', desc: '數據處理與科學探究', color: '#2f6db5', soft: '#e4edf8' }
 ];
 
 const $ = id => document.getElementById(id);

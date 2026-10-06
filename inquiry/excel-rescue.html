@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>消失的實驗數據｜Excel 數據救援任務</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="excel-rescue-core.js"></script>
+<style>
+:root{
+  --ink:#1c2230; --ink2:#2b3346; --paper:#f3ead6; --paper2:#e9dcc0; --line:#cbb88f;
+  --brass:#c39a3d; --stamp:#b3312c; --ok:#2f7d4f; --muted:#6b6250; --text:#2a2418;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  font-family:"Noto Sans TC",system-ui,sans-serif; color:var(--text); background:var(--ink);
+  background-image:radial-gradient(circle at 20% 0%,#2e3850 0,transparent 55%),radial-gradient(circle at 100% 100%,#28304a 0,transparent 50%);
+  min-height:100vh; line-height:1.65;
+}
+.wrap{max-width:980px;margin:0 auto;padding:28px 16px 60px}
+h1,h2,h3{font-family:"Noto Serif TC",serif;margin:0}
+.mono{font-family:"JetBrains Mono",monospace;letter-spacing:.08em}
+button{font:inherit;cursor:pointer}
+.hidden{display:none!important}
+
+/* 卷宗紙張 */
+.paper{background:var(--paper);border-radius:6px;box-shadow:0 18px 40px rgba(0,0,0,.35),inset 0 0 0 1px var(--line);position:relative}
+.paper::before{content:"";position:absolute;inset:0;border-radius:6px;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent 0 31px,rgba(150,120,70,.08) 31px 32px)}
+
+/* 登入 */
+.login{max-width:520px;margin:6vh auto 0;padding:40px 32px 34px;text-align:center}
+.tag{display:inline-block;font-size:.8rem;letter-spacing:.3em;color:var(--stamp);border:2px solid var(--stamp);padding:2px 12px;border-radius:3px;transform:rotate(-2deg);font-weight:700}
+.login h1{font-size:2.2rem;margin:16px 0 4px;color:var(--ink)}
+.login .sub{color:var(--muted);margin:0 0 26px}
+.field{text-align:left;margin-bottom:16px}
+.field label{display:block;font-weight:700;margin-bottom:6px;font-size:.95rem}
+.field input{width:100%;padding:12px 14px;font-size:1.1rem;border:2px solid var(--line);border-radius:6px;background:#fffaf0;font-family:inherit}
+.field input:focus{outline:none;border-color:var(--brass)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 22px;border-radius:6px;border:0;font-weight:700;font-size:1.02rem;background:var(--ink);color:var(--paper);transition:transform .1s,background .2s}
+.btn:hover{background:var(--ink2)}
+.btn:active{transform:translateY(1px)}
+.btn.brass{background:var(--brass);color:var(--ink)}
+.btn.brass:hover{background:#d4ab4c}
+.btn.ghost{background:transparent;color:var(--ink);border:2px solid var(--ink)}
+.btn.wide{width:100%}
+.err{color:var(--stamp);font-weight:700;min-height:1.4em;margin:8px 0 0}
+
+/* 頂部卷宗 */
+.top{padding:24px 26px;display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:space-between}
+.top h1{font-size:1.6rem;color:var(--ink)}
+.who{color:var(--muted);font-size:.95rem}
+.who b{color:var(--ink)}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap}
+
+/* 密碼碎片 */
+.frag{margin:18px 0;padding:18px 22px;display:flex;flex-wrap:wrap;align-items:center;gap:14px}
+.frag .lbl{font-weight:700;color:var(--ink)}
+.slots{display:flex;gap:6px;flex-wrap:wrap}
+.slot{width:46px;height:46px;border:2px dashed var(--line);border-radius:6px;display:grid;place-items:center;font-family:"JetBrains Mono",monospace;font-weight:700;color:var(--muted);background:#fbf5e7}
+.slot.got{border:2px solid var(--ink);background:var(--ink);color:var(--brass)}
+.frag .cnt{margin-left:auto;font-weight:700;color:var(--muted)}
+
+/* 關卡卡片 */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card{padding:20px 20px 18px;text-align:left;border:0;color:inherit;display:block;width:100%;transition:transform .15s}
+.card:hover{transform:translateY(-3px)}
+.card .no{font-family:"JetBrains Mono",monospace;font-size:.8rem;color:var(--muted);letter-spacing:.15em}
+.card h3{font-size:1.2rem;margin:6px 0 4px;color:var(--ink)}
+.card .kind{display:inline-block;font-size:.8rem;background:var(--paper2);padding:1px 10px;border-radius:20px;color:var(--muted);font-weight:700}
+.card .ico{position:absolute;right:16px;top:14px;font-size:1.8rem}
+.stampmark{position:absolute;right:14px;bottom:12px;color:var(--ok);border:3px solid var(--ok);font-weight:900;font-family:"Noto Serif TC",serif;padding:0 10px;transform:rotate(-8deg);border-radius:4px;font-size:1.05rem;opacity:.9}
+.card.locked{background:#3a4258;color:#b8bfd0;box-shadow:inset 0 0 0 2px #59627c}
+.card.locked::before{display:none}
+.card.locked h3{color:#dfe3ec}
+.card.locked .kind{background:#4a5370;color:#cfd5e2}
+.card.locked .no{color:#9aa3b8}
+.card.secret{background:linear-gradient(135deg,#2b2140,#3d2b52);color:#eadff7;box-shadow:inset 0 0 0 2px var(--brass)}
+.card.secret::before{display:none}
+.card.secret h3{color:#fff}
+.card.secret .kind{background:var(--brass);color:var(--ink)}
+.card.secret .no{color:#c9b6e6}
+
+/* 關卡面板 */
+.back{position:fixed;inset:0;background:rgba(12,15,24,.72);display:flex;align-items:flex-start;justify-content:center;padding:24px 12px;overflow-y:auto;z-index:20}
+.panel{max-width:720px;width:100%;padding:28px 26px 24px}
+.panel .x{position:absolute;right:12px;top:10px;background:none;border:0;font-size:1.6rem;color:var(--muted);z-index:2}
+.panel h2{font-size:1.5rem;color:var(--ink);margin:4px 0 10px}
+.story{background:#fffaf0;border-left:4px solid var(--brass);padding:12px 16px;border-radius:0 6px 6px 0;margin:0 0 18px}
+.tasks{list-style:none;padding:0;margin:0 0 20px}
+.tasks li{display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:1px dashed var(--line)}
+.tasks input{width:20px;height:20px;margin-top:3px;accent-color:var(--ink);flex:none}
+.sect{font-weight:700;color:var(--stamp);letter-spacing:.15em;font-size:.85rem;margin:0 0 8px;position:relative}
+.q{margin-bottom:14px;position:relative}
+.q label{display:block;font-weight:700;margin-bottom:6px}
+.q .row{display:flex;gap:8px;align-items:center}
+.q input,.q select{flex:1;min-width:0;padding:10px 12px;font-size:1.05rem;border:2px solid var(--line);border-radius:6px;background:#fffaf0;font-family:inherit}
+.q .unit{color:var(--muted);font-weight:700;min-width:2.5em}
+.q .mark{width:28px;text-align:center;font-weight:900;font-size:1.2rem}
+.q.right input,.q.right select{border-color:var(--ok);background:#eef7ef}
+.q.wrong input,.q.wrong select{border-color:var(--stamp);background:#fbeeec}
+.q.right .mark{color:var(--ok)} .q.wrong .mark{color:var(--stamp)}
+.result{margin-top:14px;padding:14px 16px;border-radius:6px;font-weight:700;display:none;position:relative}
+.result.show{display:block}
+.result.bad{background:#fbeeec;color:var(--stamp)}
+.result.good{background:var(--ink);color:var(--paper)}
+.result.good .mono{color:var(--brass);font-size:1.4rem}
+.attempts{color:var(--muted);font-size:.9rem;margin-top:8px;position:relative}
+.hint{margin:18px 0 0;padding:14px 16px;border-radius:6px;background:#2b2140;color:#eadff7;position:relative}
+
+/* 結案證明 */
+.cert{margin:22px 0;padding:30px 28px;text-align:center;border:3px double var(--ink)}
+.cert h2{font-size:1.8rem;color:var(--ink);margin:8px 0}
+.cert .code{font-family:"JetBrains Mono",monospace;font-size:2.4rem;color:var(--stamp);letter-spacing:.25em;margin:8px 0;font-weight:700}
+.cert .meta{color:var(--muted)}
+.cert .badge{display:inline-block;margin-top:14px;padding:8px 16px;border-radius:30px;background:#2b2140;color:#eadff7;font-weight:700}
+.cert .badge .mono{color:var(--brass)}
+.bigstamp{position:absolute;right:24px;top:18px;color:var(--stamp);border:4px solid var(--stamp);padding:2px 14px;font-family:"Noto Serif TC",serif;font-weight:900;font-size:1.4rem;transform:rotate(10deg);border-radius:6px;opacity:.85}
+.foot{color:#8f98ad;text-align:center;font-size:.85rem;margin-top:28px}
+
+@media (max-width:560px){
+  .login{padding:30px 20px}
+  .login h1{font-size:1.8rem}
+  .top{padding:18px}
+  .panel{padding:24px 18px}
+  .slot{width:40px;height:40px}
+  .cert .code{font-size:1.8rem}
+  .bigstamp{position:static;display:inline-block;margin-bottom:8px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 登入 -->
+  <section id="vLogin" class="paper login">
+    <span class="tag">機密卷宗</span>
+    <h1>消失的實驗數據</h1>
+    <p class="sub">化學實驗室的報告被弄亂了！只有會用 Excel 的調查員能把數據救回來。</p>
+    <div class="field">
+      <label for="inId">調查員學號</label>
+      <input id="inId" inputmode="numeric" autocomplete="off" placeholder="例如 110123">
+    </div>
+    <div class="field">
+      <label for="inName">姓名</label>
+      <input id="inName" autocomplete="off" placeholder="結案證明上會顯示">
+    </div>
+    <button class="btn wide" id="btnStart">🔍 開始調查</button>
+    <p class="err" id="loginErr"></p>
+  </section>
+
+  <!-- 任務總覽 -->
+  <section id="vMain" class="hidden">
+    <div class="paper top">
+      <div>
+        <h1>消失的實驗數據</h1>
+        <div class="who">調查員 <b id="whoName"></b>｜學號 <b class="mono" id="whoId"></b></div>
+      </div>
+      <div class="toolbar">
+        <button class="btn brass" id="btnDl">📥 下載我的專屬數據</button>
+        <button class="btn ghost" id="btnOut">換人</button>
+      </div>
+    </div>
+
+    <div class="paper frag">
+      <span class="lbl">🔑 結案密碼碎片</span>
+      <div class="slots" id="slots"></div>
+      <span class="cnt" id="fragCnt"></span>
+    </div>
+
+    <div id="certBox"></div>
+
+    <div class="grid" id="grid"></div>
+    <p class="foot">每位調查員的數據都不一樣，答案只對得上你自己的檔案。答錯可以一直重試，加油！</p>
+  </section>
+</div>
+
+<!-- 關卡面板 -->
+<div class="back hidden" id="back">
+  <div class="paper panel" id="panel"></div>
+</div>
+
+<script>
+(function(){
+  var X = window.ExcelRescue;
+  var $ = function(id){ return document.getElementById(id); };
+  var state = null, data = null;
+
+  function key(id){ return 'excelRescue:' + X.CONFIG.SEMESTER + ':' + id; }
+  function load(id){
+    try { var s = localStorage.getItem(key(id)); if (s) return JSON.parse(s); } catch(e){}
+    return { passed:{}, attempts:{}, inputs:{}, name:'' };
+  }
+  function save(){ try { localStorage.setItem(key(data.id), JSON.stringify(state)); } catch(e){} }
+  function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+
+  // ---------- 登入 ----------
+  try { var last = localStorage.getItem('excelRescue:last'); if (last){ var o = JSON.parse(last); $('inId').value = o.id||''; $('inName').value = o.name||''; } } catch(e){}
+  $('btnStart').onclick = function(){
+    var id = X.normId($('inId').value), name = $('inName').value.trim();
+    if (!/^[A-Z0-9]{3,12}$/.test(id)) { $('loginErr').textContent = '學號格式怪怪的，再檢查一次（只能有英文和數字）'; return; }
+    if (!name) { $('loginErr').textContent = '請填姓名，結案證明需要喔'; return; }
+    data = X.generate(id); state = load(id); state.name = name; save();
+    try { localStorage.setItem('excelRescue:last', JSON.stringify({id:id,name:name})); } catch(e){}
+    $('vLogin').classList.add('hidden'); $('vMain').classList.remove('hidden');
+    $('whoName').textContent = name; $('whoId').textContent = id;
+    render();
+  };
+  [$('inId'),$('inName')].forEach(function(el){ el.addEventListener('keydown',function(e){ if(e.key==='Enter') $('btnStart').click(); }); });
+  $('btnOut').onclick = function(){ $('vMain').classList.add('hidden'); $('vLogin').classList.remove('hidden'); $('certBox').innerHTML=''; };
+
+  // ---------- 下載專屬 Excel ----------
+  $('btnDl').onclick = function(){
+    if (!window.XLSX) { alert('Excel 工具還沒載入完成，請確認網路後重新整理頁面'); return; }
+    var wb = XLSX.utils.book_new();
+    X.sheets(data).forEach(function(s){
+      var ws = XLSX.utils.aoa_to_sheet(s.aoa);
+      ws['!cols'] = s.cols.map(function(w){ return { wch:w }; });
+      XLSX.utils.book_append_sheet(wb, ws, s.name);
+    });
+    XLSX.writeFile(wb, '消失的實驗數據_' + data.id + '.xlsx');
+  };
+
+  // ---------- 主畫面 ----------
+  function render(){
+    var all = X.LEVELS, got = 0, slots = '';
+    all.forEach(function(L){
+      var ok = !!state.passed[L.key]; if (ok) got++;
+      slots += '<div class="slot'+(ok?' got':'')+'">'+(ok? X.fragment(data.id,L.key) : L.no)+'</div>';
+    });
+    $('slots').innerHTML = slots;
+    $('fragCnt').textContent = got + ' / ' + all.length;
+
+    var g = '';
+    all.forEach(function(L){
+      var ok = !!state.passed[L.key];
+      g += '<button class="paper card" data-k="'+L.key+'"><span class="ico">'+L.icon+'</span>'+
+           '<div class="no">CASE 0'+L.no+'</div><h3>'+L.title+'</h3><span class="kind">'+L.chart+'</span>'+
+           (ok?'<span class="stampmark">已破解</span>':'')+'</button>';
+    });
+    var hOpen = !!state.passed[X.HIDDEN.requires], hOk = !!state.passed.H;
+    if (hOpen){
+      g += '<button class="paper card secret" data-k="H"><span class="ico">🕵️</span><div class="no">CASE ？？</div>'+
+           '<h3>'+X.HIDDEN.title+'</h3><span class="kind">隱藏關卡</span>'+(hOk?'<span class="stampmark" style="color:var(--brass);border-color:var(--brass)">已破解</span>':'')+'</button>';
+    } else {
+      g += '<div class="paper card locked"><span class="ico">🔒</span><div class="no">CASE ？？</div>'+
+           '<h3>？？？</h3><span class="kind">未解鎖</span><p style="margin:10px 0 0;font-size:.92rem">傳說散佈圖那一關藏著一個秘密……</p></div>';
+    }
+    $('grid').innerHTML = g;
+    Array.prototype.forEach.call(document.querySelectorAll('[data-k]'), function(b){ b.onclick = function(){ openLevel(b.getAttribute('data-k')); }; });
+
+    $('certBox').innerHTML = got === all.length ? certHtml() : '';
+  }
+
+  function certHtml(){
+    var d = new Date(), ds = d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate();
+    return '<div class="paper cert"><span class="bigstamp">結案</span><span class="tag">調查完成</span>'+
+      '<h2>結案證明</h2><div class="meta">調查員 <b>'+esc(state.name)+'</b>｜學號 <b class="mono">'+data.id+'</b>｜'+ds+'</div>'+
+      '<div class="code">'+X.closeCode(data.id)+'</div><div class="meta">結案代碼（請截圖這張證明，連同 Excel 檔一起繳交）</div>'+
+      (state.passed.H ? '<div class="badge">🕵️ 隱藏關卡徽章 <span class="mono">'+X.hiddenCode(data.id)+'</span></div>' : '')+
+      '</div>';
+  }
+
+  // ---------- 關卡面板 ----------
+  function getLevel(k){ return k === 'H' ? X.HIDDEN : X.LEVELS.filter(function(L){ return L.key===k; })[0]; }
+  function openLevel(k){
+    var L = getLevel(k), qs = L.questions(data), prev = state.inputs[k] || {}, ok = !!state.passed[k];
+    var h = '<button class="x" id="pClose" aria-label="關閉">✕</button>'+
+      '<div class="no mono" style="color:var(--muted);position:relative">'+(k==='H'?'CASE ？？　隱藏關卡':'CASE 0'+L.no+'　'+L.chart)+'</div>'+
+      '<h2 style="position:relative">'+L.icon+' '+L.title+'</h2>'+
+      '<p class="story">'+L.story+'</p>'+
+      '<p class="sect">▍任務清單（做完自己打勾）</p><ul class="tasks" style="position:relative">'+
+      L.tasks.map(function(t,i){ return '<li><input type="checkbox" id="t'+i+'"><label for="t'+i+'">'+t+'</label></li>'; }).join('')+'</ul>'+
+      '<p class="sect">▍回報調查結果</p><form id="qf" autocomplete="off" style="position:relative">';
+    qs.forEach(function(q){
+      var v = prev[q.f] != null ? prev[q.f] : '';
+      var input = q.type === 'choice'
+        ? '<select name="'+q.f+'"><option value="">— 請選擇 —</option>'+q.options.map(function(o){ return '<option'+(o===v?' selected':'')+'>'+esc(o)+'</option>'; }).join('')+'</select>'
+        : '<input name="'+q.f+'" inputmode="decimal" value="'+esc(v)+'" placeholder="輸入數字">';
+      h += '<div class="q" data-f="'+q.f+'"><label>'+q.label+'</label><div class="row">'+input+
+           (q.unit?'<span class="unit">'+q.unit+'</span>':'')+'<span class="mark"></span></div></div>';
+    });
+    h += '<button type="submit" class="btn wide">'+(ok?'✅ 已破解（可以再對一次）':'🔎 送出答案')+'</button></form>'+
+         '<div class="result" id="res"></div><div class="attempts" id="att">'+(state.attempts[k]?'已嘗試 '+state.attempts[k]+' 次':'')+'</div>';
+    if (k === 'L4' && ok && !state.passed.H) h += hiddenHint();
+    $('panel').innerHTML = h;
+    $('back').classList.remove('hidden'); document.body.style.overflow='hidden';
+    $('pClose').onclick = closePanel;
+    $('qf').onsubmit = function(e){ e.preventDefault(); submit(k); };
+    if (ok) showPass(k, false);
+  }
+  function hiddenHint(){
+    return '<div class="hint" id="hHint">📓 <b>調查員筆記</b>：你的 R² 好像沒有很漂亮……八瓶標準溶液裡，是不是有一瓶怪怪的？<br>'+
+      '有興趣的調查員，隱藏關卡已在任務總覽出現。</div>';
+  }
+  function closePanel(){ $('back').classList.add('hidden'); document.body.style.overflow=''; render(); }
+  $('back').addEventListener('click', function(e){ if (e.target === $('back')) closePanel(); });
+  document.addEventListener('keydown', function(e){ if (e.key==='Escape' && !$('back').classList.contains('hidden')) closePanel(); });
+
+  function submit(k){
+    var L = getLevel(k), qs = L.questions(data), form = $('qf'), ans = {}, empty = false;
+    qs.forEach(function(q){
+      var v = form.elements[q.f].value.trim().replace(/，/g,'.').replace(/,/g,'.');
+      if (q.type === 'num' && v !== '' && isNaN(+v)) v = 'x';
+      ans[q.f] = v; if (v === '') empty = true;
+    });
+    var res = $('res');
+    if (empty) { res.className='result show bad'; res.textContent='還有欄位沒填喔！'; return; }
+    state.inputs[k] = ans;
+    state.attempts[k] = (state.attempts[k]||0) + 1;
+    var r = L.check(data, ans), wrong = 0;
+    qs.forEach(function(q){
+      var box = form.querySelector('[data-f="'+q.f+'"]');
+      box.classList.remove('right','wrong'); box.classList.add(r[q.f]?'right':'wrong');
+      box.querySelector('.mark').textContent = r[q.f]?'✓':'✗';
+      if (!r[q.f]) wrong++;
+    });
+    $('att').textContent = '已嘗試 ' + state.attempts[k] + ' 次';
+    if (wrong === 0) {
+      var first = !state.passed[k];
+      state.passed[k] = true; save(); showPass(k, first);
+      if (k === 'L4' && !state.passed.H && !$('hHint')) $('panel').insertAdjacentHTML('beforeend', hiddenHint());
+    } else {
+      save();
+      res.className='result show bad';
+      res.textContent = '有 ' + wrong + ' 個答案對不上你的數據，回去檢查圖表或函數再試一次！';
+    }
+  }
+  function showPass(k, first){
+    var res = $('res'); res.className = 'result show good';
+    if (k === 'H') res.innerHTML = '🕵️ 你找到被污染的標準品了！隱藏徽章：<span class="mono">'+X.hiddenCode(data.id)+'</span>';
+    else res.innerHTML = (first?'🎉 破解成功！':'✅ 這關已破解。')+'獲得密碼碎片：<span class="mono">'+X.fragment(data.id,k)+'</span>';
+  }
+})();
+</script>
+</body>
+</html>
