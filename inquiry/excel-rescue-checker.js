@@ -274,21 +274,17 @@
   function checkL2(charts, d) {
     var temps = d.L2.rows.map(function (r) { return r.T; }), times = d.L2.rows.map(function (r) { return r.t; });
     var items = pickBest(levelChart(charts, 'L2', temps), function (ch) {
+      // 老師 2026-10-07：上課用「框起數據直接插入」的方式，不特別指定 X 軸，所以不檢查 X 軸是不是時間
       var f = mainSeries(ch, temps), isLine = f.g.type === 'lineChart';
-      var xOk = matchCount(f.s.x, times) >= times.length - 1;
-      var timeAsLine = ch.groups.some(function (g) { return g.series.some(function (s) { return s !== f.s && matchCount(s.y, times) >= times.length - 1; }); });
-      var xNote = xOk ? '' : timeAsLine ? '「時間」被畫成另一條線了，要把它當成 X 軸' : 'X 軸沒有用時間欄';
-      if (!isLine && f.g.type === 'scatterChart') xOk = matchCount(f.s.x, times) >= times.length - 1;
       return [
         item('type', '折線圖', isLine, isLine ? '' : '圖表類型不對（目前是 ' + f.g.type.replace('Chart', '') + '）'),
         dataItem(f, temps, '溫度'),
-        item('xTime', 'X 軸是時間', xOk, xNote),
         item('marker', '有資料標記', isLine && !f.s.noMarker, isLine && f.s.noMarker ? '要選「含資料標記的折線圖」' : ''),
         chartTitleItem(ch), axisTitleItem(ch, 'x'), axisTitleItem(ch, 'y'), yUprightItem(ch),
         labelsItem(f, ['val'])
       ];
     });
-    return items || missingChart([['type', '折線圖'], ['data', '使用自己的完整數據'], ['xTime', 'X 軸是時間'], ['marker', '有資料標記'], ['title', '圖表標題'], ['xTitle', 'X 軸座標軸標題'], ['yTitle', 'Y 軸座標軸標題'], ['yVert', 'Y 軸標題文字轉垂直'], ['labels', '資料標籤']], '找不到用你「加熱曲線溫度」數據做的圖表');
+    return items || missingChart([['type', '折線圖'], ['data', '使用自己的完整數據'], ['marker', '有資料標記'], ['title', '圖表標題'], ['xTitle', 'X 軸座標軸標題'], ['yTitle', 'Y 軸座標軸標題'], ['yVert', 'Y 軸標題文字轉垂直'], ['labels', '資料標籤']], '找不到用你「加熱曲線溫度」數據做的圖表');
   }
 
   function checkL3(charts, d) {
@@ -318,45 +314,32 @@
     var outA = abs[concs.indexOf(d.L4.hidden.outlierConc)];
     var items = pickBest(levelChart(charts, 'L4', abs, function (ch) { return hasValue(allY(ch), outA); }), function (ch) {
       var f = mainSeries(ch, abs), isSc = f.g.type === 'scatterChart';
-      var xOk = matchCount(f.s.x, concs) >= concs.length - 1;
       return [
         item('type', '散佈圖', isSc, isSc ? '' : '圖表類型不對（目前是 ' + f.g.type.replace('Chart', '') + '）'),
         dataItem(f, abs, '吸光度'),
-        item('xConc', 'X 軸是濃度', xOk, xOk ? '' : 'X 軸沒有用濃度欄'),
         chartTitleItem(ch), axisTitleItem(ch, 'x'), axisTitleItem(ch, 'y'), yUprightItem(ch)
       ].concat(trendItems(f));
     });
-    items = items || missingChart([['type', '散佈圖'], ['data', '使用自己的完整數據'], ['xConc', 'X 軸是濃度'], ['title', '圖表標題'], ['xTitle', 'X 軸座標軸標題'], ['yTitle', 'Y 軸座標軸標題'], ['yVert', 'Y 軸標題文字轉垂直'], ['trend', '線性趨勢線'], ['eq', '顯示方程式'], ['r2', '顯示 R 平方值']], '找不到用你「標準曲線」數據做的散佈圖');
-    // 未知樣品濃度：在「未知樣品濃度」那一列找數字
-    var name = findSheet(book, '關卡 4', 'L4_散佈圖'), ws = name && book.wb.Sheets[name], got = null, has = false;
-    if (ws && ws['!ref']) {
-      var r = XLSX.utils.decode_range(ws['!ref']);
-      for (var R = r.s.r; R <= r.e.r; R++) {
-        if (cellText(ws, XLSX.utils.encode_cell({ r: R, c: 0 })).indexOf('未知樣品濃度') < 0) continue;
-        for (var C = 1; C <= Math.min(r.e.c, 6); C++) {
-          var cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
-          if (cell && typeof cell.v === 'number') { got = cell.v; has = true; break; }
-        }
-      }
-    }
-    var want = d.L4.answers.conc, ok = has && Math.abs(got - want) <= Math.abs(want) * 0.03;
-    items.push(item('unknown', '算出未知樣品濃度', ok, !has ? '「未知樣品濃度」那一列還沒填數字' : ok ? (Math.round(got * 100) / 100) + ' ppm' : '填的是 ' + (Math.round(got * 100) / 100) + '，和你的趨勢線算出來的不一樣'));
+    items = items || missingChart([['type', '散佈圖'], ['data', '使用自己的完整數據'], ['title', '圖表標題'], ['xTitle', 'X 軸座標軸標題'], ['yTitle', 'Y 軸座標軸標題'], ['yVert', 'Y 軸標題文字轉垂直'], ['trend', '線性趨勢線'], ['eq', '顯示方程式'], ['r2', '顯示 R 平方值']], '找不到用你「標準曲線」數據做的散佈圖');
+    // 「算出未知樣品濃度」屬於判讀內容：學生在網頁上回答，Excel 鑑識不檢查（老師 2026-10-07）
     return items;
   }
 
   function checkHidden(charts, d) {
-    var abs = d.L4.rows.map(function (r) { return r.A; }), concs = d.L4.rows.map(function (r) { return r.c; });
-    var oi = concs.indexOf(d.L4.hidden.outlierConc), outA = abs[oi];
-    var clean = abs.filter(function (_, i) { return i !== oi; });
-    var cands = charts.filter(function (ch) { var ys = allY(ch); return matchCount(ys, clean) >= clean.length - 1 && !hasValue(ys, outA); });
-    var items = pickBest(cands, function (ch) {
-      var f = mainSeries(ch, clean), isSc = f.g.type === 'scatterChart', n = matchCount(f.s.y, clean);
-      return [
-        item('removed', '排除被污染的標準品', isSc && n === clean.length, isSc ? (n === clean.length ? '排除了 ' + d.L4.hidden.outlierConc + ' ppm 那一瓶' : '數據少了不只一筆') : '要用散佈圖')
-      ].concat(trendItems(f));
+    // 只檢查操作：刪掉一個點後重做散佈圖＋趨勢線；「刪的是不是被污染的那瓶」是判讀，學生在網頁上回答（老師 2026-10-07）
+    var abs = d.L4.rows.map(function (r) { return r.A; });
+    var cands = charts.filter(function (ch) {
+      if ((ch.usedBy || []).indexOf('L4') >= 0) return false;
+      var n = matchCount(allY(ch), abs);
+      return n === abs.length - 1;
     });
-    return items || [item('removed', '排除被污染的標準品', false, '沒有找到排除離群值後重做的散佈圖'), item('trend', '線性趨勢線', false, ''), item('eq', '顯示方程式', false, ''), item('r2', '顯示 R 平方值', false, '')];
+    var items = pickBest(cands, function (ch) {
+      var f = mainSeries(ch, abs), isSc = f.g.type === 'scatterChart';
+      return [item('redo', '刪掉一個點後重做散佈圖', isSc, isSc ? '用了 ' + matchCount(f.s.y, abs) + ' 筆標準溶液數據' : '要用散佈圖')].concat(trendItems(f));
+    });
+    return items || [item('redo', '刪掉一個點後重做散佈圖', false, '沒有找到刪掉一個點後重做的散佈圖'), item('trend', '線性趨勢線', false, ''), item('eq', '顯示方程式', false, ''), item('r2', '顯示 R 平方值', false, '')];
   }
+
 
   function checkL5(book, d) {
     var name = findSheet(book, '關卡 5', 'L5_函數'), ws = name && book.wb.Sheets[name], a = d.L5.answers;
