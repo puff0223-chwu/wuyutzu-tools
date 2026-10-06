@@ -172,7 +172,7 @@
 <script>
 /* =========================================================
    工具清單：新增工具只要在這裡加一筆資料，卡片和說明卷宗會自動產生
-   drawer：0 班級事務、1 化學實驗室 No.307、2 遊戲研究室
+   drawer：0 班級事務、1 化學實驗室 No.223、2 遊戲研究室
    shelf：抽屜裡的小分類
    teacher：true 表示連到老師專用頁（顯示「🔒 老師專用」）
    case：系列案件編號（顯示紅色 CASE 標籤）
@@ -186,9 +186,9 @@ const TOOLS = [
   {"id": "fortune", "drawer": 0, "shelf": "班級氣氛", "icon": "🏮", "name": "詩籤系統", "brief": "108支文青詩籤，抽籤得到人生智慧", "title": "巫魚子文青學院詩籤", "sub": "108支詩籤 · 人生智慧抽抽看", "features": ["108支精選詩籤，10大類別", "上上籤至下下籤，5種籤級", "每支籤附有出處與解說", "搖晃動畫，沉浸式抽籤體驗"], "href": "classroom/poetry_fortune.html", "btn": "開始使用"},
   {"id": "lottery", "drawer": 0, "shelf": "班級氣氛", "icon": "🎲", "name": "聖誕抽籤系統", "brief": "交換禮物神秘配對，保留驚喜感", "title": "聖誕抽籤系統", "sub": "交換禮物 · 保密配對", "features": ["自動配對，確保沒人抽到自己", "個別查詢，保持驚喜感", "下載備份清單，應急查詢", "支援上傳舊備份重新查詢"], "href": "christmas/lottery.html", "btn": "開始使用"},
   {"id": "adjectives", "drawer": 0, "shelf": "班級氣氛", "icon": "✨", "name": "禮物形容詞產生器", "brief": "160個形容詞，幫你想到禮物靈感", "title": "禮物形容詞產生器", "sub": "8大類別 · 160個形容詞", "features": ["8種類別按鈕，選最多3類", "隨機產生3個形容詞", "一鍵複製，貼到Google表單", "幫助想不出禮物的同學"], "href": "christmas/adjectives.html", "btn": "開始使用"},
-  {"id": "equipment", "drawer": 1, "shelf": "No.307 懸案系列", "icon": "🔍", "name": "消失的實驗器材", "brief": "看圖認器材，限時搶分，3條命挑戰排行榜", "title": "消失的實驗器材", "sub": "化學實驗器材辨識 · 限時搶分", "features": ["33 種實驗器材題庫，每局隨機 30 題", "看圖輸入名稱，一字不差才過關", "整場 3 條命，答錯扣命，扣完 Game Over", "答得越快分數越高，結算答對、答錯與總分", "即時排行榜前 30 名，可只看自己班級"], "href": "chemistry/missing-equipment.html", "btn": "開始搜查", "case": "CASE 01"},
-  {"id": "ph", "drawer": 1, "shelf": "No.307 懸案系列", "icon": "🧪", "name": "消失的指示劑", "brief": "pH 值計算：正反向題型，每人專屬5題", "title": "消失的指示劑", "sub": "pH 值計算練習 · 老師頁產生題組碼讓學生領題", "features": ["係數由 2、3、5、7、10 組成，四級難度自由分配", "正向（濃度 → pH）、反向（pH／pOH → 濃度）或混合，老師自選", "題組碼＋班級＋座號 → 每人專屬 5 題，重新整理不變", "即時對錯（不給答案）或交卷後老師批改", "投影共同題目與解法、列印學習單與解答表、全班總表匯出 Excel"], "href": "chemistry/ph-generator-teacher.html", "btn": "開啟老師頁", "note": "學生連結與 QR Code 由老師頁產生後分享", "teacher": true, "case": "CASE 02"},
-  {"id": "unit", "drawer": 1, "shelf": "No.307 懸案系列", "icon": "📜", "name": "失落的配方", "brief": "單位換算：g、mol、分子數、CM、%、ppm", "title": "失落的配方", "sub": "化學單位換算練習 · 老師頁產生題組碼讓學生領題", "features": ["質量、莫耳數、分子數、原子數、CM、重量百分率、ppm", "生活情境題，只給原子量，四級難度自由分配", "答錯時亮出「單位換算地圖」路線提示（不給答案）", "投影共同題目與解法、列印學習單與解答表", "全班總表即時更新，匯出 Excel"], "href": "chemistry/unit-generator-teacher.html", "btn": "開啟老師頁", "note": "學生連結與 QR Code 由老師頁產生後分享", "teacher": true, "case": "CASE 03"},
+  {"id": "equipment", "drawer": 1, "shelf": "No.223 懸案系列", "icon": "🔍", "name": "消失的實驗器材", "brief": "看圖認器材，限時搶分，3條命挑戰排行榜", "title": "消失的實驗器材", "sub": "化學實驗器材辨識 · 限時搶分", "features": ["33 種實驗器材題庫，每局隨機 30 題", "看圖輸入名稱，一字不差才過關", "整場 3 條命，答錯扣命，扣完 Game Over", "答得越快分數越高，結算答對、答錯與總分", "即時排行榜前 30 名，可只看自己班級"], "href": "chemistry/missing-equipment.html", "btn": "開始搜查", "case": "CASE 01"},
+  {"id": "ph", "drawer": 1, "shelf": "No.223 懸案系列", "icon": "🧪", "name": "消失的指示劑", "brief": "pH 值計算：正反向題型，每人專屬5題", "title": "消失的指示劑", "sub": "pH 值計算練習 · 老師頁產生題組碼讓學生領題", "features": ["係數由 2、3、5、7、10 組成，四級難度自由分配", "正向（濃度 → pH）、反向（pH／pOH → 濃度）或混合，老師自選", "題組碼＋班級＋座號 → 每人專屬 5 題，重新整理不變", "即時對錯（不給答案）或交卷後老師批改", "投影共同題目與解法、列印學習單與解答表、全班總表匯出 Excel"], "href": "chemistry/ph-generator-teacher.html", "btn": "開啟老師頁", "note": "學生連結與 QR Code 由老師頁產生後分享", "teacher": true, "case": "CASE 02"},
+  {"id": "unit", "drawer": 1, "shelf": "No.223 懸案系列", "icon": "📜", "name": "失落的配方", "brief": "單位換算：g、mol、分子數、CM、%、ppm", "title": "失落的配方", "sub": "化學單位換算練習 · 老師頁產生題組碼讓學生領題", "features": ["質量、莫耳數、分子數、原子數、CM、重量百分率、ppm", "生活情境題，只給原子量，四級難度自由分配", "答錯時亮出「單位換算地圖」路線提示（不給答案）", "投影共同題目與解法、列印學習單與解答表", "全班總表即時更新，匯出 Excel"], "href": "chemistry/unit-generator-teacher.html", "btn": "開啟老師頁", "note": "學生連結與 QR Code 由老師頁產生後分享", "teacher": true, "case": "CASE 03"},
   {"id": "caseboard", "drawer": 1, "shelf": "課程經營", "icon": "📌", "name": "No.940 案件委託公告欄", "brief": "同儕解題互助：發布委託、承接教學、星等評價", "title": "No.940 案件委託公告欄", "sub": "同儕解題互助 · 老師頁開設公告欄讓學生加入", "features": ["學生即時發布問題（課本、習作、講義、考卷的頁數題號）", "會的同學承接委託、面對面講解，一人同時只接 1 案", "委託人按完成並給 1～3 顆星，偵探滿 5 個評價才看得到平均", "投影公告欄即時更新：待承接／偵辦中／已破案", "統計每位學生發問數、破案數與獎勵點數，匯出 Excel"], "href": "chemistry/case-board-teacher.html", "btn": "開啟老師頁", "note": "學生連結與 QR Code 由老師頁產生後分享", "teacher": true},
   {"id": "gamification", "drawer": 1, "shelf": "課堂遊戲化", "icon": "🎯", "name": "選人系統", "brief": "可調機率隨機抽籤，8種抽選方式", "title": "巫魚子大師選人系統", "sub": "可調機率 · 8種抽選方式", "features": ["設定班級人數（1-50人）", "8種抽籤方式，每種可調整機率", "智能驗證，機率總和100%", "保留最近10次抽籤記錄"], "href": "gamification/system.html", "btn": "開始使用"},
   {"id": "curse", "drawer": 1, "shelf": "課堂遊戲化", "icon": "💀", "name": "陣亡詛咒系統", "brief": "角色血量歸零時隨機抽取懲罰", "title": "陣亡詛咒系統", "sub": "遊戲化教學 · 懲罰抽取", "features": ["角色血量歸零時觸發", "9種詛咒等機率隨機抽取", "記錄所有陣亡歷史", "增加課堂遊戲化趣味"], "href": "gamification/system.html", "btn": "開始使用"},
@@ -199,7 +199,7 @@ const TOOLS = [
 
 const DRAWERS = [
   { name: '班級事務', tag: 'Drawer I',   desc: '行政、認識學生、班級氣氛', color: '#1f9e8f', soft: '#e3f4f1' },
-  { name: '化學實驗室 No.307', tag: 'Drawer II', desc: '懸案系列與課堂遊戲化', color: '#e4572e', soft: '#fde8e1' },
+  { name: '化學實驗室 No.223', tag: 'Drawer II', desc: '懸案系列與課堂遊戲化', color: '#e4572e', soft: '#fde8e1' },
   { name: '遊戲研究室', tag: 'Drawer III', desc: '遊戲設計思考課程', color: '#7b5ea7', soft: '#eee8f6' }
 ];
 

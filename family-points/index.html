@@ -85,6 +85,21 @@ const auth2 = getAuth(initializeApp(firebaseConfig, "secondary"));
 
 const EMAIL_DOMAIN = "fp.wuyutzu.family";
 const kidEmail = (name) => `${name.toLowerCase()}@${EMAIL_DOMAIN}`;
+// Firebase 規定密碼至少 6 個字元。為了讓孩子可以用自己好記的短 PIN（最短 4 個字），
+// 實際送給 Firebase 的密碼會在 PIN 後面補上固定尾巴，孩子完全看不到。
+const KID_PAD = "-fp-kid";
+const kidPw = (p) => p + KID_PAD;
+const MIN_KID_PIN = 4;
+// 登入：先用補尾巴的密碼；失敗且 PIN 夠長時，再用原始 PIN 試一次（相容最早建立、沒補尾巴的 6 碼帳號）
+async function kidSignIn(name, pin) {
+  try { return await signInWithEmailAndPassword(auth, kidEmail(name), kidPw(pin)); }
+  catch (e) {
+    if (pin.length >= 6 && /invalid-credential|wrong-password/.test((e && e.code) || "")) {
+      return await signInWithEmailAndPassword(auth, kidEmail(name), pin);
+    }
+    throw e;
+  }
+}
 
 const DEFAULT_CONFIG = {
   behaviors: {
@@ -167,16 +182,23 @@ function TopBar({ title, onPw, onLogout }) {
   </div>`;
 }
 
-function ChangePw({ user, onClose, notify }) {
+function ChangePw({ user, isKid, onClose, notify }) {
   const [o, setO] = useState(""), [a, setA] = useState(""), [b, setB] = useState("");
   const [busy, setBusy] = useState(false);
   const go = async () => {
-    if (a.length < 6) { notify("新密碼至少 6 碼"); return; }
+    const minLen = isKid ? MIN_KID_PIN : 6;
+    if (a.length < minLen) { notify(`新密碼至少 ${minLen} 個字`); return; }
     if (a !== b) { notify("兩次輸入的新密碼不一樣"); return; }
     setBusy(true);
     try {
-      await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, o));
-      await updatePassword(user, a);
+      const tries = isKid ? [kidPw(o), o] : [o];
+      let lastErr = null, ok = false;
+      for (const pw of tries) {
+        try { await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, pw)); ok = true; break; }
+        catch (e) { lastErr = e; }
+      }
+      if (!ok) throw lastErr;
+      await updatePassword(user, isKid ? kidPw(a) : a);
       notify("密碼已更新");
       onClose();
     } catch (e) { notify(authMsg(e)); }
@@ -185,7 +207,7 @@ function ChangePw({ user, onClose, notify }) {
   return html`<div class="mbg"><div class="modal stack">
     <div class="sec">修改密碼 / PIN</div>
     <input type="password" placeholder="目前的密碼" value=${o} onInput=${(e) => setO(e.target.value)} />
-    <input type="password" placeholder="新密碼（至少 6 碼）" value=${a} onInput=${(e) => setA(e.target.value)} />
+    <input type="password" placeholder=${isKid ? "新的 PIN（至少 4 個字）" : "新密碼（至少 6 碼）"} value=${a} onInput=${(e) => setA(e.target.value)} />
     <input type="password" placeholder="再輸入一次新密碼" value=${b} onInput=${(e) => setB(e.target.value)} />
     <div class="row"><button class="b-ghost" style="flex:1" onClick=${onClose}>取消</button>
     <button class="b-primary" style="flex:1" disabled=${busy} onClick=${go}>更新</button></div>
@@ -248,7 +270,7 @@ function Login({ notify }) {
       if (mode === "kid") {
         const n = name.trim().toLowerCase();
         if (!/^[a-z0-9]{2,12}$/.test(n)) { notify("登入名稱是 2–12 個英文字母或數字"); setBusy(false); return; }
-        await signInWithEmailAndPassword(auth, kidEmail(n), pin);
+        await kidSignIn(n, pin);
       } else {
         await signInWithEmailAndPassword(auth, email.trim(), pw);
       }
@@ -272,7 +294,7 @@ function Login({ notify }) {
     <div class="card stack">
       ${mode === "kid" ? html`
         <input placeholder="我的登入名稱" autocapitalize="none" autocomplete="username" value=${name} onInput=${(e) => setName(e.target.value)} onKeyDown=${enter} />
-        <input type="password" inputmode="numeric" placeholder="我的 PIN（6 位數字）" autocomplete="current-password" value=${pin} onInput=${(e) => setPin(e.target.value)} onKeyDown=${enter} />`
+        <input type="password" placeholder="我的 PIN" autocomplete="current-password" value=${pin} onInput=${(e) => setPin(e.target.value)} onKeyDown=${enter} />`
       : html`
         <input type="email" placeholder="Email" autocomplete="username" value=${email} onInput=${(e) => setEmail(e.target.value)} onKeyDown=${enter} />
         <input type="password" placeholder="密碼" autocomplete="current-password" value=${pw} onInput=${(e) => setPw(e.target.value)} onKeyDown=${enter} />`}
@@ -302,7 +324,8 @@ function KidApp({ user, kidId, notify, onPw, onLogout }) {
   const behaviors = toList(c.behaviors);
   const rewards = toList(c.rewards).sort((a, b) => a.cost - b.cost);
   const faces = Array.isArray(c.diceFaces) && c.diceFaces.length ? c.diceFaces : [1];
-  const pendingNames = new Set(entries.filter((e) => e.status === "pending" && e.kind === "earn").map((e) => e.refName));
+  const pendingCount = {};
+  entries.filter((e) => e.status === "pending" && e.kind === "earn").forEach((e) => { pendingCount[e.refName] = (pendingCount[e.refName] || 0) + 1; });
 
   const send = async (entry, okMsg) => {
     setBusy(true);
@@ -339,10 +362,9 @@ function KidApp({ user, kidId, notify, onPw, onLogout }) {
         <div>
           <div class="title">${b.name}</div>
           <div class="muted">基本 ${b.points} 點${b.random ? "・完成後可以擲骰子加倍！" : ""}</div>
+          ${pendingCount[b.name] ? html`<div class="muted" style="color:#8A5A0B">已送出 ${pendingCount[b.name]} 次，等爸爸審核</div>` : ""}
         </div>
-        ${pendingNames.has(b.name)
-          ? html`<span class="pill" style=${{ background: "#FBF1DC", color: "#8A5A0B" }}>等審核中</span>`
-          : html`<button class=${b.random ? "b-gold" : "b-primary"} disabled=${busy} onClick=${() => (b.random ? setDice(b) : report(b, 1))}>${b.random ? "🎲 擲骰回報" : "回報完成"}</button>`}
+        <button class=${b.random ? "b-gold" : "b-primary"} disabled=${busy} onClick=${() => (b.random ? setDice(b) : report(b, 1))}>${b.random ? "🎲 擲骰回報" : "回報完成"}</button>
       </div>`)}
     </div>`}
 
@@ -536,13 +558,13 @@ function KidsManager({ kids, users, notify }) {
   const accounts = toList(users);
 
   const makeAccount = async (login, p) => {
-    const cred = await createUserWithEmailAndPassword(auth2, kidEmail(login), p);
+    const cred = await createUserWithEmailAndPassword(auth2, kidEmail(login), kidPw(p));
     await signOut(auth2);
     return cred.user.uid;
   };
   const check = (login, p) => {
     if (!/^[a-z0-9]{2,12}$/.test(login)) { notify("登入名稱要是 2–12 個英文字母或數字"); return false; }
-    if (!/^\d{6}$/.test(p)) { notify("PIN 要是 6 位數字"); return false; }
+    if (p.length < MIN_KID_PIN) { notify(`PIN 至少 ${MIN_KID_PIN} 個字（數字或英文都可以）`); return false; }
     return true;
   };
   const addKid = async () => {
@@ -579,7 +601,7 @@ function KidsManager({ kids, users, notify }) {
       <input placeholder="顯示的名字（例如：小明）" value=${dn} onInput=${(e) => setDn(e.target.value)} />
       <div class="row">
         <input placeholder="登入名稱（英數字，例如 ming）" autocapitalize="none" value=${ln} onInput=${(e) => setLn(e.target.value)} />
-        <input placeholder="PIN（6 位數字）" inputmode="numeric" value=${pin} onInput=${(e) => setPin(e.target.value)} />
+        <input placeholder="PIN（至少 4 個字，孩子之後可自己改）" value=${pin} onInput=${(e) => setPin(e.target.value)} />
       </div>
       <button class="b-primary" disabled=${busy} onClick=${addKid}>建立小孩與登入帳號</button>
     </div>
@@ -590,7 +612,7 @@ function KidsManager({ kids, users, notify }) {
       ${relink === k.id && html`<div class="stack" style="background:var(--soft);border-radius:10px;padding:12px">
         <div class="muted">會建立一組新的登入帳號並接回原本的點數紀錄，舊帳號就不能再登入。</div>
         <div class="row"><input placeholder="新的登入名稱" autocapitalize="none" value=${ln2} onInput=${(e) => setLn2(e.target.value)} />
-          <input placeholder="新 PIN（6 位數字）" inputmode="numeric" value=${pin2} onInput=${(e) => setPin2(e.target.value)} /></div>
+          <input placeholder="新 PIN（至少 4 個字）" value=${pin2} onInput=${(e) => setPin2(e.target.value)} /></div>
         <button class="b-primary" disabled=${busy} onClick=${() => doRelink(k.id)}>確認換發</button></div>`}
     </div>`)}
     <div class="muted">孩子第一次在自己的裝置登入後，瀏覽器會記住，之後直接打開就能用。</div>
@@ -700,7 +722,7 @@ function App() {
   return html`<div>
     ${toast && html`<div class="toast">${toast}</div>`}
     ${body}
-    ${pwOpen && user && html`<${ChangePw} user=${user} notify=${notify} onClose=${() => setPwOpen(false)} />`}
+    ${pwOpen && user && html`<${ChangePw} user=${user} isKid=${!!prof && prof.role === "kid"} notify=${notify} onClose=${() => setPwOpen(false)} />`}
   </div>`;
 }
 
