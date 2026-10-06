@@ -274,17 +274,23 @@
   function checkL2(charts, d) {
     var temps = d.L2.rows.map(function (r) { return r.T; }), times = d.L2.rows.map(function (r) { return r.t; });
     var items = pickBest(levelChart(charts, 'L2', temps), function (ch) {
-      // 老師 2026-10-07：上課用「框起數據直接插入」的方式，不特別指定 X 軸，所以不檢查 X 軸是不是時間
+      // 老師 2026-10-07：只要畫出「溫度」一條折線；時間被畫成另一條折線＝不通過。X 軸有沒有設成時間都算對
       var f = mainSeries(ch, temps), isLine = f.g.type === 'lineChart';
+      var timeAsLine = ch.groups.some(function (g) { return g.series.some(function (s) { return s !== f.s && matchCount(s.y, times) >= times.length - 1; }); });
+      var extra = 0; ch.groups.forEach(function (g) { extra += g.series.filter(function (s) { return s !== f.s; }).length; });
+      var xIsTime = matchCount(f.s.x, times) >= times.length - 1;
+      var oneNote = timeAsLine ? '「時間」也被畫成一條折線了，只要溫度一條線（只框選溫度那一欄，或把時間那條數列刪掉）'
+        : extra ? '圖上有 ' + (extra + 1) + ' 條線，只要溫度一條' : (xIsTime ? 'X 軸是時間' : '');
       return [
         item('type', '折線圖', isLine, isLine ? '' : '圖表類型不對（目前是 ' + f.g.type.replace('Chart', '') + '）'),
         dataItem(f, temps, '溫度'),
+        item('oneLine', '只畫溫度一條折線', !extra, oneNote),
         item('marker', '有資料標記', isLine && !f.s.noMarker, isLine && f.s.noMarker ? '要選「含資料標記的折線圖」' : ''),
         chartTitleItem(ch), axisTitleItem(ch, 'x'), axisTitleItem(ch, 'y'), yUprightItem(ch),
         labelsItem(f, ['val'])
       ];
     });
-    return items || missingChart([['type', '折線圖'], ['data', '使用自己的完整數據'], ['marker', '有資料標記'], ['title', '圖表標題'], ['xTitle', 'X 軸座標軸標題'], ['yTitle', 'Y 軸座標軸標題'], ['yVert', 'Y 軸標題文字轉垂直'], ['labels', '資料標籤']], '找不到用你「加熱曲線溫度」數據做的圖表');
+    return items || missingChart([['type', '折線圖'], ['data', '使用自己的完整數據'], ['oneLine', '只畫溫度一條折線'], ['marker', '有資料標記'], ['title', '圖表標題'], ['xTitle', 'X 軸座標軸標題'], ['yTitle', 'Y 軸座標軸標題'], ['yVert', 'Y 軸標題文字轉垂直'], ['labels', '資料標籤']], '找不到用你「加熱曲線溫度」數據做的圖表');
   }
 
   function checkL3(charts, d) {
@@ -314,13 +320,15 @@
     var outA = abs[concs.indexOf(d.L4.hidden.outlierConc)];
     var items = pickBest(levelChart(charts, 'L4', abs, function (ch) { return hasValue(allY(ch), outA); }), function (ch) {
       var f = mainSeries(ch, abs), isSc = f.g.type === 'scatterChart';
+      var xOk = matchCount(f.s.x, concs) >= concs.length - 1;
       return [
         item('type', '散佈圖', isSc, isSc ? '' : '圖表類型不對（目前是 ' + f.g.type.replace('Chart', '') + '）'),
         dataItem(f, abs, '吸光度'),
+        item('xConc', 'X 軸是濃度', xOk, xOk ? '' : 'X 軸沒有用濃度欄（XY 散佈圖要用濃度當 X、吸光度當 Y）'),
         chartTitleItem(ch), axisTitleItem(ch, 'x'), axisTitleItem(ch, 'y'), yUprightItem(ch)
       ].concat(trendItems(f));
     });
-    items = items || missingChart([['type', '散佈圖'], ['data', '使用自己的完整數據'], ['title', '圖表標題'], ['xTitle', 'X 軸座標軸標題'], ['yTitle', 'Y 軸座標軸標題'], ['yVert', 'Y 軸標題文字轉垂直'], ['trend', '線性趨勢線'], ['eq', '顯示方程式'], ['r2', '顯示 R 平方值']], '找不到用你「標準曲線」數據做的散佈圖');
+    items = items || missingChart([['type', '散佈圖'], ['data', '使用自己的完整數據'], ['xConc', 'X 軸是濃度'], ['title', '圖表標題'], ['xTitle', 'X 軸座標軸標題'], ['yTitle', 'Y 軸座標軸標題'], ['yVert', 'Y 軸標題文字轉垂直'], ['trend', '線性趨勢線'], ['eq', '顯示方程式'], ['r2', '顯示 R 平方值']], '找不到用你「標準曲線」數據做的散佈圖');
     // 「算出未知樣品濃度」屬於判讀內容：學生在網頁上回答，Excel 鑑識不檢查（老師 2026-10-07）
     return items;
   }
