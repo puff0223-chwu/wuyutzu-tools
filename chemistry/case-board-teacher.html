@@ -110,10 +110,15 @@
   .big-overlay .close { position: absolute; top: 16px; right: 20px; }
 
   @media (max-width: 900px) { .cols { grid-template-columns: 1fr; } .summary { grid-template-columns: repeat(2, 1fr); } .result { grid-template-columns: 1fr; } }
+.home-row { display: flex; justify-content: flex-end; margin-bottom: 6px; }
+.home-link { color: inherit; font-weight: 700; text-decoration: none; font-size: 0.9em; border: 2px solid currentColor; border-radius: 20px; padding: 2px 14px; opacity: 0.8; }
+.home-link:hover { opacity: 1; }
+@media print { .home-row { display: none !important; } }
 </style>
 </head>
 <body>
 <div class="wrap">
+  <div class="home-row"><a class="home-link" href="../index.html">🏠 回事務所首頁</a></div>
   <div class="eyebrow">Case Request Board · No.940</div>
   <h1>案件委託公告欄 <small>老師頁 · 請勿提供給學生</small></h1>
   <div class="current" id="current"></div>

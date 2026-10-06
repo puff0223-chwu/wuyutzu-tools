@@ -136,10 +136,15 @@
     .keytable th, .keytable td { border: 1px solid #000; padding: 3px 5px; text-align: left; }
   }
   @media (max-width: 700px) { .levels { grid-template-columns: 1fr 1fr; } .result { grid-template-columns: 1fr; } }
+.home-row { display: flex; justify-content: flex-end; margin-bottom: 6px; }
+.home-link { color: inherit; font-weight: 700; text-decoration: none; font-size: 0.9em; border: 2px solid currentColor; border-radius: 20px; padding: 2px 14px; opacity: 0.8; }
+.home-link:hover { opacity: 1; }
+@media print { .home-row { display: none !important; } }
 </style>
 </head>
 <body>
 <div class="wrap">
+  <div class="home-row"><a class="home-link" href="../index.html">🏠 回事務所首頁</a></div>
   <div class="ph-strip"></div>
   <h1>📜 失落的配方 <small>化學單位換算練習 · 老師頁 · 請勿提供給學生</small></h1>
 

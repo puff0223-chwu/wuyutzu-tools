@@ -209,15 +209,35 @@ $('btn-join').onclick = async () => {
   }
   $('join').classList.add('hidden'); $('main').classList.remove('hidden');
   $('intro').textContent = META.title ? `📋 ${META.title}` : $('intro').textContent;
-  SUB = CB.subscribe(CODE, s => { STATE = s; META = s.meta || META; render(); }, setSync);
+  connect();
   setInterval(render, 20000);   // 更新「等了幾分鐘」
 };
+/* ---------- 讓出連線：切到背景超過 60 秒或關閉分頁就斷線，回到畫面自動重連 ----------
+   Firebase 免費方案同時連線上限 100 條，這樣上一節沒關的手機不會佔住名額 */
+const IDLE_MS = 60000;
+let idleTimer = null;
+function connect() {
+  if (SUB || !CODE) return;
+  SUB = CB.subscribe(CODE, s => { STATE = s; META = s.meta || META; render(); }, setSync);
+}
+function disconnect() {
+  clearTimeout(idleTimer); idleTimer = null;
+  if (!SUB) return;
+  SUB.close(); SUB = null; setSync('paused');
+}
+document.addEventListener('visibilitychange', () => {
+  if (!CODE) return;
+  if (document.visibilityState === 'hidden') { clearTimeout(idleTimer); idleTimer = setTimeout(disconnect, IDLE_MS); }
+  else { clearTimeout(idleTimer); idleTimer = null; if (!SUB) { setSync('reconnect'); connect(); } }
+});
+window.addEventListener('pagehide', disconnect);
+window.addEventListener('pageshow', e => { if (e.persisted && CODE && document.visibilityState === 'visible') connect(); });
 function joinErr(m) { $('join-err').textContent = m; }
 let lastSync = '';
 function setSync(s) {
   lastSync = s || lastSync;
   const el = $('sync'); if (!el) return; s = lastSync;
-  el.textContent = { live: '● 即時同步中', poll: '● 同步中', reconnect: '○ 重新連線中…', offline: '○ 連線中斷' }[s] || '';
+  el.textContent = { live: '● 即時同步中', poll: '● 同步中', reconnect: '○ 重新連線中…', offline: '○ 連線中斷', paused: '○ 已暫停（回到畫面自動連線）' }[s] || '';
   el.style.color = s === 'live' || s === 'poll' ? '#3a9d6a' : '#d1495b';
 }
 
@@ -332,8 +352,8 @@ function toast(msg) {
 /* ---------- 動作 ---------- */
 const getTask = id => { const t = (STATE.tasks || {})[id]; return t ? { ...t } : null; };
 async function save(id, t, failMsg) {
-  try { await CB.putTask(CODE, id, t); SUB.refresh(); return true; }
-  catch (e) { console.error(e); toast(failMsg || '⚠️ 送出失敗，請再試一次'); SUB.refresh(); return false; }
+  try { await CB.putTask(CODE, id, t); SUB && SUB.refresh(); return true; }
+  catch (e) { console.error(e); toast(failMsg || '⚠️ 送出失敗，請再試一次'); SUB && SUB.refresh(); return false; }
 }
 const trimTries = t => (Array.isArray(t.tries) ? t.tries : Object.values(t.tries || {})).slice(-10);
 
