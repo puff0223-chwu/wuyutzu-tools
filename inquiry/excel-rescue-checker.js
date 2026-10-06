@@ -15,7 +15,7 @@
     // Y 軸標題「轉垂直」接受哪些文字方向：
     //   'upright' ＝ 中文一字一字直排（Excel「文字方向」選垂直／堆疊）
     //   'rotated' ＝ 整行轉 90°（Excel 加座標軸標題時的預設樣子）
-    Y_TITLE_ACCEPT: ['upright']
+    Y_TITLE_ACCEPT: ['upright', 'rotated']   // 老師 2026-10-06 決定：直排最好，旋轉 90° 也算對（Google 試算表沒有直排）
   };
 
   var DEFAULT_TITLES = ['圖表標題', 'Chart Title', '图表标题'];
@@ -221,7 +221,10 @@
     if (!a || !a.title) return item('yVert', label, false, '還沒有 Y 軸標題');
     var names = { upright: '垂直直排', rotated: '旋轉 90°', horizontal: '水平' };
     var ok = RULES.Y_TITLE_ACCEPT.indexOf(a.title.dir) >= 0;
-    return item('yVert', label, ok, '目前是「' + names[a.title.dir] + '」' + (ok ? '' : '，請在「文字方向」改成垂直'));
+    var note = '目前是「' + names[a.title.dir] + '」';
+    if (!ok) note += '，請在「文字方向」改成垂直';
+    else if (a.title.dir === 'rotated' && RULES.Y_TITLE_ACCEPT.indexOf('upright') >= 0) note += '（也算對；用 Excel 可以改成中文直排，更好讀）';
+    return item('yVert', label, ok, note);
   }
   function labelsItem(found, need) {   // need: ['val'] 或 ['percent','cat']
     var d = found.s.dLbls;

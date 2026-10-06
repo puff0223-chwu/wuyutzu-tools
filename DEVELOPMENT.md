@@ -277,13 +277,22 @@ wuyutzu-tools/
     - L5（6）AVERAGE、MAX、MIN、LARGE(…,3)、SMALL(…,2)、STDEV：要有公式、範圍涵蓋 B5:B34（或 B:B）、計算結果正確；手打數字會提醒「沒有用函數」
     - L6（4）有格式化條件、範圍涵蓋 B5:B24、規則 cellIs 大於（或大於等於）10／運算式 B5>10、格式顏色偏紅（主題色無法判斷時給過並註明）
     - 隱藏（4）排除被污染的標準品、線性趨勢線、方程式、R²
-  - **Y 軸標題「轉垂直」**：`RULES.Y_TITLE_ACCEPT` 預設只接受 `upright`（bodyPr vert＝eaVert／wordArtVert，中文一字一字直排）；Excel 加座標軸標題時的預設是整行旋轉 90°（rot＝-5400000），算 `rotated`。若老師要旋轉也算過，把 'rotated' 加進陣列
+  - **Y 軸標題「轉垂直」**：`RULES.Y_TITLE_ACCEPT = ['upright','rotated']`。upright＝中文直排（bodyPr vert＝eaVert／wordArtVert），rotated＝整行旋轉 90°（rot＝-5400000，Excel 預設）。老師 2026-10-06 決定：直排最好，但 Google 試算表沒有直排，所以旋轉 90° 也算對（通過時附註建議改直排）；只有水平才不過
   - 學生頁：「🔬 上傳作業自我檢查」看鑑識報告；第 4 關沒過時不顯示隱藏關卡的分數（不劇透）；檔案學號跟登入學號不同會警告
   - 老師頁 ③：一次選或拖進全班 .xlsx → 每人每關分數、總分、提醒（同學號多份檔案、數據對不上、打不開）、「詳情」只列未達成項目；列出 ① 名單中沒交檔案的人；匯出 Excel（批改總表＋逐項明細 ✓／✗）
   - 測試：用 openpyxl 產生的作業檔與 LibreOffice 另存的版本（模擬 Excel 存檔、含計算結果）：全對 42/42、隱藏關 4/4；各種常見錯誤都有對應提示；改用別人數據會被抓到
   - 限制：只認 Excel 的 .xlsx（Google 試算表下載的 .xlsx 理論上可讀但未實測）；Excel 2016 新圖表類型（chartEx）不支援
-- 已知限制：會讀原始碼的學生理論上能算出結案代碼（第三階段改由資料庫記錄）
-- 後續規劃：第三階段＝遊戲化紀錄與老師儀表板
+- **第三階段：雲端紀錄＋即時進度＋破案牆（2026-10-06）**
+  - Firebase 路徑 `excel-rescue/<學期>/<學號>`：`name`、`ts`（最後更新）、`passed: {L1…L6,H: 過關時間}`、`att: {同上: 嘗試次數}`、`closedAt`（六關全破時間）、`check: {score,max,at,lv}`（最近一次 Excel 自我檢查）。安全規則見附錄（學期與學號格式檢查、欄位型別檢查、不能刪除、不允許其他欄位）
+  - core 新增 `cloudGet／cloudPut／cloudAll`（REST，8 秒逾時，問完就走不佔連線）、`mergeProgress`（過關取聯集、時間取早；嘗試次數取大；自我檢查取最新）、`toRecord`
+  - 學生頁：登入時讀回雲端進度並合併（**換電腦可以接續**）；每次作答、過關、自我檢查後上傳整筆紀錄；連不上時照常可玩，顯示「📴 進度先存在這台裝置」，恢復網路或下次作答時補傳。localStorage 的 `passed` 由 true 改成過關時間（舊資料自動轉成 1＝時間不明）
+  - 老師頁改成分頁：🗂️ 設定與名單（學期、學生連結、全班名單）／📡 即時進度／🖥️ 破案牆／🔍 驗證代碼／🔬 批改 Excel／🔑 答案表；記住上次開的分頁
+  - 📡 即時進度：人數、已結案、隱藏徽章、「有一關試 3 次以上還沒過」人數；各關破解人數、卡關人數、過關平均嘗試次數、🔥 最卡的一關；每人每關 ✓n／✗n／·、結案時間、自我檢查分數、最後活動；可依學號／進度排序；勾「只看全班名單」會補上未開始的人；匯出 Excel（闖關進度＋嘗試次數）
+  - 🖥️ 破案牆（投影）：調查員數、已結案、隱藏徽章；六個案件的破解進度條與 🥇 首破；🏆 最速結案前 5 名；📰 即時動態（最新 7 則）；可全螢幕、可遮名字中間（王○明）
+  - **只有在「即時進度」或「破案牆」分頁、而且畫面看得到時才每 10 秒讀一次**（讀整個學期節點）。流量估算：每位學生約 0.3～0.5 KB，一班 35 人每次約 15 KB，開一節課約 6 MB；若全年級共用同一個學期代碼（300 人）每次約 120 KB、一節課約 40 MB，仍遠低於每月 10 GB。想更省就用「學期＋班級」代碼（如 115-1A）
+  - **要在 Firebase 後台貼上新規則才會生效**（附錄全文，或 `family-points/firebase-rules-merged.json`）；規則還沒更新前，學生寫入會被拒絕，學生頁顯示離線、進度只存在本機
+  - 測試：假 Firebase 模擬 28 人闖關（各種進度、卡關、結案、隱藏徽章）→ 儀表板數字、排序、最卡的一關、破案牆、自動更新都正確；換裝置接回 2 關進度；離線可玩
+- 已知限制：Firebase 規則開放寫入（跟其他工具一樣），懂技術的學生可以偽造進度；正式成績建議以「批改 Excel」為準，進度與代碼當作參考
 
 ### 💰 集點小金庫（family-points/index.html，2026-10-06 新增，**隱藏頁面**）
 
@@ -344,7 +353,7 @@ fp/
 
 ---
 
-## 附錄：Firebase 安全規則全文（2026-10-06，含集點小金庫 fp）
+## 附錄：Firebase 安全規則全文（2026-10-06，含集點小金庫 fp、消失的實驗數據 excel-rescue）
 
 ```json
 {
@@ -395,6 +404,40 @@ fp/
           "$tid": {
             ".write": "newData.exists() && root.child('case-board').child($code).child('meta').exists() && (data.exists() || (newData.child('status').val() == 'open' && root.child('case-board').child($code).child('meta').child('open').val() != false))",
             ".validate": "newData.hasChildren(['sid','name','seat','status','createdAt']) && newData.child('status').val().matches(/^(open|taken|done|cancelled|removed)$/) && (!data.exists() || newData.child('sid').val() == data.child('sid').val()) && (!(data.child('status').val() == 'taken' && newData.child('status').val() == 'taken') || newData.child('solver').val() == data.child('solver').val()) && (data.child('status').val() != 'done' || newData.child('status').val() == 'done' || newData.child('status').val() == 'removed') && (newData.child('status').val() != 'taken' || (newData.child('solver').isString() && newData.child('solver').val() != newData.child('sid').val())) && (newData.child('status').val() != 'done' || (newData.child('stars').isNumber() && newData.child('stars').val() >= 1 && newData.child('stars').val() <= 3)) && (!newData.child('note').exists() || (newData.child('note').isString() && newData.child('note').val().length <= 80))"
+          }
+        }
+      }
+    },
+    "excel-rescue": {
+      "$sem": {
+        ".read": "$sem.matches(/^[A-Z0-9-]{1,16}$/)",
+        "$id": {
+          ".write": "newData.exists() && $sem.matches(/^[A-Z0-9-]{1,16}$/) && $id.matches(/^[A-Z0-9]{3,12}$/)",
+          ".validate": "newData.hasChildren(['name','ts']) && newData.child('name').isString() && newData.child('name').val().length <= 12 && newData.child('ts').isNumber()",
+          "name": {
+            ".validate": "newData.isString()"
+          },
+          "ts": {
+            ".validate": "newData.isNumber()"
+          },
+          "passed": {
+            "$lv": {
+              ".validate": "$lv.matches(/^(L[1-6]|H)$/) && newData.isNumber()"
+            }
+          },
+          "att": {
+            "$lv": {
+              ".validate": "$lv.matches(/^(L[1-6]|H)$/) && newData.isNumber() && newData.val() >= 0 && newData.val() <= 9999"
+            }
+          },
+          "closedAt": {
+            ".validate": "newData.isNumber()"
+          },
+          "check": {
+            ".validate": "newData.hasChildren(['score','max','at']) && newData.child('score').isNumber() && newData.child('max').isNumber() && newData.child('at').isNumber()"
+          },
+          "$other": {
+            ".validate": false
           }
         }
       }

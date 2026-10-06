@@ -9,6 +9,8 @@
   /* ---------- 設定區：SEMESTER 是「預設」學期，老師頁可以隨時換，換了會放進學生連結 ?s=… ---------- */
   var CONFIG = {
     SEMESTER: '115-1',          // 預設學期代碼（學生連結沒帶 ?s= 時用這個）
+    FIREBASE_URL: 'https://point-collection-stash-default-rtdb.asia-southeast1.firebasedatabase.app',
+    DB_PATH: 'excel-rescue',      // 雲端紀錄：excel-rescue/<學期>/<學號>
     STDEV_ACCEPT: ['S', 'P']    // 標準差接受 STDEV（＝STDEV.S，樣本）與 STDEV.P（母體）兩種結果
   };
 
@@ -399,8 +401,52 @@
   }
   function isCodeLike(s) { return /^[A-HJ-NP-Z2-9]{6}$/.test(String(s || '').toUpperCase()); }
 
+  /* ---------- 雲端紀錄（第三階段）：Firebase REST，問完就走，不長期佔連線 ----------
+     紀錄格式 excel-rescue/<學期>/<學號> = {
+       name, ts（最後更新）, passed: { L1: 過關時間, …, H }, att: { L1: 嘗試次數, … },
+       closedAt（六關全破時間）, check: { score, max, at, lv: { L1: 得分, … } }（最近一次 Excel 自我檢查）
+     } */
+  var LV_KEYS = ['L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'H'];
+  function cloudBase() { return CONFIG.FIREBASE_URL + '/' + CONFIG.DB_PATH + '/' + encodeURIComponent(CONFIG.SEMESTER); }
+  function cloudFetch(url, opt) {
+    opt = opt || {};
+    var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, opt.timeout || 8000) : null;
+    return fetch(url, { method: opt.method || 'GET', cache: 'no-store', signal: ctrl ? ctrl.signal : undefined,
+      headers: opt.body ? { 'Content-Type': 'application/json' } : undefined, body: opt.body ? JSON.stringify(opt.body) : undefined })
+      .then(function (res) { if (timer) clearTimeout(timer); if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); },
+            function (e) { if (timer) clearTimeout(timer); throw e; });
+  }
+  function cloudGet(id) { return cloudFetch(cloudBase() + '/' + encodeURIComponent(normId(id)) + '.json'); }
+  function cloudPut(id, rec) { return cloudFetch(cloudBase() + '/' + encodeURIComponent(normId(id)) + '.json', { method: 'PUT', body: rec }); }
+  function cloudAll() { return cloudFetch(cloudBase() + '.json', { timeout: 15000 }).then(function (v) { return v || {}; }); }
+
+  // 把兩份進度合在一起：過關取「有過就算、時間取早的」，嘗試次數取大的
+  function mergeProgress(a, b) {
+    a = a || {}; b = b || {};
+    var out = { passed: {}, att: {} };
+    LV_KEYS.forEach(function (k) {
+      var pa = a.passed && a.passed[k], pb = b.passed && b.passed[k];
+      var ta = pa === true ? 1 : +pa || 0, tb = pb === true ? 1 : +pb || 0;
+      if (ta || tb) out.passed[k] = ta && tb ? Math.min(ta, tb) : (ta || tb);
+      var n = Math.max(+(a.att && a.att[k]) || 0, +(b.att && b.att[k]) || 0);
+      if (n) out.att[k] = n;
+    });
+    var ca = +a.closedAt || 0, cb = +b.closedAt || 0;
+    if (ca || cb) out.closedAt = ca && cb ? Math.min(ca, cb) : (ca || cb);
+    var ka = a.check, kb = b.check;
+    if (ka || kb) out.check = !ka ? kb : !kb ? ka : (ka.at >= kb.at ? ka : kb);
+    return out;
+  }
+  function toRecord(name, prog) {
+    var rec = { name: String(name || '').slice(0, 12), ts: Date.now(), passed: prog.passed || {}, att: prog.att || {} };
+    if (prog.closedAt) rec.closedAt = prog.closedAt;
+    if (prog.check) rec.check = prog.check;
+    return rec;
+  }
+
   var API = {
-    CONFIG: CONFIG, validSemester: validSemester, setSemester: setSemester, isCodeLike: isCodeLike, normId: normId, generate: generate, LEVELS: LEVELS, HIDDEN: HIDDEN,
+    CONFIG: CONFIG, LV_KEYS: LV_KEYS, cloudGet: cloudGet, cloudPut: cloudPut, cloudAll: cloudAll, mergeProgress: mergeProgress, toRecord: toRecord, validSemester: validSemester, setSemester: setSemester, isCodeLike: isCodeLike, normId: normId, generate: generate, LEVELS: LEVELS, HIDDEN: HIDDEN,
     closeCode: closeCode, hiddenCode: hiddenCode, fragment: fragment, sheets: sheets, linreg: linreg
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.ExcelRescue = API;

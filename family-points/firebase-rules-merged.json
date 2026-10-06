@@ -50,6 +50,40 @@
         }
       }
     },
+    "excel-rescue": {
+      "$sem": {
+        ".read": "$sem.matches(/^[A-Z0-9-]{1,16}$/)",
+        "$id": {
+          ".write": "newData.exists() && $sem.matches(/^[A-Z0-9-]{1,16}$/) && $id.matches(/^[A-Z0-9]{3,12}$/)",
+          ".validate": "newData.hasChildren(['name','ts']) && newData.child('name').isString() && newData.child('name').val().length <= 12 && newData.child('ts').isNumber()",
+          "name": {
+            ".validate": "newData.isString()"
+          },
+          "ts": {
+            ".validate": "newData.isNumber()"
+          },
+          "passed": {
+            "$lv": {
+              ".validate": "$lv.matches(/^(L[1-6]|H)$/) && newData.isNumber()"
+            }
+          },
+          "att": {
+            "$lv": {
+              ".validate": "$lv.matches(/^(L[1-6]|H)$/) && newData.isNumber() && newData.val() >= 0 && newData.val() <= 9999"
+            }
+          },
+          "closedAt": {
+            ".validate": "newData.isNumber()"
+          },
+          "check": {
+            ".validate": "newData.hasChildren(['score','max','at']) && newData.child('score').isNumber() && newData.child('max').isNumber() && newData.child('at').isNumber()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
     "fp": {
       "admins": {
         "$uid": {

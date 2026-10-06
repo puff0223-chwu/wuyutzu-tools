@@ -98,6 +98,63 @@ tr.det td{background:#fffaf0;text-align:left;white-space:normal}
 .er-mk{font-weight:900;width:1.2em;flex:none}
 .er-lv li.ok .er-mk{color:var(--ok)} .er-lv li.ng .er-mk{color:var(--stamp)}
 .er-lv li small{display:block;color:var(--muted)} .er-lv li.ng small{color:var(--stamp)}
+/* 分頁 */
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}
+.tabs button{font:inherit;font-weight:700;border:0;border-radius:24px;padding:8px 16px;background:#2b3346;color:#cfd5e2;cursor:pointer}
+.tabs button.on{background:var(--brass);color:var(--ink)}
+section[data-tab]{display:none} section[data-tab].on{display:block}
+.gomsg{margin-top:10px;font-weight:700;color:var(--ok)}
+.linkbtn{border:0;background:none;color:var(--ink);text-decoration:underline;font:inherit;font-weight:700;cursor:pointer;padding:0}
+/* 即時進度 */
+.ctrl{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:8px 0 14px}
+.ctrl label{display:flex;gap:6px;align-items:center;font-weight:700;font-size:.92rem;cursor:pointer}
+.ctrl input[type=checkbox]{width:18px;height:18px;accent-color:var(--ink)}
+.ctrl select{font:inherit;padding:6px 10px;border:2px solid var(--line);border-radius:6px;background:#fffaf0}
+.stamp{color:var(--muted);font-size:.88rem}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:#fffaf0;border:1px solid var(--line);border-radius:8px;padding:10px 14px}
+.kpi b{display:block;font-size:1.8rem;font-family:"JetBrains Mono",monospace;color:var(--ink);line-height:1.2}
+.kpi span{color:var(--muted);font-size:.88rem;font-weight:700}
+.lvstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:14px}
+.lvs{background:#fffaf0;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:.9rem}
+.lvs.hard{border:2px solid var(--stamp)}
+.lvs h4{margin:0 0 6px;font-size:.98rem}
+.bar{height:10px;background:var(--paper2);border-radius:6px;overflow:hidden;margin:6px 0}
+.bar i{display:block;height:100%;background:var(--ok)}
+.lvs .tag{color:var(--stamp);font-weight:700}
+td.p{color:var(--ok);font-weight:700} td.s{color:var(--stamp);font-weight:700;background:#fbeeec} td.n{color:#b5a98a}
+td.cl{color:var(--ok);font-weight:700}
+/* 破案牆 */
+.wall{background:#141a26;color:#eef0f5;border-radius:10px;padding:24px;min-height:70vh;font-size:clamp(14px,1.25vw,20px)}
+.wall:fullscreen{border-radius:0;overflow:auto;padding:3vh 3vw}
+.wall.fake{position:fixed;inset:0;z-index:40;border-radius:0;overflow:auto;padding:3vh 3vw}
+.w-top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:10px;margin-bottom:2.2vh}
+.w-top h2{color:#fff;font-size:2.1em;margin:0}
+.w-top .sub{color:var(--brass);font-family:"JetBrains Mono",monospace;letter-spacing:.15em}
+.w-big{display:flex;gap:2.5vw;font-family:"JetBrains Mono",monospace}
+.w-big div{text-align:center} .w-big b{display:block;font-size:2.6em;color:var(--brass);line-height:1}
+.w-big span{font-family:"Noto Sans TC",sans-serif;color:#aab3c5;font-size:.85em}
+.w-cases{display:grid;grid-template-columns:repeat(3,1fr);gap:1.4vw;margin-bottom:2vh}
+.w-case{background:#1f2738;border:2px solid #323c54;border-radius:10px;padding:1.1em 1.2em;position:relative}
+.w-case.done{border-color:var(--brass)}
+.w-case .no{font-family:"JetBrains Mono",monospace;color:#8f98ad;letter-spacing:.15em;font-size:.8em}
+.w-case h3{margin:.2em 0;font-size:1.3em;color:#fff}
+.w-case .ico{position:absolute;right:.8em;top:.6em;font-size:1.8em}
+.w-case .bar{height:.75em;background:#323c54;margin:.6em 0 .4em} .w-case .bar i{background:linear-gradient(90deg,var(--brass),#e9c46a)}
+.w-case .cnt{font-family:"JetBrains Mono",monospace;color:#cfd5e2}
+.w-case .first{margin-top:.4em;color:#e9c46a;font-weight:700;font-size:.92em}
+.w-case.secret{background:linear-gradient(135deg,#2b2140,#3d2b52);border-color:#8a6fc0}
+.w-low{display:grid;grid-template-columns:1fr 1fr;gap:1.4vw}
+.w-box{background:#1f2738;border-radius:10px;padding:1em 1.2em}
+.w-box h4{margin:0 0 .6em;color:var(--brass);font-size:1.1em}
+.w-box ol,.w-box ul{margin:0;padding:0;list-style:none}
+.w-box li{display:flex;gap:.8em;padding:.35em 0;border-bottom:1px dashed #323c54}
+.w-box li .t{font-family:"JetBrains Mono",monospace;color:#8f98ad;flex:none}
+.w-box li .r{font-family:"JetBrains Mono",monospace;color:var(--brass);font-weight:700;width:1.6em;flex:none}
+.w-empty{color:#8f98ad}
+.w-exit{position:fixed;right:18px;top:14px;z-index:41;display:none}
+.wall.fake ~ .w-exit{display:inline-flex}
+@media (max-width:760px){.w-cases{grid-template-columns:1fr 1fr}.w-low{grid-template-columns:1fr}}
 @media (max-width:760px){.cols{grid-template-columns:1fr}}
 </style>
 </head>
@@ -108,6 +165,16 @@ tr.det td{background:#fffaf0;text-align:left;white-space:normal}
     <div style="text-align:right"><a class="home" href="../index.html">🏠 回事務所首頁</a><div class="sem" style="margin-top:6px">目前學期：<b class="mono" id="sem"></b></div></div>
   </div>
 
+  <nav class="tabs" id="tabs">
+    <button data-t="setup" class="on">🗂️ 設定與名單</button>
+    <button data-t="live">📡 即時進度</button>
+    <button data-t="wall">🖥️ 破案牆</button>
+    <button data-t="verify">🔍 驗證代碼</button>
+    <button data-t="grade">🔬 批改 Excel</button>
+    <button data-t="key">🔑 答案表</button>
+  </nav>
+
+  <section data-tab="setup" class="on">
   <div class="paper" id="semBox">
     <h2>📅 學期設定</h2>
     <div class="semcard">
@@ -136,21 +203,55 @@ tr.det td{background:#fffaf0;text-align:left;white-space:normal}
 
   <div class="cols">
     <div class="paper">
-      <h2>① 貼上學號清單，產生全班答案</h2>
+      <h2>👥 全班名單</h2>
+      <p class="note" style="margin:0 0 8px">貼上學號（可含姓名）。即時進度、驗證代碼、批改 Excel 都會用這份名單找出「還沒做／還沒交」的人，答案表也從這裡產生。</p>
       <textarea id="ids" placeholder="一行一位，可以是「學號」或「學號 姓名」（中間空白或 Tab 都行），直接從 Excel 複製兩欄貼上也可以"></textarea>
       <div class="row">
-        <button class="btn" id="btnGen">產生答案表</button>
+        <button class="btn" id="btnGen">讀取名單＋產生答案表</button>
         <button class="btn brass" id="btnXlsx">📥 匯出答案表 Excel</button>
       </div>
+      <div class="gomsg" id="genMsg"></div>
     </div>
     <div class="paper">
       <h2>使用順序</h2>
-      <p class="note" style="font-size:.95rem">1. 先確認上方學期正確<br>2. 在 ① 貼全班學號（可含姓名）→ 看答案表<br>3. 收齊代碼後在 ② 一次驗證全班<br>4. 把全班 Excel 檔拖進 ③ 自動批改<br>② 和 ③ 都會列出 ① 名單中「還沒交」的人</p>
+      <p class="note" style="font-size:.95rem">1. 確認上方學期正確，把學生連結／QR 給學生<br>2. 在左邊貼全班名單<br>3. 上課時開「📡 即時進度」看誰卡關，或把「🖥️ 破案牆」投影給全班<br>4. 課後在「🔬 批改 Excel」整批批改繳交的檔案<br>5. 需要時用「🔍 驗證代碼」核對結案代碼、「🔑 答案表」看標準答案</p>
     </div>
   </div>
 
+  </section>
+
+  <section data-tab="live">
   <div class="paper">
-    <h2>② 批次驗證結案代碼</h2>
+    <h2>📡 即時闖關進度</h2>
+    <div class="ctrl">
+      <button class="btn" id="btnLive">🔄 立即更新</button>
+      <label><input type="checkbox" id="optAuto" checked>每 10 秒自動更新</label>
+      <label><input type="checkbox" id="optList" checked>只看全班名單</label>
+      <select id="optSort"><option value="id">依學號排序</option><option value="low">進度少的在前（找卡關的人）</option><option value="high">進度多的在前</option></select>
+      <button class="btn brass" id="btnLiveXlsx">📥 匯出進度 Excel</button>
+      <span class="stamp" id="liveStamp"></span>
+    </div>
+    <div id="liveBody"><p class="note">讀取中……</p></div>
+    <p class="note">數字是嘗試次數：<b style="color:var(--ok)">✓3</b> 第 3 次才過、<b style="color:var(--stamp)">✗4</b> 試了 4 次還沒過（卡關中）、· 還沒開始。只有打開這個分頁或破案牆時才會更新，省 Firebase 流量。</p>
+  </div>
+  </section>
+
+  <section data-tab="wall">
+  <div class="paper">
+    <h2>🖥️ 破案牆</h2>
+    <div class="ctrl">
+      <button class="btn" id="btnWallFs">🖥️ 全螢幕投影</button>
+      <label><input type="checkbox" id="optMask">名字中間遮住（王○明）</label>
+      <label><input type="checkbox" id="optWallList" checked>只看全班名單</label>
+    </div>
+  </div>
+  <div class="wall" id="wall"><p class="w-empty">讀取中……</p></div>
+  <button class="btn brass w-exit" id="btnWallExit">✕ 結束投影</button>
+  </section>
+
+  <section data-tab="verify">
+  <div class="paper">
+    <h2>🔍 批次驗證結案代碼</h2>
     <textarea id="vList" placeholder="一行一位：學號　姓名（可省略）　結案代碼　隱藏徽章（有才填）&#10;例：110123 王小明 4C2R5G 8K6U4B&#10;從 Excel 或 Google 表單回覆複製多欄貼上也可以，空白、Tab、逗號都行"></textarea>
     <div class="row">
       <button class="btn" id="btnVerifyAll">🔍 驗證全部</button>
@@ -159,8 +260,11 @@ tr.det td{background:#fffaf0;text-align:left;white-space:normal}
     <div id="vRes"></div>
   </div>
 
+  </section>
+
+  <section data-tab="grade">
   <div class="paper">
-    <h2>③ 批改學生 Excel 檔</h2>
+    <h2>🔬 批改學生 Excel 檔</h2>
     <label class="drop" id="gDrop"><b>📂 選擇或拖進全班的 Excel 檔（可以一次選很多個）</b>從課程平台下載學生繳交的 .xlsx 後，整批丟進來就好。檔案只在這台電腦的瀏覽器裡檢查，不會上傳。<input type="file" id="gFiles" accept=".xlsx" multiple></label>
     <div class="row">
       <button class="btn brass" id="btnGradeXlsx">📥 匯出批改結果 Excel</button>
@@ -171,11 +275,15 @@ tr.det td{background:#fffaf0;text-align:left;white-space:normal}
     <p class="note">每個項目 1 分，六關共 42 分；隱藏關卡 4 分另計。圖表是用「數據」認出來的：學生改了工作表名稱也找得到，但用了別人的數據就對不上。</p>
   </div>
 
+  </section>
+
+  <section data-tab="key">
   <div class="paper">
-    <h2>④ 全班答案表</h2>
+    <h2>🔑 全班答案表</h2>
     <p class="note">斜率、R² 顯示到小數第 4 位（跟 Excel 趨勢線預設一致）。點 📄 可下載該生的專屬數據檔，方便你自己試做或幫學生補檔。</p>
-    <div class="tablebox" id="tbl"><p class="note">還沒產生，先在 ① 貼上學號。</p></div>
+    <div class="tablebox" id="tbl"><p class="note">還沒產生，先在「🗂️ 設定與名單」貼上全班學號。</p></div>
   </div>
+  </section>
 </div>
 
 <div class="proj" id="proj">
@@ -202,6 +310,7 @@ tr.det td{background:#fffaf0;text-align:left;white-space:normal}
     saveRecent([sem].concat(loadRecent().filter(function(x){ return x !== sem; })).slice(0, 8));
     $('sem').textContent = sem; $('semIn').value = sem;
     renderChips(); updateLink();
+    live = null; liveAt = 0; if (curTab === 'live' || curTab === 'wall') refreshLive();
     if (list.length) $('btnGen').click();
     if (verified) verifyAll();
     if (!quiet) {
@@ -282,6 +391,9 @@ tr.det td{background:#fffaf0;text-align:left;white-space:normal}
            '<td><button class="dl" data-id="'+o.id+'" title="下載此生數據檔">📄</button></td></tr>';
     });
     $('tbl').innerHTML = h + '</tbody></table>';
+    $('genMsg').innerHTML = '✅ 已讀取 ' + list.length + ' 人，答案表已產生 → <button class="linkbtn" data-go="key">查看答案表</button>';
+    $('genMsg').querySelector('[data-go]').onclick = function(){ showTab('key'); };
+    if (live) renderLive();
     Array.prototype.forEach.call(document.querySelectorAll('.dl'), function(b){ b.onclick = function(){ dlStudent(b.getAttribute('data-id')); }; });
   };
 
@@ -346,7 +458,7 @@ tr.det td{background:#fffaf0;text-align:left;white-space:normal}
         var c2 = r.hidden.indexOf('🕵️')===0 ? 'ok' : 'na';
         return '<tr><td class="mono">'+esc(r.id)+'</td><td>'+esc(r.name)+'</td><td class="'+c1+'">'+esc(r.close)+'</td><td class="'+c2+'">'+esc(r.hidden)+'</td><td class="left'+(r.note.indexOf('！')>=0?' ng':'')+'">'+esc(r.note)+'</td></tr>';
       }).join('')+'</tbody></table></div>';
-    if (missing.length) h += '<div class="missing">📭 ① 名單中還沒交代碼的（'+missing.length+' 人）：'+missing.map(function(o){ return esc(o.id + (o.name ? ' ' + o.name : '')); }).join('、')+'</div>';
+    if (missing.length) h += '<div class="missing">📭 名單中還沒交代碼的（'+missing.length+' 人）：'+missing.map(function(o){ return esc(o.id + (o.name ? ' ' + o.name : '')); }).join('、')+'</div>';
     $('vRes').innerHTML = h;
     verified.missing = missing;
   }
@@ -355,7 +467,7 @@ tr.det td{background:#fffaf0;text-align:left;white-space:normal}
     verifyAll();
     if (!verified || !window.XLSX) return;
     var aoa = [['學號','姓名','結案代碼','隱藏徽章','備註']].concat(verified.map(function(r){ return [r.id, r.name, r.close, r.hidden, r.note]; }));
-    (verified.missing || []).forEach(function(o){ aoa.push([o.id, o.name, '未繳交', '—', '在 ① 名單中但沒有交代碼']); });
+    (verified.missing || []).forEach(function(o){ aoa.push([o.id, o.name, '未繳交', '—', '在 名單中但沒有交代碼']); });
     var ws = XLSX.utils.aoa_to_sheet(aoa), wb = XLSX.utils.book_new();
     ws['!cols'] = [{wch:12},{wch:10},{wch:12},{wch:12},{wch:40}];
     XLSX.utils.book_append_sheet(wb, ws, '驗證結果');
@@ -403,7 +515,7 @@ tr.det td{background:#fffaf0;text-align:left;white-space:normal}
     h += '</tbody></table></div>';
     var seen = {}; graded.forEach(function(g){ if (g.r.ok) seen[g.r.id] = 1; });
     var missing = list.filter(function(o){ return !seen[o.id]; });
-    if (missing.length) h += '<div class="missing">📭 ① 名單中還沒有 Excel 檔的（' + missing.length + ' 人）：' + missing.map(function(o){ return esc(o.id + (o.name ? ' ' + o.name : '')); }).join('、') + '</div>';
+    if (missing.length) h += '<div class="missing">📭 名單中還沒有 Excel 檔的（' + missing.length + ' 人）：' + missing.map(function(o){ return esc(o.id + (o.name ? ' ' + o.name : '')); }).join('、') + '</div>';
     $('gRes').innerHTML = h;
     Array.prototype.forEach.call(document.querySelectorAll('.dbtn'), function(b){
       b.onclick = function(){
@@ -448,9 +560,180 @@ tr.det td{background:#fffaf0;text-align:left;white-space:normal}
     XLSX.writeFile(wb, '消失的實驗數據_Excel批改_' + X.CONFIG.SEMESTER + '.xlsx');
   };
 
+  // ---------- 分頁 ----------
+  var curTab = 'setup';
+  function showTab(t){
+    curTab = t;
+    Array.prototype.forEach.call(document.querySelectorAll('#tabs button'), function(b){ b.classList.toggle('on', b.getAttribute('data-t') === t); });
+    Array.prototype.forEach.call(document.querySelectorAll('section[data-tab]'), function(sec){ sec.classList.toggle('on', sec.getAttribute('data-tab') === t); });
+    if (t === 'live' || t === 'wall') refreshLive(); else stopPoll();
+    try { localStorage.setItem('excelRescue-teacher:tab', t); } catch(e){}
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('#tabs button'), function(b){ b.onclick = function(){ showTab(b.getAttribute('data-t')); }; });
+
+  // ---------- 即時進度（第三階段）：Firebase excel-rescue/<學期> ----------
+  var live = null, liveAt = 0, pollTimer = null, liveErr = '';
+  var CASES = X.LEVELS.map(function(L){ return { key: L.key, no: L.no, icon: L.icon, title: L.title, chart: L.chart }; });
+  function stopPoll(){ clearTimeout(pollTimer); pollTimer = null; }
+  function schedule(){
+    stopPoll();
+    var want = (curTab === 'live' && $('optAuto').checked) || curTab === 'wall';
+    if (want) pollTimer = setTimeout(refreshLive, 10000);
+  }
+  function refreshLive(){
+    stopPoll();
+    if (document.visibilityState === 'hidden') { schedule(); return; }
+    var sem = X.CONFIG.SEMESTER;
+    X.cloudAll().then(function(all){ if (sem !== X.CONFIG.SEMESTER) return; live = all; liveAt = Date.now(); liveErr = ''; },
+                      function(e){ liveErr = '連不上 Firebase（' + e.message + '）'; })
+      .then(function(){ renderLive(); schedule(); });
+  }
+  document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'visible' && (curTab === 'live' || curTab === 'wall')) refreshLive(); });
+  $('btnLive').onclick = refreshLive;
+  $('optAuto').onchange = schedule;
+  ['optList','optSort','optMask','optWallList'].forEach(function(id){ $(id).onchange = renderLive; });
+
+  function hhmm(ts){
+    if (!ts || ts < 1e10) return '';
+    var d = new Date(ts), n = new Date(), p2 = function(x){ return (x < 10 ? '0' : '') + x; };
+    var t = p2(d.getHours()) + ':' + p2(d.getMinutes());
+    return d.toDateString() === n.toDateString() ? t : (d.getMonth() + 1) + '/' + d.getDate() + ' ' + t;
+  }
+  function ago(ts){
+    if (!ts) return '';
+    var m = Math.floor((Date.now() - ts) / 60000);
+    return m < 1 ? '剛剛' : m < 60 ? m + ' 分鐘前' : m < 1440 ? Math.floor(m / 60) + ' 小時前' : Math.floor(m / 1440) + ' 天前';
+  }
+  function mask(n){ n = String(n || ''); if (!$('optMask').checked || n.length < 2) return n; return n.length === 2 ? n[0] + '○' : n[0] + '○'.repeat(n.length - 2) + n[n.length - 1]; }
+  // 整理成每位學生一列；勾「只看全班名單」時只留名單中的人，並補上還沒開始的人
+  function people(onlyList){
+    var recs = Object.keys(live || {}).map(function(id){ var r = live[id] || {}; return { id: id, name: r.name || '', passed: r.passed || {}, att: r.att || {}, closedAt: r.closedAt || 0, check: r.check || null, ts: r.ts || 0, started: true }; });
+    if (onlyList && list.length) {
+      var byId = {}; recs.forEach(function(r){ byId[r.id] = r; });
+      recs = list.map(function(o){ return byId[o.id] ? Object.assign(byId[o.id], { name: byId[o.id].name || o.name, rosterName: o.name }) : { id: o.id, name: o.name, passed: {}, att: {}, closedAt: 0, check: null, ts: 0, started: false }; });
+    }
+    recs.forEach(function(r){ r.done = X.LEVELS.filter(function(L){ return r.passed[L.key]; }).length; });
+    return recs;
+  }
+  function levelStats(ps){
+    return CASES.concat([{ key: 'H', no: '？', icon: '🕵️', title: '被污染的標準品', chart: '隱藏關卡' }]).map(function(c){
+      var pass = ps.filter(function(r){ return r.passed[c.key]; });
+      var stuck = ps.filter(function(r){ return !r.passed[c.key] && (r.att[c.key] || 0) > 0; });
+      var tries = pass.map(function(r){ return r.att[c.key] || 1; });
+      var avg = tries.length ? tries.reduce(function(a, b){ return a + b; }, 0) / tries.length : 0;
+      var first = pass.filter(function(r){ return r.passed[c.key] > 1e10; }).sort(function(a, b){ return a.passed[c.key] - b.passed[c.key]; })[0];
+      return { c: c, pass: pass.length, stuck: stuck.length, avg: avg, first: first };
+    });
+  }
+
+  function renderLive(){
+    if (curTab === 'wall') renderWall();
+    if (curTab !== 'live') return;
+    $('liveStamp').textContent = liveErr ? '⚠️ ' + liveErr : liveAt ? '最後更新 ' + new Date(liveAt).toLocaleTimeString() + '｜學期 ' + X.CONFIG.SEMESTER : '';
+    if (!live) { $('liveBody').innerHTML = '<p class="note">' + (liveErr ? esc(liveErr) + '。學生進度還是會先存在他們自己的裝置。' : '讀取中……') + '</p>'; return; }
+    var onlyList = $('optList').checked && list.length > 0;
+    var ps = people(onlyList), started = ps.filter(function(r){ return r.started; });
+    if (!ps.length) { $('liveBody').innerHTML = '<p class="note">這個學期（' + esc(X.CONFIG.SEMESTER) + '）還沒有學生開始闖關。學生用「設定與名單」裡的連結登入後就會出現在這裡。</p>'; return; }
+    var closed = ps.filter(function(r){ return r.done === 6; }).length, hid = ps.filter(function(r){ return r.passed.H; }).length;
+    var stuckNow = ps.filter(function(r){ return CASES.some(function(c){ return !r.passed[c.key] && (r.att[c.key] || 0) >= 3; }); }).length;
+    var h = '<div class="cards">' +
+      '<div class="kpi"><b>' + started.length + (onlyList ? '<small style="font-size:.5em;color:var(--muted)"> / ' + ps.length + '</small>' : '') + '</b><span>已開始調查</span></div>' +
+      '<div class="kpi"><b>' + closed + '</b><span>已結案（六關全破）</span></div>' +
+      '<div class="kpi"><b>' + hid + '</b><span>🕵️ 隱藏徽章</span></div>' +
+      '<div class="kpi"><b style="color:var(--stamp)">' + stuckNow + '</b><span>有一關試 3 次以上還沒過</span></div></div>';
+    var st = levelStats(ps), tried = st.filter(function(x){ return x.c.key !== 'H' && x.pass + x.stuck >= 3; });
+    var hardest = tried.length ? tried.slice().sort(function(a, b){ return a.pass / (a.pass + a.stuck) - b.pass / (b.pass + b.stuck) || b.avg - a.avg; })[0] : null;
+    h += '<div class="lvstats">' + st.map(function(x){
+      var base = Math.max(started.length, 1), pct = Math.round(x.pass / base * 100), isHard = hardest && hardest.c.key === x.c.key && x.stuck > 0;
+      return '<div class="lvs' + (isHard ? ' hard' : '') + '"><h4>' + x.c.icon + ' ' + (x.c.key === 'H' ? '隱藏' : x.c.key.slice(1)) + '｜' + esc(x.c.chart) + (isHard ? ' <span class="tag">🔥 最卡</span>' : '') + '</h4>' +
+        '<div class="bar"><i style="width:' + pct + '%"></i></div>' +
+        '破解 <b>' + x.pass + '</b>／' + started.length + '　卡關 <b style="color:var(--stamp)">' + x.stuck + '</b>' +
+        (x.pass ? '<br>過關平均試 ' + x.avg.toFixed(1) + ' 次' : '') + '</div>';
+    }).join('') + '</div>';
+    var sort = $('optSort').value;
+    ps.sort(function(a, b){
+      if (sort === 'low') return a.done - b.done || a.id.localeCompare(b.id);
+      if (sort === 'high') return b.done - a.done || (a.closedAt || 9e15) - (b.closedAt || 9e15) || a.id.localeCompare(b.id);
+      return a.id.localeCompare(b.id);
+    });
+    h += '<div class="tablebox"><table><thead><tr><th>學號</th><th>姓名</th>' + CASES.map(function(c){ return '<th>' + c.key.slice(1) + ' ' + esc(c.chart) + '</th>'; }).join('') +
+      '<th>🕵️</th><th>進度</th><th>結案時間</th><th>Excel 自我檢查</th><th>最後活動</th></tr></thead><tbody>';
+    ps.forEach(function(r){
+      h += '<tr><td class="mono">' + esc(r.id) + '</td><td>' + esc(r.name) + '</td>' +
+        CASES.concat([{ key: 'H' }]).map(function(c){
+          var n = r.att[c.key] || 0;
+          if (r.passed[c.key]) return '<td class="p">✓' + (n > 1 ? n : '') + '</td>';
+          if (n) return '<td class="s">✗' + n + '</td>';
+          return '<td class="n">·</td>';
+        }).join('') +
+        '<td class="sc">' + (r.started ? r.done + '/6' : '<span class="n">未開始</span>') + '</td>' +
+        '<td class="' + (r.closedAt ? 'cl' : '') + '">' + (r.closedAt ? (hhmm(r.closedAt) || '✓') : '') + '</td>' +
+        '<td class="sc">' + (r.check ? r.check.score + '/' + r.check.max : '') + '</td>' +
+        '<td class="stamp">' + ago(r.ts) + '</td></tr>';
+    });
+    $('liveBody').innerHTML = h + '</tbody></table></div>';
+  }
+
+  $('btnLiveXlsx').onclick = function(){
+    if (!live || !window.XLSX) return;
+    var ps = people($('optList').checked && list.length > 0);
+    var head = ['學號','姓名'].concat(CASES.map(function(c){ return c.key.slice(1) + ' ' + c.chart; }), ['隱藏關卡','完成關數','結案時間','Excel 自我檢查','最後活動']);
+    var att = ['學號','姓名'].concat(CASES.map(function(c){ return c.key.slice(1) + ' 嘗試次數'; }), ['隱藏 嘗試次數']);
+    var rows = [head], rows2 = [att];
+    ps.forEach(function(r){
+      rows.push([r.id, r.name].concat(CASES.concat([{ key: 'H' }]).map(function(c){ return r.passed[c.key] ? '✓' : (r.att[c.key] ? '卡關' : ''); }),
+        [r.started ? r.done : '未開始', r.closedAt ? new Date(r.closedAt).toLocaleString() : '', r.check ? r.check.score + '/' + r.check.max : '', r.ts ? new Date(r.ts).toLocaleString() : '']));
+      rows2.push([r.id, r.name].concat(CASES.concat([{ key: 'H' }]).map(function(c){ return r.att[c.key] || 0; })));
+    });
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), '闖關進度');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows2), '嘗試次數');
+    XLSX.writeFile(wb, '消失的實驗數據_闖關進度_' + X.CONFIG.SEMESTER + '.xlsx');
+  };
+
+  // ---------- 破案牆（投影用） ----------
+  function renderWall(){
+    var w = $('wall');
+    if (!live) { w.innerHTML = '<p class="w-empty">' + (liveErr ? esc(liveErr) : '讀取中……') + '</p>'; return; }
+    var ps = people($('optWallList').checked && list.length > 0).filter(function(r){ return r.started; });
+    var st = levelStats(ps), closed = ps.filter(function(r){ return r.done === 6; });
+    var h = '<div class="w-top"><div><div class="sub">THE MISSING LAB DATA · ' + esc(X.CONFIG.SEMESTER) + '</div><h2>🔍 消失的實驗數據｜破案進度</h2></div>' +
+      '<div class="w-big"><div><b>' + ps.length + '</b><span>調查員</span></div><div><b>' + closed.length + '</b><span>已結案</span></div><div><b>' + ps.filter(function(r){ return r.passed.H; }).length + '</b><span>🕵️ 隱藏徽章</span></div></div></div>';
+    h += '<div class="w-cases">' + st.filter(function(x){ return x.c.key !== 'H'; }).map(function(x){
+      var pct = ps.length ? Math.round(x.pass / ps.length * 100) : 0;
+      return '<div class="w-case' + (ps.length && x.pass === ps.length ? ' done' : '') + '"><span class="ico">' + x.c.icon + '</span><div class="no">CASE 0' + x.c.no + '　' + esc(x.c.chart) + '</div>' +
+        '<h3>' + esc(x.c.title) + '</h3><div class="bar"><i style="width:' + pct + '%"></i></div>' +
+        '<div class="cnt">已破解 ' + x.pass + ' / ' + ps.length + '</div>' +
+        '<div class="first">' + (x.first ? '🥇 首破：' + esc(mask(x.first.name)) + '　' + hhmm(x.first.passed[x.c.key]) : '　') + '</div></div>';
+    }).join('') + '</div>';
+    var fast = closed.filter(function(r){ return r.closedAt > 1e10; }).sort(function(a, b){ return a.closedAt - b.closedAt; }).slice(0, 5);
+    var ev = [];
+    ps.forEach(function(r){
+      Object.keys(r.passed).forEach(function(k){
+        var t = r.passed[k]; if (!(t > 1e10)) return;
+        var c = CASES.filter(function(x){ return x.key === k; })[0];
+        ev.push({ t: t, txt: k === 'H' ? '🕵️ <b>' + esc(mask(r.name)) + '</b> 找到了被污染的標準品！' : '<b>' + esc(mask(r.name)) + '</b> 破解了 CASE 0' + c.no + '「' + esc(c.title) + '」' });
+      });
+      if (r.closedAt > 1e10) ev.push({ t: r.closedAt + 1, txt: '🎉 <b>' + esc(mask(r.name)) + '</b> 六案全破，正式結案！' });
+    });
+    ev.sort(function(a, b){ return b.t - a.t; });
+    h += '<div class="w-low"><div class="w-box"><h4>🏆 最速結案</h4>' + (fast.length ? '<ol>' + fast.map(function(r, i){ return '<li><span class="r">' + (i + 1) + '</span><span>' + esc(mask(r.name)) + '</span><span class="t" style="margin-left:auto">' + hhmm(r.closedAt) + '</span></li>'; }).join('') + '</ol>' : '<p class="w-empty">還沒有人結案，誰會是第一個？</p>') + '</div>' +
+      '<div class="w-box"><h4>📰 即時動態</h4>' + (ev.length ? '<ul>' + ev.slice(0, 7).map(function(e){ return '<li><span class="t">' + hhmm(e.t) + '</span><span>' + e.txt + '</span></li>'; }).join('') + '</ul>' : '<p class="w-empty">等待第一位調查員破案……</p>') + '</div></div>';
+    w.innerHTML = h;
+  }
+  $('btnWallFs').onclick = function(){
+    var w = $('wall');
+    if (w.requestFullscreen) w.requestFullscreen().catch(function(){ w.classList.add('fake'); });
+    else w.classList.add('fake');
+  };
+  $('btnWallExit').onclick = function(){ $('wall').classList.remove('fake'); };
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') $('wall').classList.remove('fake'); });
+
   // ---------- 開啟頁面：用上次的學期 ----------
   var lastSem = null; try { lastSem = localStorage.getItem(SEM_KEY); } catch(e){}
   applySemester(lastSem && X.validSemester(lastSem) ? lastSem : X.CONFIG.SEMESTER, true);
+  var lastTab = null; try { lastTab = localStorage.getItem('excelRescue-teacher:tab'); } catch(e){}
+  showTab(lastTab && document.querySelector('section[data-tab="' + lastTab + '"]') ? lastTab : 'setup');
 })();
 </script>
 </body>

@@ -59,6 +59,8 @@ button{font:inherit;cursor:pointer}
 .who{color:var(--muted);font-size:.95rem}
 .who b{color:var(--ink)}
 .toolbar{display:flex;gap:10px;flex-wrap:wrap}
+.cloud{font-size:.85rem;font-weight:700;margin-top:2px;min-height:1.3em}
+.cloud.ok{color:var(--ok)} .cloud.off{color:var(--stamp)} .cloud.busy{color:var(--muted)}
 
 /* 密碼碎片 */
 .frag{margin:18px 0;padding:18px 22px;display:flex;flex-wrap:wrap;align-items:center;gap:14px}
@@ -179,7 +181,7 @@ button{font:inherit;cursor:pointer}
     </div>
     <div class="field">
       <label for="inName">姓名</label>
-      <input id="inName" autocomplete="off" placeholder="結案證明上會顯示">
+      <input id="inName" autocomplete="off" maxlength="12" placeholder="結案證明上會顯示">
     </div>
     <button class="btn wide" id="btnStart">🔍 開始調查</button>
     <p class="err" id="loginErr"></p>
@@ -191,6 +193,7 @@ button{font:inherit;cursor:pointer}
       <div>
         <h1>消失的實驗數據</h1>
         <div class="who">調查員 <b id="whoName"></b>｜學號 <b class="mono" id="whoId"></b>｜學期 <b class="mono" id="whoSem"></b></div>
+        <div class="cloud" id="cloud"></div>
       </div>
       <div class="toolbar">
         <button class="btn brass" id="btnDl">📥 下載我的專屬數據</button>
@@ -239,6 +242,37 @@ button{font:inherit;cursor:pointer}
     return { passed:{}, attempts:{}, inputs:{}, name:'' };
   }
   function save(){ try { localStorage.setItem(key(data.id), JSON.stringify(state)); } catch(e){} }
+
+  // ---------- 雲端同步（第三階段）：老師的儀表板看得到進度；換電腦登入會自動接回 ----------
+  var syncing = false, syncAgain = false, cloudOk = null, okMsgOnce = null;
+  function setCloud(kind, text){ var el = $('cloud'); if (!el) return; el.className = 'cloud ' + kind; el.textContent = text; }
+  function progress(){ return { passed: state.passed, att: state.attempts, closedAt: state.closedAt, check: state.check }; }
+  function sync(){
+    if (!data) return;
+    if (syncing) { syncAgain = true; return; }
+    syncing = true;
+    var id = data.id;
+    X.cloudPut(id, X.toRecord(state.name, progress()))
+      .then(function(){ cloudOk = true; setCloud('ok', okMsgOnce || '☁️ 進度已同步，老師看得到'); okMsgOnce = null; },
+            function(){ cloudOk = false; setCloud('off', '📴 暫時連不上雲端，進度先存在這台裝置，之後會自動補傳'); })
+      .then(function(){ syncing = false; if (syncAgain && data && data.id === id) { syncAgain = false; sync(); } });
+  }
+  window.addEventListener('online', function(){ if (cloudOk === false) sync(); });
+  function pullCloud(id){
+    setCloud('busy', '⏳ 連線到雲端…');
+    X.cloudGet(id).then(function(remote){
+      if (!data || data.id !== id) return;
+      var hadLocal = Object.keys(state.passed).length, m = X.mergeProgress(progress(), remote || {});
+      var gained = Object.keys(m.passed).length - hadLocal;
+      state.passed = m.passed; state.attempts = m.att; state.closedAt = m.closedAt; state.check = m.check;
+      if (gained > 0) okMsgOnce = '☁️ 已從雲端接回 ' + gained + ' 關進度';
+      save(); render(); sync();
+    }, function(){ cloudOk = false; setCloud('off', '📴 暫時連不上雲端，進度先存在這台裝置，之後會自動補傳'); });
+  }
+  function markClosed(){
+    var all6 = X.LEVELS.every(function(L){ return state.passed[L.key]; });
+    if (all6 && !state.closedAt) state.closedAt = Date.now();
+  }
   function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
 
   // ---------- 登入 ----------
@@ -247,11 +281,14 @@ button{font:inherit;cursor:pointer}
     var id = X.normId($('inId').value), name = $('inName').value.trim();
     if (!/^[A-Z0-9]{3,12}$/.test(id)) { $('loginErr').textContent = '學號格式怪怪的，再檢查一次（只能有英文和數字）'; return; }
     if (!name) { $('loginErr').textContent = '請填姓名，結案證明需要喔'; return; }
-    data = X.generate(id); state = load(id); state.name = name; save();
+    data = X.generate(id); state = load(id); state.name = name.slice(0, 12);
+    Object.keys(state.passed).forEach(function(k){ if (state.passed[k] === true) state.passed[k] = 1; });   // 舊版存 true，改成時間
+    save();
     try { localStorage.setItem('excelRescue:last', JSON.stringify({id:id,name:name})); } catch(e){}
     $('vLogin').classList.add('hidden'); $('vMain').classList.remove('hidden');
     $('whoName').textContent = name; $('whoId').textContent = id; $('whoSem').textContent = X.CONFIG.SEMESTER;
     render();
+    pullCloud(id);
   };
   [$('inId'),$('inName')].forEach(function(el){ el.addEventListener('keydown',function(e){ if(e.key==='Enter') $('btnStart').click(); }); });
   $('btnOut').onclick = function(){ $('vMain').classList.add('hidden'); $('vLogin').classList.remove('hidden'); $('certBox').innerHTML=''; };
@@ -292,6 +329,10 @@ button{font:inherit;cursor:pointer}
     out.innerHTML = '<div class="busy">🔍 鑑識中……</div>';
     file.arrayBuffer().then(function(buf){ return ExcelRescueChecker.check(buf, { expectedId: data.id }); })
       .then(function(r){
+        if (r.ok && r.id === data.id) {   // 最近一次自我檢查的分數也同步給老師
+          var lv = {}; Object.keys(r.summary).forEach(function(k){ lv[k] = r.summary[k].got; });
+          state.check = { score: r.score, max: r.max, at: Date.now(), lv: lv }; save(); sync();
+        }
         var tip = r.ok && r.score === r.max ? '<div class="result show good" style="margin-top:12px">🎉 全部項目都做到了！可以放心繳交。</div>' : '';
         out.innerHTML = '<p class="sect" style="margin-top:18px">▍' + esc(file.name) + '</p>' + ExcelRescueChecker.reportHtml(r, { hideHidden: !state.passed.L4 }) + tip;
       })
@@ -395,10 +436,11 @@ button{font:inherit;cursor:pointer}
     $('att').textContent = '已嘗試 ' + state.attempts[k] + ' 次';
     if (wrong === 0) {
       var first = !state.passed[k];
-      state.passed[k] = true; save(); showPass(k, first);
+      if (first) state.passed[k] = Date.now();
+      markClosed(); save(); sync(); showPass(k, first);
       if (k === 'L4' && !state.passed.H && !$('hHint')) $('panel').insertAdjacentHTML('beforeend', hiddenHint());
     } else {
-      save();
+      save(); sync();
       res.className='result show bad';
       res.textContent = '有 ' + wrong + ' 個答案對不上你的數據，回去檢查圖表或函數再試一次！';
     }
