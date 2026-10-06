@@ -53,6 +53,19 @@ td .dl{border:0;background:none;cursor:pointer;font-size:1rem}
 .proj h2{color:var(--paper);font-size:clamp(1.6rem,4vw,2.6rem)}
 .proj .qr{width:min(52vh,78vw);height:min(52vh,78vw);padding:16px;border-radius:14px}
 .proj .linkbox{background:transparent;color:var(--brass);border-color:#59627c;font-size:clamp(.9rem,2.2vw,1.3rem)}
+.semcard{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.semcard input{width:150px;font-family:"JetBrains Mono",monospace;font-weight:700;text-transform:uppercase}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.chipb{border:2px solid var(--line);background:#fffaf0;border-radius:20px;padding:2px 12px;font-family:"JetBrains Mono",monospace;font-weight:700;cursor:pointer;color:var(--ink)}
+.chipb.on{background:var(--ink);color:var(--brass);border-color:var(--ink)}
+.flash{animation:fl 1s}
+@keyframes fl{0%{box-shadow:0 0 0 4px var(--brass)}100%{box-shadow:0 0 0 0 transparent}}
+.sum{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+.sum span{padding:4px 12px;border-radius:20px;font-weight:700;background:var(--paper2)}
+.sum .g{background:#e3f1e7;color:var(--ok)} .sum .r{background:#fbeeec;color:var(--stamp)} .sum .p{background:#efe6f7;color:#5b3f86}
+td.ok{color:var(--ok);font-weight:700} td.ng{color:var(--stamp);font-weight:700} td.na{color:var(--muted)}
+td.left{text-align:left;white-space:normal;min-width:200px}
+.missing{margin-top:10px;padding:10px 14px;border-radius:6px;background:#fff4dc;border:1px dashed var(--brass)}
 @media (max-width:760px){.cols{grid-template-columns:1fr}}
 </style>
 </head>
@@ -60,10 +73,21 @@ td .dl{border:0;background:none;cursor:pointer;font-size:1rem}
 <div class="wrap">
   <div class="paper head">
     <div><h1>🗂️ 消失的實驗數據｜老師答案卷宗</h1><div class="note">🔒 本頁含全班答案，請勿提供給學生；學生請用下方的學生連結</div></div>
-    <div class="sem">目前學期代碼：<b class="mono" id="sem"></b></div>
+    <div class="sem">目前學期：<b class="mono" id="sem"></b></div>
   </div>
 
-  <div class="paper">
+  <div class="paper" id="semBox">
+    <h2>📅 學期設定</h2>
+    <div class="semcard">
+      <input id="semIn" maxlength="16" placeholder="例：115-2">
+      <button class="btn" id="btnSem">套用這個學期</button>
+      <span class="note" id="semMsg" style="margin:0"></span>
+    </div>
+    <div class="chips" id="semChips"></div>
+    <p class="note">換學期，全班數據、標準答案、結案代碼就整批換新，學生連結與 QR Code 也會跟著換（學期藏在連結裡）。<br>只能用英文、數字和「-」，例如 <span class="mono">115-2</span>、<span class="mono">115-2A</span>（同學期不同班想用不同數據，就在後面加班級代號）。</p>
+  </div>
+
+  <div class="paper" id="shareBox">
     <h2>📮 學生連結</h2>
     <div class="share">
       <div class="qr" id="qrSmall"></div>
@@ -73,7 +97,7 @@ td .dl{border:0;background:none;cursor:pointer;font-size:1rem}
           <button class="btn" id="btnCopy">📋 複製學生連結</button>
           <button class="btn ghost" id="btnProj">🖥️ 全螢幕投影 QR</button>
         </div>
-        <p class="note">學生掃碼後輸入學號就會拿到專屬數據，不需要題組碼。</p>
+        <p class="note">連結裡已經帶著學期，學生掃碼後輸入學號就會拿到這個學期的專屬數據。</p>
       </div>
     </div>
   </div>
@@ -87,14 +111,20 @@ td .dl{border:0;background:none;cursor:pointer;font-size:1rem}
         <button class="btn brass" id="btnXlsx">📥 匯出答案表 Excel</button>
       </div>
     </div>
-    <div class="paper verify">
-      <h2>② 驗證結案代碼</h2>
-      <input id="vId" placeholder="學號">
-      <input id="vCode" placeholder="學生截圖上的代碼" style="margin-top:8px">
-      <div class="row"><button class="btn" id="btnVerify">驗證</button></div>
-      <div class="out" id="vOut"></div>
-      <p class="note">結案代碼與隱藏徽章代碼都可以驗。</p>
+    <div class="paper">
+      <h2>使用順序</h2>
+      <p class="note" style="font-size:.95rem">1. 先確認上方學期正確<br>2. 在 ① 貼全班學號（可含姓名）→ 看答案表<br>3. 收齊代碼後在 ② 一次驗證全班<br>② 會自動列出 ① 名單中「還沒交」的人</p>
     </div>
+  </div>
+
+  <div class="paper">
+    <h2>② 批次驗證結案代碼</h2>
+    <textarea id="vList" placeholder="一行一位：學號　姓名（可省略）　結案代碼　隱藏徽章（有才填）&#10;例：110123 王小明 4C2R5G 8K6U4B&#10;從 Excel 或 Google 表單回覆複製多欄貼上也可以，空白、Tab、逗號都行"></textarea>
+    <div class="row">
+      <button class="btn" id="btnVerifyAll">🔍 驗證全部</button>
+      <button class="btn brass" id="btnVerifyXlsx">📥 匯出驗證結果 Excel</button>
+    </div>
+    <div id="vRes"></div>
   </div>
 
   <div class="paper">
@@ -106,6 +136,7 @@ td .dl{border:0;background:none;cursor:pointer;font-size:1rem}
 
 <div class="proj" id="proj">
   <h2>🔍 消失的實驗數據｜掃碼開始調查</h2>
+  <div class="linkbox" style="border:0;font-size:1.2rem" id="projSem"></div>
   <div class="qr" id="qrBig"></div>
   <div class="linkbox" id="linkBig"></div>
   <button class="btn ghost" id="btnProjClose" style="color:var(--paper);border-color:var(--paper)">關閉（Esc）</button>
@@ -114,24 +145,55 @@ td .dl{border:0;background:none;cursor:pointer;font-size:1rem}
 <script>
 (function(){
   var X = window.ExcelRescue, $ = function(id){ return document.getElementById(id); };
-  $('sem').textContent = X.CONFIG.SEMESTER;
-  var list = [];
+  var list = [], verified = null, link = '';
+  var SEM_KEY = 'excelRescue-teacher:sem', REC_KEY = 'excelRescue-teacher:recentSem';
+
+  // ---------- 學期 ----------
+  function loadRecent(){ try { return JSON.parse(localStorage.getItem(REC_KEY)) || []; } catch(e){ return []; } }
+  function saveRecent(a){ try { localStorage.setItem(REC_KEY, JSON.stringify(a)); } catch(e){} }
+  function applySemester(sem, quiet){
+    if (!X.setSemester(sem)) { $('semMsg').className='note bad'; $('semMsg').textContent='格式不對：只能用英文、數字和「-」，最多 16 字'; return; }
+    sem = X.CONFIG.SEMESTER;
+    try { localStorage.setItem(SEM_KEY, sem); } catch(e){}
+    saveRecent([sem].concat(loadRecent().filter(function(x){ return x !== sem; })).slice(0, 8));
+    $('sem').textContent = sem; $('semIn').value = sem;
+    renderChips(); updateLink();
+    if (list.length) $('btnGen').click();
+    if (verified) verifyAll();
+    if (!quiet) {
+      $('semMsg').className='note good'; $('semMsg').textContent='✅ 已切換到 ' + sem + '，記得把新的學生連結給學生';
+      ['semBox','shareBox'].forEach(function(id){ var el=$(id); el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); });
+    }
+  }
+  function renderChips(){
+    var cur = X.CONFIG.SEMESTER, rec = loadRecent();
+    $('semChips').innerHTML = rec.length > 1 ? '<span class="note" style="margin:0">最近用過：</span>' + rec.map(function(x){
+      return '<button class="chipb'+(x===cur?' on':'')+'" data-s="'+esc(x)+'">'+esc(x)+'</button>'; }).join('') : '';
+    Array.prototype.forEach.call(document.querySelectorAll('.chipb'), function(b){ b.onclick = function(){ applySemester(b.getAttribute('data-s')); }; });
+  }
+  $('btnSem').onclick = function(){ applySemester($('semIn').value); };
+  $('semIn').addEventListener('keydown', function(e){ if (e.key === 'Enter') applySemester($('semIn').value); });
 
   // ---------- 學生連結與 QR Code ----------
-  var link = new URL('excel-rescue.html', location.href).href;
-  $('link').textContent = link; $('linkBig').textContent = link;
+  function updateLink(){
+    var u = new URL('excel-rescue.html', location.href);
+    u.searchParams.set('s', X.CONFIG.SEMESTER);
+    link = u.href;
+    $('link').textContent = link; $('linkBig').textContent = link;
+    drawQR('qrSmall', 140);
+    if ($('proj').classList.contains('on')) drawQR('qrBig', 512);
+  }
   function drawQR(id, size){
     var box = $(id); box.innerHTML = '';
     if (typeof QRCode === 'undefined') { box.innerHTML = '<div class="note">（QR Code 載入失敗）</div>'; return; }
     new QRCode(box, { text: link, width: size, height: size, correctLevel: QRCode.CorrectLevel.M });
   }
-  drawQR('qrSmall', 140);
   $('btnCopy').onclick = function(){
     var done = function(){ $('btnCopy').textContent = '✅ 已複製'; setTimeout(function(){ $('btnCopy').textContent = '📋 複製學生連結'; }, 1500); };
     if (navigator.clipboard) navigator.clipboard.writeText(link).then(done, function(){ prompt('請手動複製：', link); });
     else prompt('請手動複製：', link);
   };
-  $('btnProj').onclick = function(){ $('proj').classList.add('on'); drawQR('qrBig', 512); };
+  $('btnProj').onclick = function(){ $('proj').classList.add('on'); $('projSem').textContent = '學期 ' + X.CONFIG.SEMESTER; drawQR('qrBig', 512); };
   $('btnProjClose').onclick = function(){ $('proj').classList.remove('on'); };
   document.addEventListener('keydown', function(e){ if (e.key === 'Escape') $('proj').classList.remove('on'); });
 
@@ -196,13 +258,69 @@ td .dl{border:0;background:none;cursor:pointer;font-size:1rem}
     XLSX.writeFile(wb, '消失的實驗數據_' + d.id + '.xlsx');
   }
 
-  $('btnVerify').onclick = function(){
-    var id = X.normId($('vId').value), code = $('vCode').value.trim().toUpperCase().replace(/\s/g,''), out = $('vOut');
-    if (!id || !code) { out.className='out bad'; out.textContent='學號和代碼都要填'; return; }
-    if (code === X.closeCode(id)) { out.className='out good'; out.textContent='✅ 正確！這是 '+id+' 的結案代碼（六關全破）'; }
-    else if (code === X.hiddenCode(id)) { out.className='out good'; out.textContent='🕵️ 正確！這是 '+id+' 的隱藏關卡徽章'; }
-    else { out.className='out bad'; out.textContent='❌ 對不上。可能打錯字、學號不對，或是拿別人的代碼'; }
+  // ---------- 批次驗證 ----------
+  function parseVerify(){
+    return $('vList').value.split(/\r?\n/).map(function(l){ return l.trim(); }).filter(Boolean).map(function(l){
+      var t = l.split(/[\s,，\t]+/).filter(Boolean), id = X.normId(t[0]), codes = [], names = [];
+      t.slice(1).forEach(function(x){ if (X.isCodeLike(x)) codes.push(x.toUpperCase()); else names.push(x); });
+      return { id: id, name: names.join(' '), codes: codes, bad: !/^[A-Z0-9]{3,12}$/.test(id) };
+    });
+  }
+  function verifyAll(){
+    var rows = parseVerify();
+    if (!rows.length) { $('vRes').innerHTML = '<p class="note bad">還沒貼上任何資料。</p>'; verified = null; return; }
+    // 建立「代碼 → 屬於誰」對照表，用來抓拿同學代碼的情況
+    var owner = {}, pool = {};
+    rows.forEach(function(r){ if (!r.bad) pool[r.id] = 1; });
+    list.forEach(function(o){ pool[o.id] = 1; });
+    Object.keys(pool).forEach(function(id){ owner[X.closeCode(id)] = { id: id, kind: '結案代碼' }; owner[X.hiddenCode(id)] = { id: id, kind: '隱藏徽章' }; });
+    var cnt = { ok: 0, ng: 0, none: 0, hid: 0 };
+    verified = rows.map(function(r){
+      var res = { id: r.id, name: r.name, close: '未填', hidden: '—', note: '' };
+      if (r.bad) { res.close = '學號格式錯'; res.note = '這一行讀不到學號'; cnt.ng++; return res; }
+      var cc = X.closeCode(r.id), hc = X.hiddenCode(r.id), notes = [], hasClose = false;
+      r.codes.forEach(function(c){
+        if (c === cc) { res.close = '✅ 正確'; hasClose = true; }
+        else if (c === hc) { res.hidden = '🕵️ 正確'; }
+        else if (owner[c] && owner[c].id !== r.id) notes.push(c + ' 是 ' + owner[c].id + ' 的' + owner[c].kind + '！');
+        else notes.push(c + ' 對不上（打錯字或學期不對）');
+      });
+      var others = r.codes.filter(function(c){ return c !== hc; });   // 隱藏徽章以外的代碼
+      if (!hasClose && others.length) res.close = '❌ 錯誤';
+      res.note = notes.join('；');
+      if (res.close === '✅ 正確') cnt.ok++; else if (res.close === '未填') cnt.none++; else cnt.ng++;
+      if (res.hidden === '🕵️ 正確') cnt.hid++;
+      return res;
+    });
+    var seen = {}; verified.forEach(function(r){ seen[r.id] = 1; });
+    var missing = list.filter(function(o){ return !seen[o.id]; });
+    var h = '<div class="sum"><span>共 '+verified.length+' 筆｜學期 <b class="mono">'+esc(X.CONFIG.SEMESTER)+'</b></span>'+
+      '<span class="g">✅ 結案 '+cnt.ok+'</span><span class="r">❌ 錯誤 '+cnt.ng+'</span><span>未填 '+cnt.none+'</span><span class="p">🕵️ 隱藏徽章 '+cnt.hid+'</span></div>'+
+      '<div class="tablebox"><table><thead><tr><th>學號</th><th>姓名</th><th>結案代碼</th><th>隱藏徽章</th><th>備註</th></tr></thead><tbody>'+
+      verified.map(function(r){
+        var c1 = r.close.indexOf('✅')===0 ? 'ok' : r.close==='未填' ? 'na' : 'ng';
+        var c2 = r.hidden.indexOf('🕵️')===0 ? 'ok' : 'na';
+        return '<tr><td class="mono">'+esc(r.id)+'</td><td>'+esc(r.name)+'</td><td class="'+c1+'">'+esc(r.close)+'</td><td class="'+c2+'">'+esc(r.hidden)+'</td><td class="left'+(r.note.indexOf('！')>=0?' ng':'')+'">'+esc(r.note)+'</td></tr>';
+      }).join('')+'</tbody></table></div>';
+    if (missing.length) h += '<div class="missing">📭 ① 名單中還沒交代碼的（'+missing.length+' 人）：'+missing.map(function(o){ return esc(o.id + (o.name ? ' ' + o.name : '')); }).join('、')+'</div>';
+    $('vRes').innerHTML = h;
+    verified.missing = missing;
+  }
+  $('btnVerifyAll').onclick = verifyAll;
+  $('btnVerifyXlsx').onclick = function(){
+    verifyAll();
+    if (!verified || !window.XLSX) return;
+    var aoa = [['學號','姓名','結案代碼','隱藏徽章','備註']].concat(verified.map(function(r){ return [r.id, r.name, r.close, r.hidden, r.note]; }));
+    (verified.missing || []).forEach(function(o){ aoa.push([o.id, o.name, '未繳交', '—', '在 ① 名單中但沒有交代碼']); });
+    var ws = XLSX.utils.aoa_to_sheet(aoa), wb = XLSX.utils.book_new();
+    ws['!cols'] = [{wch:12},{wch:10},{wch:12},{wch:12},{wch:40}];
+    XLSX.utils.book_append_sheet(wb, ws, '驗證結果');
+    XLSX.writeFile(wb, '消失的實驗數據_驗證結果_' + X.CONFIG.SEMESTER + '.xlsx');
   };
+
+  // ---------- 開啟頁面：用上次的學期 ----------
+  var lastSem = null; try { lastSem = localStorage.getItem(SEM_KEY); } catch(e){}
+  applySemester(lastSem && X.validSemester(lastSem) ? lastSem : X.CONFIG.SEMESTER, true);
 })();
 </script>
 </body>

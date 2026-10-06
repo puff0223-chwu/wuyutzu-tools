@@ -48,6 +48,7 @@ button{font:inherit;cursor:pointer}
 .btn.brass:hover{background:#d4ab4c}
 .btn.ghost{background:transparent;color:var(--ink);border:2px solid var(--ink)}
 .btn.wide{width:100%}
+.semline{margin:-18px 0 22px;font-size:.92rem}
 .err{color:var(--stamp);font-weight:700;min-height:1.4em;margin:8px 0 0}
 
 /* 頂部卷宗 */
@@ -141,6 +142,7 @@ button{font:inherit;cursor:pointer}
     <span class="tag">機密卷宗</span>
     <h1>消失的實驗數據</h1>
     <p class="sub">化學實驗室的報告被弄亂了！只有會用 Excel 的調查員能把數據救回來。</p>
+    <p class="sub semline">卷宗學期：<b class="mono" id="semLogin"></b></p>
     <div class="field">
       <label for="inId">調查員學號</label>
       <input id="inId" inputmode="numeric" autocomplete="off" placeholder="例如 110123">
@@ -158,7 +160,7 @@ button{font:inherit;cursor:pointer}
     <div class="paper top">
       <div>
         <h1>消失的實驗數據</h1>
-        <div class="who">調查員 <b id="whoName"></b>｜學號 <b class="mono" id="whoId"></b></div>
+        <div class="who">調查員 <b id="whoName"></b>｜學號 <b class="mono" id="whoId"></b>｜學期 <b class="mono" id="whoSem"></b></div>
       </div>
       <div class="toolbar">
         <button class="btn brass" id="btnDl">📥 下載我的專屬數據</button>
@@ -190,6 +192,16 @@ button{font:inherit;cursor:pointer}
   var $ = function(id){ return document.getElementById(id); };
   var state = null, data = null;
 
+  // ---------- 學期：老師給的連結會帶 ?s=學期代碼，沒帶就用預設 ----------
+  (function(){
+    var s = null;
+    try { s = new URLSearchParams(location.search).get('s'); } catch(e){}
+    if (s && !X.setSemester(s)) {
+      document.body.insertAdjacentHTML('afterbegin','<div style="background:#b3312c;color:#fff;text-align:center;padding:10px;font-weight:700">連結裡的學期代碼怪怪的，請重新掃老師給的 QR Code</div>');
+    }
+    $('semLogin').textContent = X.CONFIG.SEMESTER;
+  })();
+
   function key(id){ return 'excelRescue:' + X.CONFIG.SEMESTER + ':' + id; }
   function load(id){
     try { var s = localStorage.getItem(key(id)); if (s) return JSON.parse(s); } catch(e){}
@@ -207,7 +219,7 @@ button{font:inherit;cursor:pointer}
     data = X.generate(id); state = load(id); state.name = name; save();
     try { localStorage.setItem('excelRescue:last', JSON.stringify({id:id,name:name})); } catch(e){}
     $('vLogin').classList.add('hidden'); $('vMain').classList.remove('hidden');
-    $('whoName').textContent = name; $('whoId').textContent = id;
+    $('whoName').textContent = name; $('whoId').textContent = id; $('whoSem').textContent = X.CONFIG.SEMESTER;
     render();
   };
   [$('inId'),$('inName')].forEach(function(el){ el.addEventListener('keydown',function(e){ if(e.key==='Enter') $('btnStart').click(); }); });
@@ -259,7 +271,7 @@ button{font:inherit;cursor:pointer}
   function certHtml(){
     var d = new Date(), ds = d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate();
     return '<div class="paper cert"><span class="bigstamp">結案</span><span class="tag">調查完成</span>'+
-      '<h2>結案證明</h2><div class="meta">調查員 <b>'+esc(state.name)+'</b>｜學號 <b class="mono">'+data.id+'</b>｜'+ds+'</div>'+
+      '<h2>結案證明</h2><div class="meta">調查員 <b>'+esc(state.name)+'</b>｜學號 <b class="mono">'+data.id+'</b>｜學期 <b class="mono">'+data.semester+'</b>｜'+ds+'</div>'+
       '<div class="code">'+X.closeCode(data.id)+'</div><div class="meta">結案代碼（請截圖這張證明，連同 Excel 檔一起繳交）</div>'+
       (state.passed.H ? '<div class="badge">🕵️ 隱藏關卡徽章 <span class="mono">'+X.hiddenCode(data.id)+'</span></div>' : '')+
       '</div>';

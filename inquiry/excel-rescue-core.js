@@ -6,9 +6,9 @@
 (function (root) {
   'use strict';
 
-  /* ---------- 老師設定區（換學期時改 SEMESTER，全班數據就會整批換新） ---------- */
+  /* ---------- 設定區：SEMESTER 是「預設」學期，老師頁可以隨時換，換了會放進學生連結 ?s=… ---------- */
   var CONFIG = {
-    SEMESTER: '115-1',          // 學期代碼：改這裡，數據與結案代碼全部重洗
+    SEMESTER: '115-1',          // 預設學期代碼（學生連結沒帶 ?s= 時用這個）
     STDEV_ACCEPT: ['S', 'P']    // 標準差接受 STDEV（＝STDEV.S，樣本）與 STDEV.P（母體）兩種結果
   };
 
@@ -390,8 +390,17 @@
     ];
   }
 
+  /* ---------- 換學期：只接受英數與連字號，最多 16 字 ---------- */
+  function validSemester(s) { return /^[A-Za-z0-9-]{1,16}$/.test(String(s || '').trim()); }
+  function setSemester(s) {
+    s = String(s || '').trim().toUpperCase();
+    if (!validSemester(s)) return false;
+    CONFIG.SEMESTER = s; return true;
+  }
+  function isCodeLike(s) { return /^[A-HJ-NP-Z2-9]{6}$/.test(String(s || '').toUpperCase()); }
+
   var API = {
-    CONFIG: CONFIG, normId: normId, generate: generate, LEVELS: LEVELS, HIDDEN: HIDDEN,
+    CONFIG: CONFIG, validSemester: validSemester, setSemester: setSemester, isCodeLike: isCodeLike, normId: normId, generate: generate, LEVELS: LEVELS, HIDDEN: HIDDEN,
     closeCode: closeCode, hiddenCode: hiddenCode, fragment: fragment, sheets: sheets, linreg: linreg
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.ExcelRescue = API;
