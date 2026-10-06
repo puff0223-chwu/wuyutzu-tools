@@ -23,6 +23,8 @@ h1,h2{font-family:"Noto Serif TC",serif;margin:0}
 .head{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
 .head h1{font-size:1.6rem;color:var(--ink)}
 .sem{font-weight:700;color:var(--muted)}
+.home{display:inline-block;color:var(--ink);font-weight:700;text-decoration:none;border:2px solid var(--ink);border-radius:20px;padding:2px 14px}
+.home:hover{background:var(--ink);color:var(--paper)}
 .sem b{color:var(--stamp)}
 h2{font-size:1.15rem;color:var(--ink);margin-bottom:10px}
 textarea,input{font:inherit;padding:10px 12px;border:2px solid var(--line);border-radius:6px;background:#fffaf0;width:100%}
@@ -73,7 +75,7 @@ td.left{text-align:left;white-space:normal;min-width:200px}
 <div class="wrap">
   <div class="paper head">
     <div><h1>🗂️ 消失的實驗數據｜老師答案卷宗</h1><div class="note">🔒 本頁含全班答案，請勿提供給學生；學生請用下方的學生連結</div></div>
-    <div class="sem">目前學期：<b class="mono" id="sem"></b></div>
+    <div style="text-align:right"><a class="home" href="../index.html">🏠 回事務所首頁</a><div class="sem" style="margin-top:6px">目前學期：<b class="mono" id="sem"></b></div></div>
   </div>
 
   <div class="paper" id="semBox">
