@@ -10,7 +10,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="excel-rescue-core.js"></script>
+<script src="excel-rescue-checker.js"></script>
 <style>
 :root{--ink:#1c2230;--paper:#f3ead6;--paper2:#e9dcc0;--line:#cbb88f;--brass:#c39a3d;--stamp:#b3312c;--ok:#2f7d4f;--muted:#6b6250;--text:#2a2418}
 *{box-sizing:border-box}
@@ -67,7 +69,35 @@ td .dl{border:0;background:none;cursor:pointer;font-size:1rem}
 .sum .g{background:#e3f1e7;color:var(--ok)} .sum .r{background:#fbeeec;color:var(--stamp)} .sum .p{background:#efe6f7;color:#5b3f86}
 td.ok{color:var(--ok);font-weight:700} td.ng{color:var(--stamp);font-weight:700} td.na{color:var(--muted)}
 td.left{text-align:left;white-space:normal;min-width:200px}
+.hidden{display:none!important}
 .missing{margin-top:10px;padding:10px 14px;border-radius:6px;background:#fff4dc;border:1px dashed var(--brass)}
+.drop{display:block;border:3px dashed var(--line);border-radius:10px;padding:24px 16px;text-align:center;background:#fffaf0;cursor:pointer;transition:background .2s,border-color .2s}
+.drop.over{background:#f6ecd2;border-color:var(--brass)}
+.drop b{display:block;font-size:1.05rem;color:var(--ink);margin-bottom:4px}
+.drop input{display:none}
+.prog{font-weight:700;color:var(--muted);margin:10px 0}
+td.sc{font-family:"JetBrains Mono",monospace}
+td.full{color:var(--ok);font-weight:700} td.zero{color:var(--stamp);font-weight:700}
+td.tot{font-weight:700;background:#fff4dc}
+tr.det td{background:#fffaf0;text-align:left;white-space:normal}
+.detbox{position:sticky;left:0;max-width:min(860px,calc(100vw - 80px))}
+.dbtn{border:2px solid var(--ink);background:transparent;border-radius:14px;padding:0 10px;cursor:pointer;font:inherit;font-size:.85rem;font-weight:700}
+.er-head{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin:6px 0 10px}
+.er-score{font-family:"JetBrains Mono",monospace;background:var(--ink);color:var(--paper);padding:4px 14px;border-radius:8px}
+.er-score b{font-size:1.4rem;color:var(--brass)} .er-score span{margin-left:8px;color:#c9cfdb}
+.er-meta{color:var(--muted)}
+.er-warn,.er-err{background:#fbeeec;color:var(--stamp);border-radius:6px;padding:8px 12px;font-weight:700;margin:8px 0}
+.er-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px}
+.er-chip{padding:2px 10px;border-radius:20px;background:var(--paper2);font-weight:700;font-size:.85rem}
+.er-chip.full{background:#e3f1e7;color:var(--ok)} .er-chip.zero{background:#fbeeec;color:var(--stamp)} .er-chip.hid{background:#2b2140;color:#eadff7}
+.er-lv{background:#fff;border:1px solid var(--line);border-radius:8px;margin-bottom:6px}
+.er-lv summary{cursor:pointer;padding:8px 12px;font-weight:700;display:flex;gap:6px}
+.er-n{margin-left:auto;font-family:"JetBrains Mono",monospace;color:var(--stamp)} .er-n.full{color:var(--ok)}
+.er-lv ul{list-style:none;margin:0;padding:0 12px 8px}
+.er-lv li{display:flex;gap:10px;padding:5px 0;border-top:1px dashed var(--line)}
+.er-mk{font-weight:900;width:1.2em;flex:none}
+.er-lv li.ok .er-mk{color:var(--ok)} .er-lv li.ng .er-mk{color:var(--stamp)}
+.er-lv li small{display:block;color:var(--muted)} .er-lv li.ng small{color:var(--stamp)}
 @media (max-width:760px){.cols{grid-template-columns:1fr}}
 </style>
 </head>
@@ -115,7 +145,7 @@ td.left{text-align:left;white-space:normal;min-width:200px}
     </div>
     <div class="paper">
       <h2>使用順序</h2>
-      <p class="note" style="font-size:.95rem">1. 先確認上方學期正確<br>2. 在 ① 貼全班學號（可含姓名）→ 看答案表<br>3. 收齊代碼後在 ② 一次驗證全班<br>② 會自動列出 ① 名單中「還沒交」的人</p>
+      <p class="note" style="font-size:.95rem">1. 先確認上方學期正確<br>2. 在 ① 貼全班學號（可含姓名）→ 看答案表<br>3. 收齊代碼後在 ② 一次驗證全班<br>4. 把全班 Excel 檔拖進 ③ 自動批改<br>② 和 ③ 都會列出 ① 名單中「還沒交」的人</p>
     </div>
   </div>
 
@@ -130,7 +160,19 @@ td.left{text-align:left;white-space:normal;min-width:200px}
   </div>
 
   <div class="paper">
-    <h2>③ 全班答案表</h2>
+    <h2>③ 批改學生 Excel 檔</h2>
+    <label class="drop" id="gDrop"><b>📂 選擇或拖進全班的 Excel 檔（可以一次選很多個）</b>從課程平台下載學生繳交的 .xlsx 後，整批丟進來就好。檔案只在這台電腦的瀏覽器裡檢查，不會上傳。<input type="file" id="gFiles" accept=".xlsx" multiple></label>
+    <div class="row">
+      <button class="btn brass" id="btnGradeXlsx">📥 匯出批改結果 Excel</button>
+      <button class="btn ghost" id="btnGradeClear">清空結果</button>
+    </div>
+    <div class="prog" id="gProg"></div>
+    <div id="gRes"></div>
+    <p class="note">每個項目 1 分，六關共 42 分；隱藏關卡 4 分另計。圖表是用「數據」認出來的：學生改了工作表名稱也找得到，但用了別人的數據就對不上。</p>
+  </div>
+
+  <div class="paper">
+    <h2>④ 全班答案表</h2>
     <p class="note">斜率、R² 顯示到小數第 4 位（跟 Excel 趨勢線預設一致）。點 📄 可下載該生的專屬數據檔，方便你自己試做或幫學生補檔。</p>
     <div class="tablebox" id="tbl"><p class="note">還沒產生，先在 ① 貼上學號。</p></div>
   </div>
@@ -318,6 +360,92 @@ td.left{text-align:left;white-space:normal;min-width:200px}
     ws['!cols'] = [{wch:12},{wch:10},{wch:12},{wch:12},{wch:40}];
     XLSX.utils.book_append_sheet(wb, ws, '驗證結果');
     XLSX.writeFile(wb, '消失的實驗數據_驗證結果_' + X.CONFIG.SEMESTER + '.xlsx');
+  };
+
+  // ---------- 批改學生 Excel 檔 ----------
+  var graded = [];   // { file, r }
+  var LV = ['L1','L2','L3','L4','L5','L6'];
+  function nameOf(id){ var o = list.filter(function(x){ return x.id === id; })[0]; return o ? o.name : ''; }
+  async function gradeFiles(files){
+    files = Array.prototype.filter.call(files, function(f){ return /\.xlsx$/i.test(f.name); });
+    if (!files.length) { $('gProg').textContent = '沒有 .xlsx 檔案'; return; }
+    if (!window.JSZip || !window.XLSX) { $('gProg').textContent = '檢查工具還沒載入完成，請確認網路後重新整理'; return; }
+    for (var i = 0; i < files.length; i++) {
+      $('gProg').textContent = '🔍 批改中 ' + (i + 1) + ' / ' + files.length + '：' + files[i].name;
+      var r;
+      try { r = await ExcelRescueChecker.check(await files[i].arrayBuffer()); }
+      catch (e) { console.error(e); r = { ok: false, error: '檔案讀取失敗' }; }
+      graded = graded.filter(function(g){ return g.file !== files[i].name; });   // 同檔名重新批改就取代
+      graded.push({ file: files[i].name, r: r });
+    }
+    $('gProg').textContent = '✅ 批改完成，共 ' + graded.length + ' 份';
+    renderGrades();
+  }
+  function renderGrades(){
+    if (!graded.length) { $('gRes').innerHTML = ''; return; }
+    graded.sort(function(a, b){ return ((a.r.id || 'zzz') + a.file).localeCompare((b.r.id || 'zzz') + b.file); });
+    var count = {}; graded.forEach(function(g){ if (g.r.ok) count[g.r.id] = (count[g.r.id] || 0) + 1; });
+    var h = '<div class="tablebox"><table><thead><tr><th>學號</th><th>姓名</th><th>檔名</th>' +
+      LV.map(function(k){ return '<th>' + k.slice(1) + ' ' + ExcelRescueChecker.LEVEL_NAMES[k] + '</th>'; }).join('') +
+      '<th>🕵️ 隱藏</th><th>總分</th><th>%</th><th>提醒</th><th></th></tr></thead><tbody>';
+    graded.forEach(function(g, gi){
+      var r = g.r;
+      if (!r.ok) { h += '<tr><td>—</td><td></td><td class="left">' + esc(g.file) + '</td><td colspan="' + (LV.length + 4) + '" class="ng">' + esc(r.error) + '</td><td></td></tr>'; return; }
+      var notes = r.warnings.slice();
+      if (count[r.id] > 1) notes.unshift('⚠️ 這個學號交了 ' + count[r.id] + ' 份檔案');
+      h += '<tr><td class="mono">' + esc(r.id) + '</td><td>' + esc(nameOf(r.id)) + '</td><td class="left" style="min-width:140px">' + esc(g.file) + '</td>' +
+        LV.concat('H').map(function(k){ var s = r.summary[k]; return '<td class="sc ' + (s.got === s.max ? 'full' : s.got === 0 ? 'zero' : '') + '">' + s.got + '/' + s.max + '</td>'; }).join('') +
+        '<td class="sc tot">' + r.score + '</td><td class="sc">' + Math.round(r.score / r.max * 100) + '</td>' +
+        '<td class="left' + (notes.length ? ' ng' : '') + '">' + esc(notes.join('；')) + '</td>' +
+        '<td><button class="dbtn" data-g="' + gi + '">詳情</button></td></tr>' +
+        '<tr class="det hidden" id="det' + gi + '"><td colspan="' + (LV.length + 8) + '"></td></tr>';
+    });
+    h += '</tbody></table></div>';
+    var seen = {}; graded.forEach(function(g){ if (g.r.ok) seen[g.r.id] = 1; });
+    var missing = list.filter(function(o){ return !seen[o.id]; });
+    if (missing.length) h += '<div class="missing">📭 ① 名單中還沒有 Excel 檔的（' + missing.length + ' 人）：' + missing.map(function(o){ return esc(o.id + (o.name ? ' ' + o.name : '')); }).join('、') + '</div>';
+    $('gRes').innerHTML = h;
+    Array.prototype.forEach.call(document.querySelectorAll('.dbtn'), function(b){
+      b.onclick = function(){
+        var gi = +b.getAttribute('data-g'), row = $('det' + gi), open = row.classList.toggle('hidden') === false;
+        if (open && !row.firstChild.innerHTML) row.firstChild.innerHTML = '<div class="detbox">' + ExcelRescueChecker.reportHtml(graded[gi].r, { failsOnly: true }) + '</div>';
+        b.textContent = open ? '收起' : '詳情';
+      };
+    });
+  }
+  var gDrop = $('gDrop');
+  $('gFiles').onchange = function(){ gradeFiles(this.files); this.value = ''; };
+  ['dragenter','dragover'].forEach(function(t){ gDrop.addEventListener(t, function(e){ e.preventDefault(); gDrop.classList.add('over'); }); });
+  ['dragleave','drop'].forEach(function(t){ gDrop.addEventListener(t, function(e){ e.preventDefault(); gDrop.classList.remove('over'); }); });
+  gDrop.addEventListener('drop', function(e){ gradeFiles(e.dataTransfer.files); });
+  $('btnGradeClear').onclick = function(){ graded = []; $('gProg').textContent = ''; renderGrades(); };
+  $('btnGradeXlsx').onclick = function(){
+    if (!graded.length || !window.XLSX) { $('gProg').textContent = '還沒有批改結果可以匯出'; return; }
+    var head = ['學號','姓名','檔名','學期'].concat(LV.map(function(k){ return k.slice(1) + ' ' + ExcelRescueChecker.LEVEL_NAMES[k]; }), ['隱藏關卡','總分','滿分','百分比','提醒','未達成項目']);
+    var rows = [head], detail = null, cnt = {};
+    graded.forEach(function(g){ if (g.r.ok) cnt[g.r.id] = (cnt[g.r.id] || 0) + 1; });
+    graded.forEach(function(g){
+      var r = g.r;
+      if (!r.ok) { rows.push(['', '', g.file, '', '', '', '', '', '', '', '', '', '', '', r.error, '']); return; }
+      var fails = [];
+      Object.keys(r.levels).forEach(function(k){ r.levels[k].forEach(function(it){ if (!it.ok && !(k === 'H' && r.summary.H.got === 0)) fails.push((k === 'H' ? '隱藏' : k) + ' ' + it.label); }); });
+      rows.push([r.id, nameOf(r.id), g.file, r.semester].concat(LV.map(function(k){ return r.summary[k].got; }), [r.summary.H.got, r.score, r.max, Math.round(r.score / r.max * 100), (cnt[r.id] > 1 ? ['這個學號交了 ' + cnt[r.id] + ' 份檔案'] : []).concat(r.warnings).join('；'), fails.join('、')]));
+      // 逐項明細：每個檢查項目一欄
+      if (!detail) {
+        var cols = ['學號','姓名'];
+        Object.keys(r.levels).forEach(function(k){ r.levels[k].forEach(function(it){ cols.push((k === 'H' ? '隱藏' : k) + ' ' + it.label); }); });
+        detail = [cols];
+      }
+      var line = [r.id, nameOf(r.id)];
+      Object.keys(r.levels).forEach(function(k){ r.levels[k].forEach(function(it){ line.push(it.ok ? '✓' : '✗'); }); });
+      detail.push(line);
+    });
+    list.forEach(function(o){ if (!graded.some(function(g){ return g.r.ok && g.r.id === o.id; })) rows.push([o.id, o.name, '（未繳交）']); });
+    var wb = XLSX.utils.book_new(), ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = head.map(function(h, i){ return { wch: i === 2 ? 28 : i === head.length - 1 ? 60 : i === head.length - 2 ? 30 : 10 }; });
+    XLSX.utils.book_append_sheet(wb, ws, '批改總表');
+    if (detail) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(detail), '逐項明細');
+    XLSX.writeFile(wb, '消失的實驗數據_Excel批改_' + X.CONFIG.SEMESTER + '.xlsx');
   };
 
   // ---------- 開啟頁面：用上次的學期 ----------
