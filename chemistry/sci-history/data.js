@@ -27,7 +27,7 @@ const SH_DATA = (() => {
       tag: '氣體化合體積定律', needs: ['dalton'], ready: true, color: '#2f6db5',
       teaser: '氣體反應的體積竟然是簡單整數比，這讓道耳頓很頭痛。', videos: [] },
     { id: 'avogadro', name: '亞佛加厥', en: 'Amedeo Avogadro', life: '1776–1856', year: 1811, x: 64, y: 34,
-      tag: '分子說', needs: ['dalton', 'gaylussac'], color: '#7b5ea7',
+      tag: '分子說', needs: ['dalton', 'gaylussac'], ready: true, color: '#7b5ea7',
       teaser: '道耳頓先生，您的原子說怪怪的喔？',
       videos: [{ id: 'WoLjMZ-d9a8', title: '道耳頓先生，您的原子說怪怪的喔？（亞佛加厥－分子說）' }] },
     { id: 'mendeleev', name: '門得列夫', en: 'Dmitri Mendeleev', life: '1834–1907', year: 1869, x: 78, y: 22,

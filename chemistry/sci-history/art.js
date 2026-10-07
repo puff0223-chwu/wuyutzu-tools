@@ -110,6 +110,17 @@ const ART = (() => {
     'gay-f3': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 22, '每個氯化氫只分到半顆氫？', 14, R, 900)}
       ${vol(30, 54, 1, '氫 1 體積', HC, 34)}${T(86, 76, '＋', 18, K)}${vol(104, 54, 1, '氯 1 體積', CLC, 34)}${T(160, 76, '→', 18, K)}${vol(180, 54, 2, '氯化氫 2 體積', PC, 34)}
       ${T(214, 124, '½ ?', 16, R, 900)}${T(250, 124, '½ ?', 16, R, 900)}`),
+    /* ---- 亞佛加厥 ---- */
+    'avo-f1': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 22, '同一瓶，粒子數目一樣嗎？', 14, R, 900)}
+      ${[[90, '氫氣', HC, '輕'], [210, '氧氣', OC, '重 16 倍']].map(([x, n, c, w]) => `<path d="M${x - 14} 40 L${x - 14} 52 L${x - 34} 70 L${x - 34} 128 L${x + 34} 128 L${x + 34} 70 L${x + 14} 52 L${x + 14} 40Z" fill="${c}" stroke="${B}" stroke-width="2"/>${T(x, 98, '？ 個', 16, '#2c4a7c', 900)}${T(x, 144, `${n}（${w}）`, 11, '#555', 400)}`).join('')}
+      ${T(150, 98, '＝？', 18, R, 900)}`),
+    'avo-f2': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 22, '被冷落的五十年', 14, R, 900)}
+      <rect x="30" y="52" width="70" height="86" fill="#f6eedb" stroke="#b9a77f"/>${T(65, 72, '1811', 12, '#8a6510')}${T(65, 92, '論文', 11, '#555', 400)}<path d="M34 120 h62" stroke="#ccc"/>${[0, 1, 2, 3, 4].map(i => `<circle cx="${40 + i * 13}" cy="${110 - (i % 2) * 6}" r="2" fill="#bbb"/>`).join('')}
+      ${T(65, 148, '積滿灰塵', 10, '#888', 400)}
+      ${[['HO', 140, 50], ['H₂O', 210, 62], ['H₂O₂', 160, 96], ['HO₂', 236, 104], ['?', 196, 128]].map(([t, x, y]) => `<rect x="${x - 24}" y="${y - 14}" width="48" height="22" rx="4" fill="#fff" stroke="${R}"/>${T(x, y + 2, t, 12, R)}`).join('')}`),
+    'avo-f3': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 22, '分子到底有幾個？真的存在嗎？', 14, R, 900)}
+      <circle cx="90" cy="88" r="44" fill="#eef9ff" stroke="${K}" stroke-width="3"/>${[[70, 70], [104, 78], [84, 104], [112, 100], [76, 88]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="5" fill="#c9a24a"/><path d="M${x} ${y} l${(x % 7) - 3} ${(y % 5) - 2} l4 -3" stroke="#c9a24a" stroke-width="1" fill="none"/>`).join('')}
+      ${T(90, 146, '顯微鏡下亂動的微粒', 10, '#555', 400)}${T(220, 90, '× ？？？', 22, '#2c4a7c', 900)}`),
   };
 
   /* ---------- 證據小圖示 ---------- */
@@ -147,6 +158,14 @@ const ART = (() => {
     hcl2: () => wrap(`${vol(2, 8, 1, '', HC, 10)}${vol(14, 8, 1, '', CLC, 10)}<path d="M28 13 h4" stroke="${K}" stroke-width="2"/>${vol(34, 2, 1, '', PC, 10)}${vol(34, 14, 1, '', PC, 10)}${T(24, 40, '1+1→2', 9)}`, 48, 48),
     atomwhole: () => wrap(`<circle cx="24" cy="20" r="12" fill="#e9e4f5" stroke="${K}" stroke-width="2"/><path d="M14 36 L34 36" stroke="${R}" stroke-width="2"/>${T(24, 46, '不可分', 9, R)}`, 48, 48),
     samevol: () => wrap(`<rect x="4" y="8" width="18" height="24" fill="${HC}" stroke="#555"/><rect x="26" y="8" width="18" height="24" fill="${OC}" stroke="#555"/>${T(13, 24, 'n', 11)}${T(35, 24, 'n', 11)}${T(24, 44, '同體積同數目?', 7)}`, 48, 48),
+    heatsame: () => wrap(`${flame(24, 46, .7)}${vol(4, 4, 3, '', HC, 11)}<path d="M4 20 h36" stroke="${R}" stroke-width="1.5"/>`, 48, 48),
+    density: () => wrap(`<rect x="4" y="20" width="16" height="20" fill="${HC}" stroke="#555"/><rect x="28" y="20" width="16" height="20" fill="${OC}" stroke="#555"/>${T(12, 14, '1', 10)}${T(36, 14, '16', 10, R)}`, 48, 48),
+    berz: () => wrap(`<circle cx="16" cy="22" r="9" fill="#fff" stroke="${R}" stroke-width="2"/>${T(16, 26, '+', 12, R)}<circle cx="34" cy="22" r="9" fill="#fff" stroke="${R}" stroke-width="2"/>${T(34, 26, '+', 12, R)}<path d="M4 40 l6 -4 M44 40 l-6 -4" stroke="${K}" stroke-width="2"/>${T(24, 46, '互斥', 8, R)}`, 48, 48),
+    paper: () => wrap(`<rect x="10" y="6" width="28" height="36" fill="#f6eedb" stroke="#b9a77f"/>${[14, 20, 26, 32].map(y => `<line x1="14" y1="${y}" x2="34" y2="${y}" stroke="#ccc"/>`).join('')}${T(24, 46, '1811', 8)}`, 48, 48),
+    formulas: () => wrap(`${T(14, 16, 'HO', 10, R)}${T(34, 24, 'H₂O', 10, R)}${T(18, 34, 'H₂O₂', 9, R)}${T(36, 42, '?', 12, R)}`, 48, 48),
+    brown: () => wrap(`<circle cx="24" cy="24" r="18" fill="#eef9ff" stroke="${K}" stroke-width="2"/><path d="M14 26 l6 -6 l4 8 l6 -10 l4 6" stroke="#c9a24a" stroke-width="2" fill="none"/>`, 48, 48),
+    oilfilm: () => wrap(`<rect x="2" y="28" width="44" height="14" fill="#7cc0e6"/><ellipse cx="24" cy="28" rx="18" ry="2.5" fill="${G}"/><circle cx="24" cy="12" r="4" fill="${G}"/>`, 48, 48),
+    einstein: () => wrap(`<rect x="8" y="8" width="32" height="30" fill="#fff" stroke="${K}"/>${T(24, 24, '理論', 10)}${T(24, 46, '1905', 9)}`, 48, 48),
   };
 
   /* ---------- 實驗器材插圖 ---------- */
@@ -273,6 +292,31 @@ const ART = (() => {
       ${T(220, 124, '原子被分成兩半？矛盾！', 12, R)}`),
     'gay-steam': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '氫 2 ＋ 氧 1 → 水蒸氣 2', 13, R)}${vol(20, 60, 2, '氫 2', HC, 30)}${T(98, 80, '＋', 16, K)}${vol(114, 60, 1, '氧 1', OC, 30)}${T(164, 80, '→', 16, K)}${vol(184, 60, 2, '水蒸氣 2', '#cfe8f5', 30)}
       ${T(150, 132, '氧只有 1 份，怎麼出現在 2 份水蒸氣裡？', 11, R)}`),
+    'avo-heat': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '加熱：各種氣體膨脹比例相同', 13, R)}
+      ${[['氫', HC, 50], ['氧', OC, 120], ['氮', NC, 190], ['CO₂', '#ddd', 260]].map(([n, c, x]) => `<rect x="${x - 18}" y="50" width="36" height="40" fill="${c}" stroke="#555"/><rect x="${x - 18}" y="40" width="36" height="10" fill="${c}" stroke="#555" stroke-dasharray="3 2"/>${flame(x, 120, .6)}${T(x, 104, n, 11)}`).join('')}
+      ${T(150, 142, '體積增加的比例都一樣', 11, '#2c4a7c')}`),
+    'avo-press': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '壓力加倍：體積都縮小一半', 13, R)}
+      ${[['氫', HC, 80], ['氧', OC, 220]].map(([n, c, x]) => `<rect x="${x - 50}" y="50" width="40" height="70" fill="${c}" stroke="#555"/>${T(x - 30, 136, n + ' 原本', 10, '#555', 400)}<rect x="${x + 6}" y="85" width="40" height="35" fill="${c}" stroke="#555"/><rect x="${x + 4}" y="78" width="44" height="7" fill="#777"/>${T(x + 26, 136, '加壓後', 10, '#555', 400)}`).join('')}`),
+    'avo-weigh': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '同一瓶：氧約是氫的 16 倍重', 13, R)}
+      ${balance(104, '1  :  16')}<rect x="90" y="66" width="30" height="36" fill="${HC}" stroke="#555"/>${T(105, 90, '氫', 11)}<rect x="180" y="66" width="30" height="36" fill="${OC}" stroke="#555"/>${T(195, 90, '氧', 11)}`),
+    'avo-acetic': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '醋酸竟然有 19 種化學式！', 13, R)}
+      ${Array.from({ length: 19 }, (_, i) => `<rect x="${20 + (i % 7) * 38}" y="${36 + Math.floor(i / 7) * 34}" width="34" height="26" rx="4" fill="#fff" stroke="${R}"/>${T(37 + (i % 7) * 38, 54 + Math.floor(i / 7) * 34, `#${i + 1}`, 10, R)}`).join('')}
+      ${T(150, 142, '（1861 年凱庫勒的教科書）', 10, '#888', 400)}`),
+    'avo-recalc': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '用分子說重算：數據全部吻合', 13, R)}
+      ${[['氫氣', 'H₂', 40], ['水', 'H₂O', 80], ['氧的原子量', '16', 120]].map(([a, b, y]) => `${T(90, y + 10, a, 12, '#555', 400)}${T(190, y + 10, b, 15, '#2c4a7c', 900)}${T(250, y + 10, '✓', 16, '#2f9e5a')}`).join('')}`),
+    'avo-vapor': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '同體積比質量 → 分子量', 13, R)}
+      ${[['氫分子', 2, HC, 50], ['氧分子', 32, OC, 130], ['水蒸氣', 18, '#cfe8f5', 210]].map(([n, w, c, x]) => `<rect x="${x - 26}" y="46" width="52" height="52" rx="6" fill="${c}" stroke="#555"/>${T(x, 76, String(w), 16, '#2c4a7c', 900)}${T(x, 116, n, 11, '#555', 400)}`).join('')}
+      ${T(150, 140, '（以今天的數值表示）', 10, '#888', 400)}`),
+    'avo-brown': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '追蹤微粒的亂動', 13, R)}
+      <circle cx="90" cy="84" r="48" fill="#eef9ff" stroke="${K}" stroke-width="3"/><path d="M60 92 l12 -18 l10 20 l8 -26 l14 12 l6 -18 l10 24" stroke="#c9a24a" stroke-width="2" fill="none"/>${[[60, 92], [72, 74], [82, 94], [90, 68], [104, 80], [110, 62], [120, 86]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="3" fill="#c9a24a"/>`).join('')}
+      ${T(220, 74, '2 g 氫氣裡', 12, '#555', 400)}${T(220, 100, '約 6 × 10²³ 個', 15, '#2c4a7c', 900)}`),
+    'avo-oil': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '油膜：薄到只剩一層分子', 13, R)}
+      <rect x="20" y="90" width="260" height="40" fill="#7cc0e6"/><ellipse cx="150" cy="90" rx="110" ry="6" fill="${G}" opacity=".85"/><circle cx="150" cy="52" r="7" fill="${G}"/><path d="M150 60 v18" stroke="${G}" stroke-width="2" stroke-dasharray="3 3"/>
+      ${T(150, 146, '由厚度推算分子大小 → 同樣的數量級', 11, '#2c4a7c')}`),
+    'avo-sky': () => wrap(`<rect width="300" height="150" fill="#cfe6ff"/>${T(150, 20, '天空為什麼是藍的？', 13, R)}
+      <circle cx="40" cy="56" r="18" fill="${G}"/>${[0, 1, 2].map(i => `<path d="M60 ${56 + i * 6} L${140 + i * 20} ${70 + i * 10}" stroke="${G}" stroke-width="2"/>`).join('')}
+      ${[[150, 76], [180, 64], [170, 96], [210, 84]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="3" fill="#555"/><path d="M${x} ${y} l12 -16 M${x} ${y} l-14 -10 M${x} ${y} l14 10" stroke="#4d8fb8" stroke-width="1.5"/>`).join('')}
+      ${T(150, 136, '藍光被空氣分子散射 → 也能估算分子數', 11, '#2c4a7c')}`),
   };
 
   const get = (lib, k) => (lib[k] ? lib[k]() : '');
