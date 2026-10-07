@@ -125,19 +125,21 @@
 </main>
 <div class="modal-bg hidden" id="m"><div class="modal" id="mc"></div></div>
 
-<script src="data.js?v=20261007k"></script>
-<script src="core.js?v=20261007k"></script>
-<script src="ch-lavoisier.js?v=20261007k"></script>
-<script src="ch-proust.js?v=20261007k"></script>
-<script src="ch-dalton.js?v=20261007k"></script>
-<script src="ch-gaylussac.js?v=20261007k"></script>
-<script src="ch-avogadro.js?v=20261007k"></script>
-<script src="ch-mendeleev.js?v=20261007k"></script>
-<script src="ch-thomson.js?v=20261007k"></script>
+<script src="data.js?v=20261007l"></script>
+<script src="core.js?v=20261007l"></script>
+<script src="ch-lavoisier.js?v=20261007l"></script>
+<script src="ch-proust.js?v=20261007l"></script>
+<script src="ch-dalton.js?v=20261007l"></script>
+<script src="ch-gaylussac.js?v=20261007l"></script>
+<script src="ch-avogadro.js?v=20261007l"></script>
+<script src="ch-mendeleev.js?v=20261007l"></script>
+<script src="ch-thomson.js?v=20261007l"></script>
+<script src="ch-rutherford.js?v=20261007l"></script>
+<script src="ch-millikan.js?v=20261007l"></script>
 <script>
 const $ = id => document.getElementById(id);
 const { esc, fmtTime } = SHC;
-const CHAPTERS = { lavoisier: CH_LAVOISIER, proust: CH_PROUST, dalton: CH_DALTON, gaylussac: CH_GAYLUSSAC, avogadro: CH_AVOGADRO, mendeleev: CH_MENDELEEV, thomson: CH_THOMSON };
+const CHAPTERS = { lavoisier: CH_LAVOISIER, proust: CH_PROUST, dalton: CH_DALTON, gaylussac: CH_GAYLUSSAC, avogadro: CH_AVOGADRO, mendeleev: CH_MENDELEEV, thomson: CH_THOMSON, rutherford: CH_RUTHERFORD, millikan: CH_MILLIKAN };
 const READY = SH_DATA.NODES.filter(n => n.ready && CHAPTERS[n.id]);
 const STU = new URL('./', location.href).href;
 const PAGE = 30, DAY = 86400000;
