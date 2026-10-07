@@ -271,14 +271,14 @@
   <div class="bar"><span id="video-title"></span><span><a id="video-link" target="_blank" rel="noopener">在 YouTube 開啟 ↗</a>　<button class="btn" id="video-close">關閉</button></span></div></div></div>
 <div class="toast" id="toast"></div>
 
-<script src="data.js?v=20261007i"></script>
-<script src="core.js?v=20261007i"></script>
-<script src="art.js?v=20261007i"></script>
-<script src="ch-lavoisier.js?v=20261007i"></script>
-<script src="ch-proust.js?v=20261007i"></script>
-<script src="ch-dalton.js?v=20261007i"></script>
-<script src="ch-gaylussac.js?v=20261007i"></script>
-<script src="ch-avogadro.js?v=20261007i"></script>
+<script src="data.js?v=20261007j"></script>
+<script src="core.js?v=20261007j"></script>
+<script src="art.js?v=20261007j"></script>
+<script src="ch-lavoisier.js?v=20261007j"></script>
+<script src="ch-proust.js?v=20261007j"></script>
+<script src="ch-dalton.js?v=20261007j"></script>
+<script src="ch-gaylussac.js?v=20261007j"></script>
+<script src="ch-avogadro.js?v=20261007j"></script>
 <script>
 const $ = id => document.getElementById(id);
 const { esc, md, CONFIG } = SHC;
@@ -321,13 +321,15 @@ $('btn-repay').onclick = async () => {
 };
 
 /* ---------- 登入 ---------- */
-let CFG = null;
+let CFG = null, JOINING = false;
 $('in-purpose').innerHTML = CONFIG.PURPOSES.map((x, i) => `<label><input type="radio" name="pur" value="${x}" ${i === 0 ? 'checked' : ''}><span>${x}</span></label>`).join('');
 SHC.loadConfig().then(c => { CFG = c; $('term-tag').textContent = `目前學期：${c.current}`; });
 $('btn-join').onclick = async () => {
   const cls = SHC.toHalf($('in-cls').value).toUpperCase(), seat = parseInt(SHC.toHalf($('in-seat').value), 10), name = $('in-name').value.trim();
   const stuNo = SHC.toHalf($('in-no').value).toUpperCase(), purpose = (document.querySelector('[name=pur]:checked') || {}).value;
   if (!cls || !seat || !name || !stuNo) return ($('login-msg').textContent = '班級、座號、姓名、學號都要填喔！');
+  if (seat < 1 || seat > 199) return ($('login-msg').textContent = '座號要是 1～199 的數字喔！');
+  if (JOINING) return; JOINING = true;
   if (!CFG) CFG = await SHC.loadConfig();
   const term = CFG.current;
   const p = { cls, seat, name, stuNo, purpose, term, sid: SHC.makeSid(term, cls, seat) };
@@ -339,6 +341,7 @@ $('btn-join').onclick = async () => {
   SHC.log('login', { purpose });
   await persist();
   openHub();
+  JOINING = false;
   checkBankrupt();
 };
 ['in-cls', 'in-seat', 'in-name', 'in-no'].forEach(id => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-join').click(); }));
@@ -489,6 +492,7 @@ document.addEventListener('visibilitychange', () => { tick = Date.now(); if (doc
 
 /* ---------- 開始章節 ---------- */
 async function startChapter(id) {
+  if (ST.chapters[id] && typeof ST.chapters[id] !== 'object') delete ST.chapters[id];
   if (!ST.chapters[id]) {
     if (ST.started > 0) { ST.coins += CONFIG.SUBSIDY; SHC.log('subsidy', { ch: id, coins: ST.coins }); toast(`💰 新劇本資金補助 +${CONFIG.SUBSIDY} 金幣`); }
     ST.started++;
@@ -496,8 +500,26 @@ async function startChapter(id) {
     SHC.log('start', { ch: id, coins: ST.coins });
     await persist(); renderWallet(true);
   }
+  fixChap(id);
   if (ST.done[id] && ST.chapters[id]) ST.chapters[id].phase = 'end';
   CUR = id; VIEW = 'play'; show('s-play'); startTimer(); render();
+}
+
+// 壞掉或舊版的章節狀態：把超出範圍的數字拉回安全值（崩潰測試發現）
+function fixChap(id) {
+  const c = ST.chapters[id], n = CHAPTERS[id].forks.length;
+  const okIdx = v => Number.isInteger(v) && v >= 0 && v < n;
+  if (!Number.isInteger(c.fork) || c.fork < 0 || c.fork > n) { c.fork = 0; if (c.phase !== 'intro') c.phase = 'fork'; }
+  if (!['intro', 'fork', 'ok', 'fail', 'end'].includes(c.phase)) c.phase = 'intro';
+  if (c.phase === 'fork' && c.fork >= n) c.fork = 0;
+  if (c.phase === 'ok' && !okIdx(c.okFork)) c.phase = c.fork >= n ? 'end' : 'fork';
+  if (c.phase === 'fail' && !(c.failed && okIdx(c.failed.fork) && CHAPTERS[id].forks[c.failed.fork].options.some(o => o.id === c.failed.opt && o.fail))) { c.phase = 'intro'; delete c.failed; }
+  if (c.phase === 'end' && !ST.done[id]) { c.phase = 'intro'; c.fork = 0; }
+  if (!c.first || typeof c.first !== 'object') c.first = {};
+  if (!c.bought || typeof c.bought !== 'object') c.bought = {};
+  if (!Number.isInteger(c.attempt) || c.attempt < 1) c.attempt = 1;
+  if (typeof c.fails !== 'number') c.fails = 0;
+  if (typeof c.ms !== 'number' || !isFinite(c.ms)) c.ms = 0;
 }
 
 /* ---------- 劇本畫面 ---------- */
@@ -510,7 +532,7 @@ function render() {
   if (c.phase === 'intro') {
     P.innerHTML = head + steps + `<div class="card col">${c.attempt > 1 ? `<p><b>⏪ 時光倒流！</b>你回到了 ${esc(ch.forks[0].year)} 年，重新做一次投資決定。之前做過的實驗結果，你都還記得。</p>` : ch.intro.map(t => `<p>${md(t)}</p>`).join('')}
       <div class="actions"><button class="btn" id="go">${c.attempt > 1 ? '⏩ 直接進入第一個抉擇' : '開始投資 ▶'}</button></div></div>`;
-    $('go').onclick = async () => { c.phase = 'fork'; await persist(); render(); };
+    $('go').onclick = async e => { e.target.disabled = true; c.phase = 'fork'; render(); await persist(); };
   } else if (c.phase === 'fork') {
     const f = ch.forks[c.fork], bought = c.bought[f.id] || [];
     const opts = SHC.shuffle(f.options, ST.sid + f.id);
@@ -533,7 +555,7 @@ function render() {
     const f = ch.forks[c.okFork];
     P.innerHTML = head + steps + `<div class="card result-ok col"><span class="badge">✅ 真實的歷史</span><h2 style="margin-top:6px">${esc(f.title)}</h2><p>${md(f.success)}</p>
       <div class="actions"><button class="btn" id="go">${c.fork >= ch.forks.length ? '前往結算 ▶' : '繼續下一個抉擇 ▶'}</button></div></div>`;
-    $('go').onclick = async () => { c.phase = c.fork >= ch.forks.length ? 'end' : 'fork'; await persist(); render(); };
+    $('go').onclick = async e => { e.target.disabled = true; c.phase = c.fork >= ch.forks.length ? 'end' : 'fork'; render(); await persist(); };
   } else if (c.phase === 'fail') {
     const f = ch.forks[c.failed.fork], o = f.options.find(x => x.id === c.failed.opt);
     P.innerHTML = head + `<div class="card para col"><span class="badge">🌀 平行時空</span><h2 style="margin-top:6px">如果……你支持了「${esc(o.text)}」</h2><p style="color:#bfb0f0;font-size:.9em">（這是<b style="color:#fff">${esc(o.who)}</b>的主張）</p>
@@ -546,11 +568,11 @@ function render() {
     let i = 0; const story = $('story');
     const next = () => { if (i < o.fail.story.length) story.insertAdjacentHTML('beforeend', `<p>${md(o.fail.story[i++])}</p>`); if (i >= o.fail.story.length) { $('more-wrap').classList.add('hidden'); $('after').classList.remove('hidden'); } };
     next(); $('more').onclick = next;
-    $('go').onclick = async () => { c.phase = 'intro'; delete c.failed; await persist(); if (!(await checkBankrupt())) render(); };
+    $('go').onclick = async e => { e.target.disabled = true; c.phase = 'intro'; delete c.failed; await persist(); if (!(await checkBankrupt())) render(); };
   } else if (c.phase === 'end') {
     renderEnd(head);
   }
-  const hb = $('btn-hub'); if (hb) hb.onclick = async () => { await persist(); openHub(); };
+  const hb = $('btn-hub'); if (hb) hb.onclick = () => { openHub(); persist(); };
 }
 setInterval(() => { const el = $('clock'); if (el && CUR && ST.chapters[CUR]) el.textContent = SHC.fmtTime(ST.chapters[CUR].ms); }, 1000);
 
@@ -560,13 +582,15 @@ async function buyExp(f, xid) {
   ST.coins -= CONFIG.EXP_COST; c.bought[f.id] = [...(c.bought[f.id] || []), xid];
   SHC.log('exp', { ch: CUR, fork: f.id, exp: xid, coins: ST.coins });
   const y = window.scrollY;
-  await persist(); renderWallet(true); render(); window.scrollTo(0, y);
+  renderWallet(true); render(); window.scrollTo(0, y); persist();
   toast(`🔬 ${x.name}：結果出爐！`);
 }
 
 async function choose(f, o) {
   if (!(await confirmBox('💼 確定投資？', `你要支持這個論點嗎？<br>「${esc(o.text)}」`, '確定支持'))) return;
   const ch = CHAPTERS[CUR], c = ST.chapters[CUR];
+  // 網路慢時畫面還沒換，學生又按了一次 → 已經不是這個抉擇了就忽略（崩潰測試發現會跳關、重複扣錢）
+  if (!c || c.phase !== 'fork' || ch.forks[c.fork] !== f) return;
   const firstTime = c.first[f.id] === undefined;
   if (firstTime) c.first[f.id] = !!o.correct;
   SHC.log('choose', { ch: CUR, fork: f.id, opt: o.id, correct: !!o.correct, attempt: c.attempt, first: firstTime, coins: ST.coins });
@@ -579,7 +603,7 @@ async function choose(f, o) {
     c.phase = 'fail'; c.failed = { fork: ch.forks.indexOf(f), opt: o.id };
     SHC.log('fail', { ch: CUR, fork: f.id, opt: o.id, coins: ST.coins });
   }
-  await persist(); renderWallet(true); render();
+  renderWallet(true); render(); await persist();
 }
 
 // 最後一個抉擇選對：當下就擲骰、記錄破關（避免重新整理重擲）
@@ -625,12 +649,17 @@ function renderEnd(head) {
       showAfter();
     };
   }
-  $('back').onclick = async () => { await persist(); openHub(); };
+  $('back').onclick = () => { openHub(); persist(); };
 }
 
 /* ---------- 破產 ---------- */
+let BANKRUPTING = false;   // 同時只處理一次破產（避免連點借兩次錢）
 async function checkBankrupt() {
-  if (!ST || ST.coins >= 0) return false;
+  if (!ST || ST.coins >= 0 || BANKRUPTING) return false;
+  BANKRUPTING = true;
+  try { return await doBankrupt(); } finally { BANKRUPTING = false; }
+}
+async function doBankrupt() {
   if (ST.loans < CONFIG.MAX_LOANS) {
     await confirmBox('💸 你破產了！', `金幣變成 <b>${ST.coins}</b>。大師銀行願意借你 <b>8 金幣</b>（第 ${ST.loans + 1} 次，最多 2 次）。<br>借款一次總分 −3；之後金幣夠時可以還款，還款一次總分 +4。`, '🏦 向大師銀行借錢', null);
     ST.loans++; ST.coins += CONFIG.LOAN; SHC.log('loan', { n: ST.loans, coins: ST.coins });

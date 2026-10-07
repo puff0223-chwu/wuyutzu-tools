@@ -69,12 +69,20 @@ const SHC = (() => {
   }
   const LKEY = sid => `sci-history-v2:${sid}`;
   async function load(p) {
-    let st = null, lg = null;
-    try { [st, lg] = await Promise.all([req(url('players/' + p.sid)), req(url('logs/' + p.sid))]); }
-    catch (e) { try { const c = JSON.parse(localStorage.getItem(LKEY(p.sid))); if (c) { st = c.st; lg = c.log; } } catch (e2) {} }
-    if (!st) st = newState(p);
+    let st = null, lg = null, local = null;
+    try { local = JSON.parse(localStorage.getItem(LKEY(p.sid))); } catch (e) {}
+    try { [st, lg] = await Promise.all([req(url('players/' + p.sid)), req(url('logs/' + p.sid))]); } catch (e) {}
+    // 斷線時存在本機的進度比雲端新 → 用本機的（之後 persist 會補傳上去）
+    const ts = x => (x && typeof x === 'object' && Number(x.updatedAt)) || 0;
+    if (local && local.st && typeof local.st === 'object' && ts(local.st) > ts(st)) { st = local.st; lg = local.log; }
+    if (!st || typeof st !== 'object') st = null;
+    st = Object.assign(newState(p), st || {});
     Object.assign(st, { name: p.name, cls: p.cls, seat: p.seat, term: p.term, stuNo: p.stuNo, purpose: p.purpose, sid: p.sid });
-    st.chapters = st.chapters || {}; st.done = st.done || {}; st.replays = st.replays || 0;
+    // 舊版或壞掉的存檔：數字欄位補預設值
+    const num = (k, d) => { if (typeof st[k] !== 'number' || !isFinite(st[k])) st[k] = d; };
+    num('coins', CONFIG.START); ['loans', 'repays', 'restarts', 'perfect', 'started', 'replays', 'gameOvers'].forEach(k => num(k, 0));
+    if (!st.chapters || typeof st.chapters !== 'object') st.chapters = {};
+    if (!st.done || typeof st.done !== 'object') st.done = {};
     LOG = Array.isArray(lg) ? lg : (lg ? Object.values(lg) : []);
     return st;
   }
