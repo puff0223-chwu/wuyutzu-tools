@@ -127,6 +127,16 @@
   .blk p { line-height: 1.95; margin: 0 0 8px; font-size: 1.06em; }
   .blk p:last-child { margin-bottom: 0; }
   .blk b { color: #8a3a12; }
+  .pic { background: #fffaf0; border: 1px solid var(--paper-2); border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+  .pic svg { display: block; width: 100%; max-height: 200px; }
+  .evlist.ic li { display: flex; gap: 10px; align-items: center; padding: 6px 10px; }
+  .evlist.ic li::before { content: none; }
+  .evlist .eic { flex: none; width: 44px; height: 44px; background: #fffaf0; border-radius: 8px; }
+  .evlist .eic svg { width: 100%; height: 100%; display: block; }
+  .labx .res.has-pic { display: grid; grid-template-columns: 240px 1fr; gap: 12px; align-items: center; }
+  .labx .res .rpic { background: #fffaf0; border-radius: 8px; overflow: hidden; border: 1px solid #e4dbf3; }
+  .labx .res .rpic svg { display: block; width: 100%; }
+  @media (max-width: 600px) { .labx .res.has-pic { grid-template-columns: 1fr; } }
   .evlist { list-style: none; display: grid; gap: 6px; }
   .evlist li { position: relative; padding: 6px 10px 6px 30px; background: #fff; border-radius: 8px; line-height: 1.7; }
   .evlist li::before { content: '📜'; position: absolute; left: 8px; top: 6px; font-size: .9em; }
@@ -261,9 +271,10 @@
   <div class="bar"><span id="video-title"></span><span><a id="video-link" target="_blank" rel="noopener">在 YouTube 開啟 ↗</a>　<button class="btn" id="video-close">關閉</button></span></div></div></div>
 <div class="toast" id="toast"></div>
 
-<script src="data.js?v=20261007d"></script>
-<script src="core.js?v=20261007d"></script>
-<script src="ch-lavoisier.js?v=20261007d"></script>
+<script src="data.js?v=20261007e"></script>
+<script src="core.js?v=20261007e"></script>
+<script src="art.js?v=20261007e"></script>
+<script src="ch-lavoisier.js?v=20261007e"></script>
 <script>
 const $ = id => document.getElementById(id);
 const { esc, md, CONFIG } = SHC;
@@ -501,12 +512,12 @@ function render() {
     const opts = SHC.shuffle(f.options, ST.sid + f.id);
     P.innerHTML = head + steps + `<div class="col">
       <span class="year">${esc(f.year)}</span><h2 class="fork-title">抉擇 ${c.fork + 1}／${ch.forks.length}：${esc(f.title)}</h2>
-      <div class="blk"><div class="blk-h"><span class="no">1</span>發生了什麼事？</div>${f.scene.map(t => `<p>${md(t)}</p>`).join('')}</div>
-      <div class="blk"><div class="blk-h"><span class="no">2</span>目前知道的證據</div><ul class="evlist">${f.evidence.map(e => `<li>${md(e)}</li>`).join('')}</ul></div>
+      <div class="blk"><div class="blk-h"><span class="no">1</span>發生了什麼事？</div>${f.pic ? `<div class="pic">${ART.scene(f.pic)}</div>` : ''}${f.scene.map(t => `<p>${md(t)}</p>`).join('')}</div>
+      <div class="blk"><div class="blk-h"><span class="no">2</span>目前知道的證據</div><ul class="evlist ${f.evIcons ? 'ic' : ''}">${f.evidence.map((e, i) => `<li>${f.evIcons && f.evIcons[i] ? `<span class="eic">${ART.icon(f.evIcons[i])}</span>` : ''}<span>${md(e)}</span></li>`).join('')}</ul></div>
       <div class="blk"><div class="blk-h"><span class="no">3</span>實驗室<small>每個實驗 ${CONFIG.EXP_COST} 金幣，可以不做</small></div>
         ${f.exps.map(x => { const done = bought.includes(x.id); return `<div class="labx ${done ? 'done' : ''}"><div class="top"><span class="ic">${done ? '✅' : '🔬'}</span><span class="nm">${esc(x.name)}</span>
           ${done ? '' : `<button class="do" data-x="${x.id}" ${ST.coins < CONFIG.EXP_COST ? 'disabled' : ''}>${ST.coins < CONFIG.EXP_COST ? '金幣不足' : `做實驗 −${CONFIG.EXP_COST} 🪙`}</button>`}</div>
-          ${done ? `<div class="res"><span class="lbl">實驗結果</span>${md(x.result)}</div>` : ''}</div>`; }).join('')}
+          ${done ? `<div class="res ${x.pic ? 'has-pic' : ''}">${x.pic ? `<div class="rpic">${ART.exp(x.pic)}</div>` : ''}<div><span class="lbl">實驗結果</span>${md(x.result)}</div></div>` : ''}</div>`; }).join('')}
       </div>
       <div class="blk"><div class="blk-h"><span class="no">4</span>${esc(f.question)}</div>
         <div class="opts">${opts.map((o, k) => `<button class="opt" data-o="${o.id}"><span class="lt">${'ABCD'[k]}</span><span class="txt">${esc(o.text)}</span><span class="go">支持 ▶</span></button>`).join('')}</div>
