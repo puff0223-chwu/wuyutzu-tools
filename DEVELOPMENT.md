@@ -55,12 +55,13 @@ wuyutzu-tools/
 │   ├── case-board-core.js        # 📌 No.940 案件委託公告欄：共用核心（代碼、即時同步、統計）
 │   ├── case-board.html           # 案件委託公告欄：學生頁
 │   ├── case-board-teacher.html   # 案件委託公告欄：老師頁（開設、投影牆、統計）
-│   └── sci-history/              # 📖 時光手稿：科學史大冒險（RPG，試玩版）
-│       ├── index.html            #   登入、科學家知識網路、遊戲畫面、結算
-│       ├── data.js               #   科學家節點、先備關係 needs、LIS 影片
-│       ├── sprites.js            #   像素美術（角色字元圖＋程式畫的圖塊）
-│       ├── engine.js             #   遊戲引擎（移動、對話、實驗台、背包、Boss 戰、存檔）
-│       └── ch-lavoisier.js       #   第一章：拉瓦節（地圖、劇情、三個實驗、燃素魔）
+│   ├── sci-history/              # 📖 時光手稿：科學史大冒險（抉擇＋平行時空版）
+│   │   ├── index.html            #   學生頁：登入、知識網路、排行榜、劇本
+│   │   ├── teacher.html          #   老師頁：QR、學生統計、遊戲歷程、抉擇分析、Excel
+│   │   ├── core.js               #   規則（金幣、借款、計分）、Firebase 存取
+│   │   ├── data.js               #   科學家知識網路（needs、LIS 影片）
+│   │   └── ch-lavoisier.js       #   第一章劇本資料：拉瓦節
+│   └── sci-history-rpg/          # 🗄️ 舊的薩爾達式 RPG 試玩版（不在首頁，保留給未來其他領域參考）
 │
 ├── gamification/                 # 🎲 課堂遊戲化
 │   ├── system.html               # 選人系統＋陣亡詛咒系統
@@ -302,22 +303,27 @@ wuyutzu-tools/
   - 測試：假 Firebase 模擬 28 人闖關（各種進度、卡關、結案、隱藏徽章）→ 儀表板數字、排序、最卡的一關、破案牆、自動更新都正確；換裝置接回 2 關進度；離線可玩
 - 已知限制：Firebase 規則開放寫入（跟其他工具一樣），懂技術的學生可以偽造進度；正式成績建議以「批改 Excel」為準，進度與代碼當作參考
 
-### 📖 時光手稿：科學史大冒險（chemistry/sci-history/，2026-10-07 試玩版）
-- 定位：科學史 RPG，重點是「科學家的思考歷程」不是背結論；每位科學家一章、約 15 分鐘；可上課或回家自學
-- 玩法（老師選了薩爾達式探險，不要逆轉裁判式辯論）：
-  - 俯視角地圖 16×11 格、每格 16 像素，整數 0.5 倍放大保持像素風；鍵盤或觸控十字鍵＋A／B
-  - **道具即科學**：玻璃鐘罩罩住「迷思火苗」使其熄滅（燃燒需要空氣中的成分）
-  - **實驗台**（DOM 視窗＋SVG 插圖）：先預測 → 操作 → 觀察數據 → 推理；預測與推理答案記在 `stats.predictions`
-  - **Boss 戰**：迷思魔的每層護盾是一個舊理論說法，要丟出「對應的證據卡」才能打破；丟錯會冒出小火焰，連錯 2 次給提示
-  - 支線：散落的筆記（收齊加 1 顆心）、傳說真假（查證史料）
-- 知識網路：`data.js` 的 `needs` 全部完成才亮起（例：道耳頓需要拉瓦節＋普魯斯特）；`ready: true` 才可玩，其餘顯示「章節製作中」
-- 新章節做法：複製 `ch-lavoisier.js` 的結構（cast、items、evidence、rooms、intro、profile、clear），在 index.html 的 `CHAPTERS` 註冊，並把 data.js 該節點設 `ready: true`
-  - 章節 API：`SH.say / choose / panel / give / addEvidence / flag / startBoss / finish`（見 engine.js 開頭說明）
-  - 地圖字元：`#` 牆、`w` 窗、`S` 書架、`T` 桌、`F` 熔爐、`X` 木箱、`.` 地板、`c` 地毯、`g` 草地、`p` 路、`m` 大理石、`_` 門墊（可走、配合 doors）
-- 存檔：只存學生自己的裝置 localStorage（`sci-history-player`、`sci-history-v1:<班級_座號>`）；**試玩版尚未接 Firebase 與老師頁**（老師已決定要能看學生進度，玩法確認後再做）
-- LIS 影片：只用 youtube-nocookie 嵌入播放，不下載；已找到拉瓦節（2 支）、道耳頓、亞佛加厥、湯姆森、拉塞福、查兌克、門得列夫；普魯斯特、給呂薩克、密立根、波耳、莫斯利尚未找到
-- 內容不綁特定出版社（老師擔心版權），依 108 課綱提及的科學家與公開史料撰寫
-- 第一章史實重點：錫的密封煅燒（1774）、普利斯特里 1774 年 8 月以透鏡加熱汞煅灰、同年 10 月訪問巴黎；汞的十二天實驗（約 50 → 42 立方英寸，約 1/6）；《化學基本論述》(1789) 33 種元素含光與熱質；1794/5/8 處死；「共和國不需要科學家」與「斬首後眨眼」為查無實據的傳說
+### 📖 時光手稿：科學史大冒險（chemistry/sci-history/，2026-10-07）
+- 定位：科學史抉擇遊戲。學生扮演**投資人**，在科學史的分岔點選擇支持哪個論點；重點是讓大腦花時間在推理，不是操作
+- 規則（老師訂，數字都在 `core.js` 的 `CONFIG`）：
+  - 起始 8 金幣；每個實驗固定 1 金幣（固定價格，避免價格暗示正確路線）
+  - 支持錯誤論點 → 虛構的平行時空劇情（逐段顯示）→ 標示「純屬虛構」→ 真實歷史中這個論點的下落與未來可能的價值 → 扣 3 金幣，回到本章開頭
+  - 已買過的實驗結果在重來時保留；重來時開場可快轉，但每個抉擇都要重新選
+  - 分岔點「第一次就選對」→ 破關時擲一顆投資回報骰（1,1,2,2,2,3）；骰子在最後一個抉擇選對的當下就決定並存檔，結算畫面只是播放動畫（重新整理不能重擲）
+  - 開啟第二位以後的科學家劇本，補助 2 金幣
+  - 金幣 < 0＝破產 → 向大師銀行借 8 金幣（最多 2 次）；第 3 次破產整局重來（金幣、破關全部歸零，`gameOvers` 與歷程保留）
+  - 錢包列有「還款 8 金幣」按鈕（有負債且金幣 ≥ 8 才出現）
+  - 總分＝金幣 − 借款×3 ＋ 還款×4 − 重來×1 ＋ 全對破關章數×5（全對＝這章沒有掉進平行時空）
+  - 破關時間：只計算劇本畫面開著、分頁在前景時的時間
+- 選項只顯示「論點 A／B／C」，**提出者在選完後才揭曉**（避免學生看到「拉瓦節」就直接選）；選項順序依學生＋分岔點固定亂序
+- 錯誤選擇當下就扣錢、存檔，重新整理也躲不掉
+- 身分：`學年度_班級_座號`（學年度 8 月起算，例如 2026/10 → 115）；換裝置用同樣的班級座號就能接著玩
+- 排行榜：總分、各科學家最快破關；範圍：本班／本學年跨班／歷屆全部
+- Firebase：`sci-history/players/<sid>`（完整狀態＋分數，排行榜讀這裡）、`sci-history/logs/<sid>`（遊戲歷程陣列：join、start、subsidy、exp、choose、fail、loan、repay、clear、gameover）
+- 老師頁：學生入口 QR；學年／班級篩選；統計表可排序；點學生看完整歷程；**抉擇分析**＝每個分岔點學生「第一次」選擇的分布（找出常見迷思）；Excel 兩張表
+- 新增科學家：寫一份 `ch-<id>.js`（intro、forks〔scene、evidence、exps、options〔who、text、correct、fail.story、fail.real〕、success〕、ending、orbs、profile），在 index.html 與 teacher.html 的 `CHAPTERS` 註冊，data.js 該節點設 `ready: true`
+- 已知限制：沒有登入，懂技術的學生可以直接改資料庫裡自己的分數（同其他小工具）
+- 舊的 RPG 版移到 `sci-history-rpg/`：老師試玩後認為走路、閃躲佔掉太多思考時間、開發成本高，不適合科學史；鑑識課這類「探索本身就是學習」的主題可以再用
 
 ### 💰 集點小金庫（family-points/index.html，2026-10-06 新增）
 
@@ -382,7 +388,7 @@ fp/
 
 ---
 
-## 附錄：Firebase 安全規則全文（2026-10-06，含集點小金庫 fp、消失的實驗數據 excel-rescue）
+## 附錄：Firebase 安全規則全文（2026-10-07，含時光手稿 sci-history）
 
 ```json
 {
@@ -503,6 +509,21 @@ fp/
             ".write": "auth != null && (root.child('fp/admins').child(auth.uid).val() === true || (root.child('fp/users').child(auth.uid).child('kidId').val() === $kid && !data.exists() && newData.exists() && newData.child('status').val() === 'pending' && (newData.child('kind').val() === 'earn' || newData.child('kind').val() === 'redeem') && newData.child('amount').val() > 0))",
             ".validate": "newData.hasChildren(['kidId', 'kind', 'refName', 'amount', 'status', 'createdAt']) && newData.child('kidId').val() === $kid && newData.child('amount').isNumber() && newData.child('refName').isString() && newData.child('refName').val().length < 60 && (newData.child('status').val() === 'pending' || newData.child('status').val() === 'approved' || newData.child('status').val() === 'rejected')"
           }
+        }
+      }
+    },
+    "sci-history": {
+      "players": {
+        ".read": true,
+        "$sid": {
+          ".write": "newData.exists() && $sid.length <= 30",
+          ".validate": "newData.hasChildren(['sid','cls','seat','name','year','coins','score','updatedAt']) && newData.child('sid').val() == $sid && newData.child('name').isString() && newData.child('name').val().length <= 12 && newData.child('cls').isString() && newData.child('cls').val().length <= 10 && newData.child('coins').isNumber() && newData.child('score').isNumber()"
+        }
+      },
+      "logs": {
+        ".read": true,
+        "$sid": {
+          ".write": "newData.exists() && $sid.length <= 30 && newData.hasChildren()"
         }
       }
     }

@@ -2,60 +2,65 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>時光手稿：科學史大冒險</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Noto+Serif+TC:wght@700;900&family=Silkscreen&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --night: #141228; --night-2: #1f1b3d; --night-3: #2c2656; --gold: #f3c64b; --gold-2: #c99a2a;
-    --paper: #f6eedb; --paper-2: #e9dcbc; --ink: #2a2238; --soft: #b9b2d6; --red: #e4572e; --green: #3fae6a;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  html, body { height: 100%; }
-  body { font-family: 'Noto Sans TC', sans-serif; background: var(--night); color: #fff; overflow-x: hidden; }
-  body.playing { overflow: hidden; touch-action: none; }
+  :root { --night: #141228; --night-2: #1f1b3d; --night-3: #2c2656; --gold: #f3c64b; --gold-2: #c99a2a;
+    --paper: #f6eedb; --paper-2: #e9dcbc; --ink: #2a2238; --soft: #b9b2d6; --red: #e4572e; --green: #2f9e5a; --violet: #7b5ea7; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans TC', sans-serif; background: var(--night); color: #fff; min-height: 100vh; }
   .hidden { display: none !important; }
   button { font: inherit; cursor: pointer; }
-  .serif { font-family: 'Noto Serif TC', serif; }
-  .btn { border: none; border-radius: 10px; padding: 11px 18px; font-weight: 700; background: var(--gold); color: var(--ink); box-shadow: 0 4px 0 var(--gold-2); transition: transform .08s; }
+  .sky { position: fixed; inset: 0; z-index: -1; background: radial-gradient(ellipse at 20% 10%, #2c2656 0%, transparent 55%), radial-gradient(ellipse at 90% 90%, #3a1f3d 0%, transparent 50%), var(--night); }
+  .sky::before { content: ''; position: absolute; inset: 0; background-image: radial-gradient(1px 1px at 10% 20%, #fff8, transparent), radial-gradient(1px 1px at 30% 70%, #fff6, transparent), radial-gradient(1.5px 1.5px at 60% 30%, #fffa, transparent), radial-gradient(1px 1px at 80% 60%, #fff7, transparent), radial-gradient(1.5px 1.5px at 90% 15%, #fff9, transparent); background-size: 300px 300px; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 14px 16px 40px; }
+  .btn { border: none; border-radius: 10px; padding: 11px 18px; font-weight: 700; background: var(--gold); color: var(--ink); box-shadow: 0 4px 0 var(--gold-2); }
   .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--gold-2); }
   .btn.ghost { background: transparent; color: var(--soft); box-shadow: none; border: 2px solid var(--night-3); }
-  .btn.red { background: var(--red); color: #fff; box-shadow: 0 4px 0 #a33a1c; }
-  .btn:disabled { opacity: .4; cursor: default; }
-
-  /* 星空背景 */
-  .sky { position: fixed; inset: 0; z-index: -1; background: radial-gradient(ellipse at 20% 10%, #2c2656 0%, transparent 55%), radial-gradient(ellipse at 90% 90%, #3a1f3d 0%, transparent 50%), var(--night); }
-  .sky::before { content: ''; position: absolute; inset: 0; background-image: radial-gradient(1px 1px at 10% 20%, #fff8, transparent), radial-gradient(1px 1px at 30% 70%, #fff6, transparent), radial-gradient(1.5px 1.5px at 60% 30%, #fffa, transparent), radial-gradient(1px 1px at 80% 60%, #fff7, transparent), radial-gradient(1px 1px at 45% 85%, #fff5, transparent), radial-gradient(1.5px 1.5px at 90% 15%, #fff9, transparent); background-size: 300px 300px; }
-
-  /* ===== 登入 ===== */
-  #s-login { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
-  .login-card { width: min(440px, 100%); text-align: center; }
-  .logo-book { width: 96px; height: 96px; margin: 0 auto 10px; image-rendering: pixelated; animation: float 3s ease-in-out infinite; }
-  @keyframes float { 50% { transform: translateY(-6px); } }
+  .btn.ink { background: var(--ink); color: var(--gold); box-shadow: 0 4px 0 #000; }
+  .btn.red { background: var(--red); color: #fff; box-shadow: 0 4px 0 #9c3418; }
+  .btn:disabled { opacity: .4; cursor: default; transform: none; }
   .kicker { font-family: 'Silkscreen', monospace; color: var(--gold); letter-spacing: .15em; font-size: .8em; }
-  h1.title { font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: 2.2em; margin: 4px 0 6px; text-shadow: 0 3px 0 #000a; }
-  .lead { color: var(--soft); line-height: 1.7; margin-bottom: 20px; font-size: .95em; }
+  .serif { font-family: 'Noto Serif TC', serif; }
+
+  /* 登入 */
+  #s-login { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
+  .login { width: min(440px, 100%); text-align: center; }
+  .login h1 { font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: 2.3em; margin: 4px 0; }
+  .login .lead { color: var(--soft); line-height: 1.8; margin: 8px 0 20px; }
   .form { background: var(--night-2); border: 2px solid var(--night-3); border-radius: 16px; padding: 18px; text-align: left; }
   .form label { display: block; font-size: .85em; color: var(--soft); margin: 10px 0 4px; }
   .form input { width: 100%; padding: 11px 12px; border-radius: 9px; border: 2px solid var(--night-3); background: #0f0d20; color: #fff; font: inherit; font-size: 1.05em; }
   .form input:focus { outline: none; border-color: var(--gold); }
   .form .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .form .btn { width: 100%; margin-top: 16px; font-size: 1.1em; }
-  .welcome { background: var(--night-2); border: 2px solid var(--gold-2); border-radius: 16px; padding: 18px; }
-  .welcome b { color: var(--gold); }
-  .welcome .btns { display: flex; gap: 8px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
   .msg { color: #ff9c86; font-size: .9em; margin-top: 8px; min-height: 1.2em; }
 
-  /* ===== 知識網路 ===== */
-  #s-map { min-height: 100vh; padding: 14px 16px 30px; max-width: 1100px; margin: 0 auto; }
-  .map-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
-  .map-head h2 { font-family: 'Noto Serif TC', serif; font-size: 1.5em; }
-  .map-head .who { margin-left: auto; color: var(--soft); font-size: .9em; display: flex; gap: 8px; align-items: center; }
-  .map-head .who button { background: none; border: 1px solid var(--night-3); color: var(--soft); border-radius: 8px; padding: 4px 10px; font-size: .85em; }
-  .progress { color: var(--soft); font-size: .9em; margin-bottom: 10px; }
-  .progress b { color: var(--gold); }
+  /* 錢包列 */
+  .wallet { position: sticky; top: 0; z-index: 20; background: #0d0b1cee; backdrop-filter: blur(6px); border-bottom: 2px solid var(--night-3); }
+  .wallet .in { max-width: 1000px; margin: 0 auto; padding: 8px 16px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .chip { background: var(--night-2); border: 1px solid var(--night-3); border-radius: 999px; padding: 4px 12px; font-weight: 700; white-space: nowrap; }
+  .chip.coin { color: var(--gold); font-size: 1.05em; }
+  .chip.debt { color: #ff9c86; }
+  .chip.score { color: #9fe3b7; }
+  .chip.pulse { animation: pop .5s; }
+  @keyframes pop { 50% { transform: scale(1.25); } }
+  .wallet .who { margin-left: auto; color: var(--soft); font-size: .85em; }
+  .wallet .sm { background: none; border: 1px solid var(--night-3); color: var(--soft); border-radius: 8px; padding: 4px 9px; font-size: .82em; }
+  .sync { font-size: .8em; color: #ff9c86; }
+
+  /* 首頁分頁 */
+  .tabs { display: flex; gap: 6px; margin: 12px 0; }
+  .tabs button { flex: 1; background: var(--night-2); border: 2px solid var(--night-3); color: var(--soft); border-radius: 10px; padding: 9px; font-weight: 700; }
+  .tabs button.on { background: var(--gold); color: var(--ink); border-color: var(--gold); }
+  .rules { background: var(--night-2); border: 1px solid var(--night-3); border-radius: 12px; padding: 10px 14px; color: var(--soft); font-size: .88em; line-height: 1.75; margin-bottom: 10px; }
+  .rules b { color: var(--gold); }
+  .rules summary { cursor: pointer; color: #fff; font-weight: 700; }
+
+  /* 知識網路 */
   .net-wrap { background: rgba(20,18,40,.6); border: 2px solid var(--night-3); border-radius: 18px; padding: 6px; overflow-x: auto; }
   #net { width: 100%; min-width: 640px; display: block; }
   .net-line { stroke: #4a4378; stroke-width: 2; stroke-dasharray: 6 6; fill: none; }
@@ -64,165 +69,114 @@
   .node circle.base { stroke-width: 3; }
   .node.locked circle.base { fill: #1f1b3d; stroke: #4a4378; }
   .node.open circle.base { stroke: var(--gold); }
-  .node.open circle.glow { fill: var(--gold); opacity: .25; animation: pulse 1.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
-  @keyframes pulse { 50% { opacity: .05; transform: scale(1.25); } }
+  .node.open circle.glow { fill: var(--gold); opacity: .25; animation: glow 1.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+  @keyframes glow { 50% { opacity: .05; transform: scale(1.25); } }
   .node.done circle.base { stroke: #fff; }
-  .node text { fill: #fff; font-family: 'Noto Sans TC', sans-serif; text-anchor: middle; pointer-events: none; }
+  .node text { fill: #fff; text-anchor: middle; pointer-events: none; font-family: 'Noto Sans TC', sans-serif; }
   .node.locked text { fill: #7d76a8; }
   .node .ini { font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: 22px; }
   .node .nm { font-size: 15px; font-weight: 700; }
   .node .tg { font-size: 11px; fill: var(--soft); }
-  .node .new { fill: var(--red); font-size: 11px; font-weight: 900; }
-  .axis text { fill: #6c66a0; font-size: 12px; font-family: 'Silkscreen', monospace; text-anchor: middle; }
+  .axis text { fill: #6c66a0; font-size: 12px; text-anchor: middle; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; color: var(--soft); font-size: .82em; margin-top: 8px; }
+  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
   .swipe { display: none; color: var(--soft); font-size: .8em; text-align: center; margin-top: 6px; }
   @media (max-width: 700px) { .swipe { display: block; } }
-  .legend { display: flex; gap: 14px; flex-wrap: wrap; color: var(--soft); font-size: .82em; margin-top: 10px; }
-  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
 
-  /* 彈出卡片 */
-  .modal-bg { position: fixed; inset: 0; background: #0009; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 16px; }
-  .card { background: var(--paper); color: var(--ink); border-radius: 16px; width: min(560px, 100%); max-height: 90vh; overflow: auto; padding: 22px; position: relative; box-shadow: 0 10px 40px #000a; }
-  .card .x { position: absolute; right: 12px; top: 10px; background: none; border: none; font-size: 1.4em; color: #8a7d64; }
-  .card h3 { font-family: 'Noto Serif TC', serif; font-size: 1.6em; }
-  .card .en { color: #8a7d64; font-size: .9em; }
-  .card .tag { display: inline-block; background: var(--ink); color: var(--gold); border-radius: 6px; padding: 2px 10px; font-size: .85em; margin: 8px 0; }
-  .card p, .card li { line-height: 1.7; }
-  .card ul { padding-left: 1.3em; margin: 6px 0 10px; }
-  .card h4 { margin: 14px 0 4px; color: #6b4e2e; }
-  .card .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
-  .card .actions .btn.ghost { color: #6b4e2e; border-color: var(--paper-2); }
-  .card .vids { display: grid; gap: 8px; margin-top: 6px; }
-  .card .vid { display: flex; gap: 10px; align-items: center; background: #fff; border: 1px solid var(--paper-2); border-radius: 10px; padding: 8px; cursor: pointer; text-align: left; color: var(--ink); }
-  .card .vid img { width: 96px; height: 54px; object-fit: cover; border-radius: 6px; background: #ddd; flex: none; }
-  .card .note { background: #fff6d6; border-left: 4px solid var(--gold-2); padding: 8px 12px; border-radius: 6px; font-size: .92em; }
+  /* 排行榜 */
+  .board-ctl { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .board-ctl select { background: var(--night-2); color: #fff; border: 2px solid var(--night-3); border-radius: 9px; padding: 8px 10px; font: inherit; }
+  .board { width: 100%; border-collapse: collapse; background: var(--night-2); border-radius: 12px; overflow: hidden; }
+  .board th, .board td { padding: 8px 10px; text-align: center; border-bottom: 1px solid var(--night-3); font-size: .92em; }
+  .board th { color: var(--soft); font-weight: 700; background: #17142f; }
+  .board td.l { text-align: left; }
+  .board tr.me td { background: #3a3214; color: var(--gold); font-weight: 700; }
+  .board .rk { font-family: 'Silkscreen', monospace; }
+  .myrank { margin: 8px 0; color: var(--soft); font-size: .9em; }
+  .myrank b { color: var(--gold); }
+
+  /* 卡片 */
+  .card { background: var(--paper); color: var(--ink); border-radius: 16px; padding: 20px; box-shadow: 0 8px 30px #0008; }
+  .card h2 { font-family: 'Noto Serif TC', serif; font-size: 1.5em; }
+  .card p { line-height: 1.85; margin: 8px 0; }
+  .card b { color: #8a3a12; }
+
+  /* 劇本 */
+  .stage-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 14px 0 10px; }
+  .stage-head h2 { font-family: 'Noto Serif TC', serif; font-size: 1.4em; }
+  .stage-head .meta { color: var(--soft); font-size: .88em; margin-left: auto; }
+  .steps { display: flex; gap: 6px; margin-bottom: 12px; }
+  .steps i { flex: 1; height: 6px; border-radius: 3px; background: var(--night-3); }
+  .steps i.ok { background: var(--gold); } .steps i.now { background: #fff; }
+  .scene { font-size: 1.05em; }
+  .year { display: inline-block; background: var(--ink); color: var(--gold); border-radius: 6px; padding: 1px 10px; font-family: 'Silkscreen', monospace; margin-bottom: 4px; }
+  .sec { margin-top: 16px; }
+  .sec h3 { font-size: 1em; margin-bottom: 8px; color: #6b4e2e; }
+  .ev { background: #fff; border: 1px solid var(--paper-2); border-left: 5px solid #9a8a6a; border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; line-height: 1.7; }
+  .ev.exp { border-left-color: var(--violet); background: #f6f1ff; }
+  .ev .tag { font-size: .78em; color: var(--violet); font-weight: 900; margin-right: 6px; }
+  .exps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
+  .exp-btn { background: #fff; border: 2px dashed var(--violet); color: var(--violet); border-radius: 10px; padding: 10px; font-weight: 700; text-align: left; }
+  .exp-btn small { display: block; color: #8a7d9e; font-weight: 400; }
+  .exp-btn:disabled { opacity: .45; cursor: default; }
+  .opts { display: grid; gap: 10px; }
+  .opt { background: #fff; border: 2px solid var(--paper-2); border-radius: 12px; padding: 12px 14px; text-align: left; color: var(--ink); line-height: 1.7; box-shadow: 0 3px 0 var(--paper-2); }
+  .opt:hover { border-color: var(--gold-2); }
+  .opt .who { font-size: .82em; color: #8a7d64; font-weight: 700; }
+  .opt .txt { font-size: 1.05em; font-weight: 700; }
+  .opt .go { display: inline-block; margin-top: 6px; font-size: .85em; background: var(--ink); color: var(--gold); border-radius: 6px; padding: 2px 10px; }
+  .hint { color: #8a7d64; font-size: .88em; }
+
+  .result-ok { border: 3px solid var(--green); }
+  .result-ok .badge { display: inline-block; background: var(--green); color: #fff; border-radius: 6px; padding: 2px 10px; font-weight: 900; }
+  .para { background: #1d1638; color: #eae4ff; border: 3px solid #8f6fe0; box-shadow: 0 0 30px #8f6fe055; }
+  .para h2 { color: #d9c9ff; }
+  .para .badge { display: inline-block; background: #8f6fe0; color: #fff; border-radius: 6px; padding: 2px 10px; font-weight: 900; }
+  .para p { color: #eae4ff; }
+  .para .fiction { background: #2c2052; border-radius: 10px; padding: 10px 12px; margin-top: 12px; font-size: .92em; color: #cfc2ff; }
+  .para .real { background: var(--paper); color: var(--ink); border-radius: 10px; padding: 10px 12px; margin-top: 10px; line-height: 1.8; }
+  .para .real b { color: #8a3a12; }
+  .loss { margin-top: 12px; background: #4a1a12; border: 2px solid var(--red); border-radius: 10px; padding: 10px 12px; color: #ffd2c6; font-weight: 700; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+
+  /* 結算 */
+  .orbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
+  .orb { background: var(--ink); color: #fff; border-radius: 12px; padding: 10px 6px; text-align: center; font-size: .88em; }
+  .orb b { display: block; color: var(--gold); font-size: 1.5em; }
+  .settle { display: grid; gap: 6px; margin: 10px 0; }
+  .settle div { display: flex; justify-content: space-between; background: #fff; border: 1px solid var(--paper-2); border-radius: 8px; padding: 7px 12px; }
+  .dice { display: flex; gap: 10px; justify-content: center; margin: 12px 0; flex-wrap: wrap; }
+  .die { width: 58px; height: 58px; border-radius: 12px; background: #fff; border: 3px solid var(--ink); display: flex; align-items: center; justify-content: center; font-size: 1.8em; font-weight: 900; color: var(--ink); }
+  .die.rolling { animation: shake .12s infinite; }
+  @keyframes shake { 25% { transform: rotate(12deg); } 75% { transform: rotate(-12deg); } }
+
+  /* 彈出視窗 */
+  .modal-bg { position: fixed; inset: 0; background: #000a; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .modal { width: min(520px, 100%); max-height: 90vh; overflow: auto; }
+  .modal .x { float: right; background: none; border: none; font-size: 1.3em; color: #8a7d64; }
+  .modal ul { padding-left: 1.3em; margin: 6px 0; } .modal li { line-height: 1.7; }
+  .modal h4 { margin: 12px 0 4px; color: #6b4e2e; }
+  .vids { display: grid; gap: 8px; margin-top: 6px; }
+  .vid { display: flex; gap: 10px; align-items: center; background: #fff; border: 1px solid var(--paper-2); border-radius: 10px; padding: 8px; text-align: left; color: var(--ink); }
+  .vid img { width: 96px; height: 54px; object-fit: cover; border-radius: 6px; background: #ddd; flex: none; }
   .video-box { width: min(860px, 100%); }
   .video-box .frame { position: relative; padding-top: 56.25%; background: #000; border-radius: 12px; overflow: hidden; }
   .video-box iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
   .video-box .bar { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; gap: 10px; }
   .video-box a { color: var(--gold); font-size: .9em; }
-
-  /* ===== 遊戲畫面 ===== */
-  #s-game { position: fixed; inset: 0; display: flex; flex-direction: column; background: #0b0a16; }
-  #hud { display: flex; align-items: center; gap: 10px; padding: 8px 12px; padding-top: max(8px, env(safe-area-inset-top)); background: #000; border-bottom: 2px solid var(--night-3); }
-  #hearts { font-size: 1.3em; letter-spacing: 2px; white-space: nowrap; }
-  .heart { color: #ff4d6d; text-shadow: 0 0 4px #ff4d6d88; }
-  .heart.empty { color: #3a3550; text-shadow: none; }
-  #room-name { flex: 1; text-align: center; font-family: 'Noto Serif TC', serif; color: var(--gold); font-size: .95em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .hud-btn { background: var(--night-2); border: 1px solid var(--night-3); color: #fff; border-radius: 8px; padding: 5px 9px; position: relative; }
-  #ev-count { position: absolute; top: -6px; right: -6px; background: var(--red); border-radius: 9px; font-size: 10px; padding: 0 5px; }
-  #stage { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
-  #cv { image-rendering: pixelated; image-rendering: crisp-edges; border: 2px solid #000; box-shadow: 0 0 0 3px var(--night-3); background: #000; }
-  #fade { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; transition: opacity .2s; }
-  #fade.on { opacity: 1; }
-  #toast { position: absolute; top: 10px; left: 50%; transform: translate(-50%, -20px); background: #000d; border: 2px solid var(--gold); border-radius: 10px; padding: 8px 14px; font-size: .95em; opacity: 0; transition: .25s; pointer-events: none; white-space: nowrap; max-width: 92%; overflow: hidden; text-overflow: ellipsis; z-index: 5; }
-  #toast.on { opacity: 1; transform: translate(-50%, 0); }
-  #banner { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: min(560px, 94%); background: #2a0d0dee; border: 2px solid #ff7a3a; border-radius: 12px; padding: 8px 12px; z-index: 4; box-shadow: 0 0 20px #ff5a1a66; }
-  #banner .claim { font-weight: 700; line-height: 1.5; }
-  #banner .extra { color: #ffd8a8; font-size: .88em; margin-top: 4px; }
-  #banner .shield { display: flex; gap: 4px; margin-bottom: 5px; }
-  #banner .shield i { flex: 1; height: 6px; border-radius: 3px; background: #ffb347; }
-  #banner .shield i.broken { background: #4a2a2a; }
-
-  /* 對話框 */
-  #dlg { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); width: min(720px, 96%); background: #0f0d20f2; border: 3px solid var(--paper); border-radius: 12px; padding: 12px 14px; display: flex; gap: 12px; z-index: 6; box-shadow: 0 6px 0 #000; cursor: pointer; }
-  #dlg-face { flex: none; width: 60px; height: 60px; background: #2c2656; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-  #dlg-face canvas { image-rendering: pixelated; width: 56px; height: 56px; }
-  #dlg-main { flex: 1; min-width: 0; }
-  #dlg-name { color: var(--gold); font-weight: 900; font-size: .9em; margin-bottom: 3px; }
-  #dlg-text { line-height: 1.65; font-size: 1.02em; min-height: 3.3em; }
-  #dlg-text b { color: var(--gold); }
-  #dlg-next { position: absolute; right: 12px; bottom: 6px; color: var(--gold); animation: blink 1s infinite; font-size: .8em; }
-  @keyframes blink { 50% { opacity: 0; } }
-  #dlg-choices { display: grid; gap: 6px; margin-top: 8px; }
-  .choice { text-align: left; background: var(--night-3); border: 2px solid #4a4378; color: #fff; border-radius: 9px; padding: 8px 10px; line-height: 1.45; }
-  .choice:hover { border-color: var(--gold); }
-  .choice .ck { display: inline-block; background: var(--gold); color: var(--ink); border-radius: 5px; width: 20px; text-align: center; margin-right: 8px; font-weight: 900; font-size: .85em; }
-
-  /* 實驗台 */
-  #panel { position: absolute; inset: 0; background: #000b; z-index: 8; display: flex; align-items: center; justify-content: center; padding: 10px; }
-  .panel-card { background: var(--paper); color: var(--ink); border-radius: 14px; width: min(620px, 100%); max-height: 100%; display: flex; flex-direction: column; box-shadow: 0 10px 30px #000; border: 4px solid #6b4e2e; }
-  #panel-title { background: #6b4e2e; color: var(--paper); font-family: 'Noto Serif TC', serif; padding: 9px 14px; font-size: 1.05em; }
-  #panel-body { padding: 12px 16px 16px; overflow: auto; }
-  .exp p { line-height: 1.7; margin: 6px 0; }
-  .exp p.big { font-size: 1.12em; }
-  .exp p.q { background: #fff; border: 2px dashed #c9b49a; border-radius: 10px; padding: 8px 12px; font-weight: 700; }
-  .exp-svg { width: 100%; max-height: 190px; display: block; background: #fffaf0; border-radius: 10px; border: 1px solid var(--paper-2); }
-  .exp-btns { display: grid; gap: 8px; margin-top: 12px; }
-  .exp-btns .btn { width: 100%; }
-  .exp-btns .btn.opt { background: #fff; color: var(--ink); box-shadow: 0 3px 0 #c9b49a; border: 2px solid #c9b49a; text-align: left; font-weight: 700; }
-  .fb { border-radius: 10px; padding: 10px 12px; margin-top: 10px; line-height: 1.7; }
-  .fb.ok { background: #e2f5e8; border: 2px solid var(--green); }
-  .fb.no { background: #fff4d6; border: 2px solid var(--gold-2); }
-  .fb.neutral { background: #ece7f8; border: 2px solid #9a8ccc; }
-
-  /* 背包 */
-  #bag { position: absolute; inset: 0; background: #000b; z-index: 7; display: flex; align-items: center; justify-content: center; padding: 10px; }
-  .bag-card { background: var(--night-2); border: 3px solid var(--gold-2); border-radius: 14px; width: min(560px, 100%); max-height: 100%; overflow: auto; padding: 14px; position: relative; }
-  .bag-card h3 { color: var(--gold); margin: 10px 0 6px; font-size: 1em; }
-  .bag-card h3 small { color: var(--soft); font-weight: 400; }
-  #bag-close { position: absolute; right: 10px; top: 8px; background: none; border: none; color: #fff; font-size: 1.3em; }
-  .bag-item { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: #0f0d20; border: 2px solid var(--night-3); border-radius: 10px; padding: 8px 10px; color: #fff; margin-bottom: 6px; }
-  .bag-item.on { border-color: var(--gold); background: #2a2440; }
-  .bag-item .bi { font-size: 1.5em; }
-  .bag-item .bt { flex: 1; display: flex; flex-direction: column; }
-  .bag-item small { color: var(--soft); line-height: 1.5; }
-  .bag-item .sel { font-size: .8em; color: var(--gold); white-space: nowrap; }
-  .bag-card .empty { color: var(--soft); font-size: .9em; padding: 4px 0 8px; }
-
-  /* 手機控制器 */
-  #pad { display: flex; justify-content: space-between; align-items: center; padding: 10px 18px; padding-bottom: max(12px, env(safe-area-inset-bottom)); background: #000; border-top: 2px solid var(--night-3); user-select: none; -webkit-user-select: none; }
-  .dpad { display: grid; grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(3, 50px); }
-  .dpad button { background: var(--night-3); border: none; color: #fff; font-size: 1.2em; border-radius: 10px; touch-action: none; }
-  .dpad button.down { background: var(--gold); color: var(--ink); }
-  .dpad .u { grid-column: 2; grid-row: 1; } .dpad .l { grid-column: 1; grid-row: 2; } .dpad .r { grid-column: 3; grid-row: 2; } .dpad .d { grid-column: 2; grid-row: 3; }
-  .ab { display: flex; gap: 14px; align-items: center; }
-  .ab button { width: 66px; height: 66px; border-radius: 50%; border: none; font-weight: 900; font-size: 1.3em; touch-action: none; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
-  #btn-a { background: var(--red); color: #fff; box-shadow: 0 4px 0 #8a2f15; transform: translateY(-14px); }
-  #btn-b { background: var(--gold); color: var(--ink); box-shadow: 0 4px 0 var(--gold-2); }
-  #btn-b small, #btn-a small { font-size: .55em; margin-top: 2px; }
-  #btn-a:active, #btn-b:active { filter: brightness(1.2); }
-  .keyhint { display: none; color: var(--soft); font-size: .85em; text-align: center; flex: 1; }
-  @media (hover: hover) and (pointer: fine) {
-    .keyhint { display: block; }
-    .dpad { grid-template-columns: repeat(3, 38px); grid-template-rows: repeat(3, 38px); }
-    .ab button { width: 52px; height: 52px; font-size: 1.1em; }
-  }
-  @media (max-aspect-ratio: 4/5) { #stage { align-items: flex-start; padding-top: 10px; } }
-  @media (max-height: 560px) and (orientation: landscape) {
-    #hud { padding-top: 4px; padding-bottom: 4px; }
-    #pad { position: absolute; inset: auto 0 0 0; background: transparent; border: none; pointer-events: none; }
-    #pad > * { pointer-events: auto; opacity: .85; }
-    .keyhint { display: none !important; }
-  }
-
-  /* ===== 結算 ===== */
-  #s-result { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px 16px; }
-  .result { width: min(600px, 100%); background: var(--paper); color: var(--ink); border-radius: 18px; padding: 24px; box-shadow: 0 10px 40px #000a; text-align: center; }
-  .result h2 { font-family: 'Noto Serif TC', serif; font-size: 1.7em; }
-  .result .stamp { display: inline-block; border: 3px solid var(--red); color: var(--red); font-weight: 900; padding: 2px 14px; border-radius: 8px; transform: rotate(-6deg); margin: 8px 0 12px; font-family: 'Noto Serif TC', serif; }
-  .orbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
-  .orb { background: var(--ink); color: #fff; border-radius: 12px; padding: 10px 6px; font-size: .88em; line-height: 1.4; }
-  .orb b { display: block; color: var(--gold); font-size: 1.5em; }
-  .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 12px 0; text-align: left; }
-  .stats div { background: #fff; border: 1px solid var(--paper-2); border-radius: 10px; padding: 8px 12px; font-size: .92em; }
-  .stats b { font-size: 1.2em; color: #6b4e2e; }
-  .unlock { background: var(--night); color: #fff; border-radius: 12px; padding: 12px; margin: 12px 0; }
-  .unlock b { color: var(--gold); }
-  .result .actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 14px; }
-  .result .btn.ghost { color: #6b4e2e; border-color: var(--paper-2); }
+  .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: #000d; border: 2px solid var(--gold); border-radius: 10px; padding: 9px 16px; z-index: 60; opacity: 0; transition: .3s; pointer-events: none; }
+  .toast.on { opacity: 1; }
 </style>
 </head>
 <body>
 <div class="sky"></div>
 
-<!-- ① 登入 -->
 <section id="s-login">
-  <div class="login-card">
-    <canvas class="logo-book" id="logo" width="96" height="96"></canvas>
+  <div class="login">
     <div class="kicker">TIME MANUSCRIPT</div>
-    <h1 class="title">時光手稿</h1>
-    <p class="lead">科學史大冒險<br>迷思魔燒掉了科學家的思考紀錄。<br>回到過去，用證據把它們找回來！</p>
-    <div class="form" id="login-form">
+    <h1>時光手稿</h1>
+    <p class="lead">科學史大冒險<br>你是投資人，要決定支持哪一條研究路線。<br>選對，走向真實的未來；選錯，掉進平行時空！</p>
+    <div class="form">
       <div class="row">
         <div><label>班級</label><input id="in-cls" placeholder="例：101" maxlength="10"></div>
         <div><label>座號</label><input id="in-seat" type="number" min="1" max="99" placeholder="例：7"></div>
@@ -231,230 +185,362 @@
       <button class="btn" id="btn-join">翻開時光手稿 ▶</button>
       <div class="msg" id="login-msg"></div>
     </div>
-    <div class="welcome hidden" id="welcome">
-      <div>歡迎回來，<b id="wel-name"></b></div>
-      <div class="btns"><button class="btn" id="btn-continue">繼續冒險 ▶</button><button class="btn ghost" id="btn-switch">換人登入</button></div>
-    </div>
   </div>
 </section>
 
-<!-- ② 知識網路 -->
-<section id="s-map" class="hidden">
-  <div class="map-head">
-    <h2>🌌 科學家知識網路</h2>
-    <div class="who"><span id="map-who"></span><button id="btn-logout">換人</button></div>
-  </div>
-  <div class="progress" id="map-progress"></div>
-  <div class="net-wrap"><svg id="net" viewBox="0 0 1000 620"></svg></div>
-  <div class="swipe">← 左右滑動看完整的知識網路 →</div>
-  <div class="legend">
-    <span><i style="background:#fff;border:2px solid #fff"></i>已攻略</span>
-    <span><i style="background:var(--gold)"></i>已亮起，可以攻略</span>
-    <span><i style="background:#1f1b3d;border:2px solid #4a4378"></i>還沒亮起</span>
-    <span>📌 攻略一位科學家後，受他影響的科學家就會亮起</span>
-  </div>
-</section>
+<div class="wallet hidden" id="wallet"><div class="in">
+  <span class="chip coin" id="w-coin"></span>
+  <span class="chip debt" id="w-debt"></span>
+  <span class="chip score" id="w-score"></span>
+  <button class="sm hidden" id="btn-repay">🏦 還款 8 金幣</button>
+  <span class="sync hidden" id="w-sync">⚠️ 未同步</span>
+  <span class="who" id="w-who"></span>
+  <button class="sm" id="btn-logout">換人</button>
+</div></div>
 
-<!-- ③ 遊戲 -->
-<section id="s-game" class="hidden">
-  <div id="hud">
-    <div id="hearts"></div>
-    <div id="room-name"></div>
-    <button class="hud-btn" id="btn-bag" title="背包（I）">🎒<span id="ev-count">0</span></button>
-    <button class="hud-btn" id="btn-sound" title="音效">🔊</button>
-    <button class="hud-btn" id="btn-exit" title="存檔並回到知識網路">💾</button>
+<section id="s-hub" class="hidden"><div class="wrap">
+  <details class="rules">
+    <summary>💰 投資規則（點開看）</summary>
+    一開始有 <b>8 金幣</b>。每個分岔點可以花 <b>1 金幣</b>做實驗，拿到更多證據。<br>
+    支持錯誤的論點 → 掉進平行時空 → <b>扣 3 金幣</b>，回到本章開頭重來。<br>
+    每個分岔點<b>第一次就選對</b>，破關時可擲一顆投資回報骰（1、1、2、2、2、3 金幣）。<br>
+    開啟下一位科學家時，補助 <b>2 金幣</b>。金幣變負數就破產，可以向大師銀行借 8 金幣（最多 2 次），第 3 次破產整個遊戲重來。<br>
+    <b>總分</b>＝剩餘金幣 − 借款次數×3 ＋ 還款次數×4 − 重來次數×1 ＋ 一次全對破關×5
+  </details>
+  <div class="tabs"><button data-t="net" class="on">🌌 知識網路</button><button data-t="board">🏆 排行榜</button></div>
+  <div id="t-net">
+    <div class="net-wrap"><svg id="net" viewBox="0 0 1000 620"></svg></div>
+    <div class="swipe">← 左右滑動看完整的知識網路 →</div>
+    <div class="legend"><span><i style="background:#fff"></i>已破關</span><span><i style="background:var(--gold)"></i>已亮起，可以挑戰</span><span><i style="background:#1f1b3d;border:2px solid #4a4378"></i>還沒亮起</span><span>📌 破關一位科學家，受他影響的科學家就會亮起</span></div>
   </div>
-  <div id="stage">
-    <canvas id="cv"></canvas>
-    <div id="fade"></div>
-    <div id="toast"></div>
-    <div id="banner" class="hidden"></div>
-    <div id="dlg" class="hidden">
-      <div id="dlg-face"></div>
-      <div id="dlg-main"><div id="dlg-name"></div><div id="dlg-text"></div><div id="dlg-choices"></div></div>
-      <div id="dlg-next">▼</div>
+  <div id="t-board" class="hidden">
+    <div class="board-ctl">
+      <select id="b-kind"></select>
+      <select id="b-scope"><option value="cls">本班</option><option value="year">本學年・跨班</option><option value="all">歷屆・全部</option></select>
+      <button class="btn ghost" id="b-refresh">🔄</button>
     </div>
-    <div id="bag" class="hidden"><div class="bag-card"><button id="bag-close">✕</button><div id="bag-body"></div></div></div>
-    <div id="panel" class="hidden"><div class="panel-card"><div id="panel-title"></div><div id="panel-body"></div></div></div>
+    <div class="myrank" id="b-me"></div>
+    <div id="b-table"></div>
   </div>
-  <div id="pad">
-    <div class="dpad">
-      <button class="u" data-k="up">▲</button><button class="l" data-k="left">◀</button>
-      <button class="r" data-k="right">▶</button><button class="d" data-k="down">▼</button>
-    </div>
-    <div class="keyhint">鍵盤：方向鍵／WASD 移動　Z／空白鍵＝A　X＝B　I＝背包</div>
-    <div class="ab"><button id="btn-b"><span>🎒</span><small>B</small></button><button id="btn-a">A<small>調查</small></button></div>
-  </div>
-</section>
+</div></section>
 
-<!-- ④ 結算 -->
-<section id="s-result" class="hidden"><div class="result" id="result"></div></section>
+<section id="s-play" class="hidden"><div class="wrap" id="play"></div></section>
 
-<!-- 卡片 -->
-<div class="modal-bg hidden" id="m-node"><div class="card" id="node-card"></div></div>
+<div class="modal-bg hidden" id="modal"><div class="modal card" id="modal-card"></div></div>
 <div class="modal-bg hidden" id="m-video"><div class="video-box"><div class="frame" id="video-frame"></div>
   <div class="bar"><span id="video-title"></span><span><a id="video-link" target="_blank" rel="noopener">在 YouTube 開啟 ↗</a>　<button class="btn" id="video-close">關閉</button></span></div></div></div>
+<div class="toast" id="toast"></div>
 
-<script src="data.js?v=20261007a"></script>
-<script src="sprites.js?v=20261007a"></script>
-<script src="engine.js?v=20261007a"></script>
-<script src="ch-lavoisier.js?v=20261007a"></script>
+<script src="data.js?v=20261007b"></script>
+<script src="core.js?v=20261007b"></script>
+<script src="ch-lavoisier.js?v=20261007b"></script>
 <script>
 const $ = id => document.getElementById(id);
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const md = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+const { esc, md, CONFIG } = SHC;
 const CHAPTERS = { lavoisier: CH_LAVOISIER };
-const PKEY = 'sci-history-player';
-let PLAYER = null, justUnlocked = [];
+const PKEY = 'sci-history-player-v2';
+let ST = null, VIEW = 'hub', CUR = null;
 
-function show(id) {
-  ['s-login', 's-map', 's-game', 's-result'].forEach(s => $(s).classList.toggle('hidden', s !== id));
-  document.body.classList.toggle('playing', id === 's-game');
-  window.scrollTo(0, 0);
+/* ---------- 共用 ---------- */
+function show(id) { ['s-login', 's-hub', 's-play'].forEach(s => $(s).classList.toggle('hidden', s !== id)); $('wallet').classList.toggle('hidden', id === 's-login'); window.scrollTo(0, 0); }
+let tt; function toast(m) { const t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('on'), 2400); }
+function modal(html, dismiss = true) {
+  $('modal-card').innerHTML = html; $('modal').classList.remove('hidden');
+  $('modal').onclick = e => { if (dismiss && e.target === $('modal')) closeModal(); };
+  return $('modal-card');
 }
+function closeModal() { $('modal').classList.add('hidden'); }
+function confirmBox(title, text, okLabel = '確定', cancel = '再想想') {
+  return new Promise(res => {
+    const c = modal(`<h2>${title}</h2><p>${text}</p><div class="actions"><button class="btn" data-a="1">${okLabel}</button>${cancel ? `<button class="btn ghost" style="color:#6b4e2e;border-color:#e9dcbc" data-a="0">${cancel}</button>` : ''}</div>`, false);
+    c.querySelectorAll('[data-a]').forEach(b => b.onclick = () => { closeModal(); res(b.dataset.a === '1'); });
+  });
+}
+async function persist() { renderWallet(); await SHC.save(ST); $('w-sync').classList.toggle('hidden', SHC.syncOk()); }
+
+function renderWallet(flash) {
+  if (!ST) return;
+  $('w-coin').textContent = `🪙 ${ST.coins} 金幣`;
+  const d = SHC.debt(ST);
+  $('w-debt').textContent = `🏦 負債 ${d}`; $('w-debt').classList.toggle('hidden', !d);
+  $('w-score').textContent = `⭐ ${SHC.score(ST)} 分`;
+  $('w-who').textContent = `${ST.cls} 班 ${ST.seat} 號 ${ST.name}`;
+  $('btn-repay').classList.toggle('hidden', !(d > 0 && ST.coins >= CONFIG.LOAN));
+  if (flash) { const c = $('w-coin'); c.classList.remove('pulse'); void c.offsetWidth; c.classList.add('pulse'); }
+}
+$('btn-repay').onclick = async () => {
+  if (!(await confirmBox('🏦 還款給大師銀行', `用 <b>8 金幣</b>還掉一筆借款？還款一次 <b>總分 +4</b>。`, '還款'))) return;
+  if (ST.coins < CONFIG.LOAN || SHC.debt(ST) <= 0) return;
+  ST.coins -= CONFIG.LOAN; ST.repays++; SHC.log('repay', { coins: ST.coins });
+  await persist(); renderWallet(true); toast('✅ 還款成功！總分 +4');
+};
 
 /* ---------- 登入 ---------- */
-const toHalf = s => String(s ?? '').replace(/[！-～]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0)).trim();
-function loadPlayer() { try { return JSON.parse(localStorage.getItem(PKEY)); } catch (e) { return null; } }
-function initLogin() {
-  const p = loadPlayer();
-  $('login-form').classList.toggle('hidden', !!p);
-  $('welcome').classList.toggle('hidden', !p);
-  if (p) $('wel-name').textContent = `${p.cls} 班 ${p.seat} 號 ${p.name}`;
-  const lg = $('logo').getContext('2d'); lg.imageSmoothingEnabled = false; lg.clearRect(0, 0, 96, 96); lg.drawImage(SPR.obj('portal'), 0, 0, 96, 96);
-  show('s-login');
-}
-$('btn-join').onclick = () => {
-  const cls = toHalf($('in-cls').value).toUpperCase(), seat = parseInt(toHalf($('in-seat').value), 10), name = $('in-name').value.trim();
-  if (!cls || !seat || !name) { $('login-msg').textContent = '班級、座號、姓名都要填喔！'; return; }
-  PLAYER = { cls, seat, name, sid: `${cls}_${seat}`.replace(/[^\w一-鿿-]/g, '_') };
-  try { localStorage.setItem(PKEY, JSON.stringify(PLAYER)); } catch (e) {}
-  openMap();
+$('btn-join').onclick = async () => {
+  const cls = SHC.toHalf($('in-cls').value).toUpperCase(), seat = parseInt(SHC.toHalf($('in-seat').value), 10), name = $('in-name').value.trim();
+  if (!cls || !seat || !name) return ($('login-msg').textContent = '班級、座號、姓名都要填喔！');
+  const year = SHC.schoolYear();
+  const p = { cls, seat, name, year, sid: SHC.makeSid(year, cls, seat) };
+  $('login-msg').textContent = '讀取進度中……';
+  ST = await SHC.load(p);
+  try { localStorage.setItem(PKEY, JSON.stringify({ cls, seat, name })); } catch (e) {}
+  $('login-msg').textContent = '';
+  if (!SHC.getLog().length) { SHC.log('join'); }
+  await persist();
+  openHub();
+  checkBankrupt();
 };
 ['in-cls', 'in-seat', 'in-name'].forEach(id => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-join').click(); }));
-$('btn-continue').onclick = () => { PLAYER = loadPlayer(); openMap(); };
-$('btn-switch').onclick = () => { try { localStorage.removeItem(PKEY); } catch (e) {} initLogin(); };
-$('btn-logout').onclick = () => { try { localStorage.removeItem(PKEY); } catch (e) {} initLogin(); };
+$('btn-logout').onclick = () => { stopTimer(); ST = null; show('s-login'); };
+try { const p = JSON.parse(localStorage.getItem(PKEY)); if (p) { $('in-cls').value = p.cls; $('in-seat').value = p.seat; $('in-name').value = p.name; } } catch (e) {}
 
-/* ---------- 知識網路 ---------- */
-const SAVE = () => { try { return JSON.parse(localStorage.getItem(`sci-history-v1:${PLAYER.sid}`)) || { done: {}, chapters: {} }; } catch (e) { return { done: {}, chapters: {} }; } };
-function openMap() {
-  show('s-map');
-  $('map-who').textContent = `🕵️ ${PLAYER.cls} 班 ${PLAYER.seat} 號 ${PLAYER.name}`;
-  drawNet();
-}
+/* ---------- 首頁 ---------- */
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
+  $('t-net').classList.toggle('hidden', b.dataset.t !== 'net'); $('t-board').classList.toggle('hidden', b.dataset.t !== 'board');
+  if (b.dataset.t === 'board') loadBoard();
+});
+function openHub() { stopTimer(); VIEW = 'hub'; CUR = null; show('s-hub'); renderWallet(); drawNet(); }
+
 function drawNet() {
-  const sv = SAVE(), done = sv.done;
-  const N = SH_DATA.NODES, X = n => 60 + n.x * 8.8, Y = n => 40 + n.y * 5.2;
-  const nDone = N.filter(n => done[n.id]).length, nOpen = N.filter(n => SH_DATA.status(n.id, done) === 'open').length;
-  $('map-progress').innerHTML = `已攻略 <b>${nDone}</b> / ${N.length} 位科學家　·　亮起待攻略 <b>${nOpen}</b> 位`;
+  const done = ST.done || {}, N = SH_DATA.NODES, X = n => 60 + n.x * 8.8, Y = n => 40 + n.y * 5.2;
   let s = '<g class="axis"><line x1="40" y1="590" x2="960" y2="590" stroke="#3a3466"/><text x="90" y="610">◀ 較早</text><text x="910" y="610">較晚 ▶</text></g>';
-  N.forEach(n => n.needs.forEach(id => {
-    const a = SH_DATA.byId[id], lit = !!done[id];
-    const mx = (X(a) + X(n)) / 2;
-    s += `<path class="net-line ${lit ? 'lit' : ''}" d="M${X(a)} ${Y(a)} C${mx} ${Y(a)}, ${mx} ${Y(n)}, ${X(n)} ${Y(n)}"/>`;
-  }));
+  N.forEach(n => n.needs.forEach(id => { const a = SH_DATA.byId[id], mx = (X(a) + X(n)) / 2; s += `<path class="net-line ${done[id] ? 'lit' : ''}" d="M${X(a)} ${Y(a)} C${mx} ${Y(a)}, ${mx} ${Y(n)}, ${X(n)} ${Y(n)}"/>`; }));
   N.forEach(n => {
-    const st = SH_DATA.status(n.id, done), x = X(n), y = Y(n);
-    const fill = st === 'locked' ? '' : `fill="${n.color}"`;
-    s += `<g class="node ${st}" data-id="${n.id}" transform="translate(${x},${y})">
-      ${st === 'open' ? '<circle class="glow" r="40"/>' : ''}
-      <circle class="base" r="32" ${fill}/>
-      <text class="ini" y="8">${st === 'locked' ? '🔒' : esc(n.name[0])}</text>
+    const st = SH_DATA.status(n.id, done);
+    s += `<g class="node ${st}" data-id="${n.id}" transform="translate(${X(n)},${Y(n)})">${st === 'open' ? '<circle class="glow" r="40"/>' : ''}
+      <circle class="base" r="32" ${st === 'locked' ? '' : `fill="${n.color}"`}/><text class="ini" y="8">${st === 'locked' ? '🔒' : esc(n.name[0])}</text>
       ${st === 'done' ? '<text y="-38" style="font-size:16px">⭐</text>' : ''}
-      ${justUnlocked.includes(n.id) ? '<text class="new" y="-40">NEW!</text>' : ''}
-      <text class="nm" y="52">${esc(n.name)}</text>
-      <text class="tg" y="68">${n.year}・${esc(n.tag)}</text>
-    </g>`;
+      <text class="nm" y="52">${esc(n.name)}</text><text class="tg" y="68">${n.year}・${esc(n.tag)}</text></g>`;
   });
   $('net').innerHTML = s;
   $('net').querySelectorAll('.node').forEach(g => g.onclick = () => openNode(g.dataset.id));
 }
 
 function openNode(id) {
-  const n = SH_DATA.byId[id], sv = SAVE(), st = SH_DATA.status(id, sv.done), ch = CHAPTERS[id];
-  const saved = sv.chapters[id];
-  let html = `<button class="x" onclick="closeModal('m-node')">✕</button>
-    <h3>${esc(n.name)}</h3><div class="en">${esc(n.en)}（${n.life}）</div><div class="tag">${esc(n.tag)}</div>`;
+  const n = SH_DATA.byId[id], st = SH_DATA.status(id, ST.done), ch = CHAPTERS[id], prog = ST.chapters[id];
+  let h = `<button class="x" onclick="closeModal()">✕</button><h2>${esc(n.name)}</h2><div class="hint">${esc(n.en)}（${n.life}）・${esc(n.tag)}</div>`;
   if (st === 'locked') {
-    const need = n.needs.filter(x => !sv.done[x]).map(x => SH_DATA.byId[x].name).join('、');
-    html += `<p class="note">🔒 先攻略 <b>${esc(need)}</b>，這位科學家才會亮起。<br>科學家的發現，都是站在前人的肩膀上。</p>`;
+    h += `<p>🔒 先破關 <b>${esc(n.needs.filter(x => !ST.done[x]).map(x => SH_DATA.byId[x].name).join('、'))}</b>，這位科學家才會亮起。科學家的發現，都站在前人的肩膀上。</p>`;
   } else {
-    html += `<p>${esc(n.teaser)}</p>`;
-    if (st === 'done' && ch && ch.profile) {
-      const p = ch.profile;
-      html += `<h4>📇 科學家檔案</h4><p>${md(p.life)}</p><p>${md(p.roles)}</p>
+    h += `<p>${esc(n.teaser)}</p>`;
+    if (st === 'done' && ch) {
+      const d = ST.done[id], p = ch.profile;
+      h += `<p class="hint">✅ 已破關・破關時間 ${SHC.fmtTime(d.ms)}・${d.perfect ? '🌟 一次全對' : `重來 ${d.fails} 次`}</p>
+        <h4>📇 科學家檔案</h4><p>${md(p.life)}<br>${md(p.roles)}</p>
         <h4>🏆 主要貢獻</h4><ul>${p.contributions.map(c => `<li>${md(c)}</li>`).join('')}</ul>
-        <h4>🧐 他也犯過的錯</h4><ul>${p.mistakes.map(c => `<li>${md(c)}</li>`).join('')}</ul>
-        <p class="note">${md(p.others)}</p>`;
-      const r = sv.done[id];
-      if (r && r.stats) html += `<p style="margin-top:8px;color:#8a7d64;font-size:.9em">你的紀錄：遊玩 ${fmtTime(r.stats.playMs)}・推理 ${predScore(ch, r.stats)}</p>`;
+        <h4>🧐 他也犯過的錯</h4><ul>${p.mistakes.map(c => `<li>${md(c)}</li>`).join('')}</ul><p class="hint">${md(p.others)}</p>`;
     }
-    if (n.videos.length) {
-      html += `<h4>🎬 LIS 情境科學教材影片</h4><div class="vids">${n.videos.map(v => `<button class="vid" data-v="${v.id}" data-t="${esc(v.title)}"><img src="https://i.ytimg.com/vi/${v.id}/mqdefault.jpg" alt="" loading="lazy"><span>${esc(v.title)}</span></button>`).join('')}</div>`;
-    }
-    html += '<div class="actions">';
-    if (!n.ready || !ch) html += `<button class="btn" disabled>🛠️ 章節製作中</button>`;
-    else if (st === 'done') html += `<button class="btn" data-play="fresh">🔁 再玩一次</button>`;
-    else if (saved) html += `<button class="btn" data-play="resume">▶ 繼續冒險</button><button class="btn ghost" data-play="fresh">從頭開始</button>`;
-    else html += `<button class="btn" data-play="fresh">▶ 開始冒險（約 15 分鐘）</button>`;
-    html += '</div>';
+    if (n.videos.length && st !== 'locked') h += `<h4>🎬 LIS 情境科學教材影片</h4><div class="vids">${n.videos.map(v => `<button class="vid" data-v="${v.id}" data-t="${esc(v.title)}"><img src="https://i.ytimg.com/vi/${v.id}/mqdefault.jpg" alt="" loading="lazy"><span>${esc(v.title)}</span></button>`).join('')}</div>`;
+    h += '<div class="actions">';
+    if (!n.ready || !ch) h += '<button class="btn" disabled>🛠️ 劇本製作中</button>';
+    else if (st === 'done') h += prog ? '<button class="btn" id="btn-play">📊 查看結算</button>' : '';
+    else h += `<button class="btn" id="btn-play">${prog ? '▶ 繼續投資' : `▶ 開始（${Object.keys(ST.done).length || ST.started ? '補助 +2 金幣，' : ''}約 15 分鐘）`}</button>`;
+    h += '</div>';
   }
-  $('node-card').innerHTML = html;
-  $('node-card').querySelectorAll('[data-play]').forEach(b => b.onclick = () => { closeModal('m-node'); play(id, b.dataset.play === 'fresh'); });
-  $('node-card').querySelectorAll('.vid').forEach(b => b.onclick = () => openVideo(b.dataset.v, b.dataset.t));
-  $('m-node').classList.remove('hidden');
+  const c = modal(h);
+  c.querySelectorAll('.vid').forEach(b => b.onclick = () => openVideo(b.dataset.v, b.dataset.t));
+  const pb = c.querySelector('#btn-play'); if (pb) pb.onclick = () => { closeModal(); startChapter(id); };
 }
-function closeModal(id) { $(id).classList.add('hidden'); if (id === 'm-video') $('video-frame').innerHTML = ''; }
-document.querySelectorAll('.modal-bg').forEach(m => m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); }));
 function openVideo(id, title) {
   $('video-frame').innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
-  $('video-title').textContent = title; $('video-link').href = `https://www.youtube.com/watch?v=${id}`;
-  $('m-video').classList.remove('hidden');
+  $('video-title').textContent = title; $('video-link').href = `https://www.youtube.com/watch?v=${id}`; $('m-video').classList.remove('hidden');
 }
-$('video-close').onclick = () => closeModal('m-video');
+$('video-close').onclick = () => { $('m-video').classList.add('hidden'); $('video-frame').innerHTML = ''; };
 
-/* ---------- 遊玩 ---------- */
-function play(id, fresh) {
-  justUnlocked = [];
-  show('s-game');
-  SH.start(CHAPTERS[id], PLAYER, { fresh, onFinish: showResult, onExit: () => openMap() });
+/* ---------- 排行榜 ---------- */
+let BOARD = null;
+function boardKinds() {
+  $('b-kind').innerHTML = '<option value="score">⭐ 總分</option>' + SH_DATA.NODES.filter(n => n.ready).map(n => `<option value="t:${n.id}">⏱️ ${n.name} 最快破關</option>`).join('');
 }
-const fmtTime = ms => { const s = Math.round((ms || 0) / 1000); return `${Math.floor(s / 60)} 分 ${s % 60} 秒`; };
-function predScore(ch, st) {
-  const v = Object.values(st.predictions || {}).filter(p => p.ok !== null);
-  return `${v.filter(p => p.ok).length} / ${v.length} 題一次就答對`;
+boardKinds();
+['b-kind', 'b-scope'].forEach(id => $(id).onchange = renderBoard);
+$('b-refresh').onclick = loadBoard;
+async function loadBoard() {
+  $('b-table').innerHTML = '<p class="hint">讀取中……</p>';
+  try { BOARD = Object.values(await SHC.loadPlayers()); } catch (e) { $('b-table').innerHTML = '<p class="msg">讀不到排行榜，請檢查網路。</p>'; return; }
+  renderBoard();
 }
-
-function showResult(id, rec) {
-  const sv = SAVE(), done = { ...sv.done }; delete done[id];
-  justUnlocked = SH_DATA.unlockedBy(id, done);
-  const n = SH_DATA.byId[id], ch = CHAPTERS[id], st = rec.stats;
-  $('result').innerHTML = `
-    <div class="kicker" style="color:#c99a2a">CHAPTER CLEAR</div>
-    <h2>${esc(ch.title)}</h2>
-    <div class="stamp">破 案</div>
-    <p>${esc(ch.clear.line)}</p>
-    <div class="orbs">${ch.clear.orbs.map(o => `<div class="orb"><b>${o[0]}</b>${esc(o[1])}</div>`).join('')}</div>
-    <div class="stats">
-      <div>⏱️ 遊玩時間<br><b>${fmtTime(st.playMs)}</b></div>
-      <div>🤔 推理表現<br><b>${predScore(ch, st)}</b></div>
-      <div>📜 丟錯證據<br><b>${st.wrongEvidence} 次</b></div>
-      <div>💫 被燙暈<br><b>${st.faints} 次</b></div>
-      <div>📄 瑪麗－安的筆記<br><b>${rec.pages} / 3</b></div>
-      <div>🗞️ 傳說真假<br><b>${rec.legends === null || rec.legends === undefined ? '沒有挑戰' : rec.legends + ' / 3'}</b></div>
-    </div>
-    ${justUnlocked.length ? `<div class="unlock">✨ 知識網路上亮起了：<b>${justUnlocked.map(x => SH_DATA.byId[x].name).join('、')}</b><br><small>${justUnlocked.map(x => SH_DATA.byId[x].name + '：' + SH_DATA.byId[x].tag).join('　')}</small></div>` : ''}
-    <div class="actions">
-      <button class="btn" id="res-map">回到知識網路 ▶</button>
-      <button class="btn ghost" id="res-card">查看${esc(n.name)}的檔案與影片</button>
-    </div>`;
-  $('res-map').onclick = () => openMap();
-  $('res-card').onclick = () => { openMap(); openNode(id); };
-  show('s-result');
+function renderBoard() {
+  if (!BOARD) return;
+  const kind = $('b-kind').value, scope = $('b-scope').value;
+  let rows = BOARD.filter(p => p && p.name && (scope === 'all' || (p.year === ST.year && (scope === 'year' || p.cls === ST.cls))));
+  let cols;
+  if (kind === 'score') {
+    rows.sort((a, b) => b.score - a.score || (b.net - a.net));
+    cols = [['分數', p => `<b>${p.score}</b>`], ['金幣', p => p.coins], ['破關', p => Object.keys(p.done || {}).length], ['全對', p => p.perfect]];
+  } else {
+    const id = kind.slice(2);
+    rows = rows.filter(p => p.done && p.done[id]).sort((a, b) => a.done[id].ms - b.done[id].ms);
+    cols = [['時間', p => `<b>${SHC.fmtTime(p.done[id].ms)}</b>`], ['結果', p => p.done[id].perfect ? '🌟 一次全對' : `重來 ${p.done[id].fails} 次`]];
+  }
+  const myIdx = rows.findIndex(p => p.sid === ST.sid);
+  $('b-me').innerHTML = myIdx >= 0 ? `你目前排名第 <b>${myIdx + 1}</b> 名（共 ${rows.length} 人）` : (kind === 'score' ? '' : '你還沒破關這位科學家');
+  const top = rows.slice(0, 30);
+  $('b-table').innerHTML = top.length ? `<table class="board"><tr><th>#</th><th>班級</th><th>姓名</th>${cols.map(c => `<th>${c[0]}</th>`).join('')}</tr>` +
+    top.map((p, i) => `<tr class="${p.sid === ST.sid ? 'me' : ''}"><td class="rk">${i + 1}</td><td>${esc(scope === 'all' ? p.year + '・' + p.cls : p.cls)}</td><td class="l">${esc(p.seat)} 號 ${esc(p.name)}</td>${cols.map(c => `<td>${c[1](p)}</td>`).join('')}</tr>`).join('') + '</table>'
+    : '<p class="hint" style="color:var(--soft)">還沒有人上榜，搶第一吧！</p>';
 }
 
-initLogin();
+/* ---------- 計時（只算畫面開著、正在玩的時間） ---------- */
+let timer = null, tick = 0;
+function startTimer() { stopTimer(); tick = Date.now(); timer = setInterval(() => { const now = Date.now(); const c = ST && CUR && ST.chapters[CUR]; if (c && !document.hidden && c.phase !== 'end') c.ms = (c.ms || 0) + (now - tick); tick = now; }, 1000); }
+function stopTimer() { clearInterval(timer); timer = null; }
+document.addEventListener('visibilitychange', () => { tick = Date.now(); if (document.hidden && ST) SHC.save(ST); });
+
+/* ---------- 開始章節 ---------- */
+async function startChapter(id) {
+  if (!ST.chapters[id]) {
+    if (ST.started > 0) { ST.coins += CONFIG.SUBSIDY; SHC.log('subsidy', { ch: id, coins: ST.coins }); toast(`💰 新劇本資金補助 +${CONFIG.SUBSIDY} 金幣`); }
+    ST.started++;
+    ST.chapters[id] = { phase: 'intro', fork: 0, attempt: 1, first: {}, bought: {}, fails: 0, ms: 0 };
+    SHC.log('start', { ch: id, coins: ST.coins });
+    await persist(); renderWallet(true);
+  }
+  if (ST.done[id] && ST.chapters[id]) ST.chapters[id].phase = 'end';
+  CUR = id; VIEW = 'play'; show('s-play'); startTimer(); render();
+}
+
+/* ---------- 劇本畫面 ---------- */
+function render() {
+  const ch = CHAPTERS[CUR], c = ST.chapters[CUR], P = $('play');
+  window.scrollTo(0, 0);
+  const steps = `<div class="steps">${ch.forks.map((f, i) => `<i class="${i < c.fork ? 'ok' : i === c.fork && c.phase === 'fork' ? 'now' : ''}"></i>`).join('')}</div>`;
+  const head = `<div class="stage-head"><div class="kicker">${esc(ch.place)}</div><h2>${esc(ch.title)}</h2><span class="meta">第 ${c.attempt} 次嘗試・⏱️ <span id="clock">${SHC.fmtTime(c.ms)}</span></span><button class="btn ghost" id="btn-hub" style="padding:5px 10px">⬅ 知識網路</button></div>`;
+
+  if (c.phase === 'intro') {
+    P.innerHTML = head + steps + `<div class="card">${c.attempt > 1 ? `<p><b>⏪ 時光倒流！</b>你回到了 1772 年的巴黎，重新做一次投資決定。之前做過的實驗結果，你都還記得。</p>` : ch.intro.map(t => `<p>${md(t)}</p>`).join('')}
+      <div class="actions"><button class="btn" id="go">${c.attempt > 1 ? '⏩ 直接進入第一個抉擇' : '開始投資 ▶'}</button></div></div>`;
+    $('go').onclick = async () => { c.phase = 'fork'; await persist(); render(); };
+  } else if (c.phase === 'fork') {
+    const f = ch.forks[c.fork], bought = c.bought[f.id] || [];
+    const opts = SHC.shuffle(f.options, ST.sid + f.id);
+    P.innerHTML = head + steps + `<div class="card">
+      <span class="year">${esc(f.year)}</span><h2>抉擇 ${c.fork + 1}：${esc(f.title)}</h2>
+      <div class="scene">${f.scene.map(t => `<p>${md(t)}</p>`).join('')}</div>
+      <div class="sec"><h3>📜 目前知道的證據</h3>${f.evidence.map(e => `<div class="ev">${md(e)}</div>`).join('')}
+        ${f.exps.filter(x => bought.includes(x.id)).map(x => `<div class="ev exp"><span class="tag">🔬 ${esc(x.name)}</span>${md(x.result)}</div>`).join('')}</div>
+      <div class="sec"><h3>🔬 要不要先做實驗？（每個 ${CONFIG.EXP_COST} 金幣）</h3>
+        <div class="exps">${f.exps.map(x => `<button class="exp-btn" data-x="${x.id}" ${bought.includes(x.id) || ST.coins < CONFIG.EXP_COST ? 'disabled' : ''}>${bought.includes(x.id) ? '✅ ' : '🔬 '}${esc(x.name)}<small>${bought.includes(x.id) ? '已完成' : ST.coins < CONFIG.EXP_COST ? '金幣不足' : `花 ${CONFIG.EXP_COST} 金幣，看實驗結果`}</small></button>`).join('')}</div>
+        <p class="hint" style="margin-top:6px">實驗能幫你判斷，但要花錢；你也可以不做實驗，直接下決定。</p></div>
+      <div class="sec"><h3>💼 ${esc(f.question)}</h3><div class="opts">${opts.map((o, k) => `<button class="opt" data-o="${o.id}"><div class="who">論點 ${'ABCD'[k]}</div><div class="txt">「${esc(o.text)}」</div><span class="go">支持這個論點</span></button>`).join('')}</div>
+      <p class="hint" style="margin-top:8px">💡 論點是誰提出的，要等你選了之後才會揭曉。<br>⚠️ 支持錯誤的論點，會掉進平行時空，扣 ${CONFIG.FAIL_COST} 金幣並回到本章開頭。</p></div></div>`;
+    P.querySelectorAll('.exp-btn').forEach(b => b.onclick = () => buyExp(f, b.dataset.x));
+    P.querySelectorAll('.opt').forEach(b => b.onclick = () => choose(f, f.options.find(o => o.id === b.dataset.o)));
+  } else if (c.phase === 'ok') {
+    const f = ch.forks[c.okFork];
+    P.innerHTML = head + steps + `<div class="card result-ok"><span class="badge">✅ 真實的歷史</span><h2 style="margin-top:6px">${esc(f.title)}</h2><p>${md(f.success)}</p>
+      <div class="actions"><button class="btn" id="go">${c.fork >= ch.forks.length ? '前往結算 ▶' : '繼續下一個抉擇 ▶'}</button></div></div>`;
+    $('go').onclick = async () => { c.phase = c.fork >= ch.forks.length ? 'end' : 'fork'; await persist(); render(); };
+  } else if (c.phase === 'fail') {
+    const f = ch.forks[c.failed.fork], o = f.options.find(x => x.id === c.failed.opt);
+    P.innerHTML = head + `<div class="card para"><span class="badge">🌀 平行時空</span><h2 style="margin-top:6px">如果……你支持了「${esc(o.text)}」</h2><p style="color:#bfb0f0;font-size:.9em">（這是<b style="color:#fff">${esc(o.who)}</b>的主張）</p>
+      <div id="story"></div><div id="after" class="hidden">
+        <div class="fiction">🌀 以上劇情<b>純屬虛構</b>。我們並沒有走向這樣的未來。</div>
+        <div class="real">📚 <b>真實歷史：</b>${md(o.fail.real)}</div>
+        <div class="loss">💸 這次投資失敗：−${CONFIG.FAIL_COST} 金幣（剩 ${ST.coins} 金幣）。時光倒流，回到本章開頭重新來過。</div>
+        <div class="actions"><button class="btn" id="go">⏪ 回到過去，重新投資</button></div></div>
+      <div class="actions" id="more-wrap"><button class="btn" id="more">繼續看 ▶</button></div></div>`;
+    let i = 0; const story = $('story');
+    const next = () => { if (i < o.fail.story.length) story.insertAdjacentHTML('beforeend', `<p>${md(o.fail.story[i++])}</p>`); if (i >= o.fail.story.length) { $('more-wrap').classList.add('hidden'); $('after').classList.remove('hidden'); } };
+    next(); $('more').onclick = next;
+    $('go').onclick = async () => { c.phase = 'intro'; delete c.failed; await persist(); if (!(await checkBankrupt())) render(); };
+  } else if (c.phase === 'end') {
+    renderEnd(head);
+  }
+  const hb = $('btn-hub'); if (hb) hb.onclick = async () => { await persist(); openHub(); };
+}
+setInterval(() => { const el = $('clock'); if (el && CUR && ST.chapters[CUR]) el.textContent = SHC.fmtTime(ST.chapters[CUR].ms); }, 1000);
+
+async function buyExp(f, xid) {
+  const c = ST.chapters[CUR], x = f.exps.find(e => e.id === xid);
+  if (ST.coins < CONFIG.EXP_COST || (c.bought[f.id] || []).includes(xid)) return;
+  ST.coins -= CONFIG.EXP_COST; c.bought[f.id] = [...(c.bought[f.id] || []), xid];
+  SHC.log('exp', { ch: CUR, fork: f.id, exp: xid, coins: ST.coins });
+  await persist(); renderWallet(true); render();
+  toast(`🔬 ${x.name}：結果已加入證據`);
+}
+
+async function choose(f, o) {
+  if (!(await confirmBox('💼 確定投資？', `你要支持這個論點嗎？<br>「${esc(o.text)}」`, '確定支持'))) return;
+  const ch = CHAPTERS[CUR], c = ST.chapters[CUR];
+  const firstTime = c.first[f.id] === undefined;
+  if (firstTime) c.first[f.id] = !!o.correct;
+  SHC.log('choose', { ch: CUR, fork: f.id, opt: o.id, correct: !!o.correct, attempt: c.attempt, first: firstTime, coins: ST.coins });
+  if (o.correct) {
+    c.fork++; c.okFork = ch.forks.indexOf(f); c.phase = 'ok';
+    if (c.fork >= ch.forks.length) finishChapter();
+  } else {
+    // 失敗：當下就扣錢、重來（重新整理也躲不掉）
+    ST.coins -= CONFIG.FAIL_COST; ST.restarts++; c.fails++; c.attempt++; c.fork = 0;
+    c.phase = 'fail'; c.failed = { fork: ch.forks.indexOf(f), opt: o.id };
+    SHC.log('fail', { ch: CUR, fork: f.id, opt: o.id, coins: ST.coins });
+  }
+  await persist(); renderWallet(true); render();
+}
+
+// 最後一個抉擇選對：當下就擲骰、記錄破關（避免重新整理重擲）
+function finishChapter() {
+  const ch = CHAPTERS[CUR], c = ST.chapters[CUR];
+  const lucky = ch.forks.filter(f => c.first[f.id]).length;
+  c.rolls = Array.from({ length: lucky }, () => SHC.roll());
+  const gain = c.rolls.reduce((a, b) => a + b, 0);
+  ST.coins += gain;
+  const perfect = c.fails === 0 && lucky === ch.forks.length;
+  if (perfect) ST.perfect++;
+  ST.done[CUR] = { ms: c.ms, at: Date.now(), perfect, fails: c.fails, rolls: c.rolls, gain };
+  SHC.log('clear', { ch: CUR, ms: c.ms, perfect, fails: c.fails, rolls: c.rolls, coins: ST.coins });
+}
+
+function renderEnd(head) {
+  const ch = CHAPTERS[CUR], c = ST.chapters[CUR], d = ST.done[CUR], P = $('play');
+  const unlocked = SH_DATA.unlockedBy(CUR, Object.fromEntries(Object.keys(ST.done).filter(k => k !== CUR).map(k => [k, 1])));
+  P.innerHTML = head + `<div class="card"><div class="kicker" style="color:#c99a2a">CHAPTER CLEAR</div><h2>🎉 ${esc(ch.title)}・破關！</h2>
+    ${ch.ending.map(t => `<p>${md(t)}</p>`).join('')}
+    <div class="orbs">${ch.orbs.map(o => `<div class="orb"><b>${o[0]}</b>${esc(o[1])}</div>`).join('')}</div>
+    <h3 style="margin-top:14px">📊 投資結算</h3>
+    <div class="settle">${ch.forks.map(f => `<div><span>抉擇：${esc(f.title)}</span><span>${c.first[f.id] ? '✅ 第一次就選對' : '❌ 有選錯過'}</span></div>`).join('')}
+      <div><span>⏱️ 破關時間</span><b>${SHC.fmtTime(d.ms)}</b></div><div><span>🌀 掉進平行時空</span><b>${d.fails} 次</b></div></div>
+    <div id="dice-area">${d.rolls.length ? `<p>你有 <b>${d.rolls.length}</b> 個抉擇第一次就選對，可以擲 ${d.rolls.length} 顆投資回報骰！</p><div class="dice" id="dice">${d.rolls.map(() => '<div class="die">?</div>').join('')}</div><div class="actions" style="justify-content:center"><button class="btn" id="roll">🎲 擲骰領取投資回報</button></div>` : '<p>這次沒有第一次就選對的抉擇，沒有投資回報骰。下一位科學家再加油！</p>'}</div>
+    <div id="after-dice" class="${d.rolls.length && !c.rolled ? 'hidden' : ''}">
+      ${d.perfect ? '<p>🌟 <b>一次全對破關！</b>總分額外 +5 分。</p>' : ''}
+      ${unlocked.length ? `<p>✨ 知識網路上亮起了：<b>${unlocked.map(x => SH_DATA.byId[x].name).join('、')}</b></p>` : ''}
+      <div class="actions"><button class="btn" id="back">回到知識網路 ▶</button></div></div></div>`;
+  const showAfter = () => $('after-dice').classList.remove('hidden');
+  const rb = $('roll');
+  if (rb) {
+    if (c.rolled) { [...document.querySelectorAll('#dice .die')].forEach((el, i) => el.textContent = d.rolls[i]); rb.remove(); $('dice').insertAdjacentHTML('afterend', `<p style="text-align:center">投資回報 <b>+${d.gain} 金幣</b></p>`); }
+    else rb.onclick = async () => {
+      rb.disabled = true;
+      const dice = [...document.querySelectorAll('#dice .die')];
+      dice.forEach(el => el.classList.add('rolling'));
+      const spin = setInterval(() => dice.forEach(el => { if (el.classList.contains('rolling')) el.textContent = CONFIG.DICE[Math.floor(Math.random() * 6)]; }), 70);
+      for (let i = 0; i < dice.length; i++) { await new Promise(r => setTimeout(r, 600)); dice[i].classList.remove('rolling'); dice[i].textContent = d.rolls[i]; }
+      clearInterval(spin);
+      c.rolled = true; await persist(); renderWallet(true);
+      rb.remove(); $('dice').insertAdjacentHTML('afterend', `<p style="text-align:center">投資回報 <b>+${d.gain} 金幣</b>！</p>`);
+      showAfter();
+    };
+  }
+  $('back').onclick = async () => { await persist(); openHub(); };
+}
+
+/* ---------- 破產 ---------- */
+async function checkBankrupt() {
+  if (!ST || ST.coins >= 0) return false;
+  if (ST.loans < CONFIG.MAX_LOANS) {
+    await confirmBox('💸 你破產了！', `金幣變成 <b>${ST.coins}</b>。大師銀行願意借你 <b>8 金幣</b>（第 ${ST.loans + 1} 次，最多 2 次）。<br>借款一次總分 −3；之後金幣夠時可以還款，還款一次總分 +4。`, '🏦 向大師銀行借錢', null);
+    ST.loans++; ST.coins += CONFIG.LOAN; SHC.log('loan', { n: ST.loans, coins: ST.coins });
+    await persist(); renderWallet(true);
+    if (VIEW === 'play') render();
+    return false;
+  }
+  await confirmBox('☠️ 第三次破產', '大師銀行不再借錢給你了……<br>你的投資事業<b>從頭開始</b>：金幣回到 8 枚，所有科學家重新挑戰。<br>（之前的遊戲歷程都會保留給老師看）', '重新開始', null);
+  ST.gameOvers++; SHC.log('gameover', { n: ST.gameOvers });
+  SHC.freshRun(ST);
+  await persist(); openHub();
+  return true;
+}
 </script>
 </body>
 </html>

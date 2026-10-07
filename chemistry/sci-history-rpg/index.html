@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>時光手稿：科學史大冒險</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Noto+Serif+TC:wght@700;900&family=Silkscreen&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --night: #141228; --night-2: #1f1b3d; --night-3: #2c2656; --gold: #f3c64b; --gold-2: #c99a2a;
+    --paper: #f6eedb; --paper-2: #e9dcbc; --ink: #2a2238; --soft: #b9b2d6; --red: #e4572e; --green: #3fae6a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body { font-family: 'Noto Sans TC', sans-serif; background: var(--night); color: #fff; overflow-x: hidden; }
+  body.playing { overflow: hidden; touch-action: none; }
+  .hidden { display: none !important; }
+  button { font: inherit; cursor: pointer; }
+  .serif { font-family: 'Noto Serif TC', serif; }
+  .btn { border: none; border-radius: 10px; padding: 11px 18px; font-weight: 700; background: var(--gold); color: var(--ink); box-shadow: 0 4px 0 var(--gold-2); transition: transform .08s; }
+  .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--gold-2); }
+  .btn.ghost { background: transparent; color: var(--soft); box-shadow: none; border: 2px solid var(--night-3); }
+  .btn.red { background: var(--red); color: #fff; box-shadow: 0 4px 0 #a33a1c; }
+  .btn:disabled { opacity: .4; cursor: default; }
+
+  /* 星空背景 */
+  .sky { position: fixed; inset: 0; z-index: -1; background: radial-gradient(ellipse at 20% 10%, #2c2656 0%, transparent 55%), radial-gradient(ellipse at 90% 90%, #3a1f3d 0%, transparent 50%), var(--night); }
+  .sky::before { content: ''; position: absolute; inset: 0; background-image: radial-gradient(1px 1px at 10% 20%, #fff8, transparent), radial-gradient(1px 1px at 30% 70%, #fff6, transparent), radial-gradient(1.5px 1.5px at 60% 30%, #fffa, transparent), radial-gradient(1px 1px at 80% 60%, #fff7, transparent), radial-gradient(1px 1px at 45% 85%, #fff5, transparent), radial-gradient(1.5px 1.5px at 90% 15%, #fff9, transparent); background-size: 300px 300px; }
+
+  /* ===== 登入 ===== */
+  #s-login { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
+  .login-card { width: min(440px, 100%); text-align: center; }
+  .logo-book { width: 96px; height: 96px; margin: 0 auto 10px; image-rendering: pixelated; animation: float 3s ease-in-out infinite; }
+  @keyframes float { 50% { transform: translateY(-6px); } }
+  .kicker { font-family: 'Silkscreen', monospace; color: var(--gold); letter-spacing: .15em; font-size: .8em; }
+  h1.title { font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: 2.2em; margin: 4px 0 6px; text-shadow: 0 3px 0 #000a; }
+  .lead { color: var(--soft); line-height: 1.7; margin-bottom: 20px; font-size: .95em; }
+  .form { background: var(--night-2); border: 2px solid var(--night-3); border-radius: 16px; padding: 18px; text-align: left; }
+  .form label { display: block; font-size: .85em; color: var(--soft); margin: 10px 0 4px; }
+  .form input { width: 100%; padding: 11px 12px; border-radius: 9px; border: 2px solid var(--night-3); background: #0f0d20; color: #fff; font: inherit; font-size: 1.05em; }
+  .form input:focus { outline: none; border-color: var(--gold); }
+  .form .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .form .btn { width: 100%; margin-top: 16px; font-size: 1.1em; }
+  .welcome { background: var(--night-2); border: 2px solid var(--gold-2); border-radius: 16px; padding: 18px; }
+  .welcome b { color: var(--gold); }
+  .welcome .btns { display: flex; gap: 8px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+  .msg { color: #ff9c86; font-size: .9em; margin-top: 8px; min-height: 1.2em; }
+
+  /* ===== 知識網路 ===== */
+  #s-map { min-height: 100vh; padding: 14px 16px 30px; max-width: 1100px; margin: 0 auto; }
+  .map-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+  .map-head h2 { font-family: 'Noto Serif TC', serif; font-size: 1.5em; }
+  .map-head .who { margin-left: auto; color: var(--soft); font-size: .9em; display: flex; gap: 8px; align-items: center; }
+  .map-head .who button { background: none; border: 1px solid var(--night-3); color: var(--soft); border-radius: 8px; padding: 4px 10px; font-size: .85em; }
+  .progress { color: var(--soft); font-size: .9em; margin-bottom: 10px; }
+  .progress b { color: var(--gold); }
+  .net-wrap { background: rgba(20,18,40,.6); border: 2px solid var(--night-3); border-radius: 18px; padding: 6px; overflow-x: auto; }
+  #net { width: 100%; min-width: 640px; display: block; }
+  .net-line { stroke: #4a4378; stroke-width: 2; stroke-dasharray: 6 6; fill: none; }
+  .net-line.lit { stroke: var(--gold); stroke-dasharray: none; opacity: .8; }
+  .node { cursor: pointer; }
+  .node circle.base { stroke-width: 3; }
+  .node.locked circle.base { fill: #1f1b3d; stroke: #4a4378; }
+  .node.open circle.base { stroke: var(--gold); }
+  .node.open circle.glow { fill: var(--gold); opacity: .25; animation: pulse 1.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+  @keyframes pulse { 50% { opacity: .05; transform: scale(1.25); } }
+  .node.done circle.base { stroke: #fff; }
+  .node text { fill: #fff; font-family: 'Noto Sans TC', sans-serif; text-anchor: middle; pointer-events: none; }
+  .node.locked text { fill: #7d76a8; }
+  .node .ini { font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: 22px; }
+  .node .nm { font-size: 15px; font-weight: 700; }
+  .node .tg { font-size: 11px; fill: var(--soft); }
+  .node .new { fill: var(--red); font-size: 11px; font-weight: 900; }
+  .axis text { fill: #6c66a0; font-size: 12px; font-family: 'Silkscreen', monospace; text-anchor: middle; }
+  .swipe { display: none; color: var(--soft); font-size: .8em; text-align: center; margin-top: 6px; }
+  @media (max-width: 700px) { .swipe { display: block; } }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; color: var(--soft); font-size: .82em; margin-top: 10px; }
+  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+
+  /* 彈出卡片 */
+  .modal-bg { position: fixed; inset: 0; background: #0009; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .card { background: var(--paper); color: var(--ink); border-radius: 16px; width: min(560px, 100%); max-height: 90vh; overflow: auto; padding: 22px; position: relative; box-shadow: 0 10px 40px #000a; }
+  .card .x { position: absolute; right: 12px; top: 10px; background: none; border: none; font-size: 1.4em; color: #8a7d64; }
+  .card h3 { font-family: 'Noto Serif TC', serif; font-size: 1.6em; }
+  .card .en { color: #8a7d64; font-size: .9em; }
+  .card .tag { display: inline-block; background: var(--ink); color: var(--gold); border-radius: 6px; padding: 2px 10px; font-size: .85em; margin: 8px 0; }
+  .card p, .card li { line-height: 1.7; }
+  .card ul { padding-left: 1.3em; margin: 6px 0 10px; }
+  .card h4 { margin: 14px 0 4px; color: #6b4e2e; }
+  .card .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+  .card .actions .btn.ghost { color: #6b4e2e; border-color: var(--paper-2); }
+  .card .vids { display: grid; gap: 8px; margin-top: 6px; }
+  .card .vid { display: flex; gap: 10px; align-items: center; background: #fff; border: 1px solid var(--paper-2); border-radius: 10px; padding: 8px; cursor: pointer; text-align: left; color: var(--ink); }
+  .card .vid img { width: 96px; height: 54px; object-fit: cover; border-radius: 6px; background: #ddd; flex: none; }
+  .card .note { background: #fff6d6; border-left: 4px solid var(--gold-2); padding: 8px 12px; border-radius: 6px; font-size: .92em; }
+  .video-box { width: min(860px, 100%); }
+  .video-box .frame { position: relative; padding-top: 56.25%; background: #000; border-radius: 12px; overflow: hidden; }
+  .video-box iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .video-box .bar { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; gap: 10px; }
+  .video-box a { color: var(--gold); font-size: .9em; }
+
+  /* ===== 遊戲畫面 ===== */
+  #s-game { position: fixed; inset: 0; display: flex; flex-direction: column; background: #0b0a16; }
+  #hud { display: flex; align-items: center; gap: 10px; padding: 8px 12px; padding-top: max(8px, env(safe-area-inset-top)); background: #000; border-bottom: 2px solid var(--night-3); }
+  #hearts { font-size: 1.3em; letter-spacing: 2px; white-space: nowrap; }
+  .heart { color: #ff4d6d; text-shadow: 0 0 4px #ff4d6d88; }
+  .heart.empty { color: #3a3550; text-shadow: none; }
+  #room-name { flex: 1; text-align: center; font-family: 'Noto Serif TC', serif; color: var(--gold); font-size: .95em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hud-btn { background: var(--night-2); border: 1px solid var(--night-3); color: #fff; border-radius: 8px; padding: 5px 9px; position: relative; }
+  #ev-count { position: absolute; top: -6px; right: -6px; background: var(--red); border-radius: 9px; font-size: 10px; padding: 0 5px; }
+  #stage { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+  #cv { image-rendering: pixelated; image-rendering: crisp-edges; border: 2px solid #000; box-shadow: 0 0 0 3px var(--night-3); background: #000; }
+  #fade { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; transition: opacity .2s; }
+  #fade.on { opacity: 1; }
+  #toast { position: absolute; top: 10px; left: 50%; transform: translate(-50%, -20px); background: #000d; border: 2px solid var(--gold); border-radius: 10px; padding: 8px 14px; font-size: .95em; opacity: 0; transition: .25s; pointer-events: none; white-space: nowrap; max-width: 92%; overflow: hidden; text-overflow: ellipsis; z-index: 5; }
+  #toast.on { opacity: 1; transform: translate(-50%, 0); }
+  #banner { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: min(560px, 94%); background: #2a0d0dee; border: 2px solid #ff7a3a; border-radius: 12px; padding: 8px 12px; z-index: 4; box-shadow: 0 0 20px #ff5a1a66; }
+  #banner .claim { font-weight: 700; line-height: 1.5; }
+  #banner .extra { color: #ffd8a8; font-size: .88em; margin-top: 4px; }
+  #banner .shield { display: flex; gap: 4px; margin-bottom: 5px; }
+  #banner .shield i { flex: 1; height: 6px; border-radius: 3px; background: #ffb347; }
+  #banner .shield i.broken { background: #4a2a2a; }
+
+  /* 對話框 */
+  #dlg { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); width: min(720px, 96%); background: #0f0d20f2; border: 3px solid var(--paper); border-radius: 12px; padding: 12px 14px; display: flex; gap: 12px; z-index: 6; box-shadow: 0 6px 0 #000; cursor: pointer; }
+  #dlg-face { flex: none; width: 60px; height: 60px; background: #2c2656; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  #dlg-face canvas { image-rendering: pixelated; width: 56px; height: 56px; }
+  #dlg-main { flex: 1; min-width: 0; }
+  #dlg-name { color: var(--gold); font-weight: 900; font-size: .9em; margin-bottom: 3px; }
+  #dlg-text { line-height: 1.65; font-size: 1.02em; min-height: 3.3em; }
+  #dlg-text b { color: var(--gold); }
+  #dlg-next { position: absolute; right: 12px; bottom: 6px; color: var(--gold); animation: blink 1s infinite; font-size: .8em; }
+  @keyframes blink { 50% { opacity: 0; } }
+  #dlg-choices { display: grid; gap: 6px; margin-top: 8px; }
+  .choice { text-align: left; background: var(--night-3); border: 2px solid #4a4378; color: #fff; border-radius: 9px; padding: 8px 10px; line-height: 1.45; }
+  .choice:hover { border-color: var(--gold); }
+  .choice .ck { display: inline-block; background: var(--gold); color: var(--ink); border-radius: 5px; width: 20px; text-align: center; margin-right: 8px; font-weight: 900; font-size: .85em; }
+
+  /* 實驗台 */
+  #panel { position: absolute; inset: 0; background: #000b; z-index: 8; display: flex; align-items: center; justify-content: center; padding: 10px; }
+  .panel-card { background: var(--paper); color: var(--ink); border-radius: 14px; width: min(620px, 100%); max-height: 100%; display: flex; flex-direction: column; box-shadow: 0 10px 30px #000; border: 4px solid #6b4e2e; }
+  #panel-title { background: #6b4e2e; color: var(--paper); font-family: 'Noto Serif TC', serif; padding: 9px 14px; font-size: 1.05em; }
+  #panel-body { padding: 12px 16px 16px; overflow: auto; }
+  .exp p { line-height: 1.7; margin: 6px 0; }
+  .exp p.big { font-size: 1.12em; }
+  .exp p.q { background: #fff; border: 2px dashed #c9b49a; border-radius: 10px; padding: 8px 12px; font-weight: 700; }
+  .exp-svg { width: 100%; max-height: 190px; display: block; background: #fffaf0; border-radius: 10px; border: 1px solid var(--paper-2); }
+  .exp-btns { display: grid; gap: 8px; margin-top: 12px; }
+  .exp-btns .btn { width: 100%; }
+  .exp-btns .btn.opt { background: #fff; color: var(--ink); box-shadow: 0 3px 0 #c9b49a; border: 2px solid #c9b49a; text-align: left; font-weight: 700; }
+  .fb { border-radius: 10px; padding: 10px 12px; margin-top: 10px; line-height: 1.7; }
+  .fb.ok { background: #e2f5e8; border: 2px solid var(--green); }
+  .fb.no { background: #fff4d6; border: 2px solid var(--gold-2); }
+  .fb.neutral { background: #ece7f8; border: 2px solid #9a8ccc; }
+
+  /* 背包 */
+  #bag { position: absolute; inset: 0; background: #000b; z-index: 7; display: flex; align-items: center; justify-content: center; padding: 10px; }
+  .bag-card { background: var(--night-2); border: 3px solid var(--gold-2); border-radius: 14px; width: min(560px, 100%); max-height: 100%; overflow: auto; padding: 14px; position: relative; }
+  .bag-card h3 { color: var(--gold); margin: 10px 0 6px; font-size: 1em; }
+  .bag-card h3 small { color: var(--soft); font-weight: 400; }
+  #bag-close { position: absolute; right: 10px; top: 8px; background: none; border: none; color: #fff; font-size: 1.3em; }
+  .bag-item { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: #0f0d20; border: 2px solid var(--night-3); border-radius: 10px; padding: 8px 10px; color: #fff; margin-bottom: 6px; }
+  .bag-item.on { border-color: var(--gold); background: #2a2440; }
+  .bag-item .bi { font-size: 1.5em; }
+  .bag-item .bt { flex: 1; display: flex; flex-direction: column; }
+  .bag-item small { color: var(--soft); line-height: 1.5; }
+  .bag-item .sel { font-size: .8em; color: var(--gold); white-space: nowrap; }
+  .bag-card .empty { color: var(--soft); font-size: .9em; padding: 4px 0 8px; }
+
+  /* 手機控制器 */
+  #pad { display: flex; justify-content: space-between; align-items: center; padding: 10px 18px; padding-bottom: max(12px, env(safe-area-inset-bottom)); background: #000; border-top: 2px solid var(--night-3); user-select: none; -webkit-user-select: none; }
+  .dpad { display: grid; grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(3, 50px); }
+  .dpad button { background: var(--night-3); border: none; color: #fff; font-size: 1.2em; border-radius: 10px; touch-action: none; }
+  .dpad button.down { background: var(--gold); color: var(--ink); }
+  .dpad .u { grid-column: 2; grid-row: 1; } .dpad .l { grid-column: 1; grid-row: 2; } .dpad .r { grid-column: 3; grid-row: 2; } .dpad .d { grid-column: 2; grid-row: 3; }
+  .ab { display: flex; gap: 14px; align-items: center; }
+  .ab button { width: 66px; height: 66px; border-radius: 50%; border: none; font-weight: 900; font-size: 1.3em; touch-action: none; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+  #btn-a { background: var(--red); color: #fff; box-shadow: 0 4px 0 #8a2f15; transform: translateY(-14px); }
+  #btn-b { background: var(--gold); color: var(--ink); box-shadow: 0 4px 0 var(--gold-2); }
+  #btn-b small, #btn-a small { font-size: .55em; margin-top: 2px; }
+  #btn-a:active, #btn-b:active { filter: brightness(1.2); }
+  .keyhint { display: none; color: var(--soft); font-size: .85em; text-align: center; flex: 1; }
+  @media (hover: hover) and (pointer: fine) {
+    .keyhint { display: block; }
+    .dpad { grid-template-columns: repeat(3, 38px); grid-template-rows: repeat(3, 38px); }
+    .ab button { width: 52px; height: 52px; font-size: 1.1em; }
+  }
+  @media (max-aspect-ratio: 4/5) { #stage { align-items: flex-start; padding-top: 10px; } }
+  @media (max-height: 560px) and (orientation: landscape) {
+    #hud { padding-top: 4px; padding-bottom: 4px; }
+    #pad { position: absolute; inset: auto 0 0 0; background: transparent; border: none; pointer-events: none; }
+    #pad > * { pointer-events: auto; opacity: .85; }
+    .keyhint { display: none !important; }
+  }
+
+  /* ===== 結算 ===== */
+  #s-result { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px 16px; }
+  .result { width: min(600px, 100%); background: var(--paper); color: var(--ink); border-radius: 18px; padding: 24px; box-shadow: 0 10px 40px #000a; text-align: center; }
+  .result h2 { font-family: 'Noto Serif TC', serif; font-size: 1.7em; }
+  .result .stamp { display: inline-block; border: 3px solid var(--red); color: var(--red); font-weight: 900; padding: 2px 14px; border-radius: 8px; transform: rotate(-6deg); margin: 8px 0 12px; font-family: 'Noto Serif TC', serif; }
+  .orbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
+  .orb { background: var(--ink); color: #fff; border-radius: 12px; padding: 10px 6px; font-size: .88em; line-height: 1.4; }
+  .orb b { display: block; color: var(--gold); font-size: 1.5em; }
+  .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 12px 0; text-align: left; }
+  .stats div { background: #fff; border: 1px solid var(--paper-2); border-radius: 10px; padding: 8px 12px; font-size: .92em; }
+  .stats b { font-size: 1.2em; color: #6b4e2e; }
+  .unlock { background: var(--night); color: #fff; border-radius: 12px; padding: 12px; margin: 12px 0; }
+  .unlock b { color: var(--gold); }
+  .result .actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 14px; }
+  .result .btn.ghost { color: #6b4e2e; border-color: var(--paper-2); }
+</style>
+</head>
+<body>
+<div class="sky"></div>
+
+<!-- ① 登入 -->
+<section id="s-login">
+  <div class="login-card">
+    <canvas class="logo-book" id="logo" width="96" height="96"></canvas>
+    <div class="kicker">TIME MANUSCRIPT</div>
+    <h1 class="title">時光手稿</h1>
+    <p class="lead">科學史大冒險<br>迷思魔燒掉了科學家的思考紀錄。<br>回到過去，用證據把它們找回來！</p>
+    <div class="form" id="login-form">
+      <div class="row">
+        <div><label>班級</label><input id="in-cls" placeholder="例：101" maxlength="10"></div>
+        <div><label>座號</label><input id="in-seat" type="number" min="1" max="99" placeholder="例：7"></div>
+      </div>
+      <label>姓名</label><input id="in-name" maxlength="12" placeholder="你的名字">
+      <button class="btn" id="btn-join">翻開時光手稿 ▶</button>
+      <div class="msg" id="login-msg"></div>
+    </div>
+    <div class="welcome hidden" id="welcome">
+      <div>歡迎回來，<b id="wel-name"></b></div>
+      <div class="btns"><button class="btn" id="btn-continue">繼續冒險 ▶</button><button class="btn ghost" id="btn-switch">換人登入</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ② 知識網路 -->
+<section id="s-map" class="hidden">
+  <div class="map-head">
+    <h2>🌌 科學家知識網路</h2>
+    <div class="who"><span id="map-who"></span><button id="btn-logout">換人</button></div>
+  </div>
+  <div class="progress" id="map-progress"></div>
+  <div class="net-wrap"><svg id="net" viewBox="0 0 1000 620"></svg></div>
+  <div class="swipe">← 左右滑動看完整的知識網路 →</div>
+  <div class="legend">
+    <span><i style="background:#fff;border:2px solid #fff"></i>已攻略</span>
+    <span><i style="background:var(--gold)"></i>已亮起，可以攻略</span>
+    <span><i style="background:#1f1b3d;border:2px solid #4a4378"></i>還沒亮起</span>
+    <span>📌 攻略一位科學家後，受他影響的科學家就會亮起</span>
+  </div>
+</section>
+
+<!-- ③ 遊戲 -->
+<section id="s-game" class="hidden">
+  <div id="hud">
+    <div id="hearts"></div>
+    <div id="room-name"></div>
+    <button class="hud-btn" id="btn-bag" title="背包（I）">🎒<span id="ev-count">0</span></button>
+    <button class="hud-btn" id="btn-sound" title="音效">🔊</button>
+    <button class="hud-btn" id="btn-exit" title="存檔並回到知識網路">💾</button>
+  </div>
+  <div id="stage">
+    <canvas id="cv"></canvas>
+    <div id="fade"></div>
+    <div id="toast"></div>
+    <div id="banner" class="hidden"></div>
+    <div id="dlg" class="hidden">
+      <div id="dlg-face"></div>
+      <div id="dlg-main"><div id="dlg-name"></div><div id="dlg-text"></div><div id="dlg-choices"></div></div>
+      <div id="dlg-next">▼</div>
+    </div>
+    <div id="bag" class="hidden"><div class="bag-card"><button id="bag-close">✕</button><div id="bag-body"></div></div></div>
+    <div id="panel" class="hidden"><div class="panel-card"><div id="panel-title"></div><div id="panel-body"></div></div></div>
+  </div>
+  <div id="pad">
+    <div class="dpad">
+      <button class="u" data-k="up">▲</button><button class="l" data-k="left">◀</button>
+      <button class="r" data-k="right">▶</button><button class="d" data-k="down">▼</button>
+    </div>
+    <div class="keyhint">鍵盤：方向鍵／WASD 移動　Z／空白鍵＝A　X＝B　I＝背包</div>
+    <div class="ab"><button id="btn-b"><span>🎒</span><small>B</small></button><button id="btn-a">A<small>調查</small></button></div>
+  </div>
+</section>
+
+<!-- ④ 結算 -->
+<section id="s-result" class="hidden"><div class="result" id="result"></div></section>
+
+<!-- 卡片 -->
+<div class="modal-bg hidden" id="m-node"><div class="card" id="node-card"></div></div>
+<div class="modal-bg hidden" id="m-video"><div class="video-box"><div class="frame" id="video-frame"></div>
+  <div class="bar"><span id="video-title"></span><span><a id="video-link" target="_blank" rel="noopener">在 YouTube 開啟 ↗</a>　<button class="btn" id="video-close">關閉</button></span></div></div></div>
+
+<script src="data.js?v=20261007a"></script>
+<script src="sprites.js?v=20261007a"></script>
+<script src="engine.js?v=20261007a"></script>
+<script src="ch-lavoisier.js?v=20261007a"></script>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const md = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+const CHAPTERS = { lavoisier: CH_LAVOISIER };
+const PKEY = 'sci-history-player';
+let PLAYER = null, justUnlocked = [];
+
+function show(id) {
+  ['s-login', 's-map', 's-game', 's-result'].forEach(s => $(s).classList.toggle('hidden', s !== id));
+  document.body.classList.toggle('playing', id === 's-game');
+  window.scrollTo(0, 0);
+}
+
+/* ---------- 登入 ---------- */
+const toHalf = s => String(s ?? '').replace(/[！-～]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0)).trim();
+function loadPlayer() { try { return JSON.parse(localStorage.getItem(PKEY)); } catch (e) { return null; } }
+function initLogin() {
+  const p = loadPlayer();
+  $('login-form').classList.toggle('hidden', !!p);
+  $('welcome').classList.toggle('hidden', !p);
+  if (p) $('wel-name').textContent = `${p.cls} 班 ${p.seat} 號 ${p.name}`;
+  const lg = $('logo').getContext('2d'); lg.imageSmoothingEnabled = false; lg.clearRect(0, 0, 96, 96); lg.drawImage(SPR.obj('portal'), 0, 0, 96, 96);
+  show('s-login');
+}
+$('btn-join').onclick = () => {
+  const cls = toHalf($('in-cls').value).toUpperCase(), seat = parseInt(toHalf($('in-seat').value), 10), name = $('in-name').value.trim();
+  if (!cls || !seat || !name) { $('login-msg').textContent = '班級、座號、姓名都要填喔！'; return; }
+  PLAYER = { cls, seat, name, sid: `${cls}_${seat}`.replace(/[^\w一-鿿-]/g, '_') };
+  try { localStorage.setItem(PKEY, JSON.stringify(PLAYER)); } catch (e) {}
+  openMap();
+};
+['in-cls', 'in-seat', 'in-name'].forEach(id => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-join').click(); }));
+$('btn-continue').onclick = () => { PLAYER = loadPlayer(); openMap(); };
+$('btn-switch').onclick = () => { try { localStorage.removeItem(PKEY); } catch (e) {} initLogin(); };
+$('btn-logout').onclick = () => { try { localStorage.removeItem(PKEY); } catch (e) {} initLogin(); };
+
+/* ---------- 知識網路 ---------- */
+const SAVE = () => { try { return JSON.parse(localStorage.getItem(`sci-history-v1:${PLAYER.sid}`)) || { done: {}, chapters: {} }; } catch (e) { return { done: {}, chapters: {} }; } };
+function openMap() {
+  show('s-map');
+  $('map-who').textContent = `🕵️ ${PLAYER.cls} 班 ${PLAYER.seat} 號 ${PLAYER.name}`;
+  drawNet();
+}
+function drawNet() {
+  const sv = SAVE(), done = sv.done;
+  const N = SH_DATA.NODES, X = n => 60 + n.x * 8.8, Y = n => 40 + n.y * 5.2;
+  const nDone = N.filter(n => done[n.id]).length, nOpen = N.filter(n => SH_DATA.status(n.id, done) === 'open').length;
+  $('map-progress').innerHTML = `已攻略 <b>${nDone}</b> / ${N.length} 位科學家　·　亮起待攻略 <b>${nOpen}</b> 位`;
+  let s = '<g class="axis"><line x1="40" y1="590" x2="960" y2="590" stroke="#3a3466"/><text x="90" y="610">◀ 較早</text><text x="910" y="610">較晚 ▶</text></g>';
+  N.forEach(n => n.needs.forEach(id => {
+    const a = SH_DATA.byId[id], lit = !!done[id];
+    const mx = (X(a) + X(n)) / 2;
+    s += `<path class="net-line ${lit ? 'lit' : ''}" d="M${X(a)} ${Y(a)} C${mx} ${Y(a)}, ${mx} ${Y(n)}, ${X(n)} ${Y(n)}"/>`;
+  }));
+  N.forEach(n => {
+    const st = SH_DATA.status(n.id, done), x = X(n), y = Y(n);
+    const fill = st === 'locked' ? '' : `fill="${n.color}"`;
+    s += `<g class="node ${st}" data-id="${n.id}" transform="translate(${x},${y})">
+      ${st === 'open' ? '<circle class="glow" r="40"/>' : ''}
+      <circle class="base" r="32" ${fill}/>
+      <text class="ini" y="8">${st === 'locked' ? '🔒' : esc(n.name[0])}</text>
+      ${st === 'done' ? '<text y="-38" style="font-size:16px">⭐</text>' : ''}
+      ${justUnlocked.includes(n.id) ? '<text class="new" y="-40">NEW!</text>' : ''}
+      <text class="nm" y="52">${esc(n.name)}</text>
+      <text class="tg" y="68">${n.year}・${esc(n.tag)}</text>
+    </g>`;
+  });
+  $('net').innerHTML = s;
+  $('net').querySelectorAll('.node').forEach(g => g.onclick = () => openNode(g.dataset.id));
+}
+
+function openNode(id) {
+  const n = SH_DATA.byId[id], sv = SAVE(), st = SH_DATA.status(id, sv.done), ch = CHAPTERS[id];
+  const saved = sv.chapters[id];
+  let html = `<button class="x" onclick="closeModal('m-node')">✕</button>
+    <h3>${esc(n.name)}</h3><div class="en">${esc(n.en)}（${n.life}）</div><div class="tag">${esc(n.tag)}</div>`;
+  if (st === 'locked') {
+    const need = n.needs.filter(x => !sv.done[x]).map(x => SH_DATA.byId[x].name).join('、');
+    html += `<p class="note">🔒 先攻略 <b>${esc(need)}</b>，這位科學家才會亮起。<br>科學家的發現，都是站在前人的肩膀上。</p>`;
+  } else {
+    html += `<p>${esc(n.teaser)}</p>`;
+    if (st === 'done' && ch && ch.profile) {
+      const p = ch.profile;
+      html += `<h4>📇 科學家檔案</h4><p>${md(p.life)}</p><p>${md(p.roles)}</p>
+        <h4>🏆 主要貢獻</h4><ul>${p.contributions.map(c => `<li>${md(c)}</li>`).join('')}</ul>
+        <h4>🧐 他也犯過的錯</h4><ul>${p.mistakes.map(c => `<li>${md(c)}</li>`).join('')}</ul>
+        <p class="note">${md(p.others)}</p>`;
+      const r = sv.done[id];
+      if (r && r.stats) html += `<p style="margin-top:8px;color:#8a7d64;font-size:.9em">你的紀錄：遊玩 ${fmtTime(r.stats.playMs)}・推理 ${predScore(ch, r.stats)}</p>`;
+    }
+    if (n.videos.length) {
+      html += `<h4>🎬 LIS 情境科學教材影片</h4><div class="vids">${n.videos.map(v => `<button class="vid" data-v="${v.id}" data-t="${esc(v.title)}"><img src="https://i.ytimg.com/vi/${v.id}/mqdefault.jpg" alt="" loading="lazy"><span>${esc(v.title)}</span></button>`).join('')}</div>`;
+    }
+    html += '<div class="actions">';
+    if (!n.ready || !ch) html += `<button class="btn" disabled>🛠️ 章節製作中</button>`;
+    else if (st === 'done') html += `<button class="btn" data-play="fresh">🔁 再玩一次</button>`;
+    else if (saved) html += `<button class="btn" data-play="resume">▶ 繼續冒險</button><button class="btn ghost" data-play="fresh">從頭開始</button>`;
+    else html += `<button class="btn" data-play="fresh">▶ 開始冒險（約 15 分鐘）</button>`;
+    html += '</div>';
+  }
+  $('node-card').innerHTML = html;
+  $('node-card').querySelectorAll('[data-play]').forEach(b => b.onclick = () => { closeModal('m-node'); play(id, b.dataset.play === 'fresh'); });
+  $('node-card').querySelectorAll('.vid').forEach(b => b.onclick = () => openVideo(b.dataset.v, b.dataset.t));
+  $('m-node').classList.remove('hidden');
+}
+function closeModal(id) { $(id).classList.add('hidden'); if (id === 'm-video') $('video-frame').innerHTML = ''; }
+document.querySelectorAll('.modal-bg').forEach(m => m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); }));
+function openVideo(id, title) {
+  $('video-frame').innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+  $('video-title').textContent = title; $('video-link').href = `https://www.youtube.com/watch?v=${id}`;
+  $('m-video').classList.remove('hidden');
+}
+$('video-close').onclick = () => closeModal('m-video');
+
+/* ---------- 遊玩 ---------- */
+function play(id, fresh) {
+  justUnlocked = [];
+  show('s-game');
+  SH.start(CHAPTERS[id], PLAYER, { fresh, onFinish: showResult, onExit: () => openMap() });
+}
+const fmtTime = ms => { const s = Math.round((ms || 0) / 1000); return `${Math.floor(s / 60)} 分 ${s % 60} 秒`; };
+function predScore(ch, st) {
+  const v = Object.values(st.predictions || {}).filter(p => p.ok !== null);
+  return `${v.filter(p => p.ok).length} / ${v.length} 題一次就答對`;
+}
+
+function showResult(id, rec) {
+  const sv = SAVE(), done = { ...sv.done }; delete done[id];
+  justUnlocked = SH_DATA.unlockedBy(id, done);
+  const n = SH_DATA.byId[id], ch = CHAPTERS[id], st = rec.stats;
+  $('result').innerHTML = `
+    <div class="kicker" style="color:#c99a2a">CHAPTER CLEAR</div>
+    <h2>${esc(ch.title)}</h2>
+    <div class="stamp">破 案</div>
+    <p>${esc(ch.clear.line)}</p>
+    <div class="orbs">${ch.clear.orbs.map(o => `<div class="orb"><b>${o[0]}</b>${esc(o[1])}</div>`).join('')}</div>
+    <div class="stats">
+      <div>⏱️ 遊玩時間<br><b>${fmtTime(st.playMs)}</b></div>
+      <div>🤔 推理表現<br><b>${predScore(ch, st)}</b></div>
+      <div>📜 丟錯證據<br><b>${st.wrongEvidence} 次</b></div>
+      <div>💫 被燙暈<br><b>${st.faints} 次</b></div>
+      <div>📄 瑪麗－安的筆記<br><b>${rec.pages} / 3</b></div>
+      <div>🗞️ 傳說真假<br><b>${rec.legends === null || rec.legends === undefined ? '沒有挑戰' : rec.legends + ' / 3'}</b></div>
+    </div>
+    ${justUnlocked.length ? `<div class="unlock">✨ 知識網路上亮起了：<b>${justUnlocked.map(x => SH_DATA.byId[x].name).join('、')}</b><br><small>${justUnlocked.map(x => SH_DATA.byId[x].name + '：' + SH_DATA.byId[x].tag).join('　')}</small></div>` : ''}
+    <div class="actions">
+      <button class="btn" id="res-map">回到知識網路 ▶</button>
+      <button class="btn ghost" id="res-card">查看${esc(n.name)}的檔案與影片</button>
+    </div>`;
+  $('res-map').onclick = () => openMap();
+  $('res-card').onclick = () => { openMap(); openNode(id); };
+  show('s-result');
+}
+
+initLogin();
+</script>
+</body>
+</html>
