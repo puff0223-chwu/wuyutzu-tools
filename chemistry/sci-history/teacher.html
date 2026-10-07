@@ -12,108 +12,145 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Noto Sans TC', sans-serif; background: #f3efe6; color: var(--ink); }
   .hidden { display: none !important; }
-  header { background: var(--ink); color: #fff; padding: 14px 20px; }
-  header h1 { font-family: 'Noto Serif TC', serif; font-size: 1.4em; }
+  header { background: var(--ink); color: #fff; padding: 12px 20px; }
+  header h1 { font-family: 'Noto Serif TC', serif; font-size: 1.3em; }
   header h1 span { color: var(--gold); }
-  header p { color: #c9c2dd; font-size: .9em; }
-  main { max-width: 1200px; margin: 0 auto; padding: 16px; display: grid; gap: 14px; }
-  .box { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
-  .box h2 { font-size: 1.1em; margin-bottom: 10px; }
-  .link { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: center; }
-  #qr { width: 130px; height: 130px; } #qr img, #qr canvas { width: 100% !important; height: 100% !important; }
-  .url { font-family: monospace; font-size: .85em; word-break: break-all; color: #555; margin: 6px 0; }
-  .btn { border: none; border-radius: 9px; padding: 8px 14px; font: inherit; font-weight: 700; background: var(--gold); color: var(--ink); cursor: pointer; }
+  main { max-width: 1200px; margin: 0 auto; padding: 14px; display: grid; gap: 12px; }
+  .box { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+  .box h2 { font-size: 1.08em; }
+  .top { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .link { display: flex; gap: 14px; align-items: center; }
+  #qr { width: 92px; height: 92px; flex: none; } #qr img, #qr canvas { width: 100% !important; height: 100% !important; }
+  .url { font-family: monospace; font-size: .8em; word-break: break-all; color: #555; margin: 4px 0 6px; }
+  .btn { border: none; border-radius: 8px; padding: 7px 12px; font: inherit; font-size: .92em; font-weight: 700; background: var(--gold); color: var(--ink); cursor: pointer; }
   .btn.dark { background: var(--ink); color: #fff; }
+  .btn.ghost { background: #fff; border: 1px solid var(--line); }
   .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  select { padding: 7px 10px; border-radius: 8px; border: 1px solid var(--line); font: inherit; }
-  .sum { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin: 10px 0; }
-  .sum > div { background: var(--paper); border-radius: 10px; padding: 8px 12px; }
-  .sum b { display: block; font-size: 1.5em; }
-  .sum small { color: var(--soft); }
-  .tw { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: .9em; }
-  th, td { padding: 7px 8px; border-bottom: 1px solid #eee5cf; text-align: center; white-space: nowrap; }
-  th { background: var(--paper); cursor: pointer; position: sticky; top: 0; }
+  select, input.in { padding: 6px 9px; border-radius: 8px; border: 1px solid var(--line); font: inherit; font-size: .92em; background: #fff; }
+  .hint { color: var(--soft); font-size: .84em; }
+  .head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+
+  /* 摘要列 */
+  .strip { display: flex; flex-wrap: wrap; gap: 6px 18px; background: var(--paper); border-radius: 10px; padding: 8px 14px; margin: 8px 0; font-size: .92em; }
+  .strip b { font-size: 1.15em; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 8px; }
+  .chip { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 4px 11px; font: inherit; font-size: .86em; cursor: pointer; }
+  .chip.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .chip i { font-style: normal; opacity: .7; margin-left: 3px; }
+
+  /* 表格：固定高度、標題列不動 */
+  .tw { max-height: 520px; overflow: auto; border: 1px solid #eee5cf; border-radius: 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: .88em; }
+  th, td { padding: 6px 8px; border-bottom: 1px solid #f1ead8; text-align: center; white-space: nowrap; }
+  th { background: var(--paper); cursor: pointer; position: sticky; top: 0; z-index: 1; font-size: .92em; }
   td.l { text-align: left; }
   tr.click { cursor: pointer; } tr.click:hover td { background: #fffaf0; }
   .neg { color: var(--red); font-weight: 700; }
-  .hint { color: var(--soft); font-size: .85em; }
-  .fork { margin-bottom: 14px; }
-  .fork h3 { font-size: .98em; margin-bottom: 6px; }
-  .bar { display: grid; grid-template-columns: 1fr 96px; gap: 8px; align-items: center; margin-bottom: 4px; font-size: .88em; }
-  .bar .track { background: #f0eadb; border-radius: 6px; overflow: hidden; position: relative; min-height: 26px; }
-  .bar .fill { position: absolute; inset: 0 auto 0 0; background: #e8dcc0; }
-  .bar .fill.ok { background: #bfe6cc; }
-  .bar .t { position: relative; padding: 4px 8px; display: block; }
+  .tag { display: inline-block; border-radius: 5px; padding: 0 5px; font-size: .82em; margin: 0 1px; }
+  .tag.r { background: #fde3df; color: var(--red); } .tag.y { background: #fff1c9; color: #8a6510; } .tag.g { background: #dff3e6; color: var(--green); }
+  .pager { display: flex; gap: 4px; align-items: center; justify-content: flex-end; margin-top: 8px; flex-wrap: wrap; }
+  .pager button { min-width: 32px; }
+  .pager button.on { background: var(--ink); color: #fff; }
+
+  /* 科學家分析 */
+  .ov tr.sel td { background: #fff6d6; }
+  .mini { display: inline-flex; gap: 3px; }
+  .mini span { font-size: .8em; border-radius: 5px; padding: 0 5px; background: #eee; }
+  .detail { margin-top: 12px; border-top: 2px dashed var(--line); padding-top: 12px; }
+  .fk { display: grid; grid-template-columns: 220px 1fr 70px; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid #f3ecdc; }
+  .fk .t { font-weight: 700; font-size: .92em; }
+  .fk .t small { display: block; font-weight: 400; color: var(--soft); }
+  .stack { display: flex; height: 26px; border-radius: 7px; overflow: hidden; background: #f0eadb; font-size: .8em; }
+  .stack span { display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; white-space: nowrap; overflow: hidden; }
+  .fk .pc { text-align: right; font-weight: 900; }
+  .fk details { grid-column: 1 / -1; font-size: .86em; }
+  .fk details summary { cursor: pointer; color: var(--soft); }
+  .fk details li { list-style: none; padding: 3px 0; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+
   .modal-bg { position: fixed; inset: 0; background: #0008; display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 30; }
-  .modal { background: #fff; border-radius: 14px; width: min(680px, 100%); max-height: 88vh; overflow: auto; padding: 18px; }
+  .modal { background: #fff; border-radius: 14px; width: min(720px, 100%); max-height: 88vh; overflow: auto; padding: 18px; }
   .modal .x { float: right; background: none; border: none; font-size: 1.3em; cursor: pointer; }
-  .log { list-style: none; margin-top: 10px; }
-  .log li { padding: 6px 8px; border-left: 3px solid var(--line); margin-bottom: 4px; font-size: .9em; }
+  .kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 6px; margin: 10px 0; }
+  .kv div { background: var(--paper); border-radius: 8px; padding: 6px 10px; font-size: .85em; color: var(--soft); }
+  .kv b { display: block; color: var(--ink); font-size: 1.2em; }
+  .log { list-style: none; margin-top: 8px; max-height: 300px; overflow: auto; }
+  .log li { padding: 5px 8px; border-left: 3px solid var(--line); margin-bottom: 3px; font-size: .86em; }
   .log li.ok { border-color: var(--green); } .log li.bad { border-color: var(--red); background: #fff4f2; } .log li.money { border-color: var(--gold); }
   .log time { color: var(--soft); font-size: .85em; margin-right: 8px; }
-  @media (max-width: 600px) { .link { grid-template-columns: 1fr; } }
+  @media (max-width: 800px) { .top { grid-template-columns: 1fr; } .fk { grid-template-columns: 1fr 60px; } .fk .stack { grid-column: 1 / -1; grid-row: 2; } }
 </style>
 </head>
 <body>
-<header><h1>📖 <span>時光手稿</span>：科學史大冒險・老師頁</h1><p>學生扮演投資人，在科學史的分岔點選擇支持的論點；排行榜比總分與各章最快破關。</p></header>
+<header><h1>📖 <span>時光手稿</span>：科學史大冒險・老師頁</h1></header>
 <main>
-  <section class="box link">
-    <div id="qr"></div>
-    <div><h2>學生入口</h2><div class="url" id="url"></div>
-      <div class="row"><button class="btn" id="copy">📋 複製連結</button><button class="btn dark" id="reload">🔄 重新讀取資料</button><span class="hint" id="status"></span></div>
-      <p class="hint" style="margin-top:6px">學生用「班級＋座號＋姓名＋學號」登入並選擇用途，進度存在資料庫，換裝置也能接著玩；同一學期同一班級座號視為同一人。</p></div>
-  </section>
+  <div class="top">
+    <section class="box link">
+      <div id="qr"></div>
+      <div><h2>學生入口</h2><div class="url" id="url"></div>
+        <div class="row"><button class="btn" id="copy">📋 複製連結</button><button class="btn dark" id="reload">🔄 重新讀取</button><span class="hint" id="status"></span></div></div>
+    </section>
+    <section class="box">
+      <h2>📅 學期設定</h2>
+      <div class="row" style="margin-top:8px">
+        目前學期 <select id="t-cur"></select><button class="btn ghost" id="t-del">🗑️ 刪除</button>
+        <input class="in" id="t-new" placeholder="例：115-2" maxlength="5" style="width:86px"><button class="btn" id="t-add">＋ 新增並切換</button>
+      </div>
+      <p class="hint" style="margin-top:6px" id="t-msg">學生登入時會記在「目前學期」。刪除只移出清單，學生資料仍保留。</p>
+    </section>
+  </div>
 
   <section class="box">
-    <h2>📅 學期設定</h2>
-    <div class="row">
-      <span>目前學期（學生登入時會記在這個學期）：</span><select id="t-cur"></select>
-      <button class="btn dark" id="t-del">🗑️ 刪除這個學期</button>
-      <span style="margin-left:14px">新增學期：</span><input id="t-new" placeholder="例：115-2" maxlength="5" style="width:90px;padding:7px 10px;border-radius:8px;border:1px solid var(--line);font:inherit">
-      <button class="btn" id="t-add">＋ 新增並切換</button>
-      <span class="hint" id="t-msg"></span>
+    <div class="head"><h2>📊 學生統計</h2>
+      <div class="row"><select id="f-term"></select><select id="f-cls"></select>
+        <select id="f-pur"><option value="">全部用途</option><option>正式進度</option><option>考試複習</option><option>重補修</option></select>
+        <input class="in" id="f-q" placeholder="🔍 姓名／學號／座號" style="width:150px">
+        <button class="btn dark" id="xlsx">📥 Excel</button></div></div>
+    <div class="strip" id="strip"></div>
+    <div class="chips" id="chips"></div>
+    <div class="row" style="margin-bottom:6px">
+      <label class="hint"><input type="checkbox" id="f-full"> 顯示完整欄位</label>
+      <span class="hint">破關時間欄：</span><select id="f-ch"></select>
     </div>
-    <p class="hint" style="margin-top:6px">學期格式：學年度-1（上學期）或 -2（下學期）。刪除學期只會從清單移除，學生資料仍保留，可以用下方「學期」篩選查看。</p>
-  </section>
-
-  <section class="box">
-    <div class="row" style="justify-content:space-between"><h2>📊 學生統計</h2>
-      <div class="row"><select id="f-term"></select><select id="f-cls"></select><select id="f-pur"><option value="">全部用途</option><option>正式進度</option><option>考試複習</option><option>重補修</option></select><button class="btn dark" id="xlsx">📥 匯出 Excel</button></div></div>
-    <div class="sum" id="sum"></div>
     <div class="tw" id="table"></div>
-    <p class="hint" style="margin-top:6px">點學生那一列，可以看完整的遊戲歷程。總分＝剩餘金幣 − 借款×3 ＋ 還款×4 − 重來×1 ＋ 全對破關×5 − 重玩×1。「用途」是學生最近一次登入時選的。</p>
+    <div class="pager" id="pager"></div>
+    <p class="hint" style="margin-top:4px">點學生那一列看個人卡片（各科學家成績與完整歷程）。總分＝金幣 − 借款×3 ＋ 還款×4 − 重來×1 ＋ 全對×5 − 重玩×1。</p>
   </section>
 
   <section class="box">
-    <h2>🧭 抉擇分析（學生第一次的選擇）</h2>
-    <p class="hint">看出全班最常卡在哪個論點，就是課堂上最值得討論的迷思。綠色是史實路線。</p>
-    <div id="forks" style="margin-top:10px"></div>
+    <div class="head"><h2>🧭 科學家分析</h2><span class="hint">依上方的學期／班級／用途篩選計算；點一位科學家看每個抉擇的選擇分布</span></div>
+    <div class="tw" style="max-height:none"><table class="ov" id="ov"></table></div>
+    <div id="detail"></div>
   </section>
 </main>
 <div class="modal-bg hidden" id="m"><div class="modal" id="mc"></div></div>
 
-<script src="data.js?v=20261007c"></script>
-<script src="core.js?v=20261007c"></script>
-<script src="ch-lavoisier.js?v=20261007c"></script>
+<script src="data.js?v=20261007d"></script>
+<script src="core.js?v=20261007d"></script>
+<script src="ch-lavoisier.js?v=20261007d"></script>
 <script>
 const $ = id => document.getElementById(id);
 const { esc, fmtTime } = SHC;
 const CHAPTERS = { lavoisier: CH_LAVOISIER };
+const READY = SH_DATA.NODES.filter(n => n.ready && CHAPTERS[n.id]);
 const STU = new URL('./', location.href).href;
-let P = [], LOGS = {}, sortK = 'score', sortD = -1;
+const PAGE = 30, DAY = 86400000;
+const COLORS = ['#7b5ea7', '#d08a1e', '#2f6db5', '#b0413e'];
+let P = [], LOGS = {}, sortK = 'score', sortD = -1, page = 0, quick = 'all', selCh = null;
 
 $('url').textContent = STU;
-try { new QRCode($('qr'), { text: STU, width: 260, height: 260 }); } catch (e) {}
+try { new QRCode($('qr'), { text: STU, width: 200, height: 200 }); } catch (e) {}
 $('copy').onclick = () => navigator.clipboard.writeText(STU).then(() => $('status').textContent = '已複製！');
 $('reload').onclick = load;
-['f-term', 'f-cls', 'f-pur'].forEach(id => $(id).onchange = () => { if (id === 'f-term') fillCls(); render(); });
+['f-term', 'f-cls', 'f-pur', 'f-full', 'f-ch'].forEach(id => $(id).onchange = () => { if (id === 'f-term') fillCls(); page = 0; render(); });
+$('f-q').oninput = () => { page = 0; render(); };
+$('f-ch').innerHTML = READY.map(n => `<option value="${n.id}">${n.name}</option>`).join('');
 
 /* ---------- 學期設定 ---------- */
 let CFG = null;
 function renderTerms() {
   $('t-cur').innerHTML = CFG.terms.slice().sort().reverse().map(t => `<option ${t === CFG.current ? 'selected' : ''}>${t}</option>`).join('');
-  $('t-msg').textContent = CFG.fallback ? '（尚未儲存過，先用系統推算的學期）' : '';
+  if (CFG.fallback) $('t-msg').textContent = '尚未儲存過學期，先用系統推算的；按「新增並切換」或切換一次就會存起來。';
 }
 async function saveCfg(msg) {
   try { await SHC.saveConfig(CFG); CFG.fallback = false; renderTerms(); $('t-msg').textContent = '✅ ' + msg; }
@@ -122,7 +159,7 @@ async function saveCfg(msg) {
 $('t-cur').onchange = () => { CFG.current = $('t-cur').value; saveCfg(`已切換到 ${CFG.current}`); };
 $('t-add').onclick = () => {
   const t = SHC.toHalf($('t-new').value);
-  if (!SHC.validTerm(t)) return ($('t-msg').textContent = '格式要像 115-2');
+  if (!SHC.validTerm(t)) return ($('t-msg').textContent = '格式要像 115-2（學年度-1 上學期／-2 下學期）');
   if (!CFG.terms.includes(t)) CFG.terms.push(t);
   CFG.current = t; $('t-new').value = ''; saveCfg(`已新增並切換到 ${t}`);
 };
@@ -134,18 +171,19 @@ $('t-del').onclick = () => {
   if (CFG.current === t) CFG.current = CFG.terms.slice().sort().reverse()[0];
   saveCfg(`已刪除 ${t}，目前學期 ${CFG.current}`);
 };
-SHC.loadConfig().then(c => { CFG = c; renderTerms(); });
 
+/* ---------- 讀取 ---------- */
 async function load() {
   $('status').textContent = '讀取中……';
+  if (!CFG) { CFG = await SHC.loadConfig(); renderTerms(); }
   try {
     const [pl, lg] = await Promise.all([SHC.loadPlayers(), fetch(`${SHC.CONFIG.FIREBASE_URL}/sci-history/logs.json`, { cache: 'no-store' }).then(r => r.json())]);
     P = Object.values(pl || {}).filter(p => p && p.sid); LOGS = lg || {};
-    $('status').textContent = `已讀取 ${P.length} 位學生・${new Date().toLocaleTimeString('zh-TW')}`;
-  } catch (e) { $('status').textContent = '⚠️ 讀取失敗：請檢查網路或 Firebase 規則'; return; }
-  const ts = [...new Set([...P.map(p => p.term), ...(CFG ? CFG.terms : [])].filter(Boolean))].sort().reverse();
-  const cur = $('f-term').value || (CFG && CFG.current) || '';
-  $('f-term').innerHTML = '<option value="">全部學期</option>' + ts.map(t => `<option value="${t}">${t} 學期</option>`).join('');
+    $('status').textContent = `${P.length} 位學生・${new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}`;
+  } catch (e) { $('status').textContent = '⚠️ 讀取失敗'; return; }
+  const ts = [...new Set([...P.map(p => p.term), ...CFG.terms].filter(Boolean))].sort().reverse();
+  const cur = $('f-term').value || CFG.current;
+  $('f-term').innerHTML = '<option value="">全部學期</option>' + ts.map(t => `<option value="${t}">${t}</option>`).join('');
   $('f-term').value = ts.includes(cur) ? cur : '';
   fillCls(); render();
 }
@@ -155,51 +193,125 @@ function fillCls() {
   $('f-cls').innerHTML = '<option value="">全部班級</option>' + cs.map(c => `<option>${esc(c)}</option>`).join('');
   if (cs.includes(cur)) $('f-cls').value = cur;
 }
-const rows = () => P.filter(p => (!$('f-term').value || p.term === $('f-term').value) && (!$('f-cls').value || p.cls === $('f-cls').value) && (!$('f-pur').value || p.purpose === $('f-pur').value));
+const base = () => P.filter(p => (!$('f-term').value || p.term === $('f-term').value) && (!$('f-cls').value || p.cls === $('f-cls').value) && (!$('f-pur').value || p.purpose === $('f-pur').value));
 const logOf = sid => { const l = LOGS[sid]; return Array.isArray(l) ? l : (l ? Object.values(l) : []); };
+const nDone = p => Object.keys(p.done || {}).length;
+const inProg = p => Object.keys(p.chapters || {}).filter(k => !(p.done || {})[k]);
 
-const COLS = [
-  ['cls', '班級', p => esc(p.cls)], ['seat', '座號', p => p.seat], ['name', '姓名', p => esc(p.name), 'l'], ['stuNo', '學號', p => esc(p.stuNo || '')], ['purpose', '用途', p => esc(p.purpose || '')],
-  ['score', '總分', p => `<b>${p.score}</b>`], ['coins', '金幣', p => p.coins], ['net', '淨資產', p => `<span class="${p.net < 0 ? 'neg' : ''}">${p.net}</span>`],
-  ['loans', '借款', p => p.loans], ['repays', '還款', p => p.repays], ['restarts', '重來', p => p.restarts], ['perfect', '全對破關', p => p.perfect],
-  ['replays', '按重玩', p => p.replays || 0], ['gameOvers', '破產重來', p => p.gameOvers || 0], ['ndone', '已破關', p => Object.keys(p.done || {}).length],
-  ...SH_DATA.NODES.filter(n => n.ready).map(n => [`t_${n.id}`, `${n.name}時間`, p => p.done && p.done[n.id] ? fmtTime(p.done[n.id].ms) : '—']),
-  ['updatedAt', '最後遊玩', p => p.updatedAt ? new Date(p.updatedAt).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '']
+/* ---------- 快速篩選 ---------- */
+const QUICK = [
+  ['all', '全部', () => true],
+  ['none', '還沒破關任何一章', p => !nDone(p)],
+  ['neg', '負資產', p => p.net < 0],
+  ['loan', '借過錢', p => p.loans > 0],
+  ['replay', '按過重玩', p => (p.replays || 0) > 0],
+  ['idle', '3 天沒玩', p => !p.updatedAt || Date.now() - p.updatedAt > 3 * DAY]
 ];
-const val = (p, k) => ['cls', 'name', 'stuNo', 'purpose'].includes(k) ? String(p[k] || '') : k === 'ndone' ? Object.keys(p.done || {}).length : k.startsWith('t_') ? (p.done && p.done[k.slice(2)] ? p.done[k.slice(2)].ms : Infinity) : (p[k] ?? 0);
 
+/* ---------- 欄位 ---------- */
+function cols() {
+  const ch = $('f-ch').value, full = $('f-full').checked;
+  const C = [
+    ['cls', '班級', p => esc(p.cls)], ['seat', '座號', p => p.seat], ['name', '姓名', p => esc(p.name), 'l'],
+    ...(full ? [['stuNo', '學號', p => esc(p.stuNo || '')]] : []),
+    ['purpose', '用途', p => esc(p.purpose || '')],
+    ['score', '總分', p => `<b>${p.score}</b>`], ['coins', '金幣', p => p.coins],
+    ['ndone', '破關', p => `${nDone(p)}／${READY.length}`],
+    [`t_${ch}`, `${SH_DATA.byId[ch].name}時間`, p => p.done && p.done[ch] ? fmtTime(p.done[ch].ms) + (p.done[ch].perfect ? ' 🌟' : '') : (p.chapters && p.chapters[ch] ? '<span class="hint">進行中</span>' : '—')]
+  ];
+  if (full) C.push(['net', '淨資產', p => `<span class="${p.net < 0 ? 'neg' : ''}">${p.net}</span>`], ['loans', '借款', p => p.loans], ['repays', '還款', p => p.repays],
+    ['restarts', '重來', p => p.restarts], ['perfect', '全對', p => p.perfect], ['replays', '重玩', p => p.replays || 0], ['gameOvers', '破產重來', p => p.gameOvers || 0]);
+  else C.push(['flags', '狀態', p => flags(p)]);
+  C.push(['updatedAt', '最後遊玩', p => ago(p.updatedAt)]);
+  return C;
+}
+function flags(p) {
+  let s = '';
+  if (p.net < 0) s += '<span class="tag r">負資產</span>';
+  else if (p.loans - p.repays > 0) s += '<span class="tag y">有負債</span>';
+  if (p.replays) s += `<span class="tag y">重玩×${p.replays}</span>`;
+  if (p.gameOvers) s += `<span class="tag r">破產重來×${p.gameOvers}</span>`;
+  if (p.perfect) s += `<span class="tag g">全對×${p.perfect}</span>`;
+  return s || '<span class="hint">—</span>';
+}
+function ago(t) {
+  if (!t) return '';
+  const d = Date.now() - t;
+  if (d < 3600000) return `${Math.max(1, Math.round(d / 60000))} 分鐘前`;
+  if (d < DAY) return `${Math.round(d / 3600000)} 小時前`;
+  return new Date(t).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' });
+}
+const val = (p, k) => ['cls', 'name', 'stuNo', 'purpose'].includes(k) ? String(p[k] || '') : k === 'ndone' ? nDone(p) : k === 'flags' ? (p.net < 0 ? 3 : 0) + (p.replays || 0) + (p.gameOvers || 0)
+  : k.startsWith('t_') ? (p.done && p.done[k.slice(2)] ? p.done[k.slice(2)].ms : Infinity) : (p[k] ?? 0);
+
+/* ---------- 學生統計 ---------- */
 function render() {
-  const R = rows();
-  const done = R.filter(p => Object.keys(p.done || {}).length);
-  $('sum').innerHTML = `<div><small>參與人數</small><b>${R.length}</b></div><div><small>至少破關一章</small><b>${done.length}</b></div>
-    <div><small>平均總分</small><b>${R.length ? (R.reduce((a, p) => a + p.score, 0) / R.length).toFixed(1) : '—'}</b></div>
-    <div><small>曾經借款</small><b>${R.filter(p => p.loans).length}</b></div><div><small>目前負資產</small><b>${R.filter(p => p.net < 0).length}</b></div>
-    ${SHC.CONFIG.PURPOSES.map(u => `<div><small>${u}</small><b>${R.filter(p => p.purpose === u).length}</b></div>`).join('')}`;
-  const S = [...R].sort((a, b) => { const x = val(a, sortK), y = val(b, sortK); return (typeof x === 'string' ? String(x).localeCompare(String(y), 'zh-Hant', { numeric: true }) : x - y) * sortD || a.seat - b.seat; });
-  $('table').innerHTML = S.length ? `<table><tr>${COLS.map(c => `<th data-k="${c[0]}">${c[1]}${sortK === c[0] ? (sortD > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('')}</tr>` +
-    S.map(p => `<tr class="click" data-sid="${esc(p.sid)}">${COLS.map(c => `<td class="${c[3] || ''}">${c[2](p)}</td>`).join('')}</tr>`).join('') + '</table>' : '<p class="hint">還沒有學生資料。</p>';
+  const B = base();
+  const cnt = u => B.filter(p => p.purpose === u).length;
+  $('strip').innerHTML = `<span>參與 <b>${B.length}</b> 人</span><span>破關至少一章 <b>${B.filter(p => nDone(p)).length}</b></span>
+    <span>平均總分 <b>${B.length ? (B.reduce((a, p) => a + p.score, 0) / B.length).toFixed(1) : '—'}</b></span>
+    <span>用途：正式進度 <b>${cnt('正式進度')}</b>・考試複習 <b>${cnt('考試複習')}</b>・重補修 <b>${cnt('重補修')}</b></span>`;
+  $('chips').innerHTML = QUICK.map(([k, l, f]) => `<button class="chip ${quick === k ? 'on' : ''}" data-k="${k}">${l}<i>${B.filter(f).length}</i></button>`).join('');
+  $('chips').querySelectorAll('.chip').forEach(b => b.onclick = () => { quick = b.dataset.k; page = 0; render(); });
+
+  const q = $('f-q').value.trim().toLowerCase();
+  let R = B.filter(QUICK.find(x => x[0] === quick)[2]).filter(p => !q || [p.name, p.stuNo, String(p.seat), `${p.cls}-${p.seat}`].some(x => String(x || '').toLowerCase().includes(q)));
+  const C = cols();
+  if (!C.some(c => c[0] === sortK)) sortK = 'score';
+  R.sort((a, b) => { const x = val(a, sortK), y = val(b, sortK); return (typeof x === 'string' ? x.localeCompare(y, 'zh-Hant', { numeric: true }) : x - y) * sortD || a.seat - b.seat; });
+  const pages = Math.max(1, Math.ceil(R.length / PAGE)); page = Math.min(page, pages - 1);
+  const show = R.slice(page * PAGE, page * PAGE + PAGE);
+  $('table').innerHTML = show.length ? `<table><tr>${C.map(c => `<th data-k="${c[0]}">${c[1]}${sortK === c[0] ? (sortD > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('')}</tr>` +
+    show.map(p => `<tr class="click" data-sid="${esc(p.sid)}">${C.map(c => `<td class="${c[3] || ''}">${c[2](p)}</td>`).join('')}</tr>`).join('') + '</table>'
+    : '<p class="hint" style="padding:14px">沒有符合條件的學生。</p>';
   $('table').querySelectorAll('th').forEach(th => th.onclick = () => { const k = th.dataset.k; if (sortK === k) sortD = -sortD; else { sortK = k; sortD = ['cls', 'seat', 'name', 'stuNo', 'purpose'].includes(k) || k.startsWith('t_') ? 1 : -1; } render(); });
-  $('table').querySelectorAll('tr[data-sid]').forEach(tr => tr.onclick = () => showLog(tr.dataset.sid));
-  renderForks(R);
+  $('table').querySelectorAll('tr[data-sid]').forEach(tr => tr.onclick = () => showStudent(tr.dataset.sid));
+  $('pager').innerHTML = pages > 1 ? `<span class="hint">共 ${R.length} 人</span>` + Array.from({ length: pages }, (_, i) => `<button class="btn ghost ${i === page ? 'on' : ''}" data-p="${i}">${i + 1}</button>`).join('') : (R.length ? `<span class="hint">共 ${R.length} 人</span>` : '');
+  $('pager').querySelectorAll('[data-p]').forEach(b => b.onclick = () => { page = +b.dataset.p; render(); $('table').scrollTop = 0; });
+  renderOverview(B);
 }
 
-function renderForks(R) {
-  const sids = new Set(R.map(p => p.sid));
-  let h = '';
-  Object.values(CHAPTERS).forEach(ch => {
-    h += `<h3 style="margin:6px 0 8px">${esc(ch.title)}</h3>`;
-    ch.forks.forEach((f, i) => {
-      const firsts = [];
-      sids.forEach(sid => { const c = logOf(sid).find(e => e.type === 'choose' && e.ch === ch.id && e.fork === f.id && e.first); if (c) firsts.push(c.opt); });
-      const n = firsts.length;
-      h += `<div class="fork"><h3>抉擇 ${i + 1}：${esc(f.title)} <span class="hint">（${n} 人作答）</span></h3>` +
-        f.options.map(o => { const k = firsts.filter(x => x === o.id).length, pc = n ? Math.round(k / n * 100) : 0;
-          return `<div class="bar"><div class="track"><div class="fill ${o.correct ? 'ok' : ''}" style="width:${pc}%"></div><span class="t">${o.correct ? '✅ ' : ''}<b>${esc(o.who)}</b>：${esc(o.text)}</span></div><div>${k} 人（${pc}%）</div></div>`; }).join('') + '</div>';
-    });
+/* ---------- 科學家分析 ---------- */
+function firstChoices(B, ch, f) {
+  const out = [];
+  B.forEach(p => { const c = logOf(p.sid).find(e => e.type === 'choose' && e.ch === ch && e.fork === f && e.first); if (c) out.push(c); });
+  return out;
+}
+function renderOverview(B) {
+  const rows = READY.map(n => {
+    const ch = CHAPTERS[n.id];
+    const started = B.filter(p => (p.chapters || {})[n.id] || (p.done || {})[n.id]);
+    const done = B.filter(p => (p.done || {})[n.id]);
+    const avg = done.length ? done.reduce((a, p) => a + p.done[n.id].ms, 0) / done.length : null;
+    const perfect = done.filter(p => p.done[n.id].perfect).length;
+    const forkRates = ch.forks.map(f => { const fc = firstChoices(B, n.id, f.id); return fc.length ? Math.round(fc.filter(c => c.correct).length / fc.length * 100) : null; });
+    return { n, started: started.length, done: done.length, avg, perfect, forkRates };
   });
-  $('forks').innerHTML = h;
+  if (!selCh && rows.length) selCh = rows[0].n.id;
+  $('ov').innerHTML = `<tr><th>科學家</th><th>開始</th><th>破關</th><th>平均破關時間</th><th>一次全對</th><th>各抉擇第一次答對率</th></tr>` +
+    rows.map(r => `<tr class="click ${selCh === r.n.id ? 'sel' : ''}" data-ch="${r.n.id}"><td class="l"><b>${esc(r.n.name)}</b> <span class="hint">${esc(r.n.tag)}</span></td><td>${r.started}</td><td>${r.done}</td>
+      <td>${r.avg === null ? '—' : fmtTime(r.avg)}</td><td>${r.done ? Math.round(r.perfect / r.done * 100) + '%' : '—'}</td>
+      <td><span class="mini">${r.forkRates.map((x, i) => `<span style="background:${x === null ? '#eee' : x >= 70 ? '#dff3e6' : x >= 40 ? '#fff1c9' : '#fde3df'}">${i + 1}：${x === null ? '—' : x + '%'}</span>`).join('')}</span></td></tr>`).join('') +
+    `<tr><td colspan="6" class="hint" style="text-align:left">還沒做好的科學家（${SH_DATA.NODES.length - READY.length} 位）做好後會自動出現在這裡。</td></tr>`;
+  $('ov').querySelectorAll('tr[data-ch]').forEach(tr => tr.onclick = () => { selCh = tr.dataset.ch; renderOverview(base()); });
+  renderDetail(B);
+}
+function renderDetail(B) {
+  const ch = CHAPTERS[selCh]; if (!ch) { $('detail').innerHTML = ''; return; }
+  $('detail').innerHTML = `<div class="detail"><h3 style="margin-bottom:6px">${esc(ch.title)}：學生第一次的選擇</h3>
+    <p class="hint" style="margin-bottom:6px">每條色帶是全部作答學生的選擇比例，<b style="color:var(--green)">✓ 綠色</b>是史實路線；右邊是第一次就答對的比例。答對率低的抉擇，就是課堂上最值得討論的迷思。</p>` +
+    ch.forks.map((f, i) => {
+      const fc = firstChoices(B, selCh, f.id), n = fc.length;
+      const segs = f.options.map((o, k) => ({ o, k, c: fc.filter(x => x.opt === o.id).length }));
+      const okRate = n ? Math.round(fc.filter(c => c.correct).length / n * 100) : null;
+      return `<div class="fk"><div class="t">${i + 1}. ${esc(f.title)}<small>${n} 人作答</small></div>
+        <div class="stack">${n ? segs.filter(s => s.c).map(s => `<span style="width:${s.c / n * 100}%;background:${s.o.correct ? 'var(--green)' : COLORS[s.k]}" title="${esc(s.o.who)}：${s.c} 人">${s.o.correct ? '✓ ' : ''}${s.c / n >= 0.12 ? Math.round(s.c / n * 100) + '%' : ''}</span>`).join('') : '<span style="color:var(--soft);width:100%">尚無資料</span>'}</div>
+        <div class="pc" style="color:${okRate === null ? 'var(--soft)' : okRate >= 70 ? 'var(--green)' : okRate >= 40 ? '#b07d1f' : 'var(--red)'}">${okRate === null ? '—' : okRate + '%'}</div>
+        <details><summary>看選項內容與人數</summary><ul>${segs.map(s => `<li><span class="dot" style="background:${s.o.correct ? 'var(--green)' : COLORS[s.k]}"></span>${s.o.correct ? '✓ ' : ''}<b>${esc(s.o.who)}</b>：${esc(s.o.text)}　<b>${s.c} 人</b>${n ? `（${Math.round(s.c / n * 100)}%）` : ''}</li>`).join('')}</ul></details></div>`;
+    }).join('') + '</div>';
 }
 
+/* ---------- 個人卡片 ---------- */
 const LABEL = { login: '🔑 登入', replay_all: '🔁 按全部重玩', replay_ch: '🔁 重玩科學家', join: '🆕 第一次登入', start: '📖 開始劇本', subsidy: '💰 新劇本補助', exp: '🔬 做實驗', choose: '💼 抉擇', fail: '🌀 掉進平行時空', loan: '🏦 向大師銀行借款', repay: '✅ 還款', clear: '🎉 破關', gameover: '☠️ 第三次破產，整局重來' };
 function describe(e) {
   const ch = CHAPTERS[e.ch], f = ch && ch.forks.find(x => x.id === e.fork);
@@ -215,25 +327,51 @@ function describe(e) {
   if ('coins' in e) return `剩 ${e.coins} 金幣`;
   return '';
 }
-function showLog(sid) {
+const cls = e => e.type === 'choose' ? (e.correct ? 'ok' : 'bad') : ['fail', 'gameover', 'replay_all', 'replay_ch'].includes(e.type) ? 'bad' : ['loan', 'repay', 'subsidy'].includes(e.type) ? 'money' : '';
+function showStudent(sid) {
   const p = P.find(x => x.sid === sid), L = logOf(sid);
+  const chRows = READY.map(n => { const d = (p.done || {})[n.id], c = (p.chapters || {})[n.id];
+    return `<tr><td class="l">${esc(n.name)}</td><td>${d ? '✅ 破關' : c ? '進行中' : '—'}</td><td>${d ? fmtTime(d.ms) : c ? fmtTime(c.ms) : ''}</td><td>${d ? (d.perfect ? '🌟 一次全對' : `重來 ${d.fails} 次`) : c ? `第 ${c.attempt} 次嘗試` : ''}</td><td>${d && d.purpose ? esc(d.purpose) : ''}</td></tr>`; }).join('');
   $('mc').innerHTML = `<button class="x" onclick="document.getElementById('m').classList.add('hidden')">✕</button>
-    <h2>${esc(p.cls)} 班 ${p.seat} 號 ${esc(p.name)}</h2><p class="hint">${p.term} 學期・學號 ${esc(p.stuNo || '')}・${esc(p.purpose || '')}・總分 ${p.score}・金幣 ${p.coins}・淨資產 ${p.net}</p>
-    <ul class="log">${L.map(e => `<li class="${e.type === 'choose' ? (e.correct ? 'ok' : 'bad') : ['fail', 'gameover'].includes(e.type) ? 'bad' : ['loan', 'repay', 'subsidy'].includes(e.type) ? 'money' : ['replay_all', 'replay_ch'].includes(e.type) ? 'bad' : ''}"><time>${new Date(e.t).toLocaleString('zh-TW')}</time>${LABEL[e.type] || e.type}　${esc(describe(e))}</li>`).join('') || '<li>沒有紀錄</li>'}</ul>`;
+    <h2>${esc(p.cls)} 班 ${p.seat} 號 ${esc(p.name)}</h2><p class="hint">${p.term} 學期・學號 ${esc(p.stuNo || '—')}・最近用途：${esc(p.purpose || '—')}</p>
+    <div class="kv"><div>總分<b>${p.score}</b></div><div>金幣<b>${p.coins}</b></div><div>淨資產<b class="${p.net < 0 ? 'neg' : ''}">${p.net}</b></div><div>借款／還款<b>${p.loans}／${p.repays}</b></div>
+      <div>重來<b>${p.restarts}</b></div><div>全對破關<b>${p.perfect}</b></div><div>按重玩<b>${p.replays || 0}</b></div><div>破產重來<b>${p.gameOvers || 0}</b></div></div>
+    <h3 style="font-size:1em;margin-top:10px">各科學家</h3>
+    <table style="margin-top:6px"><tr><th>科學家</th><th>狀態</th><th>時間</th><th>結果</th><th>破關時用途</th></tr>${chRows}</table>
+    <h3 style="font-size:1em;margin-top:14px">遊戲歷程 <span class="hint">（${L.length} 筆）</span>
+      <select id="log-f" style="margin-left:8px"><option value="">全部</option><option value="choose">只看抉擇</option><option value="money">只看金錢</option><option value="replay">只看重玩／破產</option></select></h3>
+    <ul class="log" id="log-list"></ul>`;
+  const drawLog = () => {
+    const f = $('log-f').value;
+    const keep = e => !f || (f === 'choose' ? ['choose', 'fail', 'exp'].includes(e.type) : f === 'money' ? ['loan', 'repay', 'subsidy', 'clear', 'exp', 'fail'].includes(e.type) : ['replay_all', 'replay_ch', 'gameover'].includes(e.type));
+    $('log-list').innerHTML = L.filter(keep).map(e => `<li class="${cls(e)}"><time>${new Date(e.t).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</time>${LABEL[e.type] || e.type}　${esc(describe(e))}</li>`).join('') || '<li>沒有紀錄</li>';
+  };
+  $('log-f').onchange = drawLog; drawLog();
   $('m').classList.remove('hidden');
 }
 $('m').onclick = e => { if (e.target === $('m')) $('m').classList.add('hidden'); };
 
+/* ---------- Excel ---------- */
 $('xlsx').onclick = () => {
   if (typeof XLSX === 'undefined') return alert('Excel 元件載入失敗，請重新整理');
-  const R = rows();
-  const s1 = R.map(p => { const o = {}; COLS.forEach(c => { const v = c[0] === 'net' ? p.net : ['name', 'cls', 'stuNo', 'purpose'].includes(c[0]) ? (p[c[0]] || '') : c[0] === 'updatedAt' ? (p.updatedAt ? new Date(p.updatedAt).toLocaleString('zh-TW') : '') : c[0].startsWith('t_') ? (p.done && p.done[c[0].slice(2)] ? fmtTime(p.done[c[0].slice(2)].ms) : '') : val(p, c[0]); o[c[1]] = v; }); o['學期'] = p.term; return o; });
+  const B = base();
+  const s1 = B.map(p => {
+    const o = { 學期: p.term, 班級: p.cls, 座號: p.seat, 姓名: p.name, 學號: p.stuNo || '', 用途: p.purpose || '', 總分: p.score, 金幣: p.coins, 淨資產: p.net,
+      借款: p.loans, 還款: p.repays, 重來: p.restarts, 全對破關: p.perfect, 按重玩: p.replays || 0, 破產重來: p.gameOvers || 0, 已破關: nDone(p) };
+    READY.forEach(n => { const d = (p.done || {})[n.id]; o[`${n.name}破關時間`] = d ? fmtTime(d.ms) : ''; o[`${n.name}結果`] = d ? (d.perfect ? '一次全對' : `重來${d.fails}次`) : ''; });
+    o['最後遊玩'] = p.updatedAt ? new Date(p.updatedAt).toLocaleString('zh-TW') : '';
+    return o;
+  });
   const s2 = [];
-  R.forEach(p => logOf(p.sid).forEach(e => s2.push({ 學期: p.term, 學號: p.stuNo || '', 用途: p.purpose || '', 班級: p.cls, 座號: p.seat, 姓名: p.name, 時間: new Date(e.t).toLocaleString('zh-TW'), 事件: (LABEL[e.type] || e.type).replace(/^\S+\s/, ''), 內容: describe(e) })));
+  B.forEach(p => logOf(p.sid).forEach(e => s2.push({ 學期: p.term, 班級: p.cls, 座號: p.seat, 姓名: p.name, 學號: p.stuNo || '', 時間: new Date(e.t).toLocaleString('zh-TW'), 事件: (LABEL[e.type] || e.type).replace(/^\S+\s/, ''), 內容: describe(e) })));
+  const s3 = [];
+  READY.forEach(n => CHAPTERS[n.id].forks.forEach((f, i) => { const fc = firstChoices(B, n.id, f.id);
+    f.options.forEach(o => s3.push({ 科學家: n.name, 抉擇: `${i + 1}. ${f.title}`, 論點: `${o.who}：${o.text}`, 史實路線: o.correct ? '✓' : '', 第一次選擇人數: fc.filter(c => c.opt === o.id).length, 作答人數: fc.length })); }));
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(s1.length ? s1 : [{ 說明: '尚無資料' }]), '學生統計');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(s3.length ? s3 : [{ 說明: '尚無資料' }]), '抉擇分析');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(s2.length ? s2 : [{ 說明: '尚無資料' }]), '遊戲歷程');
-  XLSX.writeFile(wb, `時光手稿_${$('f-term').value || '全部'}_${$('f-cls').value || '全部班級'}.xlsx`);
+  XLSX.writeFile(wb, `時光手稿_${$('f-term').value || '全部學期'}_${$('f-cls').value || '全部班級'}.xlsx`);
 };
 load();
 </script>
