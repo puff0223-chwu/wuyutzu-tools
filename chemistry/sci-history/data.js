@@ -20,7 +20,7 @@ const SH_DATA = (() => {
       tag: '定比定律', needs: ['lavoisier'], ready: true, color: '#d08a1e',
       teaser: '不管從哪裡來的碳酸銅，成分比例都一樣？一場打了八年的筆戰。', videos: [] },
     { id: 'dalton', name: '道耳頓', en: 'John Dalton', life: '1766–1844', year: 1808, x: 40, y: 50,
-      tag: '原子說', needs: ['lavoisier', 'proust'], color: '#1f9e8f',
+      tag: '原子說', needs: ['lavoisier', 'proust'], ready: true, color: '#1f9e8f',
       teaser: '如果把一滴水一直切下去，最後會剩下什麼？',
       videos: [{ id: 'fo8OnaecUac', title: '如果把一滴水對切1萬次會怎麼樣？（道耳頓－原子說）' }] },
     { id: 'gaylussac', name: '給呂薩克', en: 'Joseph Gay-Lussac', life: '1778–1850', year: 1808, x: 52, y: 22,

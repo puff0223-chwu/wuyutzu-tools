@@ -83,6 +83,17 @@ const ART = (() => {
       <rect x="40" y="96" width="60" height="24" fill="${M}" stroke="#777"/>${T(70, 112, '錫', 12)}<rect x="100" y="96" width="30" height="24" fill="#f6c3bd" stroke="${R}"/><rect x="130" y="96" width="30" height="24" fill="#f6c3bd" stroke="${R}"/>${T(130, 112, '氧 氧', 11, R)}
       ${T(210, 66, '氧化物一', 12, '#555', 400)}${T(210, 112, '氧化物二', 12, '#555', 400)}
       <circle cx="262" cy="88" r="20" fill="#fff" stroke="${K}" stroke-width="2"/>${T(262, 93, '1:2', 13, K, 900)}`),
+    /* ---- 道耳頓 ---- */
+    'dal-f1': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 22, '怎麼秤一顆看不見的原子？', 14, R, 900)}
+      ${balance(104, '? ? ? g')}<circle cx="150" cy="80" r="5" fill="${K}"/><circle cx="150" cy="80" r="16" fill="none" stroke="${R}" stroke-dasharray="3 3"/>
+      <path d="M170 64 L200 44" stroke="${R}" stroke-width="1.5"/>${T(232, 42, '一顆原子', 12, R)}`),
+    'dal-f2': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 22, '一個水粒子裡，各有幾顆？', 14, R, 900)}
+      <path d="M150 38 C120 76 112 92 112 106 C112 128 130 140 150 140 C170 140 188 128 188 106 C188 92 180 76 150 38Z" fill="#7cc0e6" stroke="${B}" stroke-width="2"/>
+      ${T(150, 112, '氫 ? 顆', 13, '#fff')}${T(150, 130, '氧 ? 顆', 13, '#fff')}
+      ${T(58, 80, 'HO ？', 18, '#2c4a7c', 900)}${T(242, 80, 'H₂O ？', 18, '#2c4a7c', 900)}`),
+    'dal-f3': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 22, '原子可以再分割嗎？', 14, R, 900)}
+      <circle cx="150" cy="86" r="40" fill="#e9e4f5" stroke="${K}" stroke-width="3"/>${T(150, 98, '？', 34, '#7b5ea7', 900)}
+      <path d="M70 86 h28 m-6 -6 l6 6 -6 6" stroke="${K}" stroke-width="3" fill="none"/>${T(52, 80, '🔨', 22)}${T(250, 92, '能不能打開？', 12, '#555', 400)}`),
   };
 
   /* ---------- 證據小圖示 ---------- */
@@ -106,6 +117,11 @@ const ART = (() => {
     ratio: () => wrap(`<rect x="6" y="18" width="20" height="12" fill="${M}" stroke="#777"/><rect x="26" y="18" width="16" height="12" fill="#f6c3bd" stroke="${R}"/>${T(24, 44, '固定比例', 8)}`, 48, 48),
     tinox: () => wrap(`<rect x="4" y="10" width="18" height="10" fill="${M}"/><rect x="22" y="10" width="9" height="10" fill="#f6c3bd"/><rect x="4" y="28" width="18" height="10" fill="${M}"/><rect x="22" y="28" width="9" height="10" fill="#f6c3bd"/><rect x="31" y="28" width="9" height="10" fill="#f6c3bd"/>`, 48, 48),
     affinity: () => wrap(`<rect x="6" y="6" width="36" height="36" fill="#fff" stroke="${K}" stroke-width="1.5"/>${[14, 22, 30].map(y => `<line x1="10" y1="${y}" x2="38" y2="${y}" stroke="#aaa"/>`).join('')}<path d="M24 6 v36" stroke="#aaa"/>${T(24, 46, '親和力表', 7)}`, 48, 48),
+    balloon: () => wrap(`<ellipse cx="24" cy="18" rx="12" ry="14" fill="#e9f6ff" stroke="${B}" stroke-width="2"/><path d="M24 32 q-3 6 0 12" stroke="#888" fill="none"/>${T(24, 22, 'H', 12, B)}`, 48, 48),
+    waterratio: () => wrap(`<rect x="6" y="16" width="5" height="14" fill="${B}"/><rect x="11" y="16" width="31" height="14" fill="#f6c3bd"/>${T(24, 44, '氫:氧=1:8', 8)}`, 48, 48),
+    onlyone: () => wrap(`<path d="M24 6 C14 20 12 26 12 31 C12 39 17 44 24 44 C31 44 36 39 36 31 C36 26 34 20 24 6Z" fill="#7cc0e6" stroke="${B}" stroke-width="2"/>${T(24, 34, '1', 14, '#fff')}`, 48, 48),
+    simple: () => wrap(`<circle cx="14" cy="22" r="8" fill="#fff" stroke="${K}" stroke-width="2"/><circle cx="34" cy="22" r="8" fill="#fff" stroke="${K}" stroke-width="2"/><line x1="22" y1="22" x2="26" y2="22" stroke="${K}" stroke-width="2"/>${T(24, 44, '一對一？', 9)}`, 48, 48),
+    nochange: () => wrap(`<rect x="4" y="12" width="16" height="16" fill="${M}" stroke="#777"/><path d="M22 20 h6 m-3 -3 l3 3 -3 3" stroke="${K}" stroke-width="2" fill="none"/><rect x="30" y="12" width="16" height="16" fill="${M}" stroke="#777"/>${T(24, 42, '元素不變', 8)}`, 48, 48),
   };
 
   /* ---------- 實驗器材插圖 ---------- */
@@ -176,6 +192,37 @@ const ART = (() => {
       <rect x="60" y="34" width="180" height="96" fill="#fff" stroke="${K}" stroke-width="2"/>${[0, 1, 2, 3].map(i => `<line x1="60" y1="${58 + i * 24}" x2="240" y2="${58 + i * 24}" stroke="#ccc"/>`).join('')}
       ${['硫酸', '鉀', '鈉', '鈣'].map((n, i) => `${T(150, 50 + i * 24, `${i + 1}. ${n}`, 12, '#555', 400)}`).join('')}
       ${T(268, 90, '比例？', 13, R)}`),
+    'dal-sand': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '一粒沙也有數不清的原子', 13, R)}
+      ${balance(100, '0.0010 g')}<circle cx="150" cy="90" r="4" fill="#c9a24a"/>
+      <circle cx="240" cy="62" r="34" fill="#fff" stroke="${K}"/>${Array.from({ length: 30 }, (_, i) => `<circle cx="${218 + (i % 6) * 9}" cy="${44 + Math.floor(i / 6) * 9}" r="3" fill="#c9a24a"/>`).join('')}${T(240, 108, '放大……還是好多', 10, '#555', 400)}
+      <line x1="156" y1="88" x2="208" y2="70" stroke="#999" stroke-dasharray="3 3"/>`),
+    'dal-h2o': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '比例永遠是 1 : 8', 13, R)}
+      <ellipse cx="50" cy="74" rx="22" ry="26" fill="#e9f6ff" stroke="${B}" stroke-width="2"/>${T(50, 79, '氫 1 g', 11, B)}${T(92, 80, '＋', 20, K)}
+      <ellipse cx="140" cy="74" rx="30" ry="32" fill="#fde3df" stroke="${R}" stroke-width="2"/>${T(140, 79, '氧 8 g', 12, R)}${T(188, 80, '→', 20, K)}
+      <path d="M248 40 C232 64 226 76 226 88 C226 104 236 114 248 114 C260 114 270 104 270 88 C270 76 264 64 248 40Z" fill="#7cc0e6" stroke="${B}" stroke-width="2"/>${T(248, 96, '水 9 g', 11, '#fff')}`),
+    'dal-gold': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '薄到透光，還是看不到原子', 13, R)}
+      <circle cx="80" cy="80" r="22" fill="${G}"/>${T(80, 120, '金塊', 11, '#555', 400)}<path d="M110 80 h30 m-6 -6 l6 6 -6 6" stroke="${K}" stroke-width="3" fill="none"/>
+      <rect x="160" y="44" width="110" height="72" fill="${G}" opacity=".35" stroke="#c99a2a"/>${T(215, 84, '約萬分之一毫米', 11, '#8a6510')}${T(215, 134, '金箔：可以透光', 11, '#555', 400)}`),
+    'dal-trial': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '兩種假設都符合 1 : 8', 13, R)}
+      <rect x="14" y="36" width="130" height="96" rx="8" fill="#fff" stroke="${K}"/>${T(79, 56, '假設：一氫一氧', 12)}
+      <circle cx="52" cy="86" r="10" fill="#e9f6ff" stroke="${B}"/>${T(52, 90, 'H', 10, B)}<circle cx="96" cy="86" r="20" fill="#fde3df" stroke="${R}"/>${T(96, 90, 'O', 12, R)}${T(79, 124, '氧＝氫的 8 倍', 11, R)}
+      <rect x="156" y="36" width="130" height="96" rx="8" fill="#fff" stroke="${K}"/>${T(221, 56, '假設：兩氫一氧', 12)}
+      <circle cx="186" cy="86" r="10" fill="#e9f6ff" stroke="${B}"/><circle cx="208" cy="86" r="10" fill="#e9f6ff" stroke="${B}"/><circle cx="248" cy="86" r="24" fill="#fde3df" stroke="${R}"/>${T(248, 90, 'O', 12, R)}${T(221, 124, '氧＝氫的 16 倍', 11, R)}`),
+    'dal-elec': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '電解水：氫氣的體積是氧氣的 2 倍', 13, R)}
+      <rect x="40" y="110" width="220" height="24" rx="4" fill="#cfe8f5" stroke="${B}"/>
+      <rect x="80" y="34" width="34" height="80" fill="#fff" stroke="${B}" stroke-width="2"/><rect x="81" y="35" width="32" height="60" fill="#e9f6ff"/>${T(97, 68, '氫', 12, B)}${T(97, 84, '2', 14, B)}
+      <rect x="186" y="34" width="34" height="80" fill="#fff" stroke="${B}" stroke-width="2"/><rect x="187" y="35" width="32" height="30" fill="#fde3df"/>${T(203, 56, '氧 1', 12, R)}
+      <rect x="132" y="118" width="36" height="14" fill="#555"/>${T(150, 129, '電池', 9, '#fff')}`),
+    'dal-search': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '氫和氧的化合物：目前只找到一種', 13, R)}
+      <path d="M90 44 C74 70 70 80 70 92 C70 108 80 118 90 118 C100 118 110 108 110 92 C110 80 106 70 90 44Z" fill="#7cc0e6" stroke="${B}" stroke-width="2"/>${T(90, 136, '水', 12)}
+      <rect x="170" y="50" width="80" height="70" rx="8" fill="#fff" stroke="#bbb" stroke-dasharray="5 4"/>${T(210, 92, '？', 30, '#bbb', 900)}${T(210, 136, '第二種？（1818 年才發現）', 10, '#555', 400)}`),
+    'dal-react': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '各種化學方法：元素都沒變', 13, R)}
+      ${[['加熱', 50], ['燃燒', 120], ['溶解', 190], ['通電', 260]].map(([n, x]) => `<rect x="${x - 26}" y="46" width="52" height="40" rx="6" fill="#fff" stroke="${K}"/>${T(x, 72, n, 12)}${T(x, 108, '元素不變', 10, '#2f9e5a')}`).join('')}`),
+    'dal-nox': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '同量的氮結合的氧：1 : 2 : 4', 13, R)}
+      ${[1, 2, 4].map((k, i) => `<rect x="40" y="${38 + i * 34}" width="60" height="24" fill="#cfd8ff" stroke="#556"/>${T(70, 55 + i * 34, '氮', 11, '#334')}<rect x="100" y="${38 + i * 34}" width="${k * 30}" height="24" fill="#f6c3bd" stroke="${R}"/>${T(100 + k * 15, 55 + i * 34, '氧×' + k, 11, R)}`).join('')}`),
+    'dal-weights': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '每種元素都有自己的原子量', 13, R)}
+      ${[['氫', 1, '#e9f6ff', 50], ['碳', 12, '#555', 120], ['氮', 14, '#cfd8ff', 190], ['氧', 16, '#fde3df', 260]].map(([n, w, c, x]) => `<circle cx="${x}" cy="74" r="${10 + w}" fill="${c}" stroke="${K}"/>${T(x, 78, n, 11, w === 12 ? '#fff' : K)}${T(x, 122, String(w), 13)}`).join('')}
+      ${T(150, 142, '（今天的數值）', 10, '#888', 400)}`),
   };
 
   const get = (lib, k) => (lib[k] ? lib[k]() : '');
