@@ -24,6 +24,11 @@ const ART = (() => {
   const vol = (x, y, n, label, c, sz = 22) => Array.from({ length: n }, (_, i) => `<rect x="${x + i * (sz + 2)}" y="${y}" width="${sz}" height="${sz}" rx="3" fill="${c}" stroke="#555"/>`).join('') + (label ? T(x + (n * (sz + 2)) / 2 - 1, y + sz + 14, label, 10, '#555', 400) : '');
   const HC = '#e9f6ff', OC = '#fde3df', NC = '#cfd8ff', CLC = '#e3f2c6', PC = '#f3e6c4';
 
+  // 元素卡片、陰極射線管（第六、七章用）
+  const card = (x, y, sym, sub = '', c = '#fff', w = 34, h = 40) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="${c}" stroke="#8a7a5a" stroke-width="1.5"/>${T(x + w / 2, y + h / 2 + 3, sym, 13, K, 900)}${sub ? T(x + w / 2, y + h - 4, sub, 8, '#666', 400) : ''}`;
+  const tube = (x, y, w = 200, beam = 'straight') => `<path d="M${x} ${y - 14} L${x + 40} ${y - 14} Q${x + 60} ${y - 34} ${x + w - 30} ${y - 34} Q${x + w} ${y - 34} ${x + w} ${y} Q${x + w} ${y + 34} ${x + w - 30} ${y + 34} Q${x + 60} ${y + 34} ${x + 40} ${y + 14} L${x} ${y + 14}Z" fill="${GL}" fill-opacity=".6" stroke="${B}" stroke-width="2"/><rect x="${x + 6}" y="${y - 8}" width="6" height="16" fill="#555"/>${T(x + 9, y + 28, '－', 12, K)}` +
+    (beam === 'straight' ? `<path d="M${x + 12} ${y} L${x + w - 4} ${y}" stroke="#3fd16b" stroke-width="2.5" stroke-dasharray="6 4"/><circle cx="${x + w - 3}" cy="${y}" r="5" fill="#3fd16b"/>` : beam === 'up' ? `<path d="M${x + 12} ${y} L${x + 90} ${y} Q${x + w - 40} ${y} ${x + w - 8} ${y - 22}" stroke="#3fd16b" stroke-width="2.5" fill="none" stroke-dasharray="6 4"/><circle cx="${x + w - 8}" cy="${y - 22}" r="5" fill="#3fd16b"/>` : '');
+
   /* ---------- 情境插圖 ---------- */
   const SCENES = {
     // 金屬燒完變重：天平向煅灰那一邊傾斜
@@ -121,6 +126,26 @@ const ART = (() => {
     'avo-f3': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 22, '分子到底有幾個？真的存在嗎？', 14, R, 900)}
       <circle cx="90" cy="88" r="44" fill="#eef9ff" stroke="${K}" stroke-width="3"/>${[[70, 70], [104, 78], [84, 104], [112, 100], [76, 88]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="5" fill="#c9a24a"/><path d="M${x} ${y} l${(x % 7) - 3} ${(y % 5) - 2} l4 -3" stroke="#c9a24a" stroke-width="1" fill="none"/>`).join('')}
       ${T(90, 146, '顯微鏡下亂動的微粒', 10, '#555', 400)}${T(220, 90, '× ？？？', 22, '#2c4a7c', 900)}`),
+
+    /* ---- 門得列夫 ---- */
+    'men-f1': () => wrap(`<rect width="300" height="150" fill="#f6efe0"/>${T(150, 22, '63 張卡片，要怎麼排？', 14, R, 900)}
+      ${[['O', 16, 30, 40, -8], ['Na', 23, 80, 70, 6], ['Cl', 35.5, 130, 38, 4], ['K', 39, 180, 74, -6], ['Ca', 40, 228, 44, 8], ['Li', 7, 46, 96, 5], ['Br', 80, 110, 98, -4], ['Fe', 56, 160, 104, 7], ['S', 32, 214, 98, -7], ['H', 1, 256, 92, 4]].map(([e, w, x, y, r]) => `<g transform="rotate(${r} ${x + 17} ${y + 20})">${card(x, y, e, String(w))}</g>`).join('')}`),
+    'men-f2': () => wrap(`<rect width="300" height="150" fill="#f6efe0"/>${T(150, 22, '這個元素該放哪一行？', 14, R, 900)}
+      ${[['B', 30, 40], ['C', 66, 40], ['N', 102, 40], ['Al', 30, 84], ['Si', 66, 84], ['P', 102, 84]].map(([e, x, y]) => card(x, y, e, '', '#fff', 32, 38)).join('')}
+      ${card(168, 84, 'Zn', '65', '#fff', 32, 38)}${card(236, 60, 'As', '75', '#ffe9b0', 36, 42)}
+      <path d="M232 80 Q200 70 140 102" stroke="${R}" stroke-width="2" fill="none" stroke-dasharray="4 3"/><path d="M236 92 Q210 130 150 128" stroke="${R}" stroke-width="2" fill="none" stroke-dasharray="4 3"/>${T(150, 144, '？', 14, R, 900)}`),
+    'men-f3': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 22, '鎵的密度：該相信誰？', 14, R, 900)}
+      <rect x="28" y="40" width="104" height="90" rx="8" fill="#f6eedb" stroke="#b9a77f"/>${T(80, 62, '1871 預言', 12, '#8a6510')}${T(80, 98, '5.9', 28, '#2c4a7c', 900)}${T(80, 120, '類鋁的密度', 10, '#555', 400)}
+      <rect x="168" y="40" width="104" height="90" rx="8" fill="#e8f3ff" stroke="${B}"/>${T(220, 62, '1875 實測', 12, B)}${T(220, 98, '4.7', 28, R, 900)}${T(220, 120, '鎵的密度', 10, '#555', 400)}${T(150, 92, '≠', 22, K, 900)}`),
+    /* ---- 湯姆森 ---- */
+    'tho-f1': () => wrap(`<rect width="300" height="150" fill="#1f2433"/>${T(150, 22, '陰極射線：是波？還是粒子？', 14, '#ffd36b', 900)}${tube(40, 86, 220, 'straight')}
+      <path d="M150 64 v44" stroke="#bbb" stroke-width="3"/><path d="M140 86 h20" stroke="#bbb" stroke-width="3"/>${T(150, 140, '管壁發出綠光，留下十字的影子', 10, '#cfd6e6', 400)}`),
+    'tho-f2': () => wrap(`<rect width="300" height="150" fill="#1f2433"/>${T(150, 22, '這種粒子，到底有多大？', 14, '#ffd36b', 900)}
+      <circle cx="80" cy="86" r="34" fill="#e9f6ff" stroke="#8fb4d9" stroke-width="2"/>${T(80, 90, '氫原子', 12, K)}${T(80, 140, '已知最輕', 10, '#cfd6e6', 400)}
+      ${T(150, 92, '？', 26, '#ffd36b', 900)}<circle cx="220" cy="86" r="5" fill="#3fd16b"/>${T(220, 116, '射線粒子', 11, '#cfd6e6', 400)}${T(220, 140, '荷質比大得驚人', 10, '#ffd36b', 400)}`),
+    'tho-f3': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 22, '霓虹氣竟然畫出兩條線？', 14, R, 900)}
+      <rect x="60" y="34" width="180" height="104" fill="#2b2b33" stroke="#555"/><path d="M80 120 Q150 110 220 46" stroke="#f0e6c8" stroke-width="2.5" fill="none"/><path d="M80 126 Q160 118 224 66" stroke="#f0e6c8" stroke-width="1.2" fill="none" opacity=".75"/>
+      ${T(232, 44, '20', 11, R)}${T(236, 72, '22', 11, R)}${T(150, 148, '照相底片', 10, '#555', 400)}`),
   };
 
   /* ---------- 證據小圖示 ---------- */
@@ -166,6 +191,25 @@ const ART = (() => {
     brown: () => wrap(`<circle cx="24" cy="24" r="18" fill="#eef9ff" stroke="${K}" stroke-width="2"/><path d="M14 26 l6 -6 l4 8 l6 -10 l4 6" stroke="#c9a24a" stroke-width="2" fill="none"/>`, 48, 48),
     oilfilm: () => wrap(`<rect x="2" y="28" width="44" height="14" fill="#7cc0e6"/><ellipse cx="24" cy="28" rx="18" ry="2.5" fill="${G}"/><circle cx="24" cy="12" r="4" fill="${G}"/>`, 48, 48),
     einstein: () => wrap(`<rect x="8" y="8" width="32" height="30" fill="#fff" stroke="${K}"/>${T(24, 24, '理論', 10)}${T(24, 46, '1905', 9)}`, 48, 48),
+
+    triad: () => wrap(`${card(2, 10, 'Ca', '', '#fff', 14, 18).replace(/font-size="13"/, 'font-size="7"')}${card(17, 10, 'Sr', '', '#ffe9b0', 14, 18).replace(/font-size="13"/, 'font-size="7"')}${card(32, 10, 'Ba', '', '#fff', 14, 18).replace(/font-size="13"/, 'font-size="7"')}${T(24, 42, '三元素組', 8)}`, 48, 48),
+    octave: () => wrap(`${[0, 1, 2, 3, 4, 5, 6, 7].map(i => `<rect x="${3 + i * 5.5}" y="10" width="5" height="22" fill="${i === 0 || i === 7 ? R : '#fff'}" stroke="#555" stroke-width=".8"/>`).join('')}${T(24, 44, '八音律', 9)}`, 48, 48),
+    atw: () => wrap(`<rect x="8" y="4" width="32" height="38" fill="#fff" stroke="${K}"/>${['H 1', 'O 16', 'Cl 35.5'].map((t, i) => T(24, 16 + i * 10, t, 7, '#333', 400)).join('')}${T(24, 47, '原子量', 7)}`, 48, 48),
+    pertable: () => wrap(`${Array.from({ length: 12 }, (_, i) => `<rect x="${4 + (i % 4) * 10}" y="${6 + Math.floor(i / 4) * 10}" width="9" height="9" fill="${i % 4 === 0 ? '#f6c3bd' : '#e3f2c6'}" stroke="#777" stroke-width=".6"/>`).join('')}${T(24, 46, '大致整齊', 8)}`, 48, 48),
+    misfit: () => wrap(`${card(2, 16, 'Zn', '', '#fff', 18, 20).replace(/font-size="13"/, 'font-size="8"')}<path d="M21 26 h5" stroke="${K}" stroke-width="2"/>${card(27, 16, 'As', '', '#ffe9b0', 18, 20).replace(/font-size="13"/, 'font-size="8"')}${T(24, 12, '65 → 75', 8, R)}${T(24, 46, '跑錯行', 8, R)}`, 48, 48),
+    octbreak: () => wrap(`${[0, 1, 2, 3, 4, 5].map(i => `<rect x="${4 + i * 7}" y="${10 + (i > 3 ? (i - 3) * 4 : 0)}" width="6" height="20" fill="#fff" stroke="#555" stroke-width=".8" transform="rotate(${i > 3 ? 12 : 0} ${7 + i * 7} 20)"/>`).join('')}${T(24, 44, '越排越亂', 8, R)}`, 48, 48),
+    spectrum: () => wrap(`<defs><linearGradient id="spg" x1="0" x2="1"><stop offset="0" stop-color="#7a3cff"/><stop offset=".35" stop-color="#3a8bff"/><stop offset=".6" stop-color="#3fd16b"/><stop offset=".8" stop-color="#ffd23f"/><stop offset="1" stop-color="#ff4a3a"/></linearGradient></defs><rect x="4" y="14" width="40" height="16" fill="#111"/><line x1="14" y1="14" x2="14" y2="30" stroke="#8a5cff" stroke-width="2"/><line x1="17" y1="14" x2="17" y2="30" stroke="#8a5cff" stroke-width="1.2"/>${T(24, 44, '新譜線', 8)}`, 48, 48),
+    gallium: () => wrap(`<path d="M8 30 Q8 18 20 18 L30 18 Q40 18 40 30 Q40 38 30 38 L18 38 Q8 38 8 30Z" fill="#c8ccd4" stroke="#777" stroke-width="1.5"/><path d="M14 26 q8 -5 18 0" stroke="#fff" stroke-width="2" fill="none"/>${T(24, 46, '鎵', 9)}`, 48, 48),
+    density2: () => wrap(`${T(14, 22, '5.9', 11, '#2c4a7c')}${T(34, 22, '4.7', 11, R)}${T(24, 22, '/', 11)}${T(24, 40, '預言/實測', 7)}`, 48, 48),
+    crt: () => wrap(`<ellipse cx="28" cy="22" rx="18" ry="12" fill="${GL}" stroke="${B}" stroke-width="1.5"/><rect x="2" y="18" width="10" height="8" fill="${GL}" stroke="${B}"/><path d="M8 22 h36" stroke="#3fd16b" stroke-width="2" stroke-dasharray="3 2"/><path d="M28 14 v16 M22 22 h12" stroke="#777" stroke-width="2"/>${T(24, 44, '影子銳利', 8)}`, 48, 48),
+    foil: () => wrap(`<path d="M4 22 h16" stroke="#3fd16b" stroke-width="2" stroke-dasharray="3 2"/><rect x="21" y="8" width="3" height="28" fill="#c9a24a"/><path d="M26 22 h16" stroke="#3fd16b" stroke-width="2" stroke-dasharray="3 2"/>${T(24, 46, '穿過金屬箔', 7)}`, 48, 48),
+    eplate: () => wrap(`<rect x="8" y="8" width="32" height="4" fill="${R}"/><rect x="8" y="32" width="32" height="4" fill="#4d8fb8"/>${T(4, 13, '+', 9, R)}${T(4, 37, '−', 9, B)}<path d="M2 22 h44" stroke="#3fd16b" stroke-width="2" stroke-dasharray="3 2"/>${T(24, 47, '1883', 7)}`, 48, 48),
+    deflect: () => wrap(`<rect x="8" y="6" width="32" height="3" fill="${R}"/><rect x="8" y="35" width="32" height="3" fill="#4d8fb8"/><path d="M2 24 L16 24 Q30 24 44 12" stroke="#3fd16b" stroke-width="2" fill="none"/>${T(24, 47, '帶負電', 8)}`, 48, 48),
+    hlight: () => wrap(`<circle cx="24" cy="20" r="12" fill="#e9f6ff" stroke="${B}" stroke-width="2"/>${T(24, 24, 'H', 12, B)}${T(24, 44, '最輕的原子', 7)}`, 48, 48),
+    travel: () => wrap(`<circle cx="6" cy="14" r="3" fill="#888"/><path d="M10 14 h10" stroke="#888" stroke-width="2"/><circle cx="6" cy="30" r="2" fill="#3fd16b"/><path d="M9 30 h36" stroke="#3fd16b" stroke-width="2"/>${T(24, 46, '走得比較遠', 7)}`, 48, 48),
+    parabola: () => wrap(`<rect x="4" y="4" width="40" height="34" fill="#2b2b33"/><path d="M8 34 Q26 30 40 8" stroke="#f0e6c8" stroke-width="1.5" fill="none"/>${T(24, 47, '用磁場秤原子', 7)}`, 48, 48),
+    ne202: () => wrap(`<rect x="6" y="8" width="36" height="24" rx="4" fill="#ffe0e8" stroke="${R}"/>${T(24, 25, 'Ne', 13, R)}${T(24, 44, '20.2', 9)}`, 48, 48),
+    samemass: () => wrap(`${[10, 24, 38].map(x => `<circle cx="${x}" cy="20" r="6" fill="#e9e4f5" stroke="${K}"/>`).join('')}${T(24, 42, '質量都一樣?', 7)}`, 48, 48),
   };
 
   /* ---------- 實驗器材插圖 ---------- */
@@ -317,6 +361,54 @@ const ART = (() => {
       <circle cx="40" cy="56" r="18" fill="${G}"/>${[0, 1, 2].map(i => `<path d="M60 ${56 + i * 6} L${140 + i * 20} ${70 + i * 10}" stroke="${G}" stroke-width="2"/>`).join('')}
       ${[[150, 76], [180, 64], [170, 96], [210, 84]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="3" fill="#555"/><path d="M${x} ${y} l12 -16 M${x} ${y} l-14 -10 M${x} ${y} l14 10" stroke="#4d8fb8" stroke-width="1.5"/>`).join('')}
       ${T(150, 136, '藍光被空氣分子散射 → 也能估算分子數', 11, '#2c4a7c')}`),
+
+    'men-line': () => wrap(`<rect width="300" height="150" fill="#f6efe0"/>${T(150, 20, '照原子量排：活潑金屬每隔一段出現', 13, R)}
+      ${[['Li', 1], ['Be'], ['B'], ['C'], ['N'], ['O'], ['F', 2], ['Na', 1], ['Mg'], ['Al'], ['Si'], ['P'], ['S'], ['Cl', 2]].map(([e, h], i) => card(6 + (i % 7) * 41, 38 + Math.floor(i / 7) * 50, e, '', h === 1 ? '#ffd9c2' : h === 2 ? '#d9f0c2' : '#fff', 36, 40)).join('')}
+      ${T(150, 144, '橘色：活潑金屬　綠色：活潑非金屬', 10, '#555', 400)}`),
+    'men-alkali': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '鋰、鈉、鉀丟進水裡', 13, R)}
+      ${[['鋰 Li', 60, 1], ['鈉 Na', 150, 2], ['鉀 K', 240, 3]].map(([n, x, k]) => `<path d="M${x - 36} 52 L${x - 36} 116 Q${x - 36} 124 ${x - 28} 124 L${x + 28} 124 Q${x + 36} 124 ${x + 36} 116 L${x + 36} 52" fill="${GL}" stroke="${B}" stroke-width="2"/><rect x="${x - 35}" y="72" width="70" height="51" fill="#cfe8f5"/><rect x="${x - 6}" y="66" width="12" height="7" fill="#bbb"/>${Array.from({ length: k * 3 }, (_, i) => `<circle cx="${x - 18 + (i * 11) % 36}" cy="${64 - (i % 3) * 7}" r="2.5" fill="#fff" stroke="#9cc"/>`).join('')}${k === 3 ? flame(x, 66, .6) : ''}${T(x, 140, n, 11)}`).join('')}`),
+    'men-oxide': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '氧化物的化學式會循環', 13, R)}
+      ${['R₂O', 'RO', 'R₂O₃', 'RO₂', 'R₂O₅'].map((f, i) => `<rect x="${12 + i * 56}" y="40" width="50" height="30" rx="4" fill="#fff" stroke="${R}"/>${T(37 + i * 56, 60, f, 12, R)}`).join('')}
+      ${['Li₂O', 'BeO', 'B₂O₃', 'CO₂', 'N₂O₅'].map((f, i) => T(37 + i * 56, 88, f, 10, '#555', 400)).join('')}${['Na₂O', 'MgO', 'Al₂O₃', 'SiO₂', 'P₂O₅'].map((f, i) => T(37 + i * 56, 106, f, 10, '#555', 400)).join('')}
+      ${T(150, 136, '……然後又從 R₂O 開始', 11, '#2c4a7c')}`),
+    'men-as': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '砷比較像誰？', 13, R)}
+      ${[['P', '磷', 110, 'P₂O₅', 'PH₃'], ['As', '砷', 185, 'As₂O₅', 'AsH₃'], ['Al', '鋁', 260, 'Al₂O₃', '—']].map(([e, n, x, o, h]) => `${card(x - 20, 34, e, n, e === 'As' ? '#ffe9b0' : '#fff', 40, 44)}${T(x, 102, o, 12, '#2c4a7c')}${T(x, 122, h, 12, '#2c4a7c')}`).join('')}
+      ${T(38, 102, '氧化物', 10, '#888', 400)}${T(38, 122, '氫化物', 10, '#888', 400)}`),
+    'men-tei': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '碲比碘重，可是……', 13, R)}
+      ${card(40, 40, 'Se', '硒', '#e3f2c6', 40, 44)}${card(40, 92, 'Te', '127.6', '#e3f2c6', 40, 44)}${card(200, 40, 'Br', '溴', '#fde3df', 40, 44)}${card(200, 92, 'I', '126.9', '#fde3df', 40, 44)}
+      ${T(150, 70, '性質相似 ↕', 11, '#555', 400)}${T(150, 120, '原子量：碲 ＞ 碘', 12, R)}`),
+    'men-gapcalc': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '相鄰元素的原子量差距', 13, R)}
+      ${[['Mg', 24.3], ['Al', 27], ['Si', 28.1], ['P', 31], ['S', 32.1]].map(([e, w], i) => `${card(14 + i * 40, 40, e, String(w), '#fff', 34, 40)}`).join('')}${T(110, 98, '差 1～4', 12, '#2c4a7c')}
+      ${card(222, 40, 'Zn', '65.4', '#fff', 34, 40)}${card(262, 92, 'As', '74.9', '#ffe9b0', 34, 40)}<path d="M240 82 L270 92" stroke="${R}" stroke-width="2"/>${T(222, 120, '差將近 10！', 12, R)}`),
+    'men-gaw': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '原子量：預言 vs 實測', 13, R)}
+      <rect x="40" y="${130 - 68}" width="70" height="68" fill="#f6eedb" stroke="#b9a77f"/>${T(75, 56, '68', 16, '#2c4a7c', 900)}${T(75, 146, '類鋁（預言）', 10, '#555', 400)}
+      <rect x="190" y="${130 - 70}" width="70" height="70" fill="#e8f3ff" stroke="${B}"/>${T(225, 54, '69.7', 16, '#2c4a7c', 900)}${T(225, 146, '鎵（實測）', 10, '#555', 400)}${T(150, 100, '≈', 22, '#2f9e5a', 900)}`),
+    'men-ga2o3': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '氧化物的化學式', 13, R)}
+      ${T(80, 84, 'Ea₂O₃', 24, '#8a6510', 900)}${T(80, 112, '類鋁（預言）', 10, '#555', 400)}${T(150, 84, '＝', 22, '#2f9e5a', 900)}${T(220, 84, 'Ga₂O₃', 24, '#2c4a7c', 900)}${T(220, 112, '鎵（實測）', 10, '#555', 400)}`),
+    'men-sample': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '鎵從哪裡來？', 13, R)}
+      <path d="M20 128 L50 70 L80 96 L110 60 L140 128Z" fill="#9b8a72" stroke="#6b5a42" stroke-width="2"/>${T(80, 144, '一大堆礦石', 10, '#555', 400)}<path d="M150 96 h40 m-8 -6 l8 6 -8 6" stroke="${K}" stroke-width="2" fill="none"/>
+      <circle cx="236" cy="96" r="5" fill="#c8ccd4" stroke="#777"/>${T(236, 124, '只得到一點點', 11, R)}${T(236, 140, '還沒完全純化', 10, '#555', 400)}`),
+    'tho-magnet': () => wrap(`<rect width="300" height="150" fill="#1f2433"/>${T(150, 20, '磁鐵靠近：光點移動了', 13, '#ffd36b')}${tube(40, 84, 220, 'up')}
+      <rect x="150" y="116" width="40" height="16" fill="${R}"/><rect x="190" y="116" width="40" height="16" fill="#4d8fb8"/>${T(170, 128, 'N', 10, '#fff')}${T(210, 128, 'S', 10, '#fff')}`),
+    'tho-eweak': () => wrap(`<rect width="300" height="150" fill="#1f2433"/>${T(150, 20, '加上電場：幾乎沒偏轉', 13, '#ffd36b')}${tube(40, 84, 220, 'straight')}
+      <rect x="120" y="62" width="70" height="5" fill="${R}"/><rect x="120" y="101" width="70" height="5" fill="#4d8fb8"/>${T(112, 68, '+', 12, '#ff8a7a')}${T(112, 108, '−', 12, '#8fc8ff')}
+      ${[[90, 76], [150, 92], [210, 74], [236, 96], [70, 94]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2" fill="#aab"/>`).join('')}${T(150, 142, '管內還殘留著氣體分子', 10, '#cfd6e6', 400)}`),
+    'tho-cup': () => wrap(`<rect width="300" height="150" fill="#1f2433"/>${T(150, 20, '金屬筒收集射線', 13, '#ffd36b')}${tube(30, 80, 200, 'straight')}
+      <path d="M236 64 h30 v32 h-30" fill="none" stroke="#c9a24a" stroke-width="4"/><path d="M266 80 h18 v40" stroke="#ccc" stroke-width="2"/><circle cx="284" cy="126" r="8" fill="#fff"/>${T(284, 130, '−', 12, B)}${T(150, 140, '金屬筒帶了負電', 11, '#cfd6e6')}`),
+    'tho-metals': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '換不同的陰極金屬', 13, R)}
+      ${[['鋁', 60], ['鐵', 150], ['鉑', 240]].map(([n, x]) => `<rect x="${x - 30}" y="44" width="60" height="40" rx="6" fill="#d8dce3" stroke="#777"/>${T(x, 70, n, 14)}${T(x, 112, '荷質比', 10, '#555', 400)}${T(x, 132, '相同', 14, '#2c4a7c', 900)}`).join('')}`),
+    'tho-gases': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '換管內的氣體', 13, R)}
+      ${[['空氣', '#eee', 60], ['氫氣', HC, 150], ['CO₂', '#ddd', 240]].map(([n, c, x]) => `<ellipse cx="${x}" cy="64" rx="34" ry="20" fill="${c}" stroke="${B}" stroke-width="2"/>${T(x, 69, n, 13)}${T(x, 112, '荷質比', 10, '#555', 400)}${T(x, 132, '相同', 14, '#2c4a7c', 900)}`).join('')}`),
+    'tho-em': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '荷質比大比拚', 13, R)}
+      <rect x="30" y="${128 - 8}" width="60" height="8" fill="#9fc3e6"/>${T(60, 112, '氫離子', 11)}
+      <rect x="170" y="38" width="100" height="90" fill="#3fd16b" opacity=".8"/>${T(220, 80, '一千倍以上', 14, K, 900)}${T(220, 144, '射線粒子', 11)}`),
+    'tho-diffuse': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '讓霓虹氣反覆穿過陶土管', 13, R)}
+      <rect x="40" y="60" width="220" height="24" rx="12" fill="#d9b48a" stroke="#9a7449" stroke-width="2"/>${Array.from({ length: 18 }, (_, i) => `<circle cx="${54 + i * 11.5}" cy="72" r="2" fill="#9a7449"/>`).join('')}
+      <rect x="20" y="104" width="100" height="32" rx="6" fill="#ffe0e8" stroke="${R}"/>${T(70, 125, '約 20.15', 13, R, 900)}<rect x="180" y="104" width="100" height="32" rx="6" fill="#ffe0e8" stroke="${R}"/>${T(230, 125, '約 20.28', 13, R, 900)}`),
+    'tho-inert': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '兩部分的性質比一比', 13, R)}
+      ${[60, 220].map((x, i) => `<rect x="${x - 40}" y="36" width="80" height="46" rx="6" fill="#ffe0e8" stroke="${R}"/>${T(x, 64, i ? '22 那份' : '20 那份', 12, R)}<rect x="${x - 40}" y="92" width="80" height="16" fill="#111"/><line x1="${x - 14}" y1="92" x2="${x - 14}" y2="108" stroke="#ff5a3a" stroke-width="2"/><line x1="${x + 6}" y1="92" x2="${x + 6}" y2="108" stroke="#ffb03a" stroke-width="2"/>${T(x, 128, '不反應', 11, '#555', 400)}`).join('')}${T(150, 104, '光譜 ＝', 11, '#2c4a7c')}`),
+    'tho-repeat': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '換一批霓虹氣再做', 13, R)}
+      ${[0, 1, 2].map(i => `<rect x="${24 + i * 88}" y="38" width="76" height="80" fill="#2b2b33"/><path d="M${30 + i * 88} 110 Q${62 + i * 88} 104 ${94 + i * 88} 48" stroke="#f0e6c8" stroke-width="2" fill="none"/><path d="M${30 + i * 88} 114 Q${66 + i * 88} 110 ${96 + i * 88} 64" stroke="#f0e6c8" stroke-width="1" fill="none" opacity=".6"/>${T(62 + i * 88, 136, `第 ${i + 1} 次`, 10, '#555', 400)}`).join('')}`),
   };
 
   const get = (lib, k) => (lib[k] ? lib[k]() : '');
