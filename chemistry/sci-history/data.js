@@ -46,13 +46,13 @@ const SH_DATA = (() => {
       teaser: '像用砲彈射衛生紙，砲彈卻被彈回來了！',
       videos: [{ id: '0TTThybVbG4', title: '原子內的重量級角色現身！（拉塞福－質子發現）' }] },
     { id: 'bohr', name: '波耳', en: 'Niels Bohr', life: '1885–1962', year: 1913, x: 88, y: 50,
-      tag: '原子模型・能階', needs: ['rutherford'], color: '#16708a',
+      tag: '原子模型・能階', needs: ['rutherford'], ready: true, color: '#16708a',
       teaser: '電子繞著原子核轉，為什麼不會掉進去？', videos: [] },
-    { id: 'moseley', name: '莫斯利', en: 'Henry Moseley', life: '1887–1915', year: 1913, x: 92, y: 28,
-      tag: '原子序', needs: ['rutherford', 'mendeleev'], color: '#5d6d7e',
+    { id: 'moseley', name: '莫斯利', en: 'Henry Moseley', life: '1887–1915', year: 1913, x: 92, y: 22,
+      tag: '原子序', needs: ['rutherford', 'mendeleev'], ready: true, color: '#5d6d7e',
       teaser: '週期表真正的排列依據，不是原子量。', videos: [] },
     { id: 'chadwick', name: '查兌克', en: 'James Chadwick', life: '1891–1974', year: 1932, x: 90, y: 78,
-      tag: '中子的發現', needs: ['rutherford'], color: '#6c3483',
+      tag: '中子的發現', needs: ['rutherford'], ready: true, color: '#6c3483',
       teaser: '原子中的隱藏角色，元素最大的祕密就在它身上？',
       videos: [{ id: 'mCBSpY1NsGg', title: '原子中的隱藏角色（查兌克－中子的發現）' }] }
   ];
