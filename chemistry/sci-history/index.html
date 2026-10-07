@@ -56,6 +56,14 @@
   .tabs { display: flex; gap: 6px; margin: 12px 0; }
   .tabs button { flex: 1; background: var(--night-2); border: 2px solid var(--night-3); color: var(--soft); border-radius: 10px; padding: 9px; font-weight: 700; }
   .tabs button.on { background: var(--gold); color: var(--ink); border-color: var(--gold); }
+  .hub-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 8px 0 4px; }
+  .free-banner { background: #2b6a4a; border: 2px solid #6fd39a; border-radius: 12px; padding: 10px 14px; margin: 8px 0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .purpose { display: flex; gap: 6px; flex-wrap: wrap; }
+  .purpose label { margin: 0; flex: 1; min-width: 90px; }
+  .purpose input { display: none; }
+  .purpose span { display: block; text-align: center; border: 2px solid var(--night-3); border-radius: 9px; padding: 9px 6px; color: var(--soft); cursor: pointer; font-weight: 700; }
+  .purpose input:checked + span { border-color: var(--gold); background: #3a3214; color: var(--gold); }
+  .term-tag { color: var(--gold); font-size: .85em; margin-top: 10px; text-align: center; }
   .rules { background: var(--night-2); border: 1px solid var(--night-3); border-radius: 12px; padding: 10px 14px; color: var(--soft); font-size: .88em; line-height: 1.75; margin-bottom: 10px; }
   .rules b { color: var(--gold); }
   .rules summary { cursor: pointer; color: #fff; font-weight: 700; }
@@ -108,23 +116,36 @@
   .steps { display: flex; gap: 6px; margin-bottom: 12px; }
   .steps i { flex: 1; height: 6px; border-radius: 3px; background: var(--night-3); }
   .steps i.ok { background: var(--gold); } .steps i.now { background: #fff; }
-  .scene { font-size: 1.05em; }
-  .year { display: inline-block; background: var(--ink); color: var(--gold); border-radius: 6px; padding: 1px 10px; font-family: 'Silkscreen', monospace; margin-bottom: 4px; }
-  .sec { margin-top: 16px; }
-  .sec h3 { font-size: 1em; margin-bottom: 8px; color: #6b4e2e; }
-  .ev { background: #fff; border: 1px solid var(--paper-2); border-left: 5px solid #9a8a6a; border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; line-height: 1.7; }
-  .ev.exp { border-left-color: var(--violet); background: #f6f1ff; }
-  .ev .tag { font-size: .78em; color: var(--violet); font-weight: 900; margin-right: 6px; }
-  .exps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
-  .exp-btn { background: #fff; border: 2px dashed var(--violet); color: var(--violet); border-radius: 10px; padding: 10px; font-weight: 700; text-align: left; }
-  .exp-btn small { display: block; color: #8a7d9e; font-weight: 400; }
-  .exp-btn:disabled { opacity: .45; cursor: default; }
+  .col { max-width: 760px; margin: 0 auto; }
+  #play { max-width: 800px; }
+  .year { display: inline-block; background: var(--gold); color: var(--ink); border-radius: 6px; padding: 1px 10px; font-family: 'Silkscreen', monospace; font-weight: 700; }
+  .fork-title { font-family: 'Noto Serif TC', serif; font-size: 1.55em; margin: 6px 0 12px; color: #fff; }
+  .blk { background: var(--paper); color: var(--ink); border-radius: 14px; padding: 16px 18px; margin-bottom: 14px; box-shadow: 0 6px 20px #0006; }
+  .blk-h { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 1.05em; margin-bottom: 10px; color: #4a3a22; }
+  .blk-h .no { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--ink); color: var(--gold); display: grid; place-items: center; font-size: .9em; }
+  .blk-h small { font-weight: 400; color: #8a7d64; font-size: .82em; margin-left: auto; }
+  .blk p { line-height: 1.95; margin: 0 0 8px; font-size: 1.06em; }
+  .blk p:last-child { margin-bottom: 0; }
+  .blk b { color: #8a3a12; }
+  .evlist { list-style: none; display: grid; gap: 6px; }
+  .evlist li { position: relative; padding: 6px 10px 6px 30px; background: #fff; border-radius: 8px; line-height: 1.7; }
+  .evlist li::before { content: '📜'; position: absolute; left: 8px; top: 6px; font-size: .9em; }
+  .labx { border: 2px solid #ddd3f0; border-radius: 12px; margin-bottom: 10px; overflow: hidden; background: #fff; }
+  .labx .top { display: flex; align-items: center; gap: 10px; padding: 10px 12px; }
+  .labx .ic { font-size: 1.3em; }
+  .labx .nm { flex: 1; font-weight: 700; line-height: 1.5; }
+  .labx .do { border: none; background: var(--violet); color: #fff; border-radius: 8px; padding: 7px 12px; font-weight: 700; white-space: nowrap; }
+  .labx .do:disabled { background: #cfc6de; cursor: default; }
+  .labx .res { background: #f3eeff; border-top: 2px dashed #c9b8ec; padding: 10px 14px; line-height: 1.85; }
+  .labx .res .lbl { display: inline-block; background: var(--violet); color: #fff; border-radius: 5px; font-size: .78em; padding: 0 7px; margin-right: 6px; font-weight: 700; }
+  .labx.done { border-color: var(--violet); }
   .opts { display: grid; gap: 10px; }
-  .opt { background: #fff; border: 2px solid var(--paper-2); border-radius: 12px; padding: 12px 14px; text-align: left; color: var(--ink); line-height: 1.7; box-shadow: 0 3px 0 var(--paper-2); }
+  .opt { background: #fff; border: 2px solid var(--paper-2); border-radius: 12px; padding: 12px 14px; text-align: left; color: var(--ink); line-height: 1.7; box-shadow: 0 3px 0 var(--paper-2); display: flex; gap: 12px; align-items: center; }
   .opt:hover { border-color: var(--gold-2); }
-  .opt .who { font-size: .82em; color: #8a7d64; font-weight: 700; }
-  .opt .txt { font-size: 1.05em; font-weight: 700; }
-  .opt .go { display: inline-block; margin-top: 6px; font-size: .85em; background: var(--ink); color: var(--gold); border-radius: 6px; padding: 2px 10px; }
+  .opt .lt { flex: none; width: 36px; height: 36px; border-radius: 10px; background: var(--ink); color: var(--gold); display: grid; place-items: center; font-weight: 900; font-family: 'Silkscreen', monospace; }
+  .opt .txt { flex: 1; font-size: 1.06em; font-weight: 700; }
+  .opt .go { flex: none; font-size: .82em; color: #8a7d64; }
+  .warn { margin-top: 10px; font-size: .88em; color: #8a5a2a; background: #fff4d6; border-radius: 8px; padding: 8px 12px; line-height: 1.7; }
   .hint { color: #8a7d64; font-size: .88em; }
 
   .result-ok { border: 3px solid var(--green); }
@@ -181,10 +202,16 @@
         <div><label>班級</label><input id="in-cls" placeholder="例：101" maxlength="10"></div>
         <div><label>座號</label><input id="in-seat" type="number" min="1" max="99" placeholder="例：7"></div>
       </div>
-      <label>姓名</label><input id="in-name" maxlength="12" placeholder="你的名字">
+      <div class="row">
+        <div><label>姓名</label><input id="in-name" maxlength="12" placeholder="你的名字"></div>
+        <div><label>學號</label><input id="in-no" maxlength="12" placeholder="例：1150123"></div>
+      </div>
+      <label>這次是用在……</label>
+      <div class="purpose" id="in-purpose"></div>
       <button class="btn" id="btn-join">翻開時光手稿 ▶</button>
       <div class="msg" id="login-msg"></div>
     </div>
+    <div class="term-tag" id="term-tag"></div>
   </div>
 </section>
 
@@ -205,18 +232,21 @@
     支持錯誤的論點 → 掉進平行時空 → <b>扣 3 金幣</b>，回到本章開頭重來。<br>
     每個分岔點<b>第一次就選對</b>，破關時可擲一顆投資回報骰（1、1、2、2、2、3 金幣）。<br>
     開啟下一位科學家時，補助 <b>2 金幣</b>。金幣變負數就破產，可以向大師銀行借 8 金幣（最多 2 次），第 3 次破產整個遊戲重來。<br>
-    <b>總分</b>＝剩餘金幣 − 借款次數×3 ＋ 還款次數×4 − 重來次數×1 ＋ 一次全對破關×5
+    已破關的科學家可以重玩；也可以「全部重玩」。<b>每按一次重玩 −1 分</b>（全部科學家都破關後的全部重玩是自由練習，不計分）。<br>
+    <b>總分</b>＝剩餘金幣 − 借款次數×3 ＋ 還款次數×4 − 重來次數×1 ＋ 一次全對破關×5 − 重玩次數×1
   </details>
+  <div class="free-banner hidden" id="free-banner">🧪 <b>自由重玩中</b>：這一輪不會寫入正式紀錄與排行榜。<button class="btn" id="btn-free-exit" style="padding:6px 12px;margin-left:auto">結束自由重玩</button></div>
   <div class="tabs"><button data-t="net" class="on">🌌 知識網路</button><button data-t="board">🏆 排行榜</button></div>
   <div id="t-net">
     <div class="net-wrap"><svg id="net" viewBox="0 0 1000 620"></svg></div>
     <div class="swipe">← 左右滑動看完整的知識網路 →</div>
+    <div class="hub-actions"><button class="btn ghost" id="btn-replay-all">🔁 全部重玩</button><span class="hint" id="replay-hint" style="color:var(--soft)"></span></div>
     <div class="legend"><span><i style="background:#fff"></i>已破關</span><span><i style="background:var(--gold)"></i>已亮起，可以挑戰</span><span><i style="background:#1f1b3d;border:2px solid #4a4378"></i>還沒亮起</span><span>📌 破關一位科學家，受他影響的科學家就會亮起</span></div>
   </div>
   <div id="t-board" class="hidden">
     <div class="board-ctl">
       <select id="b-kind"></select>
-      <select id="b-scope"><option value="cls">本班</option><option value="year">本學年・跨班</option><option value="all">歷屆・全部</option></select>
+      <select id="b-scope"><option value="cls">本班</option><option value="term">本學期・跨班</option><option value="all">歷屆・全部</option></select>
       <button class="btn ghost" id="b-refresh">🔄</button>
     </div>
     <div class="myrank" id="b-me"></div>
@@ -231,9 +261,9 @@
   <div class="bar"><span id="video-title"></span><span><a id="video-link" target="_blank" rel="noopener">在 YouTube 開啟 ↗</a>　<button class="btn" id="video-close">關閉</button></span></div></div></div>
 <div class="toast" id="toast"></div>
 
-<script src="data.js?v=20261007b"></script>
-<script src="core.js?v=20261007b"></script>
-<script src="ch-lavoisier.js?v=20261007b"></script>
+<script src="data.js?v=20261007c"></script>
+<script src="core.js?v=20261007c"></script>
+<script src="ch-lavoisier.js?v=20261007c"></script>
 <script>
 const $ = id => document.getElementById(id);
 const { esc, md, CONFIG } = SHC;
@@ -264,7 +294,7 @@ function renderWallet(flash) {
   const d = SHC.debt(ST);
   $('w-debt').textContent = `🏦 負債 ${d}`; $('w-debt').classList.toggle('hidden', !d);
   $('w-score').textContent = `⭐ ${SHC.score(ST)} 分`;
-  $('w-who').textContent = `${ST.cls} 班 ${ST.seat} 號 ${ST.name}`;
+  $('w-who').textContent = `${ST.term}・${ST.cls} 班 ${ST.seat} 號 ${ST.name}${SHC.isFree() ? '（自由重玩）' : ''}`;
   $('btn-repay').classList.toggle('hidden', !(d > 0 && ST.coins >= CONFIG.LOAN));
   if (flash) { const c = $('w-coin'); c.classList.remove('pulse'); void c.offsetWidth; c.classList.add('pulse'); }
 }
@@ -276,23 +306,69 @@ $('btn-repay').onclick = async () => {
 };
 
 /* ---------- 登入 ---------- */
+let CFG = null;
+$('in-purpose').innerHTML = CONFIG.PURPOSES.map((x, i) => `<label><input type="radio" name="pur" value="${x}" ${i === 0 ? 'checked' : ''}><span>${x}</span></label>`).join('');
+SHC.loadConfig().then(c => { CFG = c; $('term-tag').textContent = `目前學期：${c.current}`; });
 $('btn-join').onclick = async () => {
   const cls = SHC.toHalf($('in-cls').value).toUpperCase(), seat = parseInt(SHC.toHalf($('in-seat').value), 10), name = $('in-name').value.trim();
-  if (!cls || !seat || !name) return ($('login-msg').textContent = '班級、座號、姓名都要填喔！');
-  const year = SHC.schoolYear();
-  const p = { cls, seat, name, year, sid: SHC.makeSid(year, cls, seat) };
+  const stuNo = SHC.toHalf($('in-no').value).toUpperCase(), purpose = (document.querySelector('[name=pur]:checked') || {}).value;
+  if (!cls || !seat || !name || !stuNo) return ($('login-msg').textContent = '班級、座號、姓名、學號都要填喔！');
+  if (!CFG) CFG = await SHC.loadConfig();
+  const term = CFG.current;
+  const p = { cls, seat, name, stuNo, purpose, term, sid: SHC.makeSid(term, cls, seat) };
   $('login-msg').textContent = '讀取進度中……';
+  SHC.setFree(false);
   ST = await SHC.load(p);
-  try { localStorage.setItem(PKEY, JSON.stringify({ cls, seat, name })); } catch (e) {}
+  try { localStorage.setItem(PKEY, JSON.stringify({ cls, seat, name, stuNo, purpose })); } catch (e) {}
   $('login-msg').textContent = '';
-  if (!SHC.getLog().length) { SHC.log('join'); }
+  SHC.log('login', { purpose });
   await persist();
   openHub();
   checkBankrupt();
 };
-['in-cls', 'in-seat', 'in-name'].forEach(id => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-join').click(); }));
-$('btn-logout').onclick = () => { stopTimer(); ST = null; show('s-login'); };
-try { const p = JSON.parse(localStorage.getItem(PKEY)); if (p) { $('in-cls').value = p.cls; $('in-seat').value = p.seat; $('in-name').value = p.name; } } catch (e) {}
+['in-cls', 'in-seat', 'in-name', 'in-no'].forEach(id => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-join').click(); }));
+$('btn-logout').onclick = () => { stopTimer(); if (SHC.isFree()) exitFree(); ST = null; show('s-login'); };
+try {
+  const p = JSON.parse(localStorage.getItem(PKEY));
+  if (p) { $('in-cls').value = p.cls; $('in-seat').value = p.seat; $('in-name').value = p.name; $('in-no').value = p.stuNo || ''; const r = document.querySelector(`[name=pur][value="${p.purpose}"]`); if (r) r.checked = true; }
+} catch (e) {}
+
+/* ---------- 重玩 ---------- */
+const READY = () => SH_DATA.NODES.filter(n => n.ready && CHAPTERS[n.id]).map(n => n.id);
+const allClear = () => READY().every(id => ST.done[id]);
+let OFFICIAL = null;   // 自由重玩時，先把正式紀錄收好
+$('btn-replay-all').onclick = async () => {
+  if (SHC.isFree()) {
+    if (!(await confirmBox('🔁 重新開始自由重玩？', '自由重玩從頭開始，不影響正式紀錄。', '重新開始'))) return;
+    SHC.freshRun(ST); openHub(); return;
+  }
+  if (allClear()) {
+    if (!(await confirmBox('🧪 自由重玩', '你已經破關所有科學家了！<br>這次全部重玩是<b>自由練習</b>：不扣分、不寫入紀錄，正式成績與排行榜都會保留。', '開始自由重玩'))) return;
+    OFFICIAL = JSON.parse(JSON.stringify(ST));
+    SHC.setFree(true); SHC.freshRun(ST); ST.free = true;
+    openHub(); toast('🧪 自由重玩開始！'); return;
+  }
+  if (!(await confirmBox('🔁 全部重玩？', `金幣回到 8 枚，所有科學家重新挑戰。<br>借款、還款、重來的紀錄也會歸零，但<b>重玩次數 +1（總分 −1）</b>，而且會記錄下來。`, '確定全部重玩'))) return;
+  ST.replays++; SHC.log('replay_all', { n: ST.replays, coins: ST.coins });
+  SHC.freshRun(ST); await persist(); openHub(); toast('🔁 全部重玩，重新出發！');
+};
+function exitFree() { if (OFFICIAL) ST = OFFICIAL; OFFICIAL = null; SHC.setFree(false); }
+$('btn-free-exit').onclick = () => { exitFree(); openHub(); toast('已回到正式紀錄'); };
+async function replayChapter(id) {
+  const d = ST.done[id], n = SH_DATA.byId[id];
+  const free = SHC.isFree();
+  const msg = `重新挑戰 <b>${esc(n.name)}</b> 的劇本。<br>` + (d.gain ? `這章拿到的投資回報 <b>${d.gain} 金幣</b>會先退回。<br>` : '') + (d.perfect ? '這章的「一次全對」獎勵也會取消，要重新爭取。<br>' : '') + (free ? '（自由重玩中，不計分）' : '重玩次數 +1（<b>總分 −1</b>），會記錄下來。');
+  if (!(await confirmBox('🔁 重玩這位科學家？', msg, '確定重玩'))) return;
+  ST.coins -= d.gain || 0;
+  if (d.perfect) ST.perfect = Math.max(0, ST.perfect - 1);
+  if (!free) ST.replays++;
+  SHC.log('replay_ch', { ch: id, n: ST.replays, coins: ST.coins });
+  delete ST.done[id];
+  ST.chapters[id] = { phase: 'intro', fork: 0, attempt: 1, first: {}, bought: {}, fails: 0, ms: 0 };
+  await persist();
+  if (await checkBankrupt()) return;
+  startChapter(id);
+}
 
 /* ---------- 首頁 ---------- */
 document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
@@ -300,7 +376,13 @@ document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
   $('t-net').classList.toggle('hidden', b.dataset.t !== 'net'); $('t-board').classList.toggle('hidden', b.dataset.t !== 'board');
   if (b.dataset.t === 'board') loadBoard();
 });
-function openHub() { stopTimer(); VIEW = 'hub'; CUR = null; show('s-hub'); renderWallet(); drawNet(); }
+function openHub() {
+  stopTimer(); VIEW = 'hub'; CUR = null; show('s-hub'); renderWallet(); drawNet();
+  const free = SHC.isFree();
+  $('free-banner').classList.toggle('hidden', !free);
+  $('replay-hint').textContent = free ? '自由重玩中，不計分' : allClear() ? '已全部破關：全部重玩是自由練習，不計分' : `全部重玩：總分 −1（已重玩 ${ST.replays || 0} 次）`;
+  document.querySelector('.tabs button[data-t=board]').disabled = free;
+}
 
 function drawNet() {
   const done = ST.done || {}, N = SH_DATA.NODES, X = n => 60 + n.x * 8.8, Y = n => 40 + n.y * 5.2;
@@ -334,13 +416,14 @@ function openNode(id) {
     if (n.videos.length && st !== 'locked') h += `<h4>🎬 LIS 情境科學教材影片</h4><div class="vids">${n.videos.map(v => `<button class="vid" data-v="${v.id}" data-t="${esc(v.title)}"><img src="https://i.ytimg.com/vi/${v.id}/mqdefault.jpg" alt="" loading="lazy"><span>${esc(v.title)}</span></button>`).join('')}</div>`;
     h += '<div class="actions">';
     if (!n.ready || !ch) h += '<button class="btn" disabled>🛠️ 劇本製作中</button>';
-    else if (st === 'done') h += prog ? '<button class="btn" id="btn-play">📊 查看結算</button>' : '';
+    else if (st === 'done') h += (prog ? '<button class="btn" id="btn-play">📊 查看結算</button>' : '') + `<button class="btn ghost" id="btn-replay" style="color:#6b4e2e;border-color:#e9dcbc">🔁 重玩劇本${SHC.isFree() ? '' : '（−1 分）'}</button>`;
     else h += `<button class="btn" id="btn-play">${prog ? '▶ 繼續投資' : `▶ 開始（${Object.keys(ST.done).length || ST.started ? '補助 +2 金幣，' : ''}約 15 分鐘）`}</button>`;
     h += '</div>';
   }
   const c = modal(h);
   c.querySelectorAll('.vid').forEach(b => b.onclick = () => openVideo(b.dataset.v, b.dataset.t));
   const pb = c.querySelector('#btn-play'); if (pb) pb.onclick = () => { closeModal(); startChapter(id); };
+  const rb = c.querySelector('#btn-replay'); if (rb) rb.onclick = () => { closeModal(); replayChapter(id); };
 }
 function openVideo(id, title) {
   $('video-frame').innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
@@ -357,6 +440,7 @@ boardKinds();
 ['b-kind', 'b-scope'].forEach(id => $(id).onchange = renderBoard);
 $('b-refresh').onclick = loadBoard;
 async function loadBoard() {
+  if (SHC.isFree()) return;
   $('b-table').innerHTML = '<p class="hint">讀取中……</p>';
   try { BOARD = Object.values(await SHC.loadPlayers()); } catch (e) { $('b-table').innerHTML = '<p class="msg">讀不到排行榜，請檢查網路。</p>'; return; }
   renderBoard();
@@ -364,7 +448,7 @@ async function loadBoard() {
 function renderBoard() {
   if (!BOARD) return;
   const kind = $('b-kind').value, scope = $('b-scope').value;
-  let rows = BOARD.filter(p => p && p.name && (scope === 'all' || (p.year === ST.year && (scope === 'year' || p.cls === ST.cls))));
+  let rows = BOARD.filter(p => p && p.name && (scope === 'all' || (p.term === ST.term && (scope === 'term' || p.cls === ST.cls))));
   let cols;
   if (kind === 'score') {
     rows.sort((a, b) => b.score - a.score || (b.net - a.net));
@@ -378,7 +462,7 @@ function renderBoard() {
   $('b-me').innerHTML = myIdx >= 0 ? `你目前排名第 <b>${myIdx + 1}</b> 名（共 ${rows.length} 人）` : (kind === 'score' ? '' : '你還沒破關這位科學家');
   const top = rows.slice(0, 30);
   $('b-table').innerHTML = top.length ? `<table class="board"><tr><th>#</th><th>班級</th><th>姓名</th>${cols.map(c => `<th>${c[0]}</th>`).join('')}</tr>` +
-    top.map((p, i) => `<tr class="${p.sid === ST.sid ? 'me' : ''}"><td class="rk">${i + 1}</td><td>${esc(scope === 'all' ? p.year + '・' + p.cls : p.cls)}</td><td class="l">${esc(p.seat)} 號 ${esc(p.name)}</td>${cols.map(c => `<td>${c[1](p)}</td>`).join('')}</tr>`).join('') + '</table>'
+    top.map((p, i) => `<tr class="${p.sid === ST.sid ? 'me' : ''}"><td class="rk">${i + 1}</td><td>${esc(scope === 'all' ? p.term + '・' + p.cls : p.cls)}</td><td class="l">${esc(p.seat)} 號 ${esc(p.name)}</td>${cols.map(c => `<td>${c[1](p)}</td>`).join('')}</tr>`).join('') + '</table>'
     : '<p class="hint" style="color:var(--soft)">還沒有人上榜，搶第一吧！</p>';
 }
 
@@ -409,32 +493,35 @@ function render() {
   const head = `<div class="stage-head"><div class="kicker">${esc(ch.place)}</div><h2>${esc(ch.title)}</h2><span class="meta">第 ${c.attempt} 次嘗試・⏱️ <span id="clock">${SHC.fmtTime(c.ms)}</span></span><button class="btn ghost" id="btn-hub" style="padding:5px 10px">⬅ 知識網路</button></div>`;
 
   if (c.phase === 'intro') {
-    P.innerHTML = head + steps + `<div class="card">${c.attempt > 1 ? `<p><b>⏪ 時光倒流！</b>你回到了 1772 年的巴黎，重新做一次投資決定。之前做過的實驗結果，你都還記得。</p>` : ch.intro.map(t => `<p>${md(t)}</p>`).join('')}
+    P.innerHTML = head + steps + `<div class="card col">${c.attempt > 1 ? `<p><b>⏪ 時光倒流！</b>你回到了 1772 年的巴黎，重新做一次投資決定。之前做過的實驗結果，你都還記得。</p>` : ch.intro.map(t => `<p>${md(t)}</p>`).join('')}
       <div class="actions"><button class="btn" id="go">${c.attempt > 1 ? '⏩ 直接進入第一個抉擇' : '開始投資 ▶'}</button></div></div>`;
     $('go').onclick = async () => { c.phase = 'fork'; await persist(); render(); };
   } else if (c.phase === 'fork') {
     const f = ch.forks[c.fork], bought = c.bought[f.id] || [];
     const opts = SHC.shuffle(f.options, ST.sid + f.id);
-    P.innerHTML = head + steps + `<div class="card">
-      <span class="year">${esc(f.year)}</span><h2>抉擇 ${c.fork + 1}：${esc(f.title)}</h2>
-      <div class="scene">${f.scene.map(t => `<p>${md(t)}</p>`).join('')}</div>
-      <div class="sec"><h3>📜 目前知道的證據</h3>${f.evidence.map(e => `<div class="ev">${md(e)}</div>`).join('')}
-        ${f.exps.filter(x => bought.includes(x.id)).map(x => `<div class="ev exp"><span class="tag">🔬 ${esc(x.name)}</span>${md(x.result)}</div>`).join('')}</div>
-      <div class="sec"><h3>🔬 要不要先做實驗？（每個 ${CONFIG.EXP_COST} 金幣）</h3>
-        <div class="exps">${f.exps.map(x => `<button class="exp-btn" data-x="${x.id}" ${bought.includes(x.id) || ST.coins < CONFIG.EXP_COST ? 'disabled' : ''}>${bought.includes(x.id) ? '✅ ' : '🔬 '}${esc(x.name)}<small>${bought.includes(x.id) ? '已完成' : ST.coins < CONFIG.EXP_COST ? '金幣不足' : `花 ${CONFIG.EXP_COST} 金幣，看實驗結果`}</small></button>`).join('')}</div>
-        <p class="hint" style="margin-top:6px">實驗能幫你判斷，但要花錢；你也可以不做實驗，直接下決定。</p></div>
-      <div class="sec"><h3>💼 ${esc(f.question)}</h3><div class="opts">${opts.map((o, k) => `<button class="opt" data-o="${o.id}"><div class="who">論點 ${'ABCD'[k]}</div><div class="txt">「${esc(o.text)}」</div><span class="go">支持這個論點</span></button>`).join('')}</div>
-      <p class="hint" style="margin-top:8px">💡 論點是誰提出的，要等你選了之後才會揭曉。<br>⚠️ 支持錯誤的論點，會掉進平行時空，扣 ${CONFIG.FAIL_COST} 金幣並回到本章開頭。</p></div></div>`;
-    P.querySelectorAll('.exp-btn').forEach(b => b.onclick = () => buyExp(f, b.dataset.x));
+    P.innerHTML = head + steps + `<div class="col">
+      <span class="year">${esc(f.year)}</span><h2 class="fork-title">抉擇 ${c.fork + 1}／${ch.forks.length}：${esc(f.title)}</h2>
+      <div class="blk"><div class="blk-h"><span class="no">1</span>發生了什麼事？</div>${f.scene.map(t => `<p>${md(t)}</p>`).join('')}</div>
+      <div class="blk"><div class="blk-h"><span class="no">2</span>目前知道的證據</div><ul class="evlist">${f.evidence.map(e => `<li>${md(e)}</li>`).join('')}</ul></div>
+      <div class="blk"><div class="blk-h"><span class="no">3</span>實驗室<small>每個實驗 ${CONFIG.EXP_COST} 金幣，可以不做</small></div>
+        ${f.exps.map(x => { const done = bought.includes(x.id); return `<div class="labx ${done ? 'done' : ''}"><div class="top"><span class="ic">${done ? '✅' : '🔬'}</span><span class="nm">${esc(x.name)}</span>
+          ${done ? '' : `<button class="do" data-x="${x.id}" ${ST.coins < CONFIG.EXP_COST ? 'disabled' : ''}>${ST.coins < CONFIG.EXP_COST ? '金幣不足' : `做實驗 −${CONFIG.EXP_COST} 🪙`}</button>`}</div>
+          ${done ? `<div class="res"><span class="lbl">實驗結果</span>${md(x.result)}</div>` : ''}</div>`; }).join('')}
+      </div>
+      <div class="blk"><div class="blk-h"><span class="no">4</span>${esc(f.question)}</div>
+        <div class="opts">${opts.map((o, k) => `<button class="opt" data-o="${o.id}"><span class="lt">${'ABCD'[k]}</span><span class="txt">${esc(o.text)}</span><span class="go">支持 ▶</span></button>`).join('')}</div>
+        <div class="warn">💡 論點是誰提出的，選了之後才會揭曉。<br>⚠️ 選錯會掉進平行時空：扣 ${CONFIG.FAIL_COST} 金幣，回到本章開頭。</div></div>
+    </div>`;
+    P.querySelectorAll('.labx .do').forEach(b => b.onclick = () => buyExp(f, b.dataset.x));
     P.querySelectorAll('.opt').forEach(b => b.onclick = () => choose(f, f.options.find(o => o.id === b.dataset.o)));
   } else if (c.phase === 'ok') {
     const f = ch.forks[c.okFork];
-    P.innerHTML = head + steps + `<div class="card result-ok"><span class="badge">✅ 真實的歷史</span><h2 style="margin-top:6px">${esc(f.title)}</h2><p>${md(f.success)}</p>
+    P.innerHTML = head + steps + `<div class="card result-ok col"><span class="badge">✅ 真實的歷史</span><h2 style="margin-top:6px">${esc(f.title)}</h2><p>${md(f.success)}</p>
       <div class="actions"><button class="btn" id="go">${c.fork >= ch.forks.length ? '前往結算 ▶' : '繼續下一個抉擇 ▶'}</button></div></div>`;
     $('go').onclick = async () => { c.phase = c.fork >= ch.forks.length ? 'end' : 'fork'; await persist(); render(); };
   } else if (c.phase === 'fail') {
     const f = ch.forks[c.failed.fork], o = f.options.find(x => x.id === c.failed.opt);
-    P.innerHTML = head + `<div class="card para"><span class="badge">🌀 平行時空</span><h2 style="margin-top:6px">如果……你支持了「${esc(o.text)}」</h2><p style="color:#bfb0f0;font-size:.9em">（這是<b style="color:#fff">${esc(o.who)}</b>的主張）</p>
+    P.innerHTML = head + `<div class="card para col"><span class="badge">🌀 平行時空</span><h2 style="margin-top:6px">如果……你支持了「${esc(o.text)}」</h2><p style="color:#bfb0f0;font-size:.9em">（這是<b style="color:#fff">${esc(o.who)}</b>的主張）</p>
       <div id="story"></div><div id="after" class="hidden">
         <div class="fiction">🌀 以上劇情<b>純屬虛構</b>。我們並沒有走向這樣的未來。</div>
         <div class="real">📚 <b>真實歷史：</b>${md(o.fail.real)}</div>
@@ -457,8 +544,9 @@ async function buyExp(f, xid) {
   if (ST.coins < CONFIG.EXP_COST || (c.bought[f.id] || []).includes(xid)) return;
   ST.coins -= CONFIG.EXP_COST; c.bought[f.id] = [...(c.bought[f.id] || []), xid];
   SHC.log('exp', { ch: CUR, fork: f.id, exp: xid, coins: ST.coins });
-  await persist(); renderWallet(true); render();
-  toast(`🔬 ${x.name}：結果已加入證據`);
+  const y = window.scrollY;
+  await persist(); renderWallet(true); render(); window.scrollTo(0, y);
+  toast(`🔬 ${x.name}：結果出爐！`);
 }
 
 async function choose(f, o) {
@@ -488,14 +576,14 @@ function finishChapter() {
   ST.coins += gain;
   const perfect = c.fails === 0 && lucky === ch.forks.length;
   if (perfect) ST.perfect++;
-  ST.done[CUR] = { ms: c.ms, at: Date.now(), perfect, fails: c.fails, rolls: c.rolls, gain };
+  ST.done[CUR] = { ms: c.ms, at: Date.now(), perfect, fails: c.fails, rolls: c.rolls, gain, purpose: ST.purpose };
   SHC.log('clear', { ch: CUR, ms: c.ms, perfect, fails: c.fails, rolls: c.rolls, coins: ST.coins });
 }
 
 function renderEnd(head) {
   const ch = CHAPTERS[CUR], c = ST.chapters[CUR], d = ST.done[CUR], P = $('play');
   const unlocked = SH_DATA.unlockedBy(CUR, Object.fromEntries(Object.keys(ST.done).filter(k => k !== CUR).map(k => [k, 1])));
-  P.innerHTML = head + `<div class="card"><div class="kicker" style="color:#c99a2a">CHAPTER CLEAR</div><h2>🎉 ${esc(ch.title)}・破關！</h2>
+  P.innerHTML = head + `<div class="card col"><div class="kicker" style="color:#c99a2a">CHAPTER CLEAR</div><h2>🎉 ${esc(ch.title)}・破關！</h2>
     ${ch.ending.map(t => `<p>${md(t)}</p>`).join('')}
     <div class="orbs">${ch.orbs.map(o => `<div class="orb"><b>${o[0]}</b>${esc(o[1])}</div>`).join('')}</div>
     <h3 style="margin-top:14px">📊 投資結算</h3>
@@ -536,7 +624,7 @@ async function checkBankrupt() {
     return false;
   }
   await confirmBox('☠️ 第三次破產', '大師銀行不再借錢給你了……<br>你的投資事業<b>從頭開始</b>：金幣回到 8 枚，所有科學家重新挑戰。<br>（之前的遊戲歷程都會保留給老師看）', '重新開始', null);
-  ST.gameOvers++; SHC.log('gameover', { n: ST.gameOvers });
+  if (!SHC.isFree()) ST.gameOvers++; SHC.log('gameover', { n: ST.gameOvers });
   SHC.freshRun(ST);
   await persist(); openHub();
   return true;

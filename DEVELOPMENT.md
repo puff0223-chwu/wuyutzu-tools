@@ -314,13 +314,20 @@ wuyutzu-tools/
   - 金幣 < 0＝破產 → 向大師銀行借 8 金幣（最多 2 次）；第 3 次破產整局重來（金幣、破關全部歸零，`gameOvers` 與歷程保留）
   - 錢包列有「還款 8 金幣」按鈕（有負債且金幣 ≥ 8 才出現）
   - 總分＝金幣 − 借款×3 ＋ 還款×4 − 重來×1 ＋ 全對破關章數×5（全對＝這章沒有掉進平行時空）
+  - **重玩**（2026-10-07 晚加入）：知識網路下方「全部重玩」、已破關科學家卡片上「重玩劇本」；每按一次 `replays`+1、總分 −1，寫入歷程（replay_all／replay_ch）
+    - 重玩單一科學家：先退回這章拿到的回報骰金幣、取消這章的全對獎勵（避免重玩刷分），再從頭挑戰
+    - 全部重玩：金幣、借款、還款、重來、破關全部歸零（`freshRun`），但 `replays`、`gameOvers` 保留
+    - **全部科學家都破關後**按全部重玩＝自由練習：先把正式紀錄存在記憶體，`SHC.setFree(true)` 後不寫 Firebase、不記歷程，排行榜關閉；按「結束自由重玩」回到正式紀錄
   - 破關時間：只計算劇本畫面開著、分頁在前景時的時間
+- 抉擇頁版面（易讀性改版）：窄欄 760px，分成 ①發生了什麼事 ②目前知道的證據 ③實驗室（每個實驗一列，**結果直接展開在該實驗底下**）④你的決定；做實驗後畫面停在原位置
 - 選項只顯示「論點 A／B／C」，**提出者在選完後才揭曉**（避免學生看到「拉瓦節」就直接選）；選項順序依學生＋分岔點固定亂序
 - 錯誤選擇當下就扣錢、存檔，重新整理也躲不掉
-- 身分：`學年度_班級_座號`（學年度 8 月起算，例如 2026/10 → 115）；換裝置用同樣的班級座號就能接著玩
-- 排行榜：總分、各科學家最快破關；範圍：本班／本學年跨班／歷屆全部
+- 登入：班級、座號、姓名、**學號**、**用途**（正式進度／考試複習／重補修，存最近一次，歷程 login 也記；破關紀錄 done 也記當時用途）
+- 學期：老師在老師頁「學期設定」新增／切換／刪除（`sci-history/config` = {current, terms}）；刪除只移出清單、不刪學生資料；沒設定過時用日期推算（8～1 月 -1、2～7 月 -2）
+- 身分：`學期_班級_座號`，例如 `115-1_101_7`；換裝置用同樣的班級座號就能接著玩
+- 排行榜：總分、各科學家最快破關；範圍：本班／本學期跨班／歷屆全部
 - Firebase：`sci-history/players/<sid>`（完整狀態＋分數，排行榜讀這裡）、`sci-history/logs/<sid>`（遊戲歷程陣列：join、start、subsidy、exp、choose、fail、loan、repay、clear、gameover）
-- 老師頁：學生入口 QR；學年／班級篩選；統計表可排序；點學生看完整歷程；**抉擇分析**＝每個分岔點學生「第一次」選擇的分布（找出常見迷思）；Excel 兩張表
+- 老師頁：學生入口 QR；學期設定；學期／班級／用途篩選；統計含各用途人數、學號、用途、按重玩次數；統計表可排序；點學生看完整歷程；**抉擇分析**＝每個分岔點學生「第一次」選擇的分布（找出常見迷思）；Excel 兩張表
 - 新增科學家：寫一份 `ch-<id>.js`（intro、forks〔scene、evidence、exps、options〔who、text、correct、fail.story、fail.real〕、success〕、ending、orbs、profile），在 index.html 與 teacher.html 的 `CHAPTERS` 註冊，data.js 該節點設 `ready: true`
 - 已知限制：沒有登入，懂技術的學生可以直接改資料庫裡自己的分數（同其他小工具）
 - 舊的 RPG 版移到 `sci-history-rpg/`：老師試玩後認為走路、閃躲佔掉太多思考時間、開發成本高，不適合科學史；鑑識課這類「探索本身就是學習」的主題可以再用
@@ -388,145 +395,150 @@ fp/
 
 ---
 
-## 附錄：Firebase 安全規則全文（2026-10-07，含時光手稿 sci-history）
+## 附錄：Firebase 安全規則全文（2026-10-07 晚，含時光手稿 sci-history＋學期設定）
 
 ```json
 {
-  "rules": {
-    ".read": false,
-    ".write": false,
-    "missing-equipment": {
-      "scores": {
-        ".read": true,
-        "$id": {
-          ".write": "newData.exists() && (!data.exists() || newData.child('score').val() > data.child('score').val() || (newData.child('score').val() == data.child('score').val() && newData.child('seconds').val() < data.child('seconds').val()))",
-          ".validate": "newData.hasChildren(['cls','seat','name','score','correct','wrong','seconds','ts']) && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 3000 && newData.child('seconds').isNumber() && newData.child('correct').isNumber() && newData.child('correct').val() <= 30 && newData.child('name').isString() && newData.child('name').val().length <= 12"
-        }
-      }
-    },
-    "unit-convert": {
-      "$code": {
-        ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{7}$/)",
-        "$sid": {
-          ".write": "newData.exists() && $code.matches(/^[2-9A-HJ-NP-Z]{7}$/) && data.child('submitted').val() != true",
-          ".validate": "newData.hasChildren(['cls','seat','name','ts']) && newData.child('cls').isString() && newData.child('cls').val().length <= 10 && newData.child('seat').isNumber() && newData.child('name').isString() && newData.child('name').val().length <= 12"
-        }
-      }
-    },
-    "ph-generator": {
-      "$code": {
-        ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{7}$/)",
-        "$sid": {
-          ".write": "newData.exists() && $code.matches(/^[2-9A-HJ-NP-Z]{7}$/) && data.child('submitted').val() != true",
-          ".validate": "newData.hasChildren(['cls','seat','name','ts']) && newData.child('cls').isString() && newData.child('cls').val().length <= 10 && newData.child('seat').isNumber() && newData.child('name').isString() && newData.child('name').val().length <= 12"
-        }
-      }
-    },
-    "case-board": {
-      "$code": {
-        ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)",
-        "meta": {
-          ".write": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && newData.exists()",
-          ".validate": "newData.hasChildren(['title','createdAt']) && newData.child('title').isString() && newData.child('title').val().length <= 40"
-        },
-        "members": {
-          "$sid": {
-            ".write": "newData.exists() && root.child('case-board').child($code).child('meta').exists()",
-            ".validate": "newData.hasChildren(['cls','seat','name']) && newData.child('cls').isString() && newData.child('cls').val().length <= 10 && newData.child('name').isString() && newData.child('name').val().length <= 12"
-          }
-        },
-        "tasks": {
-          "$tid": {
-            ".write": "newData.exists() && root.child('case-board').child($code).child('meta').exists() && (data.exists() || (newData.child('status').val() == 'open' && root.child('case-board').child($code).child('meta').child('open').val() != false))",
-            ".validate": "newData.hasChildren(['sid','name','seat','status','createdAt']) && newData.child('status').val().matches(/^(open|taken|done|cancelled|removed)$/) && (!data.exists() || newData.child('sid').val() == data.child('sid').val()) && (!(data.child('status').val() == 'taken' && newData.child('status').val() == 'taken') || newData.child('solver').val() == data.child('solver').val()) && (data.child('status').val() != 'done' || newData.child('status').val() == 'done' || newData.child('status').val() == 'removed') && (newData.child('status').val() != 'taken' || (newData.child('solver').isString() && newData.child('solver').val() != newData.child('sid').val())) && (newData.child('status').val() != 'done' || (newData.child('stars').isNumber() && newData.child('stars').val() >= 1 && newData.child('stars').val() <= 3)) && (!newData.child('note').exists() || (newData.child('note').isString() && newData.child('note').val().length <= 80))"
-          }
-        }
-      }
-    },
-    "excel-rescue": {
-      "$sem": {
-        ".read": "$sem.matches(/^[A-Z0-9-]{1,16}$/)",
-        "$id": {
-          ".write": "newData.exists() && $sem.matches(/^[A-Z0-9-]{1,16}$/) && $id.matches(/^[A-Z0-9]{3,12}$/)",
-          ".validate": "newData.hasChildren(['name','ts']) && newData.child('name').isString() && newData.child('name').val().length <= 12 && newData.child('ts').isNumber()",
-          "name": {
-            ".validate": "newData.isString()"
-          },
-          "ts": {
-            ".validate": "newData.isNumber()"
-          },
-          "passed": {
-            "$lv": {
-              ".validate": "$lv.matches(/^(L[1-6]|H)$/) && newData.isNumber()"
-            }
-          },
-          "att": {
-            "$lv": {
-              ".validate": "$lv.matches(/^(L[1-6]|H)$/) && newData.isNumber() && newData.val() >= 0 && newData.val() <= 9999"
-            }
-          },
-          "closedAt": {
-            ".validate": "newData.isNumber()"
-          },
-          "check": {
-            ".validate": "newData.hasChildren(['score','max','at']) && newData.child('score').isNumber() && newData.child('max').isNumber() && newData.child('at').isNumber()"
-          },
-          "$other": {
-            ".validate": false
-          }
-        }
-      }
-    },
-    "fp": {
-      "admins": {
-        "$uid": {
-          ".read": "auth != null && auth.uid === $uid"
-        }
-      },
-      "users": {
-        ".read": "auth != null && root.child('fp/admins').child(auth.uid).val() === true",
-        "$uid": {
-          ".read": "auth != null && auth.uid === $uid",
-          ".write": "auth != null && root.child('fp/admins').child(auth.uid).val() === true"
-        }
-      },
-      "kids": {
-        ".read": "auth != null && root.child('fp/admins').child(auth.uid).val() === true",
-        "$kid": {
-          ".read": "auth != null && root.child('fp/users').child(auth.uid).child('kidId').val() === $kid",
-          ".write": "auth != null && root.child('fp/admins').child(auth.uid).val() === true"
-        }
-      },
-      "config": {
-        ".read": "auth != null && (root.child('fp/admins').child(auth.uid).val() === true || root.child('fp/users').child(auth.uid).exists())",
-        ".write": "auth != null && root.child('fp/admins').child(auth.uid).val() === true"
-      },
-      "ledger": {
-        ".read": "auth != null && root.child('fp/admins').child(auth.uid).val() === true",
-        "$kid": {
-          ".read": "auth != null && root.child('fp/users').child(auth.uid).child('kidId').val() === $kid",
-          "$entry": {
-            ".write": "auth != null && (root.child('fp/admins').child(auth.uid).val() === true || (root.child('fp/users').child(auth.uid).child('kidId').val() === $kid && !data.exists() && newData.exists() && newData.child('status').val() === 'pending' && (newData.child('kind').val() === 'earn' || newData.child('kind').val() === 'redeem') && newData.child('amount').val() > 0))",
-            ".validate": "newData.hasChildren(['kidId', 'kind', 'refName', 'amount', 'status', 'createdAt']) && newData.child('kidId').val() === $kid && newData.child('amount').isNumber() && newData.child('refName').isString() && newData.child('refName').val().length < 60 && (newData.child('status').val() === 'pending' || newData.child('status').val() === 'approved' || newData.child('status').val() === 'rejected')"
-          }
-        }
-      }
-    },
-    "sci-history": {
-      "players": {
-        ".read": true,
-        "$sid": {
-          ".write": "newData.exists() && $sid.length <= 30",
-          ".validate": "newData.hasChildren(['sid','cls','seat','name','year','coins','score','updatedAt']) && newData.child('sid').val() == $sid && newData.child('name').isString() && newData.child('name').val().length <= 12 && newData.child('cls').isString() && newData.child('cls').val().length <= 10 && newData.child('coins').isNumber() && newData.child('score').isNumber()"
-        }
-      },
-      "logs": {
-        ".read": true,
-        "$sid": {
-          ".write": "newData.exists() && $sid.length <= 30 && newData.hasChildren()"
-        }
-      }
+ "rules": {
+  ".read": false,
+  ".write": false,
+  "missing-equipment": {
+   "scores": {
+    ".read": true,
+    "$id": {
+     ".write": "newData.exists() && (!data.exists() || newData.child('score').val() > data.child('score').val() || (newData.child('score').val() == data.child('score').val() && newData.child('seconds').val() < data.child('seconds').val()))",
+     ".validate": "newData.hasChildren(['cls','seat','name','score','correct','wrong','seconds','ts']) && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 3000 && newData.child('seconds').isNumber() && newData.child('correct').isNumber() && newData.child('correct').val() <= 30 && newData.child('name').isString() && newData.child('name').val().length <= 12"
     }
+   }
+  },
+  "unit-convert": {
+   "$code": {
+    ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{7}$/)",
+    "$sid": {
+     ".write": "newData.exists() && $code.matches(/^[2-9A-HJ-NP-Z]{7}$/) && data.child('submitted').val() != true",
+     ".validate": "newData.hasChildren(['cls','seat','name','ts']) && newData.child('cls').isString() && newData.child('cls').val().length <= 10 && newData.child('seat').isNumber() && newData.child('name').isString() && newData.child('name').val().length <= 12"
+    }
+   }
+  },
+  "ph-generator": {
+   "$code": {
+    ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{7}$/)",
+    "$sid": {
+     ".write": "newData.exists() && $code.matches(/^[2-9A-HJ-NP-Z]{7}$/) && data.child('submitted').val() != true",
+     ".validate": "newData.hasChildren(['cls','seat','name','ts']) && newData.child('cls').isString() && newData.child('cls').val().length <= 10 && newData.child('seat').isNumber() && newData.child('name').isString() && newData.child('name').val().length <= 12"
+    }
+   }
+  },
+  "case-board": {
+   "$code": {
+    ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)",
+    "meta": {
+     ".write": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && newData.exists()",
+     ".validate": "newData.hasChildren(['title','createdAt']) && newData.child('title').isString() && newData.child('title').val().length <= 40"
+    },
+    "members": {
+     "$sid": {
+      ".write": "newData.exists() && root.child('case-board').child($code).child('meta').exists()",
+      ".validate": "newData.hasChildren(['cls','seat','name']) && newData.child('cls').isString() && newData.child('cls').val().length <= 10 && newData.child('name').isString() && newData.child('name').val().length <= 12"
+     }
+    },
+    "tasks": {
+     "$tid": {
+      ".write": "newData.exists() && root.child('case-board').child($code).child('meta').exists() && (data.exists() || (newData.child('status').val() == 'open' && root.child('case-board').child($code).child('meta').child('open').val() != false))",
+      ".validate": "newData.hasChildren(['sid','name','seat','status','createdAt']) && newData.child('status').val().matches(/^(open|taken|done|cancelled|removed)$/) && (!data.exists() || newData.child('sid').val() == data.child('sid').val()) && (!(data.child('status').val() == 'taken' && newData.child('status').val() == 'taken') || newData.child('solver').val() == data.child('solver').val()) && (data.child('status').val() != 'done' || newData.child('status').val() == 'done' || newData.child('status').val() == 'removed') && (newData.child('status').val() != 'taken' || (newData.child('solver').isString() && newData.child('solver').val() != newData.child('sid').val())) && (newData.child('status').val() != 'done' || (newData.child('stars').isNumber() && newData.child('stars').val() >= 1 && newData.child('stars').val() <= 3)) && (!newData.child('note').exists() || (newData.child('note').isString() && newData.child('note').val().length <= 80))"
+     }
+    }
+   }
+  },
+  "excel-rescue": {
+   "$sem": {
+    ".read": "$sem.matches(/^[A-Z0-9-]{1,16}$/)",
+    "$id": {
+     ".write": "newData.exists() && $sem.matches(/^[A-Z0-9-]{1,16}$/) && $id.matches(/^[A-Z0-9]{3,12}$/)",
+     ".validate": "newData.hasChildren(['name','ts']) && newData.child('name').isString() && newData.child('name').val().length <= 12 && newData.child('ts').isNumber()",
+     "name": {
+      ".validate": "newData.isString()"
+     },
+     "ts": {
+      ".validate": "newData.isNumber()"
+     },
+     "passed": {
+      "$lv": {
+       ".validate": "$lv.matches(/^(L[1-6]|H)$/) && newData.isNumber()"
+      }
+     },
+     "att": {
+      "$lv": {
+       ".validate": "$lv.matches(/^(L[1-6]|H)$/) && newData.isNumber() && newData.val() >= 0 && newData.val() <= 9999"
+      }
+     },
+     "closedAt": {
+      ".validate": "newData.isNumber()"
+     },
+     "check": {
+      ".validate": "newData.hasChildren(['score','max','at']) && newData.child('score').isNumber() && newData.child('max').isNumber() && newData.child('at').isNumber()"
+     },
+     "$other": {
+      ".validate": false
+     }
+    }
+   }
+  },
+  "fp": {
+   "admins": {
+    "$uid": {
+     ".read": "auth != null && auth.uid === $uid"
+    }
+   },
+   "users": {
+    ".read": "auth != null && root.child('fp/admins').child(auth.uid).val() === true",
+    "$uid": {
+     ".read": "auth != null && auth.uid === $uid",
+     ".write": "auth != null && root.child('fp/admins').child(auth.uid).val() === true"
+    }
+   },
+   "kids": {
+    ".read": "auth != null && root.child('fp/admins').child(auth.uid).val() === true",
+    "$kid": {
+     ".read": "auth != null && root.child('fp/users').child(auth.uid).child('kidId').val() === $kid",
+     ".write": "auth != null && root.child('fp/admins').child(auth.uid).val() === true"
+    }
+   },
+   "config": {
+    ".read": "auth != null && (root.child('fp/admins').child(auth.uid).val() === true || root.child('fp/users').child(auth.uid).exists())",
+    ".write": "auth != null && root.child('fp/admins').child(auth.uid).val() === true"
+   },
+   "ledger": {
+    ".read": "auth != null && root.child('fp/admins').child(auth.uid).val() === true",
+    "$kid": {
+     ".read": "auth != null && root.child('fp/users').child(auth.uid).child('kidId').val() === $kid",
+     "$entry": {
+      ".write": "auth != null && (root.child('fp/admins').child(auth.uid).val() === true || (root.child('fp/users').child(auth.uid).child('kidId').val() === $kid && !data.exists() && newData.exists() && newData.child('status').val() === 'pending' && (newData.child('kind').val() === 'earn' || newData.child('kind').val() === 'redeem') && newData.child('amount').val() > 0))",
+      ".validate": "newData.hasChildren(['kidId', 'kind', 'refName', 'amount', 'status', 'createdAt']) && newData.child('kidId').val() === $kid && newData.child('amount').isNumber() && newData.child('refName').isString() && newData.child('refName').val().length < 60 && (newData.child('status').val() === 'pending' || newData.child('status').val() === 'approved' || newData.child('status').val() === 'rejected')"
+     }
+    }
+   }
+  },
+  "sci-history": {
+   "players": {
+    ".read": true,
+    "$sid": {
+     ".write": "newData.exists() && $sid.length <= 30",
+     ".validate": "newData.hasChildren(['sid','cls','seat','name','term','coins','score','updatedAt']) && newData.child('sid').val() == $sid && newData.child('name').isString() && newData.child('name').val().length <= 12 && newData.child('cls').isString() && newData.child('cls').val().length <= 10 && newData.child('coins').isNumber() && newData.child('score').isNumber()"
+    }
+   },
+   "logs": {
+    ".read": true,
+    "$sid": {
+     ".write": "newData.exists() && $sid.length <= 30 && newData.hasChildren()"
+    }
+   },
+   "config": {
+    ".read": true,
+    ".write": "newData.exists()",
+    ".validate": "newData.hasChildren(['current','terms']) && newData.child('current').isString() && newData.child('current').val().length <= 6"
+   }
   }
+ }
 }
 ```
