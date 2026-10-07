@@ -17,7 +17,7 @@ const SH_DATA = (() => {
         { id: 'YAgsPrNdK1Y', title: '水火土氣真的是元素嗎？（拉瓦節－元素的定義）' }
       ] },
     { id: 'proust', name: '普魯斯特', en: 'Joseph Proust', life: '1754–1826', year: 1799, x: 26, y: 26,
-      tag: '定比定律', needs: ['lavoisier'], color: '#d08a1e',
+      tag: '定比定律', needs: ['lavoisier'], ready: true, color: '#d08a1e',
       teaser: '不管從哪裡來的碳酸銅，成分比例都一樣？一場打了八年的筆戰。', videos: [] },
     { id: 'dalton', name: '道耳頓', en: 'John Dalton', life: '1766–1844', year: 1808, x: 40, y: 50,
       tag: '原子說', needs: ['lavoisier', 'proust'], color: '#1f9e8f',
