@@ -125,15 +125,16 @@
 </main>
 <div class="modal-bg hidden" id="m"><div class="modal" id="mc"></div></div>
 
-<script src="data.js?v=20261007g"></script>
-<script src="core.js?v=20261007g"></script>
-<script src="ch-lavoisier.js?v=20261007g"></script>
-<script src="ch-proust.js?v=20261007g"></script>
-<script src="ch-dalton.js?v=20261007g"></script>
+<script src="data.js?v=20261007h"></script>
+<script src="core.js?v=20261007h"></script>
+<script src="ch-lavoisier.js?v=20261007h"></script>
+<script src="ch-proust.js?v=20261007h"></script>
+<script src="ch-dalton.js?v=20261007h"></script>
+<script src="ch-gaylussac.js?v=20261007h"></script>
 <script>
 const $ = id => document.getElementById(id);
 const { esc, fmtTime } = SHC;
-const CHAPTERS = { lavoisier: CH_LAVOISIER, proust: CH_PROUST, dalton: CH_DALTON };
+const CHAPTERS = { lavoisier: CH_LAVOISIER, proust: CH_PROUST, dalton: CH_DALTON, gaylussac: CH_GAYLUSSAC };
 const READY = SH_DATA.NODES.filter(n => n.ready && CHAPTERS[n.id]);
 const STU = new URL('./', location.href).href;
 const PAGE = 30, DAY = 86400000;

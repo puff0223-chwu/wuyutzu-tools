@@ -24,7 +24,7 @@ const SH_DATA = (() => {
       teaser: '如果把一滴水一直切下去，最後會剩下什麼？',
       videos: [{ id: 'fo8OnaecUac', title: '如果把一滴水對切1萬次會怎麼樣？（道耳頓－原子說）' }] },
     { id: 'gaylussac', name: '給呂薩克', en: 'Joseph Gay-Lussac', life: '1778–1850', year: 1808, x: 52, y: 22,
-      tag: '氣體化合體積定律', needs: ['dalton'], color: '#2f6db5',
+      tag: '氣體化合體積定律', needs: ['dalton'], ready: true, color: '#2f6db5',
       teaser: '氣體反應的體積竟然是簡單整數比，這讓道耳頓很頭痛。', videos: [] },
     { id: 'avogadro', name: '亞佛加厥', en: 'Amedeo Avogadro', life: '1776–1856', year: 1811, x: 64, y: 34,
       tag: '分子說', needs: ['dalton', 'gaylussac'], color: '#7b5ea7',

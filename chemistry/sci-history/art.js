@@ -20,6 +20,10 @@ const ART = (() => {
     (o.hiss ? `${T(x + 104, y - 26, '嘶～', 15, '#2c4a7c')}<path d="M${x + 84} ${y - 30} l14 -6 M${x + 84} ${y - 24} l16 0" stroke="${B}" stroke-width="2"/>` : '');
   const tri = (x, y, up, bar, c) => `<path d="${up ? `M${x} ${y - 14} L${x + 14} ${y + 10} L${x - 14} ${y + 10}Z` : `M${x} ${y + 10} L${x + 14} ${y - 14} L${x - 14} ${y - 14}Z`}" fill="none" stroke="${c}" stroke-width="3"/>` + (bar ? `<line x1="${x - 9}" y1="${y + (up ? 2 : -6)}" x2="${x + 9}" y2="${y + (up ? 2 : -6)}" stroke="${c}" stroke-width="3"/>` : '');
 
+  // 氣體體積方塊：n 格，每格 22 寬
+  const vol = (x, y, n, label, c, sz = 22) => Array.from({ length: n }, (_, i) => `<rect x="${x + i * (sz + 2)}" y="${y}" width="${sz}" height="${sz}" rx="3" fill="${c}" stroke="#555"/>`).join('') + (label ? T(x + (n * (sz + 2)) / 2 - 1, y + sz + 14, label, 10, '#555', 400) : '');
+  const HC = '#e9f6ff', OC = '#fde3df', NC = '#cfd8ff', CLC = '#e3f2c6', PC = '#f3e6c4';
+
   /* ---------- 情境插圖 ---------- */
   const SCENES = {
     // 金屬燒完變重：天平向煅灰那一邊傾斜
@@ -94,6 +98,18 @@ const ART = (() => {
     'dal-f3': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 22, '原子可以再分割嗎？', 14, R, 900)}
       <circle cx="150" cy="86" r="40" fill="#e9e4f5" stroke="${K}" stroke-width="3"/>${T(150, 98, '？', 34, '#7b5ea7', 900)}
       <path d="M70 86 h28 m-6 -6 l6 6 -6 6" stroke="${K}" stroke-width="3" fill="none"/>${T(52, 80, '🔨', 22)}${T(250, 92, '能不能打開？', 12, '#555', 400)}`),
+    /* ---- 給呂薩克 ---- */
+    'gay-f1': () => wrap(`<rect width="300" height="150" fill="#eaf6ff"/><path d="M0 150 L70 70 L110 104 L160 50 L230 150Z" fill="#9fb8a6"/><path d="M148 64 L160 50 L172 66 Q160 70 148 64Z" fill="#fff"/>
+      ${T(160, 140, '最高的山', 10, '#3a5a46', 400)}
+      <ellipse cx="240" cy="40" rx="22" ry="26" fill="${R}"/><path d="M222 54 Q240 66 258 54" fill="none" stroke="#7d1f1c"/><line x1="226" y1="60" x2="234" y2="76" stroke="#555"/><line x1="254" y1="60" x2="246" y2="76" stroke="#555"/><rect x="232" y="76" width="16" height="10" fill="${BR}"/>
+      ${T(78, 26, '高空的空氣成分一樣嗎？', 13, R, 900)}${T(240, 100, '？ 公尺', 11, K)}`),
+    'gay-f2': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 22, '巧合？還是定律？', 14, R, 900)}
+      ${vol(20, 46, 2, '氫', HC)}${T(76, 62, '＋', 16, K)}${vol(88, 46, 1, '氧', OC)}${T(138, 62, '2 : 1', 13, '#2c4a7c')}
+      ${vol(20, 96, 1, '氨', NC)}${T(52, 112, '＋', 16, K)}${vol(64, 96, 1, '氯化氫', CLC)}${T(138, 112, '1 : 1', 13, '#2c4a7c')}
+      ${vol(180, 46, 2, '一氧化碳', '#ddd')}${T(236, 62, '＋', 16, K)}${vol(248, 46, 1, '氧', OC)}${T(240, 112, '2 : 1', 13, '#2c4a7c')}`),
+    'gay-f3': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 22, '每個氯化氫只分到半顆氫？', 14, R, 900)}
+      ${vol(30, 54, 1, '氫 1 體積', HC, 34)}${T(86, 76, '＋', 18, K)}${vol(104, 54, 1, '氯 1 體積', CLC, 34)}${T(160, 76, '→', 18, K)}${vol(180, 54, 2, '氯化氫 2 體積', PC, 34)}
+      ${T(214, 124, '½ ?', 16, R, 900)}${T(250, 124, '½ ?', 16, R, 900)}`),
   };
 
   /* ---------- 證據小圖示 ---------- */
@@ -122,6 +138,15 @@ const ART = (() => {
     onlyone: () => wrap(`<path d="M24 6 C14 20 12 26 12 31 C12 39 17 44 24 44 C31 44 36 39 36 31 C36 26 34 20 24 6Z" fill="#7cc0e6" stroke="${B}" stroke-width="2"/>${T(24, 34, '1', 14, '#fff')}`, 48, 48),
     simple: () => wrap(`<circle cx="14" cy="22" r="8" fill="#fff" stroke="${K}" stroke-width="2"/><circle cx="34" cy="22" r="8" fill="#fff" stroke="${K}" stroke-width="2"/><line x1="22" y1="22" x2="26" y2="22" stroke="${K}" stroke-width="2"/>${T(24, 44, '一對一？', 9)}`, 48, 48),
     nochange: () => wrap(`<rect x="4" y="12" width="16" height="16" fill="${M}" stroke="#777"/><path d="M22 20 h6 m-3 -3 l3 3 -3 3" stroke="${K}" stroke-width="2" fill="none"/><rect x="30" y="12" width="16" height="16" fill="${M}" stroke="#777"/>${T(24, 42, '元素不變', 8)}`, 48, 48),
+    mountain: () => wrap(`<path d="M2 42 L20 12 L30 26 L36 18 L46 42Z" fill="#9fb8a6"/><path d="M16 18 L20 12 L24 18Z" fill="#fff"/>`, 48, 48),
+    mixgas: () => wrap(`${[[10, 12], [22, 20], [34, 10], [14, 30], [30, 32], [38, 24]].map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="4" fill="${i % 2 ? '#fde3df' : '#cfd8ff'}" stroke="#777"/>`).join('')}`, 48, 48),
+    balloonhot: () => wrap(`<ellipse cx="24" cy="16" rx="12" ry="14" fill="${R}"/><line x1="16" y1="28" x2="20" y2="36" stroke="#555"/><line x1="32" y1="28" x2="28" y2="36" stroke="#555"/><rect x="19" y="36" width="10" height="7" fill="${BR}"/>`, 48, 48),
+    ho21: () => wrap(`${vol(2, 14, 2, '', HC, 12)}${vol(32, 14, 1, '', OC, 12)}${T(24, 42, '2 : 1', 10)}`, 48, 48),
+    nh3hcl: () => wrap(`${vol(6, 14, 1, '', NC, 14)}${vol(28, 14, 1, '', CLC, 14)}${T(24, 42, '1 : 1', 10)}`, 48, 48),
+    cooo: () => wrap(`${vol(2, 14, 2, '', '#ddd', 12)}${vol(32, 14, 1, '', OC, 12)}${T(24, 42, '2 : 1', 10)}`, 48, 48),
+    hcl2: () => wrap(`${vol(2, 8, 1, '', HC, 10)}${vol(14, 8, 1, '', CLC, 10)}<path d="M28 13 h4" stroke="${K}" stroke-width="2"/>${vol(34, 2, 1, '', PC, 10)}${vol(34, 14, 1, '', PC, 10)}${T(24, 40, '1+1→2', 9)}`, 48, 48),
+    atomwhole: () => wrap(`<circle cx="24" cy="20" r="12" fill="#e9e4f5" stroke="${K}" stroke-width="2"/><path d="M14 36 L34 36" stroke="${R}" stroke-width="2"/>${T(24, 46, '不可分', 9, R)}`, 48, 48),
+    samevol: () => wrap(`<rect x="4" y="8" width="18" height="24" fill="${HC}" stroke="#555"/><rect x="26" y="8" width="18" height="24" fill="${OC}" stroke="#555"/>${T(13, 24, 'n', 11)}${T(35, 24, 'n', 11)}${T(24, 44, '同體積同數目?', 7)}`, 48, 48),
   };
 
   /* ---------- 實驗器材插圖 ---------- */
@@ -223,6 +248,31 @@ const ART = (() => {
     'dal-weights': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '每種元素都有自己的原子量', 13, R)}
       ${[['氫', 1, '#e9f6ff', 50], ['碳', 12, '#555', 120], ['氮', 14, '#cfd8ff', 190], ['氧', 16, '#fde3df', 260]].map(([n, w, c, x]) => `<circle cx="${x}" cy="74" r="${10 + w}" fill="${c}" stroke="${K}"/>${T(x, 78, n, 11, w === 12 ? '#fff' : K)}${T(x, 122, String(w), 13)}`).join('')}
       ${T(150, 142, '（今天的數值）', 10, '#888', 400)}`),
+    'gay-mount': () => wrap(`<rect width="300" height="150" fill="#eaf6ff"/>${T(150, 20, '山頂空氣成分和地面一樣', 13, R)}
+      <path d="M20 140 L120 50 L220 140Z" fill="#9fb8a6"/><path d="M106 63 L120 50 L134 63Z" fill="#fff"/><rect x="112" y="40" width="16" height="10" rx="2" fill="${GL}" stroke="${B}"/>
+      ${T(250, 60, '更高的地方？', 12, '#2c4a7c')}${T(250, 82, '沒有人量過', 11, '#555', 400)}`),
+    'gay-diffuse': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '分層的氣體會自己混合', 13, R)}
+      <rect x="40" y="36" width="70" height="96" fill="#fff" stroke="${B}" stroke-width="2"/><rect x="41" y="37" width="68" height="47" fill="#cfd8ff"/><rect x="41" y="84" width="68" height="47" fill="#fde3df"/>${T(75, 146, '一開始', 10, '#555', 400)}
+      ${T(150, 90, '→', 24, K)}
+      <rect x="190" y="36" width="70" height="96" fill="#fff" stroke="${B}" stroke-width="2"/>${Array.from({ length: 24 }, (_, i) => `<circle cx="${198 + (i % 6) * 11}" cy="${46 + Math.floor(i / 6) * 22}" r="4" fill="${(i * 7) % 3 ? '#fde3df' : '#cfd8ff'}" stroke="#999"/>`).join('')}${T(225, 146, '一段時間後', 10, '#555', 400)}`),
+    'gay-weather': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '晴天雨天，成分幾乎一樣', 13, R)}
+      <circle cx="80" cy="66" r="20" fill="${G}"/>${T(80, 118, '晴天', 12)}<ellipse cx="220" cy="62" rx="34" ry="18" fill="#bbb"/>${[200, 214, 228, 242].map(x => `<line x1="${x}" y1="84" x2="${x - 4}" y2="98" stroke="${B}" stroke-width="2"/>`).join('')}${T(220, 118, '雨天', 12)}
+      ${T(150, 70, '＝', 22, K)}`),
+    'gay-hcl': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '氫：氯 ＝ 1 : 1', 13, R)}${vol(70, 56, 1, '氫 1', HC, 40)}${T(136, 82, '＋', 20, K)}${vol(160, 56, 1, '氯 1', CLC, 40)}`),
+    'gay-nh3': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '氮 1 ＋ 氫 3 → 氨 2', 13, R)}${vol(16, 60, 1, '氮 1', NC, 28)}${T(56, 80, '＋', 16, K)}${vol(70, 60, 3, '氫 3', HC, 28)}${T(172, 80, '→', 16, K)}${vol(190, 60, 2, '氨 2', '#e8dcf8', 28)}`),
+    'gay-same': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '同溫同壓下，一直是整數比', 13, R)}
+      ${[['0°C', 50], ['100°C', 150], ['高壓', 250]].map(([n, x]) => `<rect x="${x - 40}" y="44" width="80" height="70" rx="8" fill="#fff" stroke="${K}"/>${T(x, 62, n, 11, '#555', 400)}${T(x, 92, '2 : 1', 16, '#2c4a7c', 900)}`).join('')}
+      ${T(150, 136, '（反應前後都在同樣條件下比較）', 10, '#888', 400)}`),
+    'gay-remeasure': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '重做好幾次：都是 2 體積', 13, R)}
+      ${[1, 2, 3].map(i => `${T(40, 40 + i * 30, `第 ${i} 次`, 11, '#555', 400)}${vol(80, 26 + i * 30, 2, '', PC, 20)}${T(150, 40 + i * 30, '✓', 14, '#2f9e5a')}`).join('')}
+      ${T(230, 84, '產物＝2 體積', 13, '#2c4a7c')}`),
+    'gay-half': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '如果每個粒子只有一顆原子……', 13, R)}
+      <circle cx="50" cy="76" r="14" fill="${HC}" stroke="${B}" stroke-width="2"/>${T(50, 81, 'H', 12, B)}${T(80, 82, '＋', 16, K)}<circle cx="110" cy="76" r="14" fill="${CLC}" stroke="#6a8a3a" stroke-width="2"/>${T(110, 81, 'Cl', 11)}
+      ${T(142, 82, '→', 16, K)}
+      ${[190, 250].map(x => `<rect x="${x - 24}" y="56" width="48" height="40" rx="6" fill="${PC}" stroke="#555"/>${T(x, 72, '½H ½Cl', 11, R)}${T(x, 90, '？', 12, R)}`).join('')}
+      ${T(220, 124, '原子被分成兩半？矛盾！', 12, R)}`),
+    'gay-steam': () => wrap(`<rect width="300" height="150" fill="${W}"/>${T(150, 20, '氫 2 ＋ 氧 1 → 水蒸氣 2', 13, R)}${vol(20, 60, 2, '氫 2', HC, 30)}${T(98, 80, '＋', 16, K)}${vol(114, 60, 1, '氧 1', OC, 30)}${T(164, 80, '→', 16, K)}${vol(184, 60, 2, '水蒸氣 2', '#cfe8f5', 30)}
+      ${T(150, 132, '氧只有 1 份，怎麼出現在 2 份水蒸氣裡？', 11, R)}`),
   };
 
   const get = (lib, k) => (lib[k] ? lib[k]() : '');
