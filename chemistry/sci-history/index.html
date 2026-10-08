@@ -38,6 +38,7 @@
   .form .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .form .btn { width: 100%; margin-top: 16px; font-size: 1.1em; }
   .msg { color: #ff9c86; font-size: .9em; margin-top: 8px; min-height: 1.2em; }
+  .msg.info { color: var(--soft); }   /* 讀取中的提示用灰色，紅色只留給真正的錯誤 */
 
   /* 錢包列 */
   .wallet { position: sticky; top: 0; z-index: 20; background: #0d0b1cee; backdrop-filter: blur(6px); border-bottom: 2px solid var(--night-3); }
@@ -290,22 +291,22 @@
   <div class="bar"><span id="video-title"></span><span><a id="video-link" target="_blank" rel="noopener">在 YouTube 開啟 ↗</a>　<button class="btn" id="video-close">關閉</button></span></div></div></div>
 <div class="toast" id="toast"></div>
 
-<script src="data.js?v=20261008c"></script>
-<script src="core.js?v=20261008c"></script>
-<script src="art.js?v=20261008c"></script>
-<script src="ch-lavoisier.js?v=20261008c"></script>
-<script src="ch-proust.js?v=20261008c"></script>
-<script src="ch-dalton.js?v=20261008c"></script>
-<script src="ch-gaylussac.js?v=20261008c"></script>
-<script src="ch-avogadro.js?v=20261008c"></script>
-<script src="ch-mendeleev.js?v=20261008c"></script>
-<script src="ch-thomson.js?v=20261008c"></script>
-<script src="ch-rutherford.js?v=20261008c"></script>
-<script src="ch-millikan.js?v=20261008c"></script>
-<script src="ch-bohr.js?v=20261008c"></script>
-<script src="ch-moseley.js?v=20261008c"></script>
-<script src="ch-chadwick.js?v=20261008c"></script>
-<script src="quiz.js?v=20261008c"></script>
+<script src="data.js?v=20261008d"></script>
+<script src="core.js?v=20261008d"></script>
+<script src="art.js?v=20261008d"></script>
+<script src="ch-lavoisier.js?v=20261008d"></script>
+<script src="ch-proust.js?v=20261008d"></script>
+<script src="ch-dalton.js?v=20261008d"></script>
+<script src="ch-gaylussac.js?v=20261008d"></script>
+<script src="ch-avogadro.js?v=20261008d"></script>
+<script src="ch-mendeleev.js?v=20261008d"></script>
+<script src="ch-thomson.js?v=20261008d"></script>
+<script src="ch-rutherford.js?v=20261008d"></script>
+<script src="ch-millikan.js?v=20261008d"></script>
+<script src="ch-bohr.js?v=20261008d"></script>
+<script src="ch-moseley.js?v=20261008d"></script>
+<script src="ch-chadwick.js?v=20261008d"></script>
+<script src="quiz.js?v=20261008d"></script>
 <script>
 const $ = id => document.getElementById(id);
 const { esc, md, CONFIG } = SHC;
@@ -349,6 +350,7 @@ $('btn-repay').onclick = async () => {
 
 /* ---------- 登入 ---------- */
 let CFG = null, JOINING = false;
+const loginMsg = (t, info) => { const m = $('login-msg'); m.textContent = t; m.classList.toggle('info', !!info); };
 // 老師頁的「總結測驗連結」（index.html?quiz）：不必全破，登入後直接進測驗；成績照常記錄並標註來源
 const QUIZ_LINK = new URLSearchParams(location.search).has('quiz');
 if (QUIZ_LINK) {
@@ -360,17 +362,18 @@ SHC.loadConfig().then(c => { CFG = c; $('term-tag').textContent = `目前學期�
 $('btn-join').onclick = async () => {
   const cls = SHC.toHalf($('in-cls').value).toUpperCase(), seat = parseInt(SHC.toHalf($('in-seat').value), 10), name = $('in-name').value.trim();
   const stuNo = SHC.toHalf($('in-no').value).toUpperCase(), purpose = (document.querySelector('[name=pur]:checked') || {}).value;
-  if (!cls || !seat || !name || !stuNo) return ($('login-msg').textContent = '班級、座號、姓名、學號都要填喔！');
-  if (seat < 1 || seat > 199) return ($('login-msg').textContent = '座號要是 1～199 的數字喔！');
+  if (!cls || !seat || !name || !stuNo) return loginMsg('班級、座號、姓名、學號都要填喔！');
+  if (seat < 1 || seat > 199) return loginMsg('座號要是 1～199 的數字喔！');
   if (JOINING) return; JOINING = true;
   if (!CFG) CFG = await SHC.loadConfig();
   const term = CFG.current;
   const p = { cls, seat, name, stuNo, purpose, term, sid: SHC.makeSid(term, cls, seat) };
-  $('login-msg').textContent = '讀取進度中……';
+  loginMsg('⏳ 讀取進度中……', true);
+  const slow = setTimeout(() => loginMsg('⏳ 網路比較慢，正在讀取雲端進度，請稍候……', true), 3000);
   SHC.setFree(false);
   ST = await SHC.load(p);
   try { localStorage.setItem(PKEY, JSON.stringify({ cls, seat, name, stuNo, purpose })); } catch (e) {}
-  $('login-msg').textContent = '';
+  clearTimeout(slow); loginMsg('');
   SHC.log('login', { purpose });
   await persist();
   openHub();
