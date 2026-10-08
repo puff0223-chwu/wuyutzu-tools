@@ -20,6 +20,7 @@
   .box h2 { font-size: 1.08em; }
   .top { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .link { display: flex; gap: 14px; align-items: center; }
+  .qlink { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); }
   #qr { width: 92px; height: 92px; flex: none; } #qr img, #qr canvas { width: 100% !important; height: 100% !important; }
   .url { font-family: monospace; font-size: .8em; word-break: break-all; color: #555; margin: 4px 0 6px; }
   .btn { border: none; border-radius: 8px; padding: 7px 12px; font: inherit; font-size: .92em; font-weight: 700; background: var(--gold); color: var(--ink); cursor: pointer; }
@@ -88,7 +89,9 @@
     <section class="box link">
       <div id="qr"></div>
       <div><h2>學生入口</h2><div class="url" id="url"></div>
-        <div class="row"><button class="btn" id="copy">📋 複製連結</button><button class="btn dark" id="reload">🔄 重新讀取</button><span class="hint" id="status"></span></div></div>
+        <div class="row"><button class="btn" id="copy">📋 複製連結</button><button class="btn dark" id="reload">🔄 重新讀取</button><span class="hint" id="status"></span></div>
+        <div class="row qlink"><b>🎓 總結測驗連結</b><button class="btn ghost" id="copy-q">📋 複製</button><button class="btn ghost" id="qr-q">🔳 投影 QR</button><a class="btn ghost" id="open-q" target="_blank" style="text-decoration:none">↗ 開啟</a></div>
+        <div class="hint">不必全部破關，學生登入後直接進入測驗；成績照常記錄（標註「老師連結」）</div></div>
     </section>
     <section class="box">
       <h2>📅 學期設定</h2>
@@ -132,21 +135,21 @@
 </main>
 <div class="modal-bg hidden" id="m"><div class="modal" id="mc"></div></div>
 
-<script src="data.js?v=20261008b"></script>
-<script src="core.js?v=20261008b"></script>
-<script src="ch-lavoisier.js?v=20261008b"></script>
-<script src="ch-proust.js?v=20261008b"></script>
-<script src="ch-dalton.js?v=20261008b"></script>
-<script src="ch-gaylussac.js?v=20261008b"></script>
-<script src="ch-avogadro.js?v=20261008b"></script>
-<script src="ch-mendeleev.js?v=20261008b"></script>
-<script src="ch-thomson.js?v=20261008b"></script>
-<script src="ch-rutherford.js?v=20261008b"></script>
-<script src="ch-millikan.js?v=20261008b"></script>
-<script src="ch-bohr.js?v=20261008b"></script>
-<script src="ch-moseley.js?v=20261008b"></script>
-<script src="ch-chadwick.js?v=20261008b"></script>
-<script src="quiz.js?v=20261008b"></script>
+<script src="data.js?v=20261008c"></script>
+<script src="core.js?v=20261008c"></script>
+<script src="ch-lavoisier.js?v=20261008c"></script>
+<script src="ch-proust.js?v=20261008c"></script>
+<script src="ch-dalton.js?v=20261008c"></script>
+<script src="ch-gaylussac.js?v=20261008c"></script>
+<script src="ch-avogadro.js?v=20261008c"></script>
+<script src="ch-mendeleev.js?v=20261008c"></script>
+<script src="ch-thomson.js?v=20261008c"></script>
+<script src="ch-rutherford.js?v=20261008c"></script>
+<script src="ch-millikan.js?v=20261008c"></script>
+<script src="ch-bohr.js?v=20261008c"></script>
+<script src="ch-moseley.js?v=20261008c"></script>
+<script src="ch-chadwick.js?v=20261008c"></script>
+<script src="quiz.js?v=20261008c"></script>
 <script>
 const $ = id => document.getElementById(id);
 const { esc, fmtTime } = SHC;
@@ -161,6 +164,15 @@ $('url').textContent = STU;
 try { new QRCode($('qr'), { text: STU, width: 200, height: 200 }); } catch (e) {}
 $('copy').onclick = () => navigator.clipboard.writeText(STU).then(() => $('status').textContent = '已複製！');
 $('reload').onclick = load;
+const QURL = STU + 'index.html?quiz';
+$('open-q').href = QURL;
+$('copy-q').onclick = () => navigator.clipboard.writeText(QURL).then(() => $('status').textContent = '已複製測驗連結！');
+$('qr-q').onclick = () => {
+  $('mc').innerHTML = `<button class="x" onclick="document.getElementById('m').classList.add('hidden')">✕</button><h2 style="text-align:center">🎓 總結測驗：猜猜我是誰</h2>
+    <div id="bigqr" style="width:min(340px,75vw);margin:14px auto"></div><div class="url" style="text-align:center">${esc(QURL)}</div>`;
+  try { new QRCode($('bigqr'), { text: QURL, width: 340, height: 340 }); } catch (e) {}
+  $('m').classList.remove('hidden');
+};
 ['f-term', 'f-cls', 'f-pur', 'f-full', 'f-ch'].forEach(id => $(id).onchange = () => { if (id === 'f-term') fillCls(); page = 0; render(); });
 $('f-q').oninput = () => { page = 0; render(); };
 $('f-ch').innerHTML = READY.map(n => `<option value="${n.id}">${n.name}</option>`).join('');
@@ -248,7 +260,7 @@ function cols() {
 }
 function quizCell(p) {
   const q = p.quiz;
-  if (q && q.n) return `<b>${q.best}</b><span class="hint">／${q.total || 20}・首次 ${q.first}・${q.n} 次</span>`;
+  if (q && q.n) return `<b>${q.best}</b><span class="hint">／${q.total || 20}・首次 ${q.first}・${q.n} 次</span>${q.viaLink ? ' <span class="tag y" title="用老師的測驗連結考的次數">連結×' + q.viaLink + '</span>' : ''}`;
   return q && q.unlocked ? '<span class="tag y">未考</span>' : '<span class="hint">—</span>';
 }
 function flags(p) {
@@ -378,8 +390,8 @@ function describe(e) {
   if (e.type === 'gameover') return `第 ${e.n} 次`;
   if (e.type === 'quiz') { const its = (Array.isArray(e.items) ? e.items : Object.values(e.items || {})).map(x => Array.isArray(x) ? x : Object.values(x)); const nm = QUIZ.NAMES();
     const w = its.filter(x => !+x[2]).map(x => QUIZ.byId[x[0]] ? `${nm[QUIZ.byId[x[0]].ch]}→誤選${nm[x[1]] || x[1]}` : x[0]);
-    return `第 ${e.n} 次：${e.score}／${e.total}・用時 ${fmtTime(e.ms)}${w.length ? `・答錯：${w.join('、')}` : '・全對！'}`; }
-  if (e.type === 'quiz_start') return `第 ${e.n} 次開考`;
+    return `第 ${e.n} 次${e.via === 'link' ? '（老師連結）' : ''}：${e.score}／${e.total}・用時 ${fmtTime(e.ms)}${w.length ? `・答錯：${w.join('、')}` : '・全對！'}`; }
+  if (e.type === 'quiz_start') return `第 ${e.n} 次開考${e.via === 'link' ? '（老師連結）' : ''}`;
   if (e.type === 'login') return `用途：${e.purpose || ''}`;
   if (e.type === 'replay_all') return `第 ${e.n} 次重玩`;
   if (e.type === 'replay_ch') return `${ch ? ch.title : e.ch}・第 ${e.n} 次重玩（剩 ${e.coins}）`;

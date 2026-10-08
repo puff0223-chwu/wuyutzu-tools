@@ -290,22 +290,22 @@
   <div class="bar"><span id="video-title"></span><span><a id="video-link" target="_blank" rel="noopener">在 YouTube 開啟 ↗</a>　<button class="btn" id="video-close">關閉</button></span></div></div></div>
 <div class="toast" id="toast"></div>
 
-<script src="data.js?v=20261008b"></script>
-<script src="core.js?v=20261008b"></script>
-<script src="art.js?v=20261008b"></script>
-<script src="ch-lavoisier.js?v=20261008b"></script>
-<script src="ch-proust.js?v=20261008b"></script>
-<script src="ch-dalton.js?v=20261008b"></script>
-<script src="ch-gaylussac.js?v=20261008b"></script>
-<script src="ch-avogadro.js?v=20261008b"></script>
-<script src="ch-mendeleev.js?v=20261008b"></script>
-<script src="ch-thomson.js?v=20261008b"></script>
-<script src="ch-rutherford.js?v=20261008b"></script>
-<script src="ch-millikan.js?v=20261008b"></script>
-<script src="ch-bohr.js?v=20261008b"></script>
-<script src="ch-moseley.js?v=20261008b"></script>
-<script src="ch-chadwick.js?v=20261008b"></script>
-<script src="quiz.js?v=20261008b"></script>
+<script src="data.js?v=20261008c"></script>
+<script src="core.js?v=20261008c"></script>
+<script src="art.js?v=20261008c"></script>
+<script src="ch-lavoisier.js?v=20261008c"></script>
+<script src="ch-proust.js?v=20261008c"></script>
+<script src="ch-dalton.js?v=20261008c"></script>
+<script src="ch-gaylussac.js?v=20261008c"></script>
+<script src="ch-avogadro.js?v=20261008c"></script>
+<script src="ch-mendeleev.js?v=20261008c"></script>
+<script src="ch-thomson.js?v=20261008c"></script>
+<script src="ch-rutherford.js?v=20261008c"></script>
+<script src="ch-millikan.js?v=20261008c"></script>
+<script src="ch-bohr.js?v=20261008c"></script>
+<script src="ch-moseley.js?v=20261008c"></script>
+<script src="ch-chadwick.js?v=20261008c"></script>
+<script src="quiz.js?v=20261008c"></script>
 <script>
 const $ = id => document.getElementById(id);
 const { esc, md, CONFIG } = SHC;
@@ -349,6 +349,12 @@ $('btn-repay').onclick = async () => {
 
 /* ---------- 登入 ---------- */
 let CFG = null, JOINING = false;
+// 老師頁的「總結測驗連結」（index.html?quiz）：不必全破，登入後直接進測驗；成績照常記錄並標註來源
+const QUIZ_LINK = new URLSearchParams(location.search).has('quiz');
+if (QUIZ_LINK) {
+  document.querySelector('#s-login .lead').innerHTML = '🎓 <b>總結測驗：猜猜我是誰</b><br>輸入你的資料，就會直接開始測驗。';
+  $('btn-join').textContent = '開始總結測驗 ▶';
+}
 $('in-purpose').innerHTML = CONFIG.PURPOSES.map((x, i) => `<label><input type="radio" name="pur" value="${x}" ${i === 0 ? 'checked' : ''}><span>${x}</span></label>`).join('');
 SHC.loadConfig().then(c => { CFG = c; $('term-tag').textContent = `目前學期：${c.current}`; });
 $('btn-join').onclick = async () => {
@@ -369,6 +375,7 @@ $('btn-join').onclick = async () => {
   await persist();
   openHub();
   JOINING = false;
+  if (QUIZ_LINK) return openQuiz();   // 老師的測驗連結：登入後直接進測驗
   checkBankrupt();
 };
 ['in-cls', 'in-seat', 'in-name', 'in-no'].forEach(id => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-join').click(); }));
@@ -687,7 +694,7 @@ function renderEnd(head) {
 const KIND = { life: '生平事蹟', contrib: '主要貢獻', mistake: '也會犯的錯' };
 let QZ = null;
 const recST = () => (SHC.isFree() && OFFICIAL ? OFFICIAL : ST);   // 測驗成績一律記在正式紀錄
-const quizOpen = () => { const r = recST(); return !!(r && ((r.quiz && r.quiz.unlocked) || READY().every(id => r.done[id]))); };
+const quizOpen = () => { const r = recST(); return !!(r && (QUIZ_LINK || (r.quiz && r.quiz.unlocked) || READY().every(id => r.done[id]))); };
 function renderQuizBanner() {
   const b = $('quiz-banner'), r = recST(), q = r.quiz || {}, N = READY().length;
   if (!quizOpen()) { b.className = 'quiz-banner locked'; b.innerHTML = `🎓 <span><b>總結測驗「猜猜我是誰」</b>：全部 ${N} 位科學家都破關後開放（目前 ${READY().filter(id => r.done[id]).length}／${N}）</span>`; return; }
@@ -699,7 +706,7 @@ function renderQuizBanner() {
 function openQuiz() {
   if (SHC.isFree()) exitFree();
   stopTimer(); VIEW = 'quiz'; CUR = null;
-  QZ = { items: QUIZ.make(READY(), 20), i: -1, picks: [] };
+  QZ = { items: QUIZ.make(READY(), 20), i: -1, picks: [], via: QUIZ_LINK ? 'link' : 'game' };
   show('s-play'); renderQuiz();
 }
 function renderQuiz(keepScroll) {
@@ -712,8 +719,9 @@ function renderQuiz(keepScroll) {
       <p>・共 <b>${N} 題</b>，每一題是一位科學家的「自我介紹」：他的生平事蹟、主要貢獻，或是他也犯過的錯。<br>・從五位科學家中，選出「我是誰」。<br>・每題作答後會馬上看到解析。<br>・成績會記錄給老師看，<b>不影響遊戲總分</b>；考完可以再考一次。</p>
       <div class="actions"><button class="btn" id="qstart">開始作答 ▶</button></div></div>`;
     $('qstart').onclick = () => {
-      ST.quiz = { ...(ST.quiz || {}), unlocked: true }; ST.quiz.started = (ST.quiz.started || 0) + 1;
-      SHC.log('quiz_start', { n: ST.quiz.started }); persist();
+      ST.quiz = { ...(ST.quiz || {}) }; ST.quiz.started = (ST.quiz.started || 0) + 1;
+      if (QZ.via === 'game') ST.quiz.unlocked = true;   // 老師連結考的，不會順便解鎖遊戲裡的測驗
+      SHC.log('quiz_start', { n: ST.quiz.started, via: QZ.via }); persist();
       QZ.i = 0; QZ.t0 = Date.now(); renderQuiz();
     };
   } else if (QZ.i < N) {
@@ -750,7 +758,8 @@ function finishQuiz() {
   q.n = (q.n || 0) + 1; q.total = N; q.last = score; q.best = Math.max(q.best || 0, score);
   if (q.first === undefined) q.first = score;
   q.at = Date.now();
-  SHC.log('quiz', { n: q.n, score, total: N, ms: Date.now() - QZ.t0, items: QZ.picks.map(x => [x.id, x.pick, x.ok ? 1 : 0]) });
+  if (QZ.via === 'link') q.viaLink = (q.viaLink || 0) + 1;
+  SHC.log('quiz', { n: q.n, via: QZ.via, score, total: N, ms: Date.now() - QZ.t0, items: QZ.picks.map(x => [x.id, x.pick, x.ok ? 1 : 0]) });
   persist();
 }
 
