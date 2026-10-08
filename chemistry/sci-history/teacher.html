@@ -122,23 +122,31 @@
     <div class="tw" style="max-height:none"><table class="ov" id="ov"></table></div>
     <div id="detail"></div>
   </section>
+
+  <section class="box">
+    <div class="head"><h2>🎓 總結測驗分析「猜猜我是誰」</h2><span class="hint">只統計每位學生<b>第一次完成</b>的測驗（最能看出真實理解）；依上方篩選計算</span></div>
+    <div class="strip" id="qz-strip"></div>
+    <div class="tw" style="max-height:none"><table class="ov" id="qz-ov"></table></div>
+    <details style="margin-top:8px"><summary class="hint" style="cursor:pointer">📌 最常答錯的題目（前 15 題）</summary><div class="tw" style="max-height:420px;margin-top:6px"><table id="qz-hard"></table></div></details>
+  </section>
 </main>
 <div class="modal-bg hidden" id="m"><div class="modal" id="mc"></div></div>
 
-<script src="data.js?v=20261008a"></script>
-<script src="core.js?v=20261008a"></script>
-<script src="ch-lavoisier.js?v=20261008a"></script>
-<script src="ch-proust.js?v=20261008a"></script>
-<script src="ch-dalton.js?v=20261008a"></script>
-<script src="ch-gaylussac.js?v=20261008a"></script>
-<script src="ch-avogadro.js?v=20261008a"></script>
-<script src="ch-mendeleev.js?v=20261008a"></script>
-<script src="ch-thomson.js?v=20261008a"></script>
-<script src="ch-rutherford.js?v=20261008a"></script>
-<script src="ch-millikan.js?v=20261008a"></script>
-<script src="ch-bohr.js?v=20261008a"></script>
-<script src="ch-moseley.js?v=20261008a"></script>
-<script src="ch-chadwick.js?v=20261008a"></script>
+<script src="data.js?v=20261008b"></script>
+<script src="core.js?v=20261008b"></script>
+<script src="ch-lavoisier.js?v=20261008b"></script>
+<script src="ch-proust.js?v=20261008b"></script>
+<script src="ch-dalton.js?v=20261008b"></script>
+<script src="ch-gaylussac.js?v=20261008b"></script>
+<script src="ch-avogadro.js?v=20261008b"></script>
+<script src="ch-mendeleev.js?v=20261008b"></script>
+<script src="ch-thomson.js?v=20261008b"></script>
+<script src="ch-rutherford.js?v=20261008b"></script>
+<script src="ch-millikan.js?v=20261008b"></script>
+<script src="ch-bohr.js?v=20261008b"></script>
+<script src="ch-moseley.js?v=20261008b"></script>
+<script src="ch-chadwick.js?v=20261008b"></script>
+<script src="quiz.js?v=20261008b"></script>
 <script>
 const $ = id => document.getElementById(id);
 const { esc, fmtTime } = SHC;
@@ -216,6 +224,7 @@ const QUICK = [
   ['neg', '負資產', p => p.net < 0],
   ['loan', '借過錢', p => p.loans > 0],
   ['replay', '按過重玩', p => (p.replays || 0) > 0],
+  ['noquiz', '可考總結測驗但還沒考', p => p.quiz && p.quiz.unlocked && !p.quiz.n],
   ['idle', '3 天沒玩', p => !p.updatedAt || Date.now() - p.updatedAt > 3 * DAY]
 ];
 
@@ -228,6 +237,7 @@ function cols() {
     ['purpose', '用途', p => esc(p.purpose || '')],
     ['score', '總分', p => `<b>${p.score}</b>`], ['coins', '金幣', p => p.coins],
     ['ndone', '破關', p => `${nDone(p)}／${READY.length}`],
+    ['quiz', '總結測驗', p => quizCell(p)],
     [`t_${ch}`, `${SH_DATA.byId[ch].name}時間`, p => p.done && p.done[ch] ? fmtTime(p.done[ch].ms) + (p.done[ch].perfect ? ' 🌟' : '') : (p.chapters && p.chapters[ch] ? '<span class="hint">進行中</span>' : '—')]
   ];
   if (full) C.push(['net', '淨資產', p => `<span class="${p.net < 0 ? 'neg' : ''}">${p.net}</span>`], ['loans', '借款', p => p.loans], ['repays', '還款', p => p.repays],
@@ -235,6 +245,11 @@ function cols() {
   else C.push(['flags', '狀態', p => flags(p)]);
   C.push(['updatedAt', '最後遊玩', p => ago(p.updatedAt)]);
   return C;
+}
+function quizCell(p) {
+  const q = p.quiz;
+  if (q && q.n) return `<b>${q.best}</b><span class="hint">／${q.total || 20}・首次 ${q.first}・${q.n} 次</span>`;
+  return q && q.unlocked ? '<span class="tag y">未考</span>' : '<span class="hint">—</span>';
 }
 function flags(p) {
   let s = '';
@@ -253,6 +268,7 @@ function ago(t) {
   return new Date(t).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' });
 }
 const val = (p, k) => ['cls', 'name', 'stuNo', 'purpose'].includes(k) ? String(p[k] || '') : k === 'ndone' ? nDone(p) : k === 'flags' ? (p.net < 0 ? 3 : 0) + (p.replays || 0) + (p.gameOvers || 0)
+  : k === 'quiz' ? (p.quiz && p.quiz.n ? p.quiz.best : -1)
   : k.startsWith('t_') ? (p.done && p.done[k.slice(2)] ? p.done[k.slice(2)].ms : Infinity) : (p[k] ?? 0);
 
 /* ---------- 學生統計 ---------- */
@@ -261,6 +277,7 @@ function render() {
   const cnt = u => B.filter(p => p.purpose === u).length;
   $('strip').innerHTML = `<span>參與 <b>${B.length}</b> 人</span><span>破關至少一章 <b>${B.filter(p => nDone(p)).length}</b></span>
     <span>平均總分 <b>${B.length ? (B.reduce((a, p) => a + p.score, 0) / B.length).toFixed(1) : '—'}</b></span>
+    <span>總結測驗完成 <b>${B.filter(p => p.quiz && p.quiz.n).length}</b> 人</span>
     <span>用途：正式進度 <b>${cnt('正式進度')}</b>・考試複習 <b>${cnt('考試複習')}</b>・重補修 <b>${cnt('重補修')}</b></span>`;
   $('chips').innerHTML = QUICK.map(([k, l, f]) => `<button class="chip ${quick === k ? 'on' : ''}" data-k="${k}">${l}<i>${B.filter(f).length}</i></button>`).join('');
   $('chips').querySelectorAll('.chip').forEach(b => b.onclick = () => { quick = b.dataset.k; page = 0; render(); });
@@ -306,6 +323,7 @@ function renderOverview(B) {
     `<tr><td colspan="6" class="hint" style="text-align:left">還沒做好的科學家（${SH_DATA.NODES.length - READY.length} 位）做好後會自動出現在這裡。</td></tr>`;
   $('ov').querySelectorAll('tr[data-ch]').forEach(tr => tr.onclick = () => { selCh = tr.dataset.ch; renderOverview(base()); });
   renderDetail(B);
+  renderQuizStats(B);
 }
 function renderDetail(B) {
   const ch = CHAPTERS[selCh]; if (!ch) { $('detail').innerHTML = ''; return; }
@@ -322,8 +340,34 @@ function renderDetail(B) {
     }).join('') + '</div>';
 }
 
+/* ---------- 總結測驗分析 ---------- */
+const QNAME = () => QUIZ.NAMES();
+const QKIND = { life: '生平事蹟', contrib: '主要貢獻', mistake: '也會犯的錯' };
+const firstQuiz = p => logOf(p.sid).find(e => e.type === 'quiz');
+function renderQuizStats(B) {
+  const names = QNAME(), F = B.map(p => firstQuiz(p)).filter(Boolean);
+  const items = F.flatMap(e => (Array.isArray(e.items) ? e.items : Object.values(e.items || {})).map(x => (Array.isArray(x) ? x : Object.values(x))));
+  const done = B.filter(p => p.quiz && p.quiz.n), avg = a => a.length ? (a.reduce((x, y) => x + y, 0) / a.length).toFixed(1) : '—';
+  const kRate = k => { const xs = items.filter(x => QUIZ.byId[x[0]] && QUIZ.byId[x[0]].k === k); return xs.length ? Math.round(xs.filter(x => +x[2]).length / xs.length * 100) + '%' : '—'; };
+  $('qz-strip').innerHTML = `<span>已開放 <b>${B.filter(p => p.quiz && p.quiz.unlocked).length}</b> 人</span><span>完成 <b>${done.length}</b> 人</span>
+    <span>首次平均 <b>${avg(done.map(p => p.quiz.first))}</b></span><span>最高分平均 <b>${avg(done.map(p => p.quiz.best))}</b></span>
+    <span>答對率：生平 <b>${kRate('life')}</b>・貢獻 <b>${kRate('contrib')}</b>・犯的錯 <b>${kRate('mistake')}</b></span>`;
+  const rate = xs => xs.length ? Math.round(xs.filter(x => +x[2]).length / xs.length * 100) : null;
+  const chip = r => `<span style="display:inline-block;min-width:46px;border-radius:5px;padding:0 6px;background:${r === null ? '#eee' : r >= 70 ? '#dff3e6' : r >= 40 ? '#fff1c9' : '#fde3df'}">${r === null ? '—' : r + '%'}</span>`;
+  $('qz-ov').innerHTML = `<tr><th>科學家</th><th>被考次數</th><th>答對率</th><th>答錯時最常被誤認成</th><th>學生誤選成「他」的次數</th></tr>` + READY.map(n => {
+    const xs = items.filter(x => QUIZ.byId[x[0]] && QUIZ.byId[x[0]].ch === n.id), wrong = xs.filter(x => !+x[2]);
+    const cnt = {}; wrong.forEach(x => cnt[x[1]] = (cnt[x[1]] || 0) + 1);
+    const top = Object.entries(cnt).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([id, c]) => `${esc(names[id] || id)}（${c}）`).join('、');
+    const asWrong = items.filter(x => !+x[2] && x[1] === n.id).length;
+    return `<tr><td class="l"><b>${esc(n.name)}</b></td><td>${xs.length}</td><td>${chip(rate(xs))}</td><td class="l">${top || '<span class="hint">—</span>'}</td><td>${asWrong}</td></tr>`;
+  }).join('') + (F.length ? '' : `<tr><td colspan="5" class="hint">還沒有學生完成總結測驗。</td></tr>`);
+  const byQ = {}; items.forEach(x => (byQ[x[0]] = byQ[x[0]] || []).push(x));
+  const hard = Object.entries(byQ).map(([id, xs]) => ({ id, q: QUIZ.byId[id], n: xs.length, r: rate(xs), xs })).filter(o => o.q).sort((a, b) => a.r - b.r || b.n - a.n).slice(0, 15);
+  $('qz-hard').innerHTML = `<tr><th>題目</th><th>答案</th><th>類型</th><th>作答</th><th>答對率</th></tr>` + (hard.map(o => `<tr><td class="l" style="max-width:520px">${esc(o.q.q)}</td><td>${esc(names[o.q.ch])}</td><td>${QKIND[o.q.k]}</td><td>${o.n}</td><td>${chip(o.r)}</td></tr>`).join('') || `<tr><td colspan="5" class="hint">尚無資料</td></tr>`);
+}
+
 /* ---------- 個人卡片 ---------- */
-const LABEL = { login: '🔑 登入', replay_all: '🔁 按全部重玩', replay_ch: '🔁 重玩科學家', join: '🆕 第一次登入', start: '📖 開始劇本', subsidy: '💰 新劇本補助', exp: '🔬 做實驗', choose: '💼 抉擇', fail: '🌀 掉進平行時空', loan: '🏦 向大師銀行借款', repay: '✅ 還款', clear: '🎉 破關', gameover: '☠️ 第三次破產，整局重來' };
+const LABEL = { login: '🔑 登入', replay_all: '🔁 按全部重玩', replay_ch: '🔁 重玩科學家', join: '🆕 第一次登入', start: '📖 開始劇本', subsidy: '💰 新劇本補助', exp: '🔬 做實驗', choose: '💼 抉擇', fail: '🌀 掉進平行時空', loan: '🏦 向大師銀行借款', repay: '✅ 還款', clear: '🎉 破關', gameover: '☠️ 第三次破產，整局重來', quiz_unlock: '🎓 開放總結測驗', quiz_start: '🎓 開始總結測驗', quiz: '🎓 完成總結測驗' };
 function describe(e) {
   const ch = CHAPTERS[e.ch], f = ch && ch.forks.find(x => x.id === e.fork);
   if (e.type === 'exp') { const x = f && f.exps.find(x => x.id === e.exp); return `${f ? f.title : ''}：${x ? x.name : e.exp}（剩 ${e.coins}）`; }
@@ -332,13 +376,17 @@ function describe(e) {
   if (e.type === 'clear') return `${ch ? ch.title : e.ch}・${fmtTime(e.ms)}・${e.perfect ? '一次全對' : `重來 ${e.fails} 次`}・回報骰 ${JSON.stringify(e.rolls)}（剩 ${e.coins}）`;
   if (e.type === 'loan') return `第 ${e.n} 次（剩 ${e.coins}）`;
   if (e.type === 'gameover') return `第 ${e.n} 次`;
+  if (e.type === 'quiz') { const its = (Array.isArray(e.items) ? e.items : Object.values(e.items || {})).map(x => Array.isArray(x) ? x : Object.values(x)); const nm = QUIZ.NAMES();
+    const w = its.filter(x => !+x[2]).map(x => QUIZ.byId[x[0]] ? `${nm[QUIZ.byId[x[0]].ch]}→誤選${nm[x[1]] || x[1]}` : x[0]);
+    return `第 ${e.n} 次：${e.score}／${e.total}・用時 ${fmtTime(e.ms)}${w.length ? `・答錯：${w.join('、')}` : '・全對！'}`; }
+  if (e.type === 'quiz_start') return `第 ${e.n} 次開考`;
   if (e.type === 'login') return `用途：${e.purpose || ''}`;
   if (e.type === 'replay_all') return `第 ${e.n} 次重玩`;
   if (e.type === 'replay_ch') return `${ch ? ch.title : e.ch}・第 ${e.n} 次重玩（剩 ${e.coins}）`;
   if ('coins' in e) return `剩 ${e.coins} 金幣`;
   return '';
 }
-const cls = e => e.type === 'choose' ? (e.correct ? 'ok' : 'bad') : ['fail', 'gameover', 'replay_all', 'replay_ch'].includes(e.type) ? 'bad' : ['loan', 'repay', 'subsidy'].includes(e.type) ? 'money' : '';
+const cls = e => e.type === 'choose' ? (e.correct ? 'ok' : 'bad') : ['fail', 'gameover', 'replay_all', 'replay_ch'].includes(e.type) ? 'bad' : ['loan', 'repay', 'subsidy'].includes(e.type) ? 'money' : e.type === 'quiz' ? 'ok' : '';
 function showStudent(sid) {
   const p = P.find(x => x.sid === sid), L = logOf(sid);
   const chRows = READY.map(n => { const d = (p.done || {})[n.id], c = (p.chapters || {})[n.id];
@@ -346,15 +394,16 @@ function showStudent(sid) {
   $('mc').innerHTML = `<button class="x" onclick="document.getElementById('m').classList.add('hidden')">✕</button>
     <h2>${esc(p.cls)} 班 ${p.seat} 號 ${esc(p.name)}</h2><p class="hint">${p.term} 學期・學號 ${esc(p.stuNo || '—')}・最近用途：${esc(p.purpose || '—')}</p>
     <div class="kv"><div>總分<b>${p.score}</b></div><div>金幣<b>${p.coins}</b></div><div>淨資產<b class="${p.net < 0 ? 'neg' : ''}">${p.net}</b></div><div>借款／還款<b>${p.loans}／${p.repays}</b></div>
-      <div>重來<b>${p.restarts}</b></div><div>全對破關<b>${p.perfect}</b></div><div>按重玩<b>${p.replays || 0}</b></div><div>破產重來<b>${p.gameOvers || 0}</b></div></div>
+      <div>重來<b>${p.restarts}</b></div><div>全對破關<b>${p.perfect}</b></div><div>按重玩<b>${p.replays || 0}</b></div><div>破產重來<b>${p.gameOvers || 0}</b></div>
+      <div>總結測驗（最高／首次）<b>${p.quiz && p.quiz.n ? `${p.quiz.best}／${p.quiz.first}` : p.quiz && p.quiz.unlocked ? '未考' : '未開放'}</b></div><div>測驗完成／開考<b>${p.quiz ? `${p.quiz.n || 0}／${p.quiz.started || 0}` : '0／0'}</b></div></div>
     <h3 style="font-size:1em;margin-top:10px">各科學家</h3>
     <table style="margin-top:6px"><tr><th>科學家</th><th>狀態</th><th>時間</th><th>結果</th><th>破關時用途</th></tr>${chRows}</table>
     <h3 style="font-size:1em;margin-top:14px">遊戲歷程 <span class="hint">（${L.length} 筆）</span>
-      <select id="log-f" style="margin-left:8px"><option value="">全部</option><option value="choose">只看抉擇</option><option value="money">只看金錢</option><option value="replay">只看重玩／破產</option></select></h3>
+      <select id="log-f" style="margin-left:8px"><option value="">全部</option><option value="choose">只看抉擇</option><option value="money">只看金錢</option><option value="replay">只看重玩／破產</option><option value="quiz">只看總結測驗</option></select></h3>
     <ul class="log" id="log-list"></ul>`;
   const drawLog = () => {
     const f = $('log-f').value;
-    const keep = e => !f || (f === 'choose' ? ['choose', 'fail', 'exp'].includes(e.type) : f === 'money' ? ['loan', 'repay', 'subsidy', 'clear', 'exp', 'fail'].includes(e.type) : ['replay_all', 'replay_ch', 'gameover'].includes(e.type));
+    const keep = e => !f || (f === 'quiz' ? e.type.startsWith('quiz') : f === 'choose' ? ['choose', 'fail', 'exp'].includes(e.type) : f === 'money' ? ['loan', 'repay', 'subsidy', 'clear', 'exp', 'fail'].includes(e.type) : ['replay_all', 'replay_ch', 'gameover'].includes(e.type));
     $('log-list').innerHTML = L.filter(keep).map(e => `<li class="${cls(e)}"><time>${new Date(e.t).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</time>${LABEL[e.type] || e.type}　${esc(describe(e))}</li>`).join('') || '<li>沒有紀錄</li>';
   };
   $('log-f').onchange = drawLog; drawLog();
@@ -370,6 +419,7 @@ $('xlsx').onclick = () => {
     const o = { 學期: p.term, 班級: p.cls, 座號: p.seat, 姓名: p.name, 學號: p.stuNo || '', 用途: p.purpose || '', 總分: p.score, 金幣: p.coins, 淨資產: p.net,
       借款: p.loans, 還款: p.repays, 重來: p.restarts, 全對破關: p.perfect, 按重玩: p.replays || 0, 破產重來: p.gameOvers || 0, 已破關: nDone(p) };
     READY.forEach(n => { const d = (p.done || {})[n.id]; o[`${n.name}破關時間`] = d ? fmtTime(d.ms) : ''; o[`${n.name}結果`] = d ? (d.perfect ? '一次全對' : `重來${d.fails}次`) : ''; });
+    o['總結測驗首次'] = p.quiz && p.quiz.n ? p.quiz.first : ''; o['總結測驗最高'] = p.quiz && p.quiz.n ? p.quiz.best : ''; o['總結測驗完成次數'] = p.quiz ? p.quiz.n || 0 : 0; o['總結測驗開考次數'] = p.quiz ? p.quiz.started || 0 : 0;
     o['最後遊玩'] = p.updatedAt ? new Date(p.updatedAt).toLocaleString('zh-TW') : '';
     return o;
   });
@@ -378,9 +428,14 @@ $('xlsx').onclick = () => {
   const s3 = [];
   READY.forEach(n => CHAPTERS[n.id].forks.forEach((f, i) => { const fc = firstChoices(B, n.id, f.id);
     f.options.forEach(o => s3.push({ 科學家: n.name, 抉擇: `${i + 1}. ${f.title}`, 論點: `${o.who}：${o.text}`, 史實路線: o.correct ? '✓' : '', 第一次選擇人數: fc.filter(c => c.opt === o.id).length, 作答人數: fc.length })); }));
+  const qn = QUIZ.NAMES(), qItems = B.map(p => firstQuiz(p)).filter(Boolean).flatMap(e => (Array.isArray(e.items) ? e.items : Object.values(e.items || {})).map(x => Array.isArray(x) ? x : Object.values(x)));
+  const s4 = QUIZ.BANK.map(q => { const xs = qItems.filter(x => x[0] === q.id), w = {}; xs.filter(x => !+x[2]).forEach(x => w[x[1]] = (w[x[1]] || 0) + 1);
+    const top = Object.entries(w).sort((a, b) => b[1] - a[1])[0];
+    return { 題號: q.id, 答案: qn[q.ch], 類型: { life: '生平事蹟', contrib: '主要貢獻', mistake: '也會犯的錯' }[q.k], 題目: q.q, 首次作答人數: xs.length, 答對人數: xs.filter(x => +x[2]).length, 答對率: xs.length ? Math.round(xs.filter(x => +x[2]).length / xs.length * 100) + '%' : '', 最常誤選: top ? `${qn[top[0]]}（${top[1]}）` : '' }; });
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(s1.length ? s1 : [{ 說明: '尚無資料' }]), '學生統計');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(s3.length ? s3 : [{ 說明: '尚無資料' }]), '抉擇分析');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(s4), '總結測驗題目分析');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(s2.length ? s2 : [{ 說明: '尚無資料' }]), '遊戲歷程');
   XLSX.writeFile(wb, `時光手稿_${$('f-term').value || '全部學期'}_${$('f-cls').value || '全部班級'}.xlsx`);
 };

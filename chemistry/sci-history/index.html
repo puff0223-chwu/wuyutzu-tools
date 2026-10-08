@@ -197,6 +197,24 @@
   .video-box a { color: var(--gold); font-size: .9em; }
   .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: #000d; border: 2px solid var(--gold); border-radius: 10px; padding: 9px 16px; z-index: 60; opacity: 0; transition: .3s; pointer-events: none; }
   .toast.on { opacity: 1; }
+  /* ---- 總結測驗 ---- */
+  .quiz-banner { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; background: linear-gradient(90deg, #3a2d6b, #5b3a8c); border: 2px solid var(--gold); border-radius: 12px; padding: 10px 14px; margin: 8px 0; font-size: 1.02em; }
+  .quiz-banner .hint { color: #d9d1f5; font-size: .86em; }
+  .quiz-banner.locked { background: #1f1b3d; border: 2px dashed #4a4378; color: var(--soft); font-size: .92em; }
+  .steps i.bad { background: var(--red); }
+  .qz-kind { display: inline-block; background: var(--violet); color: #fff; border-radius: 6px; padding: 1px 10px; font-size: .82em; font-weight: 700; }
+  .qz-q { font-size: 1.12em; line-height: 1.9; margin: 8px 0 14px; }
+  .qz-opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; }
+  .qz-opt { display: flex; align-items: center; gap: 9px; background: #fff; border: 2px solid var(--paper-2); border-radius: 12px; padding: 9px 10px; font: inherit; font-weight: 700; color: var(--ink); box-shadow: 0 3px 0 var(--paper-2); text-align: left; cursor: pointer; }
+  .qz-opt:not(:disabled):hover { border-color: var(--gold); }
+  .qz-opt:disabled { cursor: default; opacity: .55; }
+  .qz-opt.ok { border-color: var(--green); background: #e3f5ea; opacity: 1; } .qz-opt.bad { border-color: var(--red); background: #fde3df; opacity: 1; }
+  .qz-opt .av { width: 32px; height: 32px; border-radius: 50%; color: #fff; display: grid; place-items: center; font-weight: 900; flex: none; }
+  .qz-ex { margin-top: 12px; border-radius: 10px; padding: 10px 12px; line-height: 1.8; border-left: 5px solid var(--green); background: #eef8f1; }
+  .qz-ex.bad { border-color: var(--red); background: #fff1ee; }
+  .qz-score { text-align: center; margin: 6px 0 10px; } .qz-score b { font-size: 3em; color: #8a3a12; }
+  .qz-kinds { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px; } .qz-kinds span { background: #fff; border-radius: 8px; padding: 4px 10px; font-size: .9em; }
+  .qz-wrong { margin-top: 8px; } .qz-wrong li { list-style: none; background: #fff; border-radius: 10px; padding: 8px 10px; margin-bottom: 6px; line-height: 1.7; font-size: .94em; }
 </style>
 </head>
 <body>
@@ -246,6 +264,7 @@
     <b>總分</b>＝剩餘金幣 − 借款次數×3 ＋ 還款次數×4 − 重來次數×1 ＋ 一次全對破關×5 − 重玩次數×1
   </details>
   <div class="free-banner hidden" id="free-banner">🧪 <b>自由重玩中</b>：這一輪不會寫入正式紀錄與排行榜。<button class="btn" id="btn-free-exit" style="padding:6px 12px;margin-left:auto">結束自由重玩</button></div>
+  <div class="quiz-banner locked" id="quiz-banner"></div>
   <div class="tabs"><button data-t="net" class="on">🌌 知識網路</button><button data-t="board">🏆 排行榜</button></div>
   <div id="t-net">
     <div class="net-wrap"><svg id="net" viewBox="0 0 1000 620"></svg></div>
@@ -271,21 +290,22 @@
   <div class="bar"><span id="video-title"></span><span><a id="video-link" target="_blank" rel="noopener">在 YouTube 開啟 ↗</a>　<button class="btn" id="video-close">關閉</button></span></div></div></div>
 <div class="toast" id="toast"></div>
 
-<script src="data.js?v=20261008a"></script>
-<script src="core.js?v=20261008a"></script>
-<script src="art.js?v=20261008a"></script>
-<script src="ch-lavoisier.js?v=20261008a"></script>
-<script src="ch-proust.js?v=20261008a"></script>
-<script src="ch-dalton.js?v=20261008a"></script>
-<script src="ch-gaylussac.js?v=20261008a"></script>
-<script src="ch-avogadro.js?v=20261008a"></script>
-<script src="ch-mendeleev.js?v=20261008a"></script>
-<script src="ch-thomson.js?v=20261008a"></script>
-<script src="ch-rutherford.js?v=20261008a"></script>
-<script src="ch-millikan.js?v=20261008a"></script>
-<script src="ch-bohr.js?v=20261008a"></script>
-<script src="ch-moseley.js?v=20261008a"></script>
-<script src="ch-chadwick.js?v=20261008a"></script>
+<script src="data.js?v=20261008b"></script>
+<script src="core.js?v=20261008b"></script>
+<script src="art.js?v=20261008b"></script>
+<script src="ch-lavoisier.js?v=20261008b"></script>
+<script src="ch-proust.js?v=20261008b"></script>
+<script src="ch-dalton.js?v=20261008b"></script>
+<script src="ch-gaylussac.js?v=20261008b"></script>
+<script src="ch-avogadro.js?v=20261008b"></script>
+<script src="ch-mendeleev.js?v=20261008b"></script>
+<script src="ch-thomson.js?v=20261008b"></script>
+<script src="ch-rutherford.js?v=20261008b"></script>
+<script src="ch-millikan.js?v=20261008b"></script>
+<script src="ch-bohr.js?v=20261008b"></script>
+<script src="ch-moseley.js?v=20261008b"></script>
+<script src="ch-chadwick.js?v=20261008b"></script>
+<script src="quiz.js?v=20261008b"></script>
 <script>
 const $ = id => document.getElementById(id);
 const { esc, md, CONFIG } = SHC;
@@ -407,6 +427,9 @@ function openHub() {
   $('free-banner').classList.toggle('hidden', !free);
   $('replay-hint').textContent = free ? '自由重玩中，不計分' : allClear() ? '已全部破關：全部重玩是自由練習，不計分' : `全部重玩：總分 −1（已重玩 ${ST.replays || 0} 次）`;
   document.querySelector('.tabs button[data-t=board]').disabled = free;
+  // 第一次全部破關 → 永久開放總結測驗（之後重玩某位科學家也不會再鎖上）
+  if (!free && allClear() && !(ST.quiz && ST.quiz.unlocked)) { ST.quiz = { ...(ST.quiz || {}), unlocked: true }; SHC.log('quiz_unlock'); persist(); }
+  renderQuizBanner();
 }
 
 function drawNet() {
@@ -657,6 +680,78 @@ function renderEnd(head) {
     };
   }
   $('back').onclick = () => { openHub(); persist(); };
+}
+
+/* ---------- 總結測驗：猜猜我是誰 ---------- */
+// 老師的規格：12 位全破後開放；每次 20 題、五選一；每題答完看解析；可重考；成績獨立記錄、不影響遊戲總分
+const KIND = { life: '生平事蹟', contrib: '主要貢獻', mistake: '也會犯的錯' };
+let QZ = null;
+const recST = () => (SHC.isFree() && OFFICIAL ? OFFICIAL : ST);   // 測驗成績一律記在正式紀錄
+const quizOpen = () => { const r = recST(); return !!(r && ((r.quiz && r.quiz.unlocked) || READY().every(id => r.done[id]))); };
+function renderQuizBanner() {
+  const b = $('quiz-banner'), r = recST(), q = r.quiz || {}, N = READY().length;
+  if (!quizOpen()) { b.className = 'quiz-banner locked'; b.innerHTML = `🎓 <span><b>總結測驗「猜猜我是誰」</b>：全部 ${N} 位科學家都破關後開放（目前 ${READY().filter(id => r.done[id]).length}／${N}）</span>`; return; }
+  b.className = 'quiz-banner';
+  b.innerHTML = `<span style="font-size:1.6em">🎓</span><div><b>總結測驗：猜猜我是誰</b><div class="hint">讀科學家的自我介紹，猜出他是誰${q.n ? `・已完成 ${q.n} 次，最高 ${q.best}／${q.total || 20} 分` : ''}</div></div>
+    <button class="btn" id="btn-quiz" style="margin-left:auto">${q.n ? '再考一次' : '開始測驗'} ▶</button>`;
+  $('btn-quiz').onclick = openQuiz;
+}
+function openQuiz() {
+  if (SHC.isFree()) exitFree();
+  stopTimer(); VIEW = 'quiz'; CUR = null;
+  QZ = { items: QUIZ.make(READY(), 20), i: -1, picks: [] };
+  show('s-play'); renderQuiz();
+}
+function renderQuiz(keepScroll) {
+  const P = $('play'), N = QZ.items.length, names = QUIZ.NAMES(), right = QZ.picks.filter(x => x && x.ok).length;
+  if (!keepScroll) window.scrollTo(0, 0);
+  const head = `<div class="stage-head"><div class="kicker">FINAL QUIZ</div><h2>🎓 猜猜我是誰</h2><span class="meta">${QZ.i >= 0 && QZ.i < N ? `第 ${QZ.i + 1}／${N} 題・答對 ${right} 題` : ''}</span><button class="btn ghost" id="btn-qexit" style="padding:5px 10px">⬅ 知識網路</button></div>`;
+  if (QZ.i < 0) {
+    P.innerHTML = head + `<div class="card col"><h2>📜 總結測驗說明</h2>
+      <p>你已經走完了從拉瓦節到查兌克的科學史。現在換這些科學家來考考你！</p>
+      <p>・共 <b>${N} 題</b>，每一題是一位科學家的「自我介紹」：他的生平事蹟、主要貢獻，或是他也犯過的錯。<br>・從五位科學家中，選出「我是誰」。<br>・每題作答後會馬上看到解析。<br>・成績會記錄給老師看，<b>不影響遊戲總分</b>；考完可以再考一次。</p>
+      <div class="actions"><button class="btn" id="qstart">開始作答 ▶</button></div></div>`;
+    $('qstart').onclick = () => {
+      ST.quiz = { ...(ST.quiz || {}), unlocked: true }; ST.quiz.started = (ST.quiz.started || 0) + 1;
+      SHC.log('quiz_start', { n: ST.quiz.started }); persist();
+      QZ.i = 0; QZ.t0 = Date.now(); renderQuiz();
+    };
+  } else if (QZ.i < N) {
+    const it = QZ.items[QZ.i], q = QUIZ.byId[it.id], d = QZ.picks[QZ.i];
+    P.innerHTML = head + `<div class="steps">${QZ.items.map((_, k) => `<i class="${k < QZ.i || (k === QZ.i && d) ? (QZ.picks[k].ok ? 'ok' : 'bad') : k === QZ.i ? 'now' : ''}"></i>`).join('')}</div>
+      <div class="card col"><span class="qz-kind">${KIND[q.k]}</span><p class="qz-q">${esc(q.q)}</p>
+      <div class="qz-opts">${it.opts.map((id, k) => `<button class="qz-opt ${d ? (id === it.ch ? 'ok' : id === d.pick ? 'bad' : '') : ''}" data-id="${id}" ${d ? 'disabled' : ''}><span class="av" style="background:var(--violet)">${'ABCDE'[k]}</span><span>${esc(names[id])}</span></button>`).join('')}</div>
+      ${d ? `<div class="qz-ex ${d.ok ? '' : 'bad'}" id="qz-ex"><b>${d.ok ? '✅ 答對了！' : `❌ 答錯了，答案是「${esc(names[it.ch])}」`}</b><br>${esc(q.ex)}</div>
+        <div class="actions"><button class="btn" id="qnext">${QZ.i + 1 < N ? '下一題 ▶' : '看成績 ▶'}</button></div>` : ''}</div>`;
+    P.querySelectorAll('.qz-opt:not(:disabled)').forEach(b => b.onclick = () => {
+      if (QZ.picks[QZ.i]) return;
+      QZ.picks[QZ.i] = { id: it.id, ch: it.ch, pick: b.dataset.id, ok: b.dataset.id === it.ch };
+      renderQuiz(true); const ex = $('qz-ex'); if (ex) ex.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+    if (d) $('qnext').onclick = () => { QZ.i++; if (QZ.i >= N) finishQuiz(); renderQuiz(); };
+  } else {
+    const byK = Object.keys(KIND).map(k => { const xs = QZ.picks.filter(x => QUIZ.byId[x.id].k === k); return `<span>${KIND[k]} <b>${xs.filter(x => x.ok).length}／${xs.length}</b></span>`; }).join('');
+    const wrong = QZ.picks.filter(x => !x.ok);
+    const msg = right === N ? '🏆 全部答對！你是真正的科學史專家！' : right >= N * .8 ? '🌟 非常厲害！這些科學家都認得你了。' : right >= N * .6 ? '👍 不錯喔！把答錯的再看一次，下次一定更好。' : '📚 再回去和科學家們聊聊吧！可以重玩章節、看人物檔案，再來挑戰。';
+    P.innerHTML = head + `<div class="card col"><h2 style="text-align:center">測驗結果</h2>
+      <div class="qz-score"><b>${right}</b> ／ ${N}</div><p style="text-align:center">${msg}</p><div class="qz-kinds">${byK}</div>
+      ${wrong.length ? `<h3>📌 答錯的題目</h3><ul class="qz-wrong">${wrong.map(x => `<li>${esc(QUIZ.byId[x.id].q)}<br><b style="color:var(--green)">答案：${esc(names[x.ch])}</b>　<span style="color:var(--red)">你選：${esc(names[x.pick])}</span><br><span style="font-size:.92em">${esc(QUIZ.byId[x.id].ex)}</span></li>`).join('')}</ul>` : ''}
+      <div class="actions"><button class="btn" id="qagain">🔁 再考一次</button><button class="btn ghost" style="color:#6b4e2e;border-color:#e9dcbc" id="qhub">回到知識網路</button></div></div>`;
+    $('qagain').onclick = openQuiz; $('qhub').onclick = () => { QZ = null; openHub(); };
+  }
+  const ex = $('btn-qexit');
+  if (ex) ex.onclick = async () => {
+    if (QZ.i >= 0 && QZ.i < N && !(await confirmBox('離開測驗？', '這次作答還沒完成，離開後<b>不會記錄成績</b>。', '離開', '繼續作答'))) return;
+    QZ = null; openHub();
+  };
+}
+function finishQuiz() {
+  const N = QZ.items.length, score = QZ.picks.filter(x => x.ok).length, q = ST.quiz;
+  q.n = (q.n || 0) + 1; q.total = N; q.last = score; q.best = Math.max(q.best || 0, score);
+  if (q.first === undefined) q.first = score;
+  q.at = Date.now();
+  SHC.log('quiz', { n: q.n, score, total: N, ms: Date.now() - QZ.t0, items: QZ.picks.map(x => [x.id, x.pick, x.ok ? 1 : 0]) });
+  persist();
 }
 
 /* ---------- 破產 ---------- */
