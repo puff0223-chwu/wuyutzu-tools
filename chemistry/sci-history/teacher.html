@@ -26,6 +26,9 @@
   .btn { border: none; border-radius: 8px; padding: 7px 12px; font: inherit; font-size: .92em; font-weight: 700; background: var(--gold); color: var(--ink); cursor: pointer; }
   .btn.dark { background: var(--ink); color: #fff; }
   .btn.ghost { background: #fff; border: 1px solid var(--line); }
+  .btn.red { background: var(--red); color: #fff; }
+  .selbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; background: #fde3df; border: 1px solid #f3b8ad; border-radius: 10px; padding: 8px 12px; margin-bottom: 8px; }
+  tr.picked td { background: #fff1ee !important; }
   .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   select, input.in { padding: 6px 9px; border-radius: 8px; border: 1px solid var(--line); font: inherit; font-size: .92em; background: #fff; }
   .hint { color: var(--soft); font-size: .84em; }
@@ -108,7 +111,8 @@
       <div class="row"><select id="f-term"></select><select id="f-cls"></select>
         <select id="f-pur"><option value="">全部用途</option><option>正式進度</option><option>考試複習</option><option>重補修</option></select>
         <input class="in" id="f-q" placeholder="🔍 姓名／學號／座號" style="width:150px">
-        <button class="btn dark" id="xlsx">📥 Excel</button></div></div>
+        <button class="btn dark" id="xlsx">📥 Excel</button><button class="btn ghost" id="sel-mode">🧹 清除資料</button></div></div>
+    <div class="selbar hidden" id="selbar"></div>
     <div class="strip" id="strip"></div>
     <div class="chips" id="chips"></div>
     <div class="row" style="margin-bottom:6px">
@@ -135,21 +139,21 @@
 </main>
 <div class="modal-bg hidden" id="m"><div class="modal" id="mc"></div></div>
 
-<script src="data.js?v=20261008d"></script>
-<script src="core.js?v=20261008d"></script>
-<script src="ch-lavoisier.js?v=20261008d"></script>
-<script src="ch-proust.js?v=20261008d"></script>
-<script src="ch-dalton.js?v=20261008d"></script>
-<script src="ch-gaylussac.js?v=20261008d"></script>
-<script src="ch-avogadro.js?v=20261008d"></script>
-<script src="ch-mendeleev.js?v=20261008d"></script>
-<script src="ch-thomson.js?v=20261008d"></script>
-<script src="ch-rutherford.js?v=20261008d"></script>
-<script src="ch-millikan.js?v=20261008d"></script>
-<script src="ch-bohr.js?v=20261008d"></script>
-<script src="ch-moseley.js?v=20261008d"></script>
-<script src="ch-chadwick.js?v=20261008d"></script>
-<script src="quiz.js?v=20261008d"></script>
+<script src="data.js?v=20261008e"></script>
+<script src="core.js?v=20261008e"></script>
+<script src="ch-lavoisier.js?v=20261008e"></script>
+<script src="ch-proust.js?v=20261008e"></script>
+<script src="ch-dalton.js?v=20261008e"></script>
+<script src="ch-gaylussac.js?v=20261008e"></script>
+<script src="ch-avogadro.js?v=20261008e"></script>
+<script src="ch-mendeleev.js?v=20261008e"></script>
+<script src="ch-thomson.js?v=20261008e"></script>
+<script src="ch-rutherford.js?v=20261008e"></script>
+<script src="ch-millikan.js?v=20261008e"></script>
+<script src="ch-bohr.js?v=20261008e"></script>
+<script src="ch-moseley.js?v=20261008e"></script>
+<script src="ch-chadwick.js?v=20261008e"></script>
+<script src="quiz.js?v=20261008e"></script>
 <script>
 const $ = id => document.getElementById(id);
 const { esc, fmtTime } = SHC;
@@ -158,6 +162,7 @@ const READY = SH_DATA.NODES.filter(n => n.ready && CHAPTERS[n.id]);
 const STU = new URL('./', location.href).href;
 const PAGE = 30, DAY = 86400000;
 const COLORS = ['#7b5ea7', '#d08a1e', '#2f6db5', '#b0413e'];
+let SELMODE = false, SEL = new Set(), LASTR = [];
 let P = [], LOGS = {}, sortK = 'score', sortD = -1, page = 0, quick = 'all', selCh = null;
 
 $('url').textContent = STU;
@@ -244,6 +249,7 @@ const QUICK = [
 function cols() {
   const ch = $('f-ch').value, full = $('f-full').checked;
   const C = [
+    ...(SELMODE ? [['_sel', '<input type="checkbox" id="sel-page" title="全選這一頁">', p => `<input type="checkbox" class="selp" data-sid="${esc(p.sid)}" ${SEL.has(p.sid) ? 'checked' : ''}>`]] : []),
     ['cls', '班級', p => esc(p.cls)], ['seat', '座號', p => p.seat], ['name', '姓名', p => esc(p.name), 'l'],
     ...(full ? [['stuNo', '學號', p => esc(p.stuNo || '')]] : []),
     ['purpose', '用途', p => esc(p.purpose || '')],
@@ -302,10 +308,16 @@ function render() {
   const pages = Math.max(1, Math.ceil(R.length / PAGE)); page = Math.min(page, pages - 1);
   const show = R.slice(page * PAGE, page * PAGE + PAGE);
   $('table').innerHTML = show.length ? `<table><tr>${C.map(c => `<th data-k="${c[0]}">${c[1]}${sortK === c[0] ? (sortD > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('')}</tr>` +
-    show.map(p => `<tr class="click" data-sid="${esc(p.sid)}">${C.map(c => `<td class="${c[3] || ''}">${c[2](p)}</td>`).join('')}</tr>`).join('') + '</table>'
+    show.map(p => `<tr class="click ${SEL.has(p.sid) ? 'picked' : ''}" data-sid="${esc(p.sid)}">${C.map(c => `<td class="${c[3] || ''}">${c[2](p)}</td>`).join('')}</tr>`).join('') + '</table>'
     : '<p class="hint" style="padding:14px">沒有符合條件的學生。</p>';
-  $('table').querySelectorAll('th').forEach(th => th.onclick = () => { const k = th.dataset.k; if (sortK === k) sortD = -sortD; else { sortK = k; sortD = ['cls', 'seat', 'name', 'stuNo', 'purpose'].includes(k) || k.startsWith('t_') ? 1 : -1; } render(); });
-  $('table').querySelectorAll('tr[data-sid]').forEach(tr => tr.onclick = () => showStudent(tr.dataset.sid));
+  LASTR = R;
+  $('table').querySelectorAll('th').forEach(th => th.onclick = () => { const k = th.dataset.k; if (k === '_sel') return; if (sortK === k) sortD = -sortD; else { sortK = k; sortD = ['cls', 'seat', 'name', 'stuNo', 'purpose'].includes(k) || k.startsWith('t_') ? 1 : -1; } render(); });
+  $('table').querySelectorAll('tr[data-sid]').forEach(tr => tr.onclick = () => {
+    if (!SELMODE) return showStudent(tr.dataset.sid);
+    const id = tr.dataset.sid; SEL.has(id) ? SEL.delete(id) : SEL.add(id); render();   // 清除模式：點一列就勾選／取消
+  });
+  if (SELMODE) { const sp = $('sel-page'); sp.checked = show.length > 0 && show.every(p => SEL.has(p.sid)); sp.onclick = e => { e.stopPropagation(); show.forEach(p => sp.checked ? SEL.add(p.sid) : SEL.delete(p.sid)); render(); }; }
+  renderSelBar();
   $('pager').innerHTML = pages > 1 ? `<span class="hint">共 ${R.length} 人</span>` + Array.from({ length: pages }, (_, i) => `<button class="btn ghost ${i === page ? 'on' : ''}" data-p="${i}">${i + 1}</button>`).join('') : (R.length ? `<span class="hint">共 ${R.length} 人</span>` : '');
   $('pager').querySelectorAll('[data-p]').forEach(b => b.onclick = () => { page = +b.dataset.p; render(); $('table').scrollTop = 0; });
   renderOverview(B);
@@ -350,6 +362,45 @@ function renderDetail(B) {
         <div class="pc" style="color:${okRate === null ? 'var(--soft)' : okRate >= 70 ? 'var(--green)' : okRate >= 40 ? '#b07d1f' : 'var(--red)'}">${okRate === null ? '—' : okRate + '%'}</div>
         <details><summary>看選項內容與人數</summary><ul>${segs.map(s => `<li><span class="dot" style="background:${s.o.correct ? 'var(--green)' : COLORS[s.k]}"></span>${s.o.correct ? '✓ ' : ''}<b>${esc(s.o.who)}</b>：${esc(s.o.text)}　<b>${s.c} 人</b>${n ? `（${Math.round(s.c / n * 100)}%）` : ''}</li>`).join('')}</ul></details></div>`;
     }).join('') + '</div>';
+}
+
+/* ---------- 清除資料（老師測試用的資料） ---------- */
+$('sel-mode').onclick = () => { SELMODE = !SELMODE; SEL.clear(); page = 0; render(); };
+function renderSelBar() {
+  const b = $('selbar'); b.classList.toggle('hidden', !SELMODE);
+  $('sel-mode').textContent = SELMODE ? '✖ 結束清除' : '🧹 清除資料';
+  if (!SELMODE) return;
+  b.innerHTML = `<b>🧹 清除模式</b><span>點學生那一列勾選要刪除的資料。小技巧：先用上方的班級或搜尋篩選出測試資料（例如班級 test），再按「全選篩選結果」。</span>
+    <span style="margin-left:auto">已選 <b>${SEL.size}</b> 位</span>
+    <button class="btn ghost" id="sel-all">全選篩選結果（${LASTR.length}）</button><button class="btn ghost" id="sel-none">取消全選</button>
+    <button class="btn red" id="sel-del" ${SEL.size ? '' : 'disabled'}>🗑️ 刪除選取的資料</button>`;
+  $('sel-all').onclick = () => { LASTR.forEach(p => SEL.add(p.sid)); render(); };
+  $('sel-none').onclick = () => { SEL.clear(); render(); };
+  $('sel-del').onclick = confirmDelete;
+}
+function confirmDelete() {
+  const list = P.filter(p => SEL.has(p.sid));
+  $('mc').innerHTML = `<button class="x" onclick="document.getElementById('m').classList.add('hidden')">✕</button>
+    <h2>🗑️ 刪除 ${list.length} 位的資料？</h2>
+    <p style="margin:8px 0">會把這些學生的<b>遊戲進度、完整歷程、總結測驗成績</b>從雲端永久刪除，<b style="color:var(--red)">刪除後無法復原</b>。</p>
+    <ul class="log" style="max-height:220px">${list.slice(0, 50).map(p => `<li>${esc(p.term)}・${esc(p.cls)} 班 ${p.seat} 號 ${esc(p.name)}（總分 ${p.score}）</li>`).join('')}${list.length > 50 ? `<li>……還有 ${list.length - 50} 位</li>` : ''}</ul>
+    <p style="margin-top:10px">請輸入「<b>刪除</b>」兩個字確認：<input class="in" id="del-ok" style="width:90px"> <button class="btn red" id="del-go" disabled>永久刪除</button></p>
+    <p class="hint" id="del-msg"></p>`;
+  $('del-ok').oninput = () => $('del-go').disabled = $('del-ok').value.trim() !== '刪除';
+  $('del-go').onclick = async () => {
+    $('del-go').disabled = true; $('del-ok').disabled = true;
+    let ok = 0, fail = 0;
+    for (const p of list) {
+      try { await SHC.removePlayer(p.sid); ok++; } catch (e) { fail++; }
+      $('del-msg').textContent = `刪除中…… ${ok + fail}／${list.length}`;
+    }
+    if (fail) {
+      $('del-msg').innerHTML = `<b style="color:var(--red)">有 ${fail} 位刪除失敗。</b>如果全部都失敗，通常是 Firebase 安全規則還沒更新成「允許刪除」的版本（請到 Firebase 主控台更新規則後再試一次）。`;
+    } else $('m').classList.add('hidden');
+    SEL.clear(); await load();
+    if (ok) $('status').textContent = `✅ 已刪除 ${ok} 位的資料`;
+  };
+  $('m').classList.remove('hidden');
 }
 
 /* ---------- 總結測驗分析 ---------- */

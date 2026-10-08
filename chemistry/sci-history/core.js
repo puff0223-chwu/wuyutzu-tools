@@ -71,10 +71,12 @@ const SHC = (() => {
   async function load(p) {
     let st = null, lg = null, local = null;
     try { local = JSON.parse(localStorage.getItem(LKEY(p.sid))); } catch (e) {}
-    try { [st, lg] = await Promise.all([req(url('players/' + p.sid)), req(url('logs/' + p.sid))]); } catch (e) {}
+    let del = 0;   // 老師刪除這位學生資料的時間（刪除紀錄）
+    try { [st, lg, del] = await Promise.all([req(url('players/' + p.sid)), req(url('logs/' + p.sid)), req(url('deleted/' + p.sid)).catch(() => 0)]); } catch (e) {}
     // 斷線時存在本機的進度比雲端新 → 用本機的（之後 persist 會補傳上去）
     const ts = x => (x && typeof x === 'object' && Number(x.updatedAt)) || 0;
-    if (local && local.st && typeof local.st === 'object' && ts(local.st) > ts(st)) { st = local.st; lg = local.log; }
+    // 但如果本機的進度比「老師刪除」還舊，就是被刪掉的測試資料，不要再用
+    if (local && local.st && typeof local.st === 'object' && ts(local.st) > ts(st) && ts(local.st) > (Number(del) || 0)) { st = local.st; lg = local.log; }
     if (!st || typeof st !== 'object') st = null;
     st = Object.assign(newState(p), st || {});
     Object.assign(st, { name: p.name, cls: p.cls, seat: p.seat, term: p.term, stuNo: p.stuNo, purpose: p.purpose, sid: p.sid });
@@ -94,6 +96,12 @@ const SHC = (() => {
     saving = saving.then(() => Promise.all([req(url('players/' + st.sid), 'PUT', sum), req(url('logs/' + st.sid), 'PUT', LOG)]))
       .then(() => { lastOk = true; }, e => { lastOk = false; console.warn(e); });
     return saving;
+  }
+  // 老師頁刪除學生資料：刪掉進度與歷程，並留下刪除時間（避免某台裝置的本機舊進度又被補傳回來）
+  async function removePlayer(sid) {
+    await Promise.all([req(url('players/' + sid), 'DELETE'), req(url('logs/' + sid), 'DELETE')]);
+    try { await req(url('deleted/' + sid), 'PUT', Date.now()); } catch (e) {}
+    try { localStorage.removeItem(LKEY(sid)); } catch (e) {}
   }
   const loadPlayers = async () => (await req(url('players'))) || {};
   // 學期設定：{ current: '115-1', terms: ['115-1', ...] }
@@ -115,7 +123,7 @@ const SHC = (() => {
 
   return {
     CONFIG, schoolYear, defaultTerm, validTerm, toHalf, makeSid, newState, freshRun, debt, net, score, summary,
-    log, getLog: () => LOG, load, save, loadPlayers, loadLogs, loadConfig, saveConfig, syncOk: () => lastOk,
+    log, getLog: () => LOG, load, save, removePlayer, loadPlayers, loadLogs, loadConfig, saveConfig, syncOk: () => lastOk,
     setFree: v => { FREE = !!v; }, isFree: () => FREE,
     roll, shuffle, fmtTime, esc, md
   };

@@ -376,6 +376,7 @@ wuyutzu-tools/
   - 成績獨立、不影響遊戲總分：`players/<sid>.quiz = {unlocked, started, n, first, best, last, total, at}`；每次完成記 log `quiz {n, score, total, ms, items:[[題id, 選的科學家, 1/0]]}`，開考記 `quiz_start`；中途離開只增加 started、不記成績
   - 老師頁：學生表「總結測驗」欄（最高／首次／次數，可排序）、快速篩選「可考但還沒考」、學生卡片顯示每次答錯哪些；「🎓 總結測驗分析」只統計每人**第一次完成**的測驗：各科學家答對率、最常被誤認成誰、最常答錯的 15 題；Excel 新增「總結測驗題目分析」工作表
   - 不需要改 Firebase 規則（存在原本的 players 與 logs 節點裡）
+- 清除資料（老師頁 🧹）：`SHC.removePlayer(sid)` 刪除 players/logs、寫入 `deleted/<sid> = 時間`、清掉這台裝置的本機存檔；`SHC.load` 讀取 deleted，本機進度比刪除時間舊就不採用。規則需允許刪除（見附錄 2026-10-08 版）
   - 老師的測驗連結 `index.html?quiz`（老師頁「🎓 總結測驗連結」：複製／投影大 QR／開啟）：不必全破，登入後直接進測驗說明；`QZ.via = 'link'`，log 的 quiz／quiz_start 帶 `via`，`quiz.viaLink` 記次數；用連結考**不會**解鎖遊戲裡的測驗橫幅（一般入口仍顯示 x／12）
   - 情境文字也不能暗示答案（例如「某某科學家提出瘋狂的計畫」會讓學生直接選那一個）
   - 待注意：正解常是「最謹慎、留修正空間」的選項，學生可能學會「選最長最保守的」；之後的章節要讓正解有時是大膽的主張（例如拉塞福的原子核）
@@ -449,7 +450,7 @@ fp/
 
 ---
 
-## 附錄：Firebase 安全規則全文（2026-10-07 晚，含時光手稿 sci-history＋學期設定）
+## 附錄：Firebase 安全規則全文（2026-10-08，時光手稿允許老師刪除測試資料＋刪除紀錄 deleted）
 
 ```json
 {
@@ -577,20 +578,28 @@ fp/
    "players": {
     ".read": true,
     "$sid": {
-     ".write": "newData.exists() && $sid.length <= 30",
+     ".write": "$sid.length <= 30",
      ".validate": "newData.hasChildren(['sid','cls','seat','name','term','coins','score','updatedAt']) && newData.child('sid').val() == $sid && newData.child('name').isString() && newData.child('name').val().length <= 12 && newData.child('cls').isString() && newData.child('cls').val().length <= 10 && newData.child('coins').isNumber() && newData.child('score').isNumber()"
     }
    },
    "logs": {
     ".read": true,
     "$sid": {
-     ".write": "newData.exists() && $sid.length <= 30 && newData.hasChildren()"
+     ".write": "$sid.length <= 30",
+     ".validate": "newData.hasChildren()"
     }
    },
    "config": {
     ".read": true,
     ".write": "newData.exists()",
     ".validate": "newData.hasChildren(['current','terms']) && newData.child('current').isString() && newData.child('current').val().length <= 6"
+   },
+   "deleted": {
+    ".read": true,
+    "$sid": {
+     ".write": "$sid.length <= 30",
+     ".validate": "newData.isNumber()"
+    }
    }
   }
  }
