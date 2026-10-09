@@ -9,7 +9,7 @@
 (function (root) {
   'use strict';
 
-  const VERSION = '20261009b';
+  const VERSION = '20261009c';
 
   /* ---------------- 小工具 ---------------- */
   const key = (r, c) => r + '-' + c;
@@ -284,7 +284,7 @@
       id: uid('cls'), name: name || '', teacherTitle: '', roster: [],
       layout: newLayout(7, 6),
       cadres: blank ? [] : DEFAULT_CADRES.map((c) => ({ ...c, id: uid('c') })),
-      cleaning: blank ? [] : DEFAULT_CLEANING.map((a) => ({ id: uid('a'), name: a.name, items: a.items.map((it) => ({ ...it, id: uid('i'), seats: [] })) })),
+      cleaning: [],   // 打掃工作每位老師、每次換座位都不同 → 不預設，靠匯入、沿用上一回合或手動新增
       secret: [], rounds: [], currentRound: null,
       settings: { note: blank ? '' : DEFAULT_NOTE, stageView: 'student', printView: 'teacher', gameMode: blank ? 'plain' : 'game',
         showCadres: !blank, showCleaning: !blank, sheetTitle: '' },
@@ -305,14 +305,17 @@
     out.layout = normalizeLayout(c.layout);
     // 已存在的班級（有 id）若沒有幹部／打掃欄位，代表老師清空了（Firebase 會把空陣列吃掉），不要補回預設
     out.cadres = c.cadres ? toArr(c.cadres).map((x) => ({ id: x.id || uid('c'), role: x.role || '', seat: x.seat == null ? null : Number(x.seat), join: !!x.join })) : (c.id ? [] : d.cadres);
-    out.cleaning = c.cleaning ? toArr(c.cleaning).map((a) => ({ id: a.id || uid('a'), name: a.name || '', items: toArr(a.items).map((it) => ({ id: it.id || uid('i'), name: it.name || '', seats: toArr(it.seats).map(Number) })) })) : (c.id ? [] : d.cleaning);
+    const normClean = (list) => toArr(list).map((a) => ({ id: a.id || uid('a'), name: a.name || '', items: toArr(a.items).map((it) => ({ id: it.id || uid('i'), name: it.name || '', seats: toArr(it.seats).map(Number) })) }));
+    out.cleaning = c.cleaning ? normClean(c.cleaning) : [];
     out.secret = toArr(c.secret).map((x) => ({ ...x, list: toArr(x.list) }));
     out.settings = { ...d.settings, ...(c.settings || {}) };
     out.rounds = toArr(c.rounds).map((rd) => ({
       id: rd.id || uid('rd'), title: rd.title || '換座位', period: rd.period || '', createdAt: rd.createdAt || Date.now(),
       status: rd.status || 'prep', layout: normalizeLayout(rd.layout),
       locked: rd.locked || {}, lockInfo: rd.lockInfo || {}, assign: rd.assign || null,
-      drawnAt: rd.drawnAt || null, finalAt: rd.finalAt || null
+      drawnAt: rd.drawnAt || null, finalAt: rd.finalAt || null,
+      // 每回合自己的打掃工作；cleaningSet＝這回合已經有自己的打掃資料（空陣列會被 Firebase 吃掉，靠這個旗標分辨）
+      cleaning: rd.cleaning ? normClean(rd.cleaning) : (rd.cleaningSet ? [] : null), cleaningSet: !!(rd.cleaning || rd.cleaningSet)
     })).sort((a, b) => a.createdAt - b.createdAt);
     return out;
   }
