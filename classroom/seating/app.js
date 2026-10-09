@@ -82,8 +82,11 @@ const S = {
   classes: [], cls: null, tab: LS.get('seating3_tab', 'info'),
   roundId: null, roundMode: 'lock', swapSel: null,
   paint: 's', editView: 'teacher', ruleDraft: { type: 'apart', mode: 'rows', list: [] },
-  saveState: '', saveErr: '', rosterDraft: null, cloudErr: ''
+  saveState: '', saveErr: '', rosterDraft: null, cloudErr: '',
+  privacy: LS.get('seating3_privacy', false),           // 🙈 上課模式：藏起秘密規則與相關提醒
+  stageOnly: /^#stage/.test(location.hash)               // 📺 投影專用連結：直接進投影舞台、不顯示後台
 };
+const isGame = () => !C() || C().settings.gameMode !== 'plain';
 let saveTimer = null;
 function touch(rerender) {
   if (!S.cls) return;
@@ -140,6 +143,8 @@ async function boot() {
 async function enterLocal() { Store.mode = 'local'; LS.set('seating3_mode', 'local'); await loadClasses(); }
 async function loadClasses() {
   S.cloudErr = '';
+  const want = (location.hash.match(/^#stage=(.+)$/) || [])[1];
+  if (want) LS.set('seating3_last', decodeURIComponent(want));
   try { S.classes = await Store.list(); }
   catch (e) { console.error(e); S.classes = []; S.cloudErr = e.code || e.message || String(e); }
   S.classes.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
@@ -156,7 +161,41 @@ async function openClass(id) {
   S.rosterDraft = null; S.swapSel = null;
   S.saveState = c ? (Store.mode === 'cloud' ? '☁️ 雲端' : '💾 本機') : '';
   render();
+  if (S.stageOnly && !S.stageAuto && round()) { S.stageAuto = true; openStage(); }
 }
+
+/* ---------- 📺 投影專用連結的待機畫面（不顯示任何後台內容） ---------- */
+function renderStandby() {
+  const c = C(), rd = round();
+  $('#app').innerHTML = `<div id="standby" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:radial-gradient(ellipse at top,#2b3a60 0%,#141b2e 70%);color:#fff;text-align:center;padding:20px">
+    <div style="font-family:'Bebas Neue',sans-serif;letter-spacing:.25em;color:var(--gold)">SEAT AUCTION</div>
+    <div style="font-family:'Noto Serif TC',serif;font-weight:900;font-size:clamp(32px,6vw,64px)">🪑 座位大作戰</div>
+    <div style="font-size:1.3em">${c ? esc(c.name) + ' 班' : ''}${rd ? '｜' + esc(rd.title) : ''}</div>
+    ${!c ? '<p>找不到班級資料，請確認連結是否正確。</p>' : !rd ? '<p>這個班級還沒有換座位回合。</p>' : rd.assign ? '<p>✅ 本回合已分配完成</p>' : '<p>準備好了就開始吧！</p>'}
+    ${rd ? '<button class="st-btn" data-act="standbyStage">🎬 開啟投影舞台</button>' : ''}
+    <button class="st-btn ghost" data-act="standbyBack" style="margin-top:30px;font-size:.8em">回後台</button>
+  </div>`;
+}
+
+/* ---------- 另一個分頁（例如投影用的分頁）改過資料時，回到這個分頁就自動換成最新版 ---------- */
+let refreshing = false;
+async function refreshIfNewer() {
+  if (!C() || refreshing || S.saveState === '儲存中…' || ST.busy) return;
+  refreshing = true;
+  try {
+    const fresh = await Store.load(C().id);
+    if (fresh && (fresh.updatedAt || 0) > (C().updatedAt || 0)) {
+      const keepRound = S.roundId;
+      S.cls = fresh;
+      if (!fresh.rounds.find((r) => r.id === keepRound)) S.roundId = fresh.currentRound || (fresh.rounds[fresh.rounds.length - 1] || {}).id || null;
+      if ($('#stage')) paintStage(); else if (!$('.modal-bg')) render();
+    }
+  } catch (e) { /* 網路斷線時略過 */ }
+  refreshing = false;
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refreshIfNewer(); });
+window.addEventListener('focus', refreshIfNewer);
+window.addEventListener('storage', (e) => { if (e.key === 'seating3_local' && Store.mode === 'local') refreshIfNewer(); });
 
 /* ---------------- 登入畫面 ---------------- */
 function renderLogin(msg) {
@@ -184,8 +223,11 @@ const TABS = [
   ['info', '📋 班級資料'], ['map', '🗺️ 教室地圖'], ['cadres', '🎖️ 幹部'], ['cleaning', '🧹 打掃'],
   ['rules', '🔒 秘密規則'], ['round', '🎲 換座位'], ['print', '🖨️ 座位表']
 ];
+function visibleTabs() { return TABS.filter(([k]) => !(S.privacy && k === 'rules')); }
 function render() {
   const cls = C();
+  if (S.stageOnly) return renderStandby();
+  if (S.privacy && S.tab === 'rules') S.tab = 'info';
   const top = `
   <header class="topbar">
     <div class="brand">🪑 座位大作戰<small>SEAT AUCTION</small></div>
@@ -193,6 +235,7 @@ function render() {
     <button class="tb-btn" data-act="newClass">➕ 新增班級</button>
     <span class="save-state" id="saveState"></span>
     <span class="spacer"></span>
+    ${cls ? `<button class="tb-btn" data-act="privacy" title="上課時開啟：藏起不想讓學生看到的設定">${S.privacy ? '🙈 上課模式：開' : '👀 上課模式：關'}</button>` : ''}
     <span class="save-state">${Store.mode === 'cloud' ? '👤 ' + esc(Store.email) : '💾 本機模式'}</span>
     <button class="tb-btn" data-act="logout">${Store.mode === 'cloud' ? '登出' : '切換到登入'}</button>
     <a class="home" href="../../index.html">🏠 回事務所首頁</a>
@@ -205,7 +248,7 @@ function render() {
     paintSave(); return;
   }
   $('#app').innerHTML = top + `
-  <nav class="tabs">${TABS.map(([k, t]) => `<button class="tab ${S.tab === k ? 'on' : ''}" data-act="tab" data-v="${k}">${t}</button>`).join('')}</nav>
+  <nav class="tabs">${visibleTabs().map(([k, t]) => `<button class="tab ${S.tab === k ? 'on' : ''}" data-act="tab" data-v="${k}">${t}</button>`).join('')}</nav>
   <main class="panel" id="panel">${S.cloudErr ? cloudErrHTML() : ''}${(TABV[S.tab] || TABV.info)()}</main>`;
   paintSave();
   afterRender();
@@ -262,6 +305,14 @@ TABV.info = () => {
         <p class="small muted">每次換座位設定的「適用期間」會自動接在備註後面。</p>
       </div>
       <div class="card">
+        <h3 style="margin-top:0">🎮 遊戲化模式</h3>
+        <div class="seg" style="margin:4px 0 8px">
+          <button class="${isGame() ? 'on' : ''}" data-act="gameMode" data-v="game">🎮 開：暗標換座位</button>
+          <button class="${!isGame() ? 'on' : ''}" data-act="gameMode" data-v="plain">🪑 關：一般換座位</button>
+        </div>
+        <p class="small muted">${isGame() ? '學生用王牌、簽名卡、Mana 幣等資源投標座位，得標者先鎖定，其餘同學抽籤分配。（學生線上暗標頁會在第二階段加入）' : '不使用暗標：老師可以先指定部分同學的座位，其餘同學抽籤分配。介面不會出現暗標、得標等遊戲用語。'}</p>
+      </div>
+      <div class="card">
         <h3 style="margin-top:0">🗄️ 備份與還原</h3>
         <p class="small muted">建議每學期下載一份備份檔，萬一雲端出問題也能救回來。</p>
         <div class="row" style="margin-top:8px">
@@ -274,20 +325,20 @@ TABV.info = () => {
     </div>
     <div>
       <h2>👥 學生名單 <span class="chip teal">${c.roster.length} 人</span></h2>
-      <p class="lead">需要 <b>座號、學號、姓名</b> 三個欄位（之後學生線上暗標時，三項都對才能投標）。</p>
+      <p class="lead">欄位：<b>座號、姓名、學號</b>${isGame() ? '（之後學生線上暗標時，三項都對才能投標）' : '（不使用暗標時，學號可以先空著）'}。</p>
       <div class="card">
         <div class="row">
           <button class="btn sm primary" data-act="rosterFile">📄 上傳 Excel</button>
           <button class="btn sm ghost" data-act="rosterSample">下載名單範例</button>
         </div>
-        <label class="f">或直接貼上（每行：座號 學號 姓名）</label>
-        <textarea id="rosterText" rows="5" placeholder="1 1130101 王宥翎&#10;2 1130102 李○○"></textarea>
+        <label class="f">或直接貼上（每行：座號 姓名 學號，用空白或 Tab 隔開；可直接從 Excel 複製貼上）</label>
+        <textarea id="rosterText" rows="5" placeholder="1 王宥翎 1130101&#10;2 李○○ 1130102"></textarea>
         <div class="row" style="margin-top:8px"><button class="btn sm" data-act="rosterPaste">檢查貼上的名單</button></div>
         ${d ? rosterDraftHTML(d) : ''}
       </div>
       ${c.roster.length ? `<div class="card" style="max-height:420px;overflow:auto">
-        <table class="list"><thead><tr><th>座號</th><th>學號</th><th>姓名</th></tr></thead><tbody>
-        ${c.roster.map((s) => `<tr><td>${pad2(s.seat)}</td><td>${esc(s.sid) || '<span class="chip red">缺學號</span>'}</td><td>${esc(s.name)}</td></tr>`).join('')}
+        <table class="list"><thead><tr><th>座號</th><th>姓名</th><th>學號</th></tr></thead><tbody>
+        ${c.roster.map((s) => `<tr><td>${pad2(s.seat)}</td><td>${esc(s.name)}</td><td>${esc(s.sid) || (isGame() ? '<span class="chip red">缺學號</span>' : '<span class="muted">—</span>')}</td></tr>`).join('')}
         </tbody></table></div>` : ''}
     </div>
   </div>`;
@@ -398,7 +449,8 @@ TABV.cadres = () => {
       </tbody></table>
       <div class="row" style="margin-top:10px">
         <button class="btn sm primary" data-act="cadreAdd">＋ 新增職位</button>
-        <button class="btn sm ghost" data-act="cadreReset">恢復預設職位</button>
+        <button class="btn sm ghost" data-act="cadreReset">套用巫魚子老師的預設職位</button>
+        <button class="btn sm ghost" data-act="cadreClear">全部清空</button>
       </div>
     </div>
     <div>${previewCard()}</div>
@@ -417,7 +469,9 @@ TABV.cleaning = () => {
       <div class="row" style="margin-bottom:12px">
         <button class="btn sm primary" data-act="cleanImport">📥 匯入打掃徵才結果（Excel）</button>
         <button class="btn sm" data-act="areaAdd">＋ 新增區域</button>
+        <button class="btn sm ghost" data-act="cleanPreset">套用巫魚子老師的預設項目</button>
       </div>
+      ${!areas.length ? '<p class="muted">目前沒有打掃工作。可以匯入打掃徵才的結果、套用預設項目，或自己新增區域；不需要的話座位表也可以不印打掃欄。</p>' : ''}
       ${areas.map((a, ai) => `<div class="card">
         <div class="row"><b>區域</b><input type="text" class="inline" data-area="${a.id}" data-f="name" value="${esc(a.name)}" style="width:140px">
           <span class="spacer"></span>
@@ -493,7 +547,7 @@ TABV.round = () => {
   const roundList = `<div class="row" style="margin-bottom:14px">
     ${c.rounds.map((r) => `<button class="btn sm ${r.id === S.roundId ? 'ink' : ''}" data-act="pickRound" data-v="${r.id}">${esc(r.title)} ${r.status === 'final' ? '✅' : r.status === 'drawn' ? '🎲' : '📝'}</button>`).join('')}
     <button class="btn sm primary" data-act="newRound">➕ 開新回合</button></div>`;
-  if (!rd) return `<h2>🎲 換座位</h2><p class="lead">每次換座位開一個「回合」：先鎖定得標與老師預留的座位，再到投影舞台抽籤。</p>${roundList}
+  if (!rd) return `<h2>🎲 換座位</h2><p class="lead">每次換座位開一個「回合」：先${isGame() ? '鎖定得標與老師預留的座位' : '指定需要固定的座位'}，再到投影舞台抽籤。</p>${roundList}
     ${!c.roster.length ? '<div class="alert red">請先到「📋 班級資料」匯入學生名單。</div>' : ''}`;
   const L = rd.layout, drawn = !!rd.assign, final = rd.status === 'final';
   const lockedSeats = Object.values(rd.locked).map(Number);
@@ -501,6 +555,7 @@ TABV.round = () => {
   const toPlace = c.roster.filter((s) => !lockedSeats.includes(s.seat));
   const lockViol = SC.violations(L, rd.locked, c.secret);
   const assignViol = drawn ? SC.violations(L, rd.assign, c.secret) : [];
+  const hide = S.privacy;            // 上課模式：不顯示任何和秘密規則有關的提醒
   const unseated = drawn ? c.roster.filter((s) => !Object.values(rd.assign).map(Number).includes(s.seat)) : [];
   const mode = drawn ? 'swap' : S.roundMode;
   const showMap = drawn ? rd.assign : rd.locked;
@@ -510,12 +565,12 @@ TABV.round = () => {
     const lockedHere = k in rd.locked;
     let cls = s != null ? (lockedHere ? 'lock-' + (info.kind || 'reserve') : 'filled') : '';
     if (S.swapSel === k) cls += ' sel';
-    if ((drawn ? assignViol : lockViol).some((v) => v.keys.includes(k))) cls += ' warn';
-    const tag = lockedHere && s != null ? `<span class="tag">${info.kind === 'bid' ? '🏆' : '📌'}</span>` : '';
+    if (!hide && (drawn ? assignViol : lockViol).some((v) => v.keys.includes(k))) cls += ' warn';
+    const tag = lockedHere && s != null ? `<span class="tag">${info.kind === 'bid' && isGame() ? '🏆' : '📌'}</span>` : '';
     return { cls, html: s != null ? `${tag}<span class="no">${pad2(s)}</span><span class="nm">${esc((stu(s) || {}).name || '')}</span>` : '' };
   };
   return `
-  <div class="row"><h2>🎲 換座位</h2><span class="secret-badge">🙈 後台畫面請勿投影，投影請按「🎬 投影舞台」</span></div>
+  <div class="row"><h2>🎲 換座位</h2>${hide ? '' : '<span class="secret-badge">🙈 後台畫面請勿投影，投影請用「📺 投影專用連結」</span>'}</div>
   ${roundList}
   <div class="cols wide-left">
     <div>
@@ -527,12 +582,12 @@ TABV.round = () => {
       ${!drawn ? `<div class="row" style="margin-bottom:8px"><div class="seg">
         <button class="${mode === 'lock' ? 'on' : ''}" data-act="roundMode" data-v="lock">🔒 鎖定座位</button>
         <button class="${mode === 'paint' ? 'on' : ''}" data-act="roundMode" data-v="paint">✏️ 調整本回合座位</button></div>
-        <span class="small muted">${mode === 'lock' ? '點座位 → 指定得標者或老師預留的同學' : '點座位切換「座位 ↔ 關閉」'}</span></div>`
+        <span class="small muted">${mode === 'lock' ? (isGame() ? '點座位 → 指定得標者或老師預留的同學' : '點座位 → 指定這個座位給哪位同學') : '點座位切換「座位 ↔ 關閉」'}</span></div>`
       : `<p class="small muted" style="margin-bottom:8px">${final ? '已定案；如需修改請按右側「解除定案」。' : '🔁 互換模式：先點一個座位、再點另一個座位，兩人就會交換（也可以移到空位）。'}</p>`}
       <div class="legend">
-        <span style="--c:#d79a1e;--b:var(--gold-soft)">📌 老師預留</span><span style="--c:var(--purple);--b:var(--purple-soft)">🏆 得標</span>
+        <span style="--c:#d79a1e;--b:var(--gold-soft)">📌 ${isGame() ? '老師預留' : '指定座位'}</span>${isGame() ? '<span style="--c:var(--purple);--b:var(--purple-soft)">🏆 得標</span>' : ''}
         <span style="--c:var(--blue);--b:var(--blue-soft)">抽籤分配</span><span style="--c:#e4a594;--b:#fbe9e5">關閉</span>
-        <span style="--c:var(--red);--b:#fff">違反秘密規則</span>
+        ${hide ? '' : '<span style="--c:var(--red);--b:#fff">違反秘密規則</span>'}
       </div>
       <div class="map-wrap" style="--cw:72px;--ch:54px">${mapHTML(L, { view: c.settings.printView || 'teacher', act: final ? '' : 'roundCell', cell: cellFn })}</div>
       <div class="row small muted"><span>地圖視角：</span><div class="seg">${[['teacher', '講台視角'], ['student', '學生視角']].map(([v, t]) => `<button class="${(c.settings.printView || 'teacher') === v ? 'on' : ''}" data-act="printView" data-v="${v}">${t}</button>`).join('')}</div></div>
@@ -542,12 +597,14 @@ TABV.round = () => {
         <h3 style="margin-top:0">📊 本回合</h3>
         <p>全班 <b>${c.roster.length}</b> 人｜已鎖定 <b>${lockedSeats.length}</b> 人｜可分配座位 <b>${free.length}</b> 個｜待分配 <b>${toPlace.length}</b> 人</p>
         ${toPlace.length > free.length ? `<div class="alert red">座位不夠：還差 ${toPlace.length - free.length} 個座位，請先開放座位。</div>` : ''}
-        ${lockViol.length && !drawn ? `<div class="alert red"><b>⏸ 待老師決定：</b>已鎖定的座位違反秘密規則<ul style="margin:4px 0 0 18px">${lockViol.map((v) => `<li>${esc(ruleText(v.rule))}</li>`).join('')}</ul><span class="small">可以維持（暗標是學生用資源換來的），或點座位改成其他同學。</span></div>` : ''}
-        ${assignViol.length ? `<div class="alert red"><b>⚠️ 目前座位違反秘密規則：</b><ul style="margin:4px 0 0 18px">${assignViol.map((v) => `<li>${esc(ruleText(v.rule))}</li>`).join('')}</ul></div>` : ''}
+        ${hide && (lockViol.length || assignViol.length) ? '<div class="alert">⚙️ 有設定需要確認（關閉上課模式後查看）</div>' : ''}
+        ${!hide && lockViol.length && !drawn ? `<div class="alert red"><b>⏸ 待老師決定：</b>已鎖定的座位違反秘密規則<ul style="margin:4px 0 0 18px">${lockViol.map((v) => `<li>${esc(ruleText(v.rule))}</li>`).join('')}</ul><span class="small">可以維持（暗標是學生用資源換來的），或點座位改成其他同學。</span></div>` : ''}
+        ${!hide && assignViol.length ? `<div class="alert red"><b>⚠️ 目前座位違反秘密規則：</b><ul style="margin:4px 0 0 18px">${assignViol.map((v) => `<li>${esc(ruleText(v.rule))}</li>`).join('')}</ul></div>` : ''}
         ${unseated.length ? `<div class="alert red">還沒有座位：${unseated.map((s) => esc(pad2(s.seat) + ' ' + s.name)).join('、')}</div>` : ''}
         <div class="row" style="margin-top:12px">
-          <button class="btn primary" data-act="openStage" ${c.roster.length ? '' : 'disabled'}>🎬 投影舞台</button>
-          ${!drawn ? '<button class="btn sm" data-act="ruleCheckRound">🔍 先檢查規則</button>' : ''}
+          <button class="btn primary" data-act="stageLink" ${c.roster.length ? '' : 'disabled'}>📺 投影專用連結</button>
+          <button class="btn sm" data-act="openStage" ${c.roster.length ? '' : 'disabled'}>🎬 在這裡開投影舞台</button>
+          ${!drawn && !hide ? '<button class="btn sm" data-act="ruleCheckRound">🔍 先檢查規則</button>' : ''}
           ${drawn && !final ? '<button class="btn teal" data-act="finalize">✅ 定案</button><button class="btn sm ghost" data-act="redraw">🔁 清除結果、重新抽籤</button>' : ''}
           ${final ? '<button class="btn sm ghost" data-act="unfinal">解除定案</button>' : ''}
           <button class="btn sm" data-act="tab" data-v="print">🖨️ 座位表</button>
@@ -558,10 +615,10 @@ TABV.round = () => {
         <h3 style="margin-top:0">🔒 已鎖定（${lockedSeats.length}）</h3>
         ${lockedSeats.length ? `<table class="list"><tbody>${Object.entries(rd.locked).sort((a, b) => a[1] - b[1]).map(([k, s]) => {
           const info = rd.lockInfo[k] || {};
-          return `<tr><td>${info.kind === 'bid' ? '🏆 得標' : '📌 預留'}</td><td>${esc(stuLabel(s))}</td><td class="small muted">${esc(info.note || '')}</td>
+          return `<tr><td>${!isGame() ? '📌 指定' : info.kind === 'bid' ? '🏆 得標' : '📌 預留'}</td><td>${esc(stuLabel(s))}</td><td class="small muted">${esc(info.note || '')}</td>
           <td>${drawn ? '' : `<button class="btn sm ghost" data-act="unlock" data-v="${k}">解除</button>`}</td></tr>`;
-        }).join('')}</tbody></table>` : '<p class="small muted">還沒有。暗標得標者與老師指定的座位都在這裡鎖定，抽籤時不會被動到。</p>'}
-        ${drawn ? '' : '<p class="small muted" style="margin-top:8px">（線上暗標與自動開標會在第二階段加入）</p>'}
+        }).join('')}</tbody></table>` : `<p class="small muted">還沒有。${isGame() ? '暗標得標者與老師指定的座位' : '老師指定的座位'}都在這裡鎖定，抽籤時不會被動到。</p>`}
+        ${drawn || !isGame() ? '' : '<p class="small muted" style="margin-top:8px">（線上暗標與自動開標會在第二階段加入）</p>'}
       </div>
       <div class="row"><span class="spacer"></span><button class="btn sm ghost" data-act="roundDel">🗑️ 刪除這個回合</button></div>
     </div>
@@ -578,15 +635,19 @@ TABV.print = () => {
     <span class="bold">回合</span>
     <select class="inline" id="printRound">${c.rounds.map((r) => `<option value="${r.id}" ${r.id === S.roundId ? 'selected' : ''}>${esc(r.title)}${r.status === 'final' ? '（已定案）' : r.assign ? '（已抽籤）' : '（尚未抽籤）'}</option>`).join('')}${!c.rounds.length ? '<option value="">（尚無回合：只印空白地圖）</option>' : ''}</select>
     <div class="seg">${[['teacher', '講台視角'], ['student', '學生視角']].map(([v, t]) => `<button class="${(st.printView || 'teacher') === v ? 'on' : ''}" data-act="printView" data-v="${v}">${t}</button>`).join('')}</div>
-    <label><input type="checkbox" data-opt="showCadres" ${st.showCadres !== false ? 'checked' : ''}> 幹部</label>
-    <label><input type="checkbox" data-opt="showCleaning" ${st.showCleaning !== false ? 'checked' : ''}> 打掃</label>
     <span class="spacer"></span>
     <button class="btn primary" data-act="print">🖨️ 列印 / 存成 PDF</button>
     <button class="btn sm" data-act="exportXlsx">⬇️ 下載 Excel</button>
   </div>
+  <div class="row" style="margin-bottom:12px">
+    <span class="bold">版型</span>
+    <div class="seg">${SHEET_TPL.map(([v, t, a, b]) => `<button class="${(st.showCadres !== false) === a && (st.showCleaning !== false) === b ? 'on' : ''}" data-act="sheetTpl" data-v="${v}">${t}</button>`).join('')}</div>
+    <span class="bold" style="margin-left:8px">標題</span>
+    <input type="text" class="inline" data-bind="settings.sheetTitle" value="${esc(st.sheetTitle || '')}" placeholder="${esc(autoTitle(c))}" style="width:260px">
+  </div>
   <div class="sheet-preview"><div class="sheet-holder" data-auto="1"></div></div>
   <p class="small muted" id="fitNote" style="margin-top:8px"></p>
-  <p class="small muted">列印時請在印表機設定選「橫向」、邊界「預設」；想存檔可選「另存為 PDF」。</p>`;
+  <p class="small muted">標題空著會自動產生；底部備註在「📋 班級資料」修改。列印時請在印表機設定選「橫向」、邊界「預設」；想存檔可選「另存為 PDF」。</p>`;
 };
 function previewCard() {
   return `<div class="card" style="position:sticky;top:70px"><h3 style="margin-top:0">👀 版面預覽</h3>
@@ -597,6 +658,8 @@ function previewCard() {
 /* =====================================================================
    A4 座位表（列印版）
    ===================================================================== */
+const SHEET_TPL = [['full', '📋 巫魚子老師版（座位＋幹部＋打掃）', true, true], ['cadres', '座位＋幹部', true, false], ['cleaning', '座位＋打掃', false, true], ['seats', '🪑 只有座位圖', false, false]];
+const autoTitle = (c) => `${c.name || ''}班 座位表${c.settings.showCadres !== false && c.cadres.length ? '與幹部資訊' : ''}`;
 const SH = { cw: 70, ch: 50, gap: 6, row: 25, side: 22, mark: 26 };
 function sheetHTML(c, rd, opt = {}) {
   const view = opt.view || c.settings.printView || 'teacher';
@@ -653,7 +716,7 @@ function sheetHTML(c, rd, opt = {}) {
     });
     clnCols = splitCols(blocks, mapH * 1.12).map((col) => `<div class="sh-col" style="gap:10px">${col.map((b) => b.html).join('')}</div>`).join('');
   }
-  const title = `${esc(c.name || '')}班 座位表${showCad ? '與幹部資訊' : ''}`;
+  const title = esc(c.settings.sheetTitle || autoTitle(c));
   const period = rd && rd.period ? `(適用期間：${esc(rd.period)})` : '';
   return `<div class="sheet-inner" style="--rh:${ROW}px">
     <div class="sh-head"><div class="t">${title}</div>${c.teacherTitle ? `<div class="tc">導師：${esc(c.teacherTitle)}</div>` : ''}</div>
@@ -827,8 +890,8 @@ function paintStage() {
     let s = amap[k];
     if (!lockedHere && ST.revealed && !ST.revealed.has(k)) s = null;   // 揭曉中：還沒翻開
     if (s == null) return { cls: rd.assign && !ST.revealed ? '' : 'pending', html: '' };
-    const tag = lockedHere && info.kind === 'bid' ? '<span class="tag">🏆</span>' : '';
-    return { cls: lockedHere ? 'lock-' + (info.kind || 'reserve') : 'filled', html: `${tag}<span class="no">${pad2(s)}</span><span class="nm">${esc((stu(s) || {}).name || '')}</span>` };
+    const tag = lockedHere && info.kind === 'bid' && isGame() ? '<span class="tag">🏆</span>' : '';
+    return { cls: lockedHere ? 'lock-' + (isGame() ? info.kind || 'reserve' : 'reserve') : 'filled', html: `${tag}<span class="no">${pad2(s)}</span><span class="nm">${esc((stu(s) || {}).name || '')}</span>` };
   };
   body.innerHTML = mapHTML(L, { view: c.settings.stageView || 'student', cell: cellFn, style: `--cw:${cw}px;--ch:${ch}px;--fs:${fs}px;--gap:${gap}px` });
   const toPlace = c.roster.filter((s) => !Object.values(rd.locked).map(Number).includes(s.seat)).length;
@@ -924,17 +987,20 @@ act.tab = (b) => { S.tab = b.dataset.v; LS.set('seating3_tab', S.tab); S.swapSel
 act.newClass = () => modal(`<h3>➕ 新增班級</h3>
   <label class="f">班級名稱</label><input type="text" id="ncName" placeholder="例如：309">
   <label class="f">導師稱謂</label><input type="text" id="ncTeacher" placeholder="例如：巫昶昕 老師" value="${esc((C() || {}).teacherTitle || '')}">
-  ${C() ? `<label style="display:block;margin-top:10px"><input type="checkbox" id="ncCopy" checked> 複製目前班級的教室地圖、幹部職位、打掃項目、備註（不含名單）</label>` : ''}
+  <label class="f">起始設定</label>
+  <label style="display:block"><input type="radio" name="ncTpl" value="author" ${C() ? '' : 'checked'}> 📋 套用巫魚子老師的預設（暗標換座位、16 個幹部職位、教室與外掃打掃項目、任課老師備註）</label>
+  <label style="display:block"><input type="radio" name="ncTpl" value="blank"> 🪑 從簡單開始（一般換座位、不預設幹部與打掃，座位表只印座位圖）</label>
+  ${C() ? `<label style="display:block"><input type="radio" name="ncTpl" value="copy" checked> 📑 複製「${esc(C().name)} 班」的設定（地圖、幹部職位、打掃項目、備註；不含名單）</label>` : ''}
   <div class="row" style="margin-top:16px"><button class="btn primary" id="ncOk">建立</button><button class="btn ghost" data-close>取消</button></div>`,
   { mount: (m, close) => {
     $('#ncName', m).focus();
     $('#ncOk', m).onclick = async () => {
       const name = $('#ncName', m).value.trim(); if (!name) return toast('請輸入班級名稱', true);
-      const n = SC.newClass(name); n.teacherTitle = $('#ncTeacher', m).value.trim();
-      const cp = $('#ncCopy', m);
-      if (cp && cp.checked && C()) {
+      const tpl = ($('input[name=ncTpl]:checked', m) || {}).value || 'author';
+      const n = SC.newClass(name, tpl === 'blank' ? 'blank' : ''); n.teacherTitle = $('#ncTeacher', m).value.trim();
+      if (tpl === 'copy' && C()) {
         const o = JSON.parse(JSON.stringify(C()));
-        n.layout = o.layout; n.settings = { ...n.settings, ...o.settings };
+        n.layout = o.layout; n.settings = { ...n.settings, ...o.settings, sheetTitle: '' };
         n.cadres = o.cadres.map((x) => ({ ...x, seat: null })); n.cleaning = o.cleaning.map((a) => ({ ...a, items: a.items.map((it) => ({ ...it, seats: [] })) }));
       }
       S.cls = n; S.classes.unshift({ id: n.id, name: n.name, updatedAt: n.updatedAt }); S.roundId = null;
@@ -964,7 +1030,7 @@ act.restore = async () => {
 };
 act.rosterSample = () => {
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['座號', '學號', '姓名'], [1, '1130101', '王小明'], [2, '1130102', '李小華']]), '學生名單');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['座號', '姓名', '學號'], [1, '王小明', '1130101'], [2, '李小華', '1130102']]), '學生名單');
   XLSX.writeFile(wb, '座位大作戰_名單範例.xlsx');
 };
 act.rosterFile = async () => {
@@ -1117,12 +1183,13 @@ function lockModal(k) {
   const rd = round(), cur = rd.locked[k], info = rd.lockInfo[k] || { kind: 'bid' };
   const where = {}; Object.entries(rd.locked).forEach(([kk, s]) => { where[s] = kk; });
   const { r, c } = SC.parseKey(k);
-  modal(`<h3>🔒 鎖定座位（第 ${r + 1} 排、左起第 ${c + 1} 列）</h3>
-    <label class="f">同學</label><select id="lkWho">${studentOptions(cur, { note: (s) => where[s] && where[s] !== k ? '（已鎖定在別的座位，選了會移過來）' : '' })}</select>
-    <label class="f">類型</label>
+  const game = isGame();
+  modal(`<h3>🔒 ${game ? '鎖定座位' : '指定座位'}（第 ${r + 1} 排、左起第 ${c + 1} 列）</h3>
+    <label class="f">同學</label><select id="lkWho">${studentOptions(cur, { note: (s) => where[s] && where[s] !== k ? '（已在別的座位，選了會移過來）' : '' })}</select>
+    ${game ? `<label class="f">類型</label>
     <label><input type="radio" name="lkKind" value="bid" ${info.kind !== 'reserve' ? 'checked' : ''}> 🏆 暗標得標</label>
-    <label style="margin-left:16px"><input type="radio" name="lkKind" value="reserve" ${info.kind === 'reserve' ? 'checked' : ''}> 📌 老師預留</label>
-    <label class="f">備註（只有老師看得到，例如：王牌×1）</label><input type="text" id="lkNote" value="${esc(info.note || '')}">
+    <label style="margin-left:16px"><input type="radio" name="lkKind" value="reserve" ${info.kind === 'reserve' ? 'checked' : ''}> 📌 老師預留</label>` : '<input type="radio" name="lkKind" value="reserve" checked hidden>'}
+    <label class="f">備註（只有老師看得到${game ? '，例如：王牌×1' : ''}）</label><input type="text" id="lkNote" value="${esc(info.note || '')}">
     <div class="row" style="margin-top:14px"><button class="btn primary" id="lkOk">確定</button>
     ${cur != null ? '<button class="btn red" id="lkDel">解除鎖定</button>' : ''}<button class="btn ghost" data-close>取消</button></div>`,
   { mount: (m, close) => {
@@ -1156,9 +1223,42 @@ act.openStage = () => {
     const freeN = SC.seatKeys(rd.layout).filter((k) => !(k in rd.locked)).length;
     const need = C().roster.filter((s) => !Object.values(rd.locked).map(Number).includes(s.seat)).length;
     if (need > freeN) return toast(`座位不夠：還差 ${need - freeN} 個`, true);
-    if (SC.violations(rd.layout, rd.locked, C().secret).length && !confirm('有鎖定的座位違反秘密規則（右側紅框「待老師決定」）。確定維持現狀、進入投影舞台嗎？')) return;
+    if (SC.violations(rd.layout, rd.locked, C().secret).length && !confirm(S.privacy ? '有設定尚待確認，確定要繼續嗎？' : '有鎖定的座位違反秘密規則（右側紅框「待老師決定」）。確定維持現狀、進入投影舞台嗎？')) return;
   }
   openStage();
+};
+act.privacy = () => {
+  if (S.privacy && !confirm('關閉上課模式？秘密規則與相關提醒會重新出現，請確認畫面沒有在投影。')) return;
+  S.privacy = !S.privacy; LS.set('seating3_privacy', S.privacy); render();
+};
+act.gameMode = (b) => { C().settings.gameMode = b.dataset.v; touch(true); };
+act.cadreClear = () => { if (!confirm('清空所有幹部職位？')) return; C().cadres = []; touch(true); };
+act.cleanPreset = () => {
+  if (C().cleaning.some((a) => a.items.length) && !confirm('套用預設項目會取代目前的打掃工作，確定嗎？')) return;
+  C().cleaning = SC.DEFAULT_CLEANING.map((a) => ({ id: uid('a'), name: a.name, items: a.items.map((it) => ({ id: uid('i'), name: it.name, seats: [] })) })); touch(true);
+};
+act.sheetTpl = (b) => { const t = SHEET_TPL.find((x) => x[0] === b.dataset.v); C().settings.showCadres = t[2]; C().settings.showCleaning = t[3]; touch(true); };
+act.stageLink = () => {
+  const c = C(); c.currentRound = S.roundId; touch();
+  const url = location.href.split('#')[0] + '#stage=' + encodeURIComponent(c.id);
+  modal(`<h3>📺 投影專用連結</h3>
+    <p>在<b>要接投影機的那台裝置</b>（平板或教室電腦）打開這個連結，會<b>直接進入投影舞台</b>，完全不會出現後台畫面。</p>
+    <input type="text" readonly value="${esc(url)}" id="slUrl" style="margin:10px 0">
+    <ul class="small" style="margin:0 0 0 18px;line-height:1.8">
+      <li>第一次在那台裝置打開需要登入一次，之後就會記住</li>
+      <li>建議加入書籤；連結會自動打開「目前選取的回合」</li>
+      <li>在後台改了設定，回到投影分頁時會自動更新成最新版</li>
+    </ul>
+    <div class="row" style="margin-top:14px"><button class="btn primary" id="slCopy">📋 複製連結</button><button class="btn" id="slOpen">↗️ 在新分頁開啟</button><button class="btn ghost" data-close>關閉</button></div>`,
+  { mount: (m) => {
+    $('#slCopy', m).onclick = async () => { try { await navigator.clipboard.writeText(url); toast('已複製連結'); } catch (e) { $('#slUrl', m).select(); toast('請按 Ctrl+C 複製', true); } };
+    $('#slOpen', m).onclick = () => window.open(url, '_blank');
+  } });
+};
+act.standbyStage = () => { if (round()) openStage(); };
+act.standbyBack = () => {
+  if (!confirm('要切換到後台嗎？（如果正在投影，學生會看到後台畫面）')) return;
+  S.stageOnly = false; history.replaceState(null, '', location.href.split('#')[0]); render();
 };
 act.finalize = () => { const rd = round(); rd.status = 'final'; rd.finalAt = Date.now(); touch(true); toast('✅ 已定案'); };
 act.unfinal = () => { const rd = round(); rd.status = 'drawn'; touch(true); };

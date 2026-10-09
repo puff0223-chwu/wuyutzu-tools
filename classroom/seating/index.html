@@ -188,7 +188,7 @@ table.list th{background:#f3eee2;font-weight:700}
 <div id="printRoot"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="core.js?v=20261009a"></script>
+<script src="core.js?v=20261009b"></script>
 <script type="module">
 /* Firebase 只用來「老師登入＋存班級資料」。載入失敗（沒網路）時仍可用本機模式 */
 const firebaseConfig = {
@@ -216,7 +216,7 @@ try {
     remove: (path) => D.remove(D.ref(db, path))
   };
 } catch (e) { console.warn('Firebase 載入失敗，只能用本機模式', e); window.FB = null; }
-await import('./app.js?v=20261009a');
+await import('./app.js?v=20261009b');
 </script>
 </body>
 </html>

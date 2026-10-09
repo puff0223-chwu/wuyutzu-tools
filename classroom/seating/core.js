@@ -9,7 +9,7 @@
 (function (root) {
   'use strict';
 
-  const VERSION = '20261009a';
+  const VERSION = '20261009b';
 
   /* ---------------- 小工具 ---------------- */
   const key = (r, c) => r + '-' + c;
@@ -232,8 +232,12 @@
     let list = rows;
     if (typeof rows === 'string') {
       list = rows.split(/\r?\n/).map((l) => l.trim()).filter(Boolean).map((l) => {
+        // 建議順序：座號 姓名 學號；自動找出「看起來像學號」的那一欄（含 4 位以上數字），所以舊順序（座號 學號 姓名）也讀得懂
         const p = l.split(/[\s,，\t]+/).filter(Boolean);
-        return { 座號: p[0], 學號: p[1], 姓名: p.slice(2).join(' ') };
+        const rest = p.slice(1);
+        const si = rest.findIndex((x) => /^[A-Za-z]{0,2}[0-9０-９]{4,}$/.test(x));
+        const sid = si >= 0 ? rest.splice(si, 1)[0] : '';
+        return { 座號: p[0], 學號: sid, 姓名: rest.join(' ') };
       }).filter((o) => !/座號/.test(o['座號']));   // 跳過標題列
     }
     list.forEach((o, i) => {
@@ -242,7 +246,7 @@
       if (seat == null && !sid && !name) return;
       if (seat == null || seat < 1 || seat > 99) return errors.push(`第 ${line} 筆：座號「${clean(o['座號'])}」不是 1～99 的數字`);
       if (!name) return errors.push(`第 ${line} 筆：缺少姓名`);
-      if (!sid) errors.push(`第 ${line} 筆（${seat} 號 ${name}）：缺少學號（線上暗標時需要）`);
+      if (!sid) errors.push(`第 ${line} 筆（${seat} 號 ${name}）：缺少學號（線上暗標時需要；不使用暗標可以忽略）`);
       out.push({ seat, sid, name });
     });
     const seen = {}, seenSid = {};
@@ -274,14 +278,16 @@
   }
 
   /* ---------------- 班級資料正規化（Firebase 會把陣列存成物件、空陣列會消失） ---------------- */
-  function newClass(name) {
+  function newClass(name, tpl) {
+    const blank = tpl === 'blank';
     return {
       id: uid('cls'), name: name || '', teacherTitle: '', roster: [],
       layout: newLayout(7, 6),
-      cadres: DEFAULT_CADRES.map((c) => ({ ...c, id: uid('c') })),
-      cleaning: DEFAULT_CLEANING.map((a) => ({ id: uid('a'), name: a.name, items: a.items.map((it) => ({ ...it, id: uid('i'), seats: [] })) })),
+      cadres: blank ? [] : DEFAULT_CADRES.map((c) => ({ ...c, id: uid('c') })),
+      cleaning: blank ? [] : DEFAULT_CLEANING.map((a) => ({ id: uid('a'), name: a.name, items: a.items.map((it) => ({ ...it, id: uid('i'), seats: [] })) })),
       secret: [], rounds: [], currentRound: null,
-      settings: { note: DEFAULT_NOTE, stageView: 'student', printView: 'teacher', gameMode: 'game' },
+      settings: { note: blank ? '' : DEFAULT_NOTE, stageView: 'student', printView: 'teacher', gameMode: blank ? 'plain' : 'game',
+        showCadres: !blank, showCleaning: !blank, sheetTitle: '' },
       createdAt: Date.now(), updatedAt: Date.now()
     };
   }
@@ -297,8 +303,9 @@
     const out = { ...d, ...c };
     out.roster = toArr(c.roster).map((s) => ({ seat: Number(s.seat), sid: s.sid || '', name: s.name || '' })).sort((a, b) => a.seat - b.seat);
     out.layout = normalizeLayout(c.layout);
-    out.cadres = c.cadres ? toArr(c.cadres).map((x) => ({ id: x.id || uid('c'), role: x.role || '', seat: x.seat == null ? null : Number(x.seat), join: !!x.join })) : d.cadres;
-    out.cleaning = c.cleaning ? toArr(c.cleaning).map((a) => ({ id: a.id || uid('a'), name: a.name || '', items: toArr(a.items).map((it) => ({ id: it.id || uid('i'), name: it.name || '', seats: toArr(it.seats).map(Number) })) })) : d.cleaning;
+    // 已存在的班級（有 id）若沒有幹部／打掃欄位，代表老師清空了（Firebase 會把空陣列吃掉），不要補回預設
+    out.cadres = c.cadres ? toArr(c.cadres).map((x) => ({ id: x.id || uid('c'), role: x.role || '', seat: x.seat == null ? null : Number(x.seat), join: !!x.join })) : (c.id ? [] : d.cadres);
+    out.cleaning = c.cleaning ? toArr(c.cleaning).map((a) => ({ id: a.id || uid('a'), name: a.name || '', items: toArr(a.items).map((it) => ({ id: it.id || uid('i'), name: it.name || '', seats: toArr(it.seats).map(Number) })) })) : (c.id ? [] : d.cleaning);
     out.secret = toArr(c.secret).map((x) => ({ ...x, list: toArr(x.list) }));
     out.settings = { ...d.settings, ...(c.settings || {}) };
     out.rounds = toArr(c.rounds).map((rd) => ({
