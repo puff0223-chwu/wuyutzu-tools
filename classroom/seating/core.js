@@ -9,7 +9,7 @@
 (function (root) {
   'use strict';
 
-  const VERSION = '20261010b';
+  const VERSION = '20261010c';
 
   /* ---------------- 小工具 ---------------- */
   const key = (r, c) => r + '-' + c;
@@ -329,7 +329,9 @@
   }
   /** 出價是否有效：至少投一個；不允許混搭時只能用一種資源 */
   function bidUsed(res, rules) { return rules.resources.filter((r) => resTotal(r, (res || {})[r.id]) > 0); }
-  function bidValid(res, rules) { const u = bidUsed(res, rules); return u.length > 0 && (rules.allowMix || u.length === 1); }
+  /** 一般模式的「線上選位」：rules.wish=true，不比資源（大家同分），多人選同一座位時抽籤或先登記先贏 */
+  const WISH_RULES = (tie) => ({ resources: [], allowMix: true, tieBreak: tie === 'early' ? 'early' : 'random', wish: true });
+  function bidValid(res, rules) { if (rules.wish) return true; const u = bidUsed(res, rules); return u.length > 0 && (rules.allowMix || u.length === 1); }
   /** 出價 → 文字（例：王牌×1、巫魚子簽名卡×3（魚1、巫2）） */
   function resText(res, rules) {
     return bidUsed(res, rules).map((r) => {
@@ -433,7 +435,7 @@
   const api = {
     VERSION, key, parseKey, pad2, uid, toArr, toNum, shuffle, seatsText,
     DEFAULT_CADRES, DEFAULT_CLEANING, DEFAULT_NOTE,
-    DEFAULT_RESOURCES, DEFAULT_BID_RULES, normalizeBidRules, resTotal, bidVector, compareBids, bidUsed, bidValid, resText, rankBids, decideWinners,
+    DEFAULT_RESOURCES, DEFAULT_BID_RULES, normalizeBidRules, resTotal, bidVector, compareBids, bidUsed, bidValid, resText, rankBids, decideWinners, WISH_RULES,
     studentKey, normName, normSid, newCode, CODE_CHARS,
     newLayout, resizeLayout, cellType, seatKeys, viewOf, adjacency,
     members, zoneAllows, activeRules, violations, solve, diagnose,

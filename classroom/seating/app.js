@@ -243,7 +243,8 @@ function render() {
     <span class="save-state" id="saveState"></span>
     <span class="spacer"></span>
     ${cls ? `<button class="tb-btn" data-act="privacy" title="上課時開啟：藏起不想讓學生看到的設定">${S.privacy ? '🙈 上課模式：開' : '👀 上課模式：關'}</button>` : ''}
-    <span class="save-state">${Store.mode === 'cloud' ? '👤 ' + esc(Store.email) : '💾 本機模式'}</span>
+    <span class="save-state tb-email" title="${esc(Store.email)}">${Store.mode === 'cloud' ? '👤 ' + esc(Store.email) : '💾 本機模式'}</span>
+    <button class="tb-btn" data-act="guide" title="使用說明">❓ 說明</button>
     <button class="tb-btn" data-act="logout">${Store.mode === 'cloud' ? '登出' : '切換到登入'}</button>
     <a class="home" href="../../index.html">🏠 回事務所首頁</a>
   </header>`;
@@ -593,14 +594,14 @@ TABV.round = () => {
     const lockedHere = k in rd.locked;
     let cls = s != null ? (lockedHere ? 'lock-' + (isGame() ? info.kind || 'reserve' : 'reserve') : 'filled') : '';
     if (S.swapSel === k) cls += ' sel';
-    if (isGame() && !drawn && rd.biddable[k] && !lockedHere) cls += ' bidzone';
+    if (!drawn && rd.biddable[k] && !lockedHere) cls += ' bidzone';
     if (!hide && (drawn ? assignViol : lockViol).some((v) => v.keys.includes(k))) cls += ' warn';
     const tag = lockedHere && s != null ? `<span class="tag">${info.kind === 'bid' && isGame() ? '🏆' : '📌'}</span>` : '';
     return { cls, html: s != null ? `${tag}<span class="no">${pad2(s)}</span><span class="nm">${esc((stu(s) || {}).name || '')}</span>` : '' };
   };
   const hint = final ? '已定案。要修改請先「解除定案」。'
     : drawn ? '點一個座位、再點另一個座位，兩人就會交換（也可以移到空位）。'
-      : mode === 'bid' ? '點座位設定「開放暗標」的座位（黃色虛線框），學生只能投這些座位。'
+      : mode === 'bid' ? (isGame() ? '點座位設定「開放暗標」的座位（黃色虛線框），學生只能投這些座位。' : '點座位設定「開放選位」的座位（黃色虛線框），學生只能選這些座位。')
       : mode === 'lock' ? (isGame() ? '點座位，指定得標者或老師預留的同學。' : '點座位，指定這個座位給哪位同學。') : '點座位切換「可坐 ↔ 關閉」，只影響這一回合。';
   const warns = [];
   if (short > 0) warns.push(`座位不夠：還差 ${short} 個，請先開放座位。`);
@@ -613,7 +614,7 @@ TABV.round = () => {
   <div class="map-layout">
     <div class="card">
       <div class="row" style="margin-bottom:6px">
-        ${!drawn ? `<div class="seg">${isGame() ? `<button class="${mode === 'bid' ? 'on' : ''}" data-act="roundMode" data-v="bid">🎯 暗標區</button>` : ''}<button class="${mode === 'lock' ? 'on' : ''}" data-act="roundMode" data-v="lock">🔒 鎖定座位</button>
+        ${!drawn ? `<div class="seg">${Store.mode === 'cloud' || Object.keys(rd.biddable).length ? `<button class="${mode === 'bid' ? 'on' : ''}" data-act="roundMode" data-v="bid">🎯 ${isGame() ? '暗標區' : '選位區'}</button>` : ''}<button class="${mode === 'lock' ? 'on' : ''}" data-act="roundMode" data-v="lock">🔒 鎖定座位</button>
           <button class="${mode === 'paint' ? 'on' : ''}" data-act="roundMode" data-v="paint">✏️ 開關座位</button></div>` : `<span class="chip ${final ? 'teal' : 'blue'}">${final ? '✅ 已定案' : '🔁 互換模式'}</span>`}
         <span class="spacer"></span>
         <div class="seg">${[['teacher', '講台視角'], ['student', '學生視角']].map(([v, t]) => `<button class="${view === v ? 'on' : ''}" data-act="printView" data-v="${v}">${t}</button>`).join('')}</div>
@@ -622,11 +623,11 @@ TABV.round = () => {
       <div class="map-wrap" style="--cw:70px;--ch:52px;text-align:center">${mapHTML(L, { view, act: final ? '' : 'roundCell', cell: cellFn })}</div>
       <div class="legend" style="justify-content:center">
         <span style="--c:#d79a1e;--b:var(--gold-soft)">📌 ${isGame() ? '老師預留' : '指定座位'}</span>${isGame() ? '<span style="--c:var(--purple);--b:var(--purple-soft)">🏆 得標</span>' : ''}
-        ${isGame() && !drawn ? '<span style="--c:#d79a1e;--b:#fff">🎯 開放暗標</span>' : ''}<span style="--c:var(--blue);--b:var(--blue-soft)">抽籤分配</span><span style="--c:#e4a594;--b:#fbe9e5">關閉</span>
+        ${!drawn && Object.keys(rd.biddable).length ? `<span style="--c:#d79a1e;--b:#fff">🎯 ${isGame() ? '開放暗標' : '開放選位'}</span>` : ''}<span style="--c:var(--blue);--b:var(--blue-soft)">抽籤分配</span><span style="--c:#e4a594;--b:#fbe9e5">關閉</span>
       </div>
     </div>
     <div>
-      ${isGame() && !drawn ? bidCardHTML(rd) : ''}
+      ${!drawn && (isGame() || Store.mode === 'cloud') ? bidCardHTML(rd) : ''}
       <div class="card">
         <h3 style="margin-top:0">🎬 投影抽籤</h3>
         <div class="stat-row">
@@ -893,7 +894,7 @@ function openStage() {
       <div class="st-title"><small>SEAT AUCTION · ${esc(c.name)}班</small>${esc(rd.title)}</div>
       <div class="st-count" id="stCount"></div>
       <span class="spacer"></span>
-      ${isGame() && Object.values(rd.lockInfo).some((x) => x.kind === 'bid') ? '<button class="st-btn ghost" data-st="announce">📢 開標公告</button>' : ''}
+      ${Object.values(rd.lockInfo).some((x) => x.kind === 'bid') ? `<button class="st-btn ghost" data-st="announce">📢 ${isGame() ? '開標公告' : '選位結果'}</button>` : ''}
       <button class="st-btn ghost" data-st="pick">🎯 抽一位同學</button>
       <button class="st-btn" data-st="draw" id="stDraw">🎲 開始分配</button>
       <select class="st-btn ghost" id="stSpeed" style="padding:7px 8px;width:auto">${[['slow', '🐢 慢'], ['normal', '🚶 中'], ['fast', '🐇 快']].map(([v, t]) => `<option value="${v}" ${ST.speed === v ? 'selected' : ''} style="color:#000">${t}</option>`).join('')}</select>
@@ -1013,6 +1014,14 @@ async function runDraw() {
    雲端位置 seating/rounds/<代碼>/：meta（公開：是否開放、截止）、board（公開：地圖、可投座位、資源）、
    keys/<暗號>（名單暗號，學生讀不到）、checkin/<暗號>、bids/<暗號>（只有老師讀得到）
    ===================================================================== */
+/* 一般模式共用同一套流程，只是不比資源、用語換成中性的「選位、登記」 */
+const bidRulesNow = () => isGame() ? C().bidRules : SC.WISH_RULES(C().settings.wishTie);
+const TR_WORDS = [['查看開標結果', '查看選位結果'], ['線上暗標', '線上選位'], ['開放暗標', '開放選位'], ['暗標區', '選位區'], ['開標結果', '選位結果'], ['開標公告', '選位結果'], ['開標', '公布結果'],
+  ['得標座位', '選到的座位'], ['得標者', '選到的同學'], ['取消得標', '取消資格'], ['已取消得標', '已取消資格'], ['得標', '選到'], ['已投標', '已登記'], ['未投標', '未登記'], ['投標', '登記'], ['暗標', '選位'], ['出價', '　']];
+const tr = (str) => isGame() ? str : TR_WORDS.reduce((x, [a, b]) => x.split(a).join(b), String(str));
+const btoast = (m, e) => toast(tr(m), e);
+const bconfirm = (m) => confirm(tr(m));
+
 function bidRulesSummary() {
   const R = C().bidRules;
   return `<p class="small" style="margin-top:8px;line-height:1.8">比序：${R.resources.map((r) => `${esc(r.icon)} ${esc(r.name)}${r.subs.length ? `（${r.subs.map((x) => esc(x.name)).join('＞')}）` : ''}`).join(' ＞ ')}<br>
@@ -1053,15 +1062,15 @@ act.bidRulesEdit = () => {
         else if (f === 'detail') r.detail = el.checked; else r[f] = el.value;
       });
       body.querySelectorAll('[data-brmove]').forEach((el) => el.onclick = () => { const i = Number(el.dataset.brmove), j = i + Number(el.dataset.d), a = draft.resources; [a[i], a[j]] = [a[j], a[i]]; draw(); });
-      body.querySelectorAll('[data-brdel]').forEach((el) => el.onclick = () => { if (draft.resources.length <= 1) return toast('至少要有一種資源', true); draft.resources.splice(Number(el.dataset.brdel), 1); draw(); });
+      body.querySelectorAll('[data-brdel]').forEach((el) => el.onclick = () => { if (draft.resources.length <= 1) return btoast('至少要有一種資源', true); draft.resources.splice(Number(el.dataset.brdel), 1); draw(); });
       $('#brAdd', body).onclick = () => { draft.resources.push({ id: uid('res'), name: '新資源', icon: '⭐', subs: [], detail: false }); draw(); };
       $('#brMix', body).onchange = (e) => { draft.allowMix = e.target.checked; };
       body.querySelectorAll('input[name=brTie]').forEach((el) => el.onchange = () => { draft.tieBreak = el.value; });
-      $('#brReset', body).onclick = () => { if (confirm('恢復成預設的王牌、巫魚子簽名卡、ClassMana 幣？')) { Object.assign(draft, JSON.parse(JSON.stringify(SC.DEFAULT_BID_RULES))); draw(); } };
+      $('#brReset', body).onclick = () => { if (bconfirm('恢復成預設的王牌、巫魚子簽名卡、ClassMana 幣？')) { Object.assign(draft, JSON.parse(JSON.stringify(SC.DEFAULT_BID_RULES))); draw(); } };
       $('#brCancel', body).onclick = close;
       $('#brSave', body).onclick = () => {
-        if (draft.resources.some((r) => !r.name.trim())) return toast('資源名稱不能空白', true);
-        C().bidRules = SC.normalizeBidRules(draft); close(); touch(true); Bid.pushBoardSoon(); toast('💾 已儲存暗標規則');
+        if (draft.resources.some((r) => !r.name.trim())) return btoast('資源名稱不能空白', true);
+        C().bidRules = SC.normalizeBidRules(draft); close(); touch(true); Bid.pushBoardSoon(); btoast('💾 已儲存暗標規則');
       };
     };
     draw();
@@ -1075,14 +1084,14 @@ const Bid = {
     Object.keys(rd.locked).forEach((k) => { reserved[k] = true; });
     const biddable = {}; Object.keys(rd.biddable).forEach((k) => { if (SC.cellType(rd.layout, k) === 's' && !(k in rd.locked)) biddable[k] = true; });
     return SC.sanitize({ rows: rd.layout.rows, cols: rd.layout.cols, cells: rd.layout.cells, marks: rd.layout.marks, biddable, reserved,
-      resources: c.bidRules.resources, allowMix: c.bidRules.allowMix });
+      resources: isGame() ? c.bidRules.resources : [], allowMix: isGame() ? c.bidRules.allowMix : true, mode: isGame() ? 'game' : 'wish', wishTie: c.settings.wishTie === 'early' ? 'early' : 'random' });
   },
   live(rd) { return rd && rd.bid && rd.bid.code && !rd.bid.raw.length && Store.mode === 'cloud'; },
   _t: null,
   pushBoardSoon() {
     const rd = round(); if (!this.live(rd)) return;
     clearTimeout(this._t);
-    this._t = setTimeout(() => FB.set(`seating/rounds/${rd.bid.code}/board`, this.board(rd)).catch((e) => toast('更新暗標地圖失敗：' + (e.code || e.message), true)), 700);
+    this._t = setTimeout(() => FB.set(`seating/rounds/${rd.bid.code}/board`, this.board(rd)).catch((e) => btoast('更新暗標地圖失敗：' + (e.code || e.message), true)), 700);
   },
   async keys(code) {
     const out = {};
@@ -1105,7 +1114,7 @@ const Bid = {
   },
   /** 目前的開標結果（含平手、規則衝突） */
   result(rd) {
-    const c = C(), R = c.bidRules;
+    const c = C(), R = bidRulesNow();
     const ranked = SC.rankBids(rd.bid.raw, R);
     const { wins, ties } = SC.decideWinners(ranked, { tieBreak: R.tieBreak, tiePick: rd.bid.tiePick, disq: rd.bid.disq });
     // 得標者之間違反「互不相鄰」：先不鎖定，等老師決定
@@ -1115,7 +1124,8 @@ const Bid = {
     return { ranked, wins, ties, conflicts };
   }
 };
-function bidCardHTML(rd) {
+function bidCardHTML(rd) { return tr(bidCardRaw(rd)); }
+function bidCardRaw(rd) {
   const c = C(), b = rd.bid, n = Object.keys(rd.biddable).filter((k) => !(k in rd.locked)).length;
   const head = '<h3 style="margin-top:0">📜 線上暗標</h3>';
   if (Store.mode !== 'cloud') return `<div class="card">${head}<p class="small muted">線上暗標需要用雲端帳號登入（本機模式無法讓學生用手機投標）。也可以先用其他方式收集，再到地圖上「🔒 鎖定座位」。</p></div>`;
@@ -1126,6 +1136,7 @@ function bidCardHTML(rd) {
       <p class="small">開放暗標的座位：<b>${n}</b> 個 <span class="muted">（用左邊「🎯 暗標區」點選）</span></p>
       ${noSid ? `<div class="alert red small">有 ${noSid} 位同學沒有學號，他們無法登入投標。</div>` : ''}
       <label class="f">截止時間</label><input type="datetime-local" id="bidDeadline" value="${toLocalInput(def.getTime())}">
+      ${isGame() ? '' : `<label class="f">多人選同一個座位時</label><select id="wishTie" style="width:auto"><option value="random" ${C().settings.wishTie !== 'early' ? 'selected' : ''}>🎲 系統抽籤</option><option value="early" ${C().settings.wishTie === 'early' ? 'selected' : ''}>⏱️ 先登記先贏</option></select>`}
       <button class="btn primary wide" data-act="bidPublish" style="margin-top:10px" ${n ? '' : 'disabled'}>🚀 開放暗標</button></div>`;
   }
   const open = Date.now() <= b.deadline && !b.closed, judged = b.raw.length > 0 || b.judgedAt;
@@ -1144,7 +1155,7 @@ function bidCardHTML(rd) {
     <button class="btn sm ghost wide" data-act="bidCancel" style="margin-top:10px;font-size:.9em">🗑️ 取消這次暗標</button></div>`;
   return `<div class="card">${head}
     <p class="small">✅ 已鎖定 ${Object.values(rd.lockInfo).filter((x) => x.kind === 'bid').length} 個得標座位。投影舞台可按「📢 開標公告」。</p>
-    <div class="row" style="margin-top:8px"><button class="btn sm" data-act="bidRefund">💰 資源回收清單</button><button class="btn sm ghost" data-act="bidResult">⚖️ 開標結果</button></div>
+    <div class="row" style="margin-top:8px">${isGame() ? '<button class="btn sm" data-act="bidRefund">💰 資源回收清單</button>' : ''}<button class="btn sm ghost" data-act="bidResult">⚖️ 開標結果</button></div>
     <button class="btn sm ghost wide" data-act="bidCancel" style="margin-top:10px;font-size:.9em">🗑️ 取消這次暗標</button></div>`;
 }
 const pad = (n) => String(n).padStart(2, '0');
@@ -1154,12 +1165,12 @@ const bidURL = (code) => location.href.split('#')[0].replace(/index\.html$/, '')
 
 act.bidPublish = async () => {
   const rd = round(), dl = new Date($('#bidDeadline').value).getTime();
-  if (!dl || dl <= Date.now()) return toast('截止時間要在未來', true);
-  if (!confirm(`開放「${rd.title}」的線上暗標？\n開放座位 ${Object.keys(rd.biddable).length} 個，截止 ${fmtDT(dl)}`)) return;
-  try { await Bid.publish(rd, dl); touch(true); toast('🚀 已開放暗標，把學生連結或 QR 給學生吧！'); }
-  catch (e) { toast('開放失敗：' + (e.code || e.message) + '（Firebase 規則可能還沒更新）', true); }
+  if (!dl || dl <= Date.now()) return btoast('截止時間要在未來', true);
+  if (!bconfirm(`開放「${rd.title}」的線上暗標？\n開放座位 ${Object.keys(rd.biddable).length} 個，截止 ${fmtDT(dl)}`)) return;
+  try { await Bid.publish(rd, dl); touch(true); btoast('🚀 已開放暗標，把學生連結或 QR 給學生吧！'); }
+  catch (e) { btoast('開放失敗：' + (e.code || e.message) + '（Firebase 規則可能還沒更新）', true); }
 };
-act.bidLink = async (b, e) => { if (e) e.preventDefault(); const url = bidURL(round().bid.code); try { await navigator.clipboard.writeText(url); toast('已複製學生連結'); } catch (x) { prompt('學生連結：', url); } };
+act.bidLink = async (b, e) => { if (e) e.preventDefault(); const url = bidURL(round().bid.code); try { await navigator.clipboard.writeText(url); btoast('已複製學生連結'); } catch (x) { prompt('學生連結：', url); } };
 act.bidQR = () => {
   const rd = round(), url = bidURL(rd.bid.code);
   modal(`<div style="text-align:center"><h3>📱 掃描 QR 進入暗標</h3><div id="qrBox" style="display:inline-block;padding:14px;background:#fff;border-radius:12px;margin:8px 0"></div>
@@ -1187,49 +1198,49 @@ act.bidDeadline = (b, e) => {
     <div class="row" style="margin-top:14px"><button class="btn primary" id="dlOk">儲存</button><button class="btn ghost" data-close>取消</button></div>`, { mount: (m, close) => {
     $('#dlOk', m).onclick = async () => {
       const dl = new Date($('#dlIn', m).value).getTime(); if (!dl) return;
-      try { await FB.update(`seating/rounds/${rd.bid.code}/meta`, { deadline: dl, open: true }); rd.bid.deadline = dl; rd.bid.closed = false; close(); touch(true); toast('已更新截止時間'); }
-      catch (x) { toast('更新失敗：' + (x.code || x.message), true); }
+      try { await FB.update(`seating/rounds/${rd.bid.code}/meta`, { deadline: dl, open: true }); rd.bid.deadline = dl; rd.bid.closed = false; close(); touch(true); btoast('已更新截止時間'); }
+      catch (x) { btoast('更新失敗：' + (x.code || x.message), true); }
     };
   } });
 };
 act.bidClose = async () => {
-  const rd = round(); if (!confirm('現在就截止暗標？學生將無法再送出。')) return;
-  try { await FB.update(`seating/rounds/${rd.bid.code}/meta`, { open: false }); rd.bid.closed = true; touch(true); toast('⏹ 已截止'); }
-  catch (x) { toast('截止失敗：' + (x.code || x.message), true); }
+  const rd = round(); if (!bconfirm('現在就截止暗標？學生將無法再送出。')) return;
+  try { await FB.update(`seating/rounds/${rd.bid.code}/meta`, { open: false }); rd.bid.closed = true; touch(true); btoast('⏹ 已截止'); }
+  catch (x) { btoast('截止失敗：' + (x.code || x.message), true); }
 };
 act.bidCancel = async (b, e) => {
   if (e) e.preventDefault();
   const rd = round(), nLock = Object.values(rd.lockInfo).filter((x) => x.kind === 'bid').length;
-  if (!confirm(`取消這次線上暗標？\n・學生已送出的投標會全部刪除${nLock ? `\n・已鎖定的 ${nLock} 個得標座位會解除` : ''}\n・開放暗標的座位（黃色虛線框）會保留，可以重新開放`)) return;
+  if (!bconfirm(`取消這次線上暗標？\n・學生已送出的投標會全部刪除${nLock ? `\n・已鎖定的 ${nLock} 個得標座位會解除` : ''}\n・開放暗標的座位（黃色虛線框）會保留，可以重新開放`)) return;
   try { await FB.remove(`seating/rounds/${rd.bid.code}`); } catch (x) { }
   Object.keys(rd.lockInfo).forEach((k) => { if (rd.lockInfo[k].kind === 'bid') { delete rd.locked[k]; delete rd.lockInfo[k]; } });
-  rd.bid = null; touch(true); toast('已取消這次暗標');
+  rd.bid = null; touch(true); btoast('已取消這次暗標');
 };
 act.bidJudge = async () => {
   const rd = round(), b = rd.bid;
   const open = Date.now() <= b.deadline && !b.closed;
-  if (open && !confirm('暗標還沒截止，現在開標會同時截止暗標。確定嗎？')) return;
+  if (open && !bconfirm('暗標還沒截止，現在開標會同時截止暗標。確定嗎？')) return;
   try {
     if (open) { await FB.update(`seating/rounds/${b.code}/meta`, { open: false }); b.closed = true; }
     b.raw = await Bid.fetch(rd); b.judgedAt = Date.now();
-    if (C().bidRules.tieBreak === 'random') {   // 系統抽籤：開標時一次抽好並記錄
+    if (bidRulesNow().tieBreak === 'random') {   // 系統抽籤：開標時一次抽好並記錄
       const { ties } = Bid.result(rd);
       Object.entries(ties).forEach(([k, g]) => { b.tiePick[k] = SC.shuffle(g)[0].stu; });
     }
     touch(true);
-    if (!b.raw.length) return toast('沒有收到任何投標', true);
+    if (!b.raw.length) return btoast('沒有收到任何投標', true);
     act.bidResult();
-  } catch (x) { toast('開標失敗：' + (x.code || x.message), true); }
+  } catch (x) { btoast('開標失敗：' + (x.code || x.message), true); }
 };
 act.bidResult = () => {
   modal('<div id="brRes"></div>', { wide: true, mount: (m, close) => {
     const box = $('#brRes', m);
     const draw = () => {
-      const rd = round(), c = C(), R = c.bidRules, res = Bid.result(rd), hide = S.privacy, b = rd.bid;
+      const rd = round(), c = C(), R = bidRulesNow(), res = Bid.result(rd), hide = S.privacy, b = rd.bid;
       const seats = Object.keys(res.ranked).sort((x, y) => { const a = SC.parseKey(x), bb = SC.parseKey(y); return a.r - bb.r || a.c - bb.c; });
       const pend = Object.keys(res.ties).length + res.conflicts.length;
       box.innerHTML = `<h3>⚖️ 開標結果（${esc(rd.title)}）</h3>
-        <p class="small muted">共 ${b.raw.length} 人投標。比序：${R.resources.map((r) => esc(r.name)).join(' ＞ ')}；平手：${TIE_NAME[R.tieBreak]}。按「取消得標」會由下一位遞補。</p>
+        <p class="small muted">${R.wish ? `共 ${b.raw.length} 人登記。多人選同一座位時：${R.tieBreak === 'early' ? '⏱️ 先登記先贏' : '🎲 系統抽籤（開獎時已抽好）'}。按「取消資格」會由下一位遞補。` : `共 ${b.raw.length} 人投標。比序：${R.resources.map((r) => esc(r.name)).join(' ＞ ')}；平手：${TIE_NAME[R.tieBreak]}。按「取消得標」會由下一位遞補。`}</p>
         ${res.conflicts.length ? `<div class="alert red"><b>⏸ 待老師決定：得標者違反「互不相鄰」${hide ? '設定' : '秘密規則'}</b>${res.conflicts.map((v) => `<div class="row" style="margin-top:6px">
           <span>${v.seats.map((x) => esc(stuLabel(x))).join(' 與 ')}${hide ? '' : `（${esc(ruleText(v.rule))}）`}</span><span class="spacer"></span>
           <button class="btn sm" data-keep="${v.id}">兩人都保留</button>${v.seats.map((x) => `<button class="btn sm ghost" data-dq="${x}">取消 ${esc(pad2(x))} 得標</button>`).join('')}</div>`).join('')}</div>` : ''}
@@ -1240,7 +1251,7 @@ act.bidResult = () => {
           return `<tr><td class="small">${seatLabel(k)}</td>
             <td>${w ? `<b>${esc(stuLabel(w.stu))}</b>` : t ? `<span class="chip red">⚔️ ${R.tieBreak === 'rps' ? '猜拳決勝' : '平手'}</span><div class="row" style="margin-top:4px">${t.map((x) => `<button class="btn sm" data-tie="${k}" data-v="${x.stu}">${esc(stuLabel(x.stu))} 勝</button>`).join('')}</div>` : '<span class="muted">（無人得標）</span>'}</td>
             <td class="small">${w ? esc(SC.resText(w.res, R)) : t ? esc(SC.resText(t[0].res, R)) : ''}</td>
-            <td class="small muted">${others.map((x) => `${esc(pad2(x.stu))}${rd.bid.disq[x.stu] ? '（已取消）' : ''}：${esc(SC.resText(x.res, R))}`).join('<br>')}</td>
+            <td class="small muted">${others.map((x) => `${esc(R.wish ? stuLabel(x.stu) : pad2(x.stu))}${rd.bid.disq[x.stu] ? '（已取消）' : ''}${R.wish ? '' : '：' + esc(SC.resText(x.res, R))}`).join('<br>')}</td>
             <td>${w ? `<button class="btn sm ghost" data-dq="${w.stu}">取消得標</button>` : ''}${rd.bid.tiePick[k] ? `<button class="btn sm ghost" data-untie="${k}">重選</button>` : ''}</td></tr>`;
         }).join('')}
         </tbody></table>
@@ -1250,30 +1261,31 @@ act.bidResult = () => {
           ${pend ? `<span class="small" style="color:var(--red)">還有 ${pend} 項待決定</span>` : ''}
           <span class="spacer"></span>
           <button class="btn sm ghost" id="brRefetch">🔄 重新讀取投標</button><button class="btn ghost" data-close>關閉</button></div>`;
+      if (!isGame()) box.innerHTML = tr(box.innerHTML);
       $$('[data-close]', box).forEach((x) => x.onclick = () => { close(); render(); });
       $$('[data-tie]', box).forEach((x) => x.onclick = () => { rd.bid.tiePick[x.dataset.tie] = Number(x.dataset.v); touch(); draw(); });
       $$('[data-untie]', box).forEach((x) => x.onclick = () => { delete rd.bid.tiePick[x.dataset.untie]; touch(); draw(); });
       $$('[data-dq]', box).forEach((x) => x.onclick = () => { rd.bid.disq[x.dataset.dq] = true; touch(); draw(); });
       $$('[data-undq]', box).forEach((x) => x.onclick = (e) => { e.preventDefault(); delete rd.bid.disq[x.dataset.undq]; touch(); draw(); });
       $$('[data-keep]', box).forEach((x) => x.onclick = () => { rd.bid.keep[x.dataset.keep] = true; touch(); draw(); });
-      $('#brRefetch', box).onclick = async () => { try { rd.bid.raw = await Bid.fetch(rd); touch(); draw(); toast('已重新讀取'); } catch (e) { toast('讀取失敗', true); } };
+      $('#brRefetch', box).onclick = async () => { try { rd.bid.raw = await Bid.fetch(rd); touch(); draw(); btoast('已重新讀取'); } catch (e) { btoast('讀取失敗', true); } };
       $('#brLock', box).onclick = () => {
         const r2 = Bid.result(rd);
         Object.keys(rd.lockInfo).forEach((k) => { if (rd.lockInfo[k].kind === 'bid') { delete rd.locked[k]; delete rd.lockInfo[k]; } });
         const skipped = [];
         Object.entries(r2.wins).forEach(([k, w]) => {
           if (Object.values(rd.locked).map(Number).includes(Number(w.stu))) return skipped.push(stuLabel(w.stu));
-          rd.locked[k] = Number(w.stu); rd.lockInfo[k] = { kind: 'bid', note: SC.resText(w.res, R), res: w.res };
+          rd.locked[k] = Number(w.stu); rd.lockInfo[k] = { kind: 'bid', note: R.wish ? '線上選位' : SC.resText(w.res, R), res: w.res };
         });
         rd.bid.lockedAt = Date.now(); touch(true); close();
-        toast(`🔒 已鎖定 ${Object.keys(r2.wins).length - skipped.length} 個得標座位${skipped.length ? `（${skipped.join('、')} 已有預留座位，略過）` : ''}`);
+        btoast(`🔒 已鎖定 ${Object.keys(r2.wins).length - skipped.length} 個得標座位${skipped.length ? `（${skipped.join('、')} 已有預留座位，略過）` : ''}`);
       };
     };
     draw();
   } });
 };
 act.bidRefund = () => {
-  const rd = round(), R = C().bidRules;
+  const rd = round(), R = bidRulesNow();
   const rows = Object.entries(rd.lockInfo).filter(([, x]) => x.kind === 'bid').map(([k, x]) => ({ k, stu: rd.locked[k], res: x.res || {} })).sort((a, b) => a.stu - b.stu);
   const cols = []; R.resources.forEach((r) => { cols.push({ r, sub: null }); if (r.subs.length && r.detail) r.subs.forEach((x) => cols.push({ r, sub: x })); });
   const val = (row, col) => { const v = row.res[col.r.id]; if (!v) return 0; return col.sub ? Number((v.sub || {})[col.sub.id]) || 0 : SC.resTotal(col.r, v); };
@@ -1295,7 +1307,7 @@ act.bidRefund = () => {
 function announce() {
   const rd = round(), list = Object.entries(rd.lockInfo).filter(([, x]) => x.kind === 'bid').map(([k, x]) => ({ k, stu: rd.locked[k], note: x.note })).sort((a, b) => a.stu - b.stu);
   const ov = document.createElement('div'); ov.className = 'st-pick'; ov.style.justifyContent = 'flex-start'; ov.style.overflow = 'auto'; ov.style.padding = '30px 20px';
-  ov.innerHTML = `<div class="sub" style="font-size:2em;font-family:'Noto Serif TC',serif;font-weight:900;color:var(--gold)">📢 開標公告</div>
+  ov.innerHTML = `<div class="sub" style="font-size:2em;font-family:'Noto Serif TC',serif;font-weight:900;color:var(--gold)">📢 ${isGame() ? '開標公告' : '選位結果'}</div>
     <div class="ann-list">${list.map((x) => `<div class="ann"><b>${esc(stuLabel(x.stu))}</b><span>${seatLabel(x.k)}</span><em>${esc(x.note || '')}</em></div>`).join('')}</div>
     <button class="st-btn" style="margin-top:20px">好</button>`;
   $('#stage').appendChild(ov); Snd.win();
@@ -1527,8 +1539,8 @@ act.roundMode = (b) => { S.roundMode = b.dataset.v; render(); };
 act.roundCell = (b) => {
   const rd = round(), k = b.dataset.k, t = SC.cellType(rd.layout, k);
   if (rd.assign) return swapCell(k, t);
-  if (S.roundMode === 'bid' && isGame()) {
-    if (t !== 's' || k in rd.locked) return toast('已鎖定或關閉的座位不能開放暗標', true);
+  if (S.roundMode === 'bid') {
+    if (t !== 's' || k in rd.locked) return toast(isGame() ? '已鎖定或關閉的座位不能開放暗標' : '已鎖定或關閉的座位不能開放選位', true);
     if (rd.biddable[k]) delete rd.biddable[k]; else rd.biddable[k] = true;
     touch(true); return Bid.pushBoardSoon();
   }
@@ -1625,6 +1637,27 @@ act.privacy = () => {
   if (S.privacy && !confirm('關閉上課模式？秘密規則與相關提醒會重新出現，請確認畫面沒有在投影。')) return;
   S.privacy = !S.privacy; LS.set('seating3_privacy', S.privacy); render();
 };
+act.guide = () => {
+  const g = isGame();
+  const step = (n, t, d) => `<div class="guide-step"><b>${n}</b><div><div class="bold">${t}</div><div class="small">${d}</div></div></div>`;
+  modal(`<h3>❓ 座位大作戰使用說明</h3>
+    <p class="small muted" style="margin-bottom:10px">目前模式：${g ? MODE_NAME.game : MODE_NAME.plain}（可在「📋 班級資料」切換）</p>
+    <h3 style="font-size:1em">一、開學時設定一次</h3>
+    ${step('1', '📋 班級資料', '輸入班級名稱、導師稱謂，貼上或上傳學生名單（座號、姓名、學號）。')}
+    ${step('2', '🗺️ 教室地圖', '設定幾排幾列，用畫筆標出關閉的座位、走道，再擺上門、布告欄、講桌。')}
+    ${step('3', '🎖️ 幹部（選用）', '新增職位並選學生；不需要的話座位表版型選「只有座位圖」。')}
+    ${step('4', '🔒 秘密規則（選用）', '設定「互不相鄰」或「限定區域」，抽籤時默默生效，學生看不到。')}
+    <h3 style="font-size:1em;margin-top:14px">二、每次換座位</h3>
+    ${step('1', '🎲 換座位 → ＋ 開新回合', '可以沿用上一回合的地圖與打掃工作。')}
+    ${g ? step('2', '線上暗標（選用）', '切到「🎯 暗標區」點選開放的座位 → 設截止時間 → 🚀 開放暗標 → 把學生連結或 QR 給學生。截止後按「⚖️ 開標」，處理平手與衝突後「🔒 鎖定得標座位」。資源回收清單可下載 Excel。')
+      : step('2', '線上選位（選用）', '切到「🎯 選位區」點選開放的座位 → 設截止時間 → 🚀 開放選位 → 把學生連結或 QR 給學生。截止後按「⚖️ 公布結果」，系統依抽籤或先登記決定，確認後「🔒 鎖定」。')}
+    ${step('3', '🔒 鎖定座位（選用）', `點地圖上的座位，指定${g ? '老師預留' : ''}給某位同學，抽籤時不會被動到。`)}
+    ${step('4', '📺 開啟投影舞台', '在新分頁開啟，只顯示舞台。抽一位同學上台 → 🎲 開始分配，座位一格一格揭曉。' + (g ? '可先按「📢 開標公告」。' : ''))}
+    ${step('5', '✅ 定案', '揭曉後可在後台點兩個座位互換，確認後定案。')}
+    ${step('6', '🧹 打掃（選用）→ 🖨️ 座位表', '匯入或填寫打掃工作，到座位表頁填適用期間、底部備註，列印或存成 PDF。')}
+    <div class="alert teal small" style="margin-top:12px">🙈 上課投影前，記得按頂端「上課模式」，秘密規則頁會整個隱藏。</div>
+    <div class="row" style="margin-top:12px"><button class="btn primary" data-close>知道了</button></div>`, { wide: true });
+};
 act.help = (b) => { const h = HELP[b.dataset.v]; if (h) modal(`<h3>${h[0]}</h3><p style="line-height:1.8">${h[1]}</p><div class="row" style="margin-top:14px"><button class="btn primary" data-close>知道了</button></div>`); };
 act.switchMode = () => {
   const to = isGame() ? 'plain' : 'game';
@@ -1669,6 +1702,7 @@ document.addEventListener('change', (e) => {
   if (t.id === 'printRound') return render();
   if (t.id === 'sheetTpl') { const x = SHEET_TPL.find((y) => y[0] === t.value); C().settings.showCadres = x[2]; C().settings.showCleaning = x[3]; return touch(true); }
   if (t.id === 'cleanRound') { S.roundId = t.value; return render(); }
+  if (t.id === 'wishTie') { C().settings.wishTie = t.value; return touch(); }
   if (t.id === 'roundSel') { S.roundId = t.value; C().currentRound = t.value; S.swapSel = null; return touch(true); }
   if (t.dataset.zone != null) { const v = Number(t.dataset.zone), d = S.ruleDraft; d.list = t.checked ? [...new Set([...d.list, v])] : d.list.filter((x) => x !== v); return; }
   if (t.dataset.bind || t.dataset.round) return refreshPreview();

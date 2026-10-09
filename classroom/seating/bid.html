@@ -65,7 +65,7 @@ input:focus{outline:none;border-color:var(--gold)}
 </head>
 <body>
 <div class="wrap" id="app"><p class="muted" style="text-align:center;margin-top:30vh">載入中…</p></div>
-<script src="core.js?v=20261010c"></script>
+<script src="core.js?v=20261010d"></script>
 <script>
 /* =====================================================================
    🪑 座位暗標：學生頁（bid.html?code=回合代碼）
@@ -91,7 +91,7 @@ const isOpen = () => ST.meta && ST.meta.open === true && Date.now() <= (ST.meta.
 const fmtTime = (ms) => new Date(ms).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
 function clockText() {
   if (!ST.meta) return '';
-  if (!isOpen()) return '⛔ 暗標已截止';
+  if (!isOpen()) return ST.wish ? '⛔ 選位已截止' : '⛔ 暗標已截止';
   const left = ST.meta.deadline - Date.now(), h = Math.floor(left / 3600000), m = Math.floor(left % 3600000 / 60000), s = Math.floor(left % 60000 / 1000);
   return `⏳ 截止：${fmtTime(ST.meta.deadline)}（剩 ${h ? h + ' 小時 ' : ''}${m} 分 ${h ? '' : s + ' 秒'}）`;
 }
@@ -101,7 +101,9 @@ async function boot() {
   try { [ST.meta, ST.board] = await Promise.all([api('meta'), api('board')]); }
   catch (e) { return fatal('連不上暗標系統，請確認網路後重新整理。'); }
   if (!ST.meta || !ST.board) return fatal('找不到這個暗標（代碼 ' + esc(CODE) + '），請向老師確認連結。');
-  ST.rules = SC.normalizeBidRules({ resources: ST.board.resources, allowMix: ST.board.allowMix });
+  ST.wish = ST.board.mode === 'wish';    // 一般模式的「線上選位」：只選座位，不用資源
+  ST.rules = ST.wish ? SC.WISH_RULES(ST.board.wishTie) : SC.normalizeBidRules({ resources: ST.board.resources, allowMix: ST.board.allowMix });
+  document.title = ST.wish ? '🪑 線上選位' : '🪑 座位暗標';
   if (!ST.rules.allowMix) ST.resId = ST.rules.resources[0] && ST.rules.resources[0].id;
   render();
   setInterval(() => { const c = $('#clock'); if (c) { c.textContent = clockText(); c.classList.toggle('end', !isOpen()); } }, 1000);
@@ -111,18 +113,18 @@ function fatal(msg) { $('#app').innerHTML = `<div class="head"><div class="en">S
 
 function render() {
   const m = ST.meta, rec = ST.me ? LS.get(recKey(), null) : null;
-  let html = `<div class="head"><div class="en">SEAT AUCTION · ${esc(m.className || '')}</div>
-    <h1>🪑 ${esc(m.title || '座位暗標')}</h1>
-    <div class="sub">每人只能投一個座位；可以重複送出，系統只採計最後一次。</div>
+  let html = `<div class="head"><div class="en">${ST.wish ? 'SEAT PICK' : 'SEAT AUCTION'} · ${esc(m.className || '')}</div>
+    <h1>🪑 ${esc(m.title || (ST.wish ? '線上選位' : '座位暗標'))}</h1>
+    <div class="sub">${ST.wish ? `選一個想坐的座位；可以重複送出，只採計最後一次。多人選同一個座位時${ST.rules.tieBreak === 'early' ? '先登記的人優先' : '由系統抽籤決定'}。` : '每人只能投一個座位；可以重複送出，系統只採計最後一次。'}</div>
     <div class="clock ${isOpen() ? '' : 'end'}" id="clock">${clockText()}</div></div>`;
   if (!ST.me) html += loginHTML();
   else {
     html += `<div class="who">🙋 ${esc(SC.pad2(ST.me.seat))} ${esc(ST.me.name)}</div>`;
-    if (rec) html += `<div class="card"><h2>🧾 我最後一次送出的投標</h2><div class="receipt">${esc(rec.text)}<br><span class="small muted">送出時間：${fmtTime(rec.at)}</span></div>
-      ${isOpen() && !ST.editing ? '<button class="btn" id="rebid">✏️ 重新投標</button><p class="small muted" style="margin-top:6px;text-align:center">重新送出後，只採計最後一次。</p>' : ''}</div>`;
-    if (isOpen() && (!rec || ST.editing)) html += mapHTML() + resHTML() + (rec ? '<button class="btn ghost" id="noedit">取消，維持原本的投標</button>' : '');
-    if (!isOpen()) html += `<div class="alert warn">暗標已經截止，等待老師開標吧！${rec ? '' : '（這一次你沒有送出投標）'}</div>`;
-    html += `<p class="small muted" style="text-align:center;margin-top:26px">不是 ${esc(ST.me.name)}？<a href="#" id="logout">登出</a>（借用別人手機投標後請記得登出）</p>`;
+    if (rec) html += `<div class="card"><h2>🧾 我最後一次送出的${ST.wish ? '選位' : '投標'}</h2><div class="receipt">${esc(rec.text)}<br><span class="small muted">送出時間：${fmtTime(rec.at)}</span></div>
+      ${isOpen() && !ST.editing ? `<button class="btn" id="rebid">✏️ 重新${ST.wish ? '選位' : '投標'}</button>`+'<p class="small muted" style="margin-top:6px;text-align:center">重新送出後，只採計最後一次。</p>' : ''}</div>`;
+    if (isOpen() && (!rec || ST.editing)) html += mapHTML() + (ST.wish ? '' : resHTML()) + (rec ? `<button class="btn ghost" id="noedit">取消，維持原本的${ST.wish ? '選位' : '投標'}</button>` : '');
+    if (!isOpen()) html += ST.wish ? `<div class="alert warn">選位已經截止，等待老師公布結果吧！${rec ? '' : '（這一次你沒有選位）'}</div>` : `<div class="alert warn">暗標已經截止，等待老師開標吧！${rec ? '' : '（這一次你沒有送出投標）'}</div>`;
+    html += `<p class="small muted" style="text-align:center;margin-top:26px">不是 ${esc(ST.me.name)}？<a href="#" id="logout">登出</a>（借用別人手機${ST.wish ? '選位' : '投標'}後請記得登出）</p>`;
   }
   $('#app').innerHTML = html;
   bind();
@@ -130,12 +132,12 @@ function render() {
 function loginHTML() {
   const last = LS.get('bid_last', {});
   return `<div class="card"><h2>👤 先確認身分</h2>
-    <p class="small muted">三項都要和老師的名單一樣才能投標。</p>
+    <p class="small muted">三項都要和老師的名單一樣才能${ST.wish ? '選位' : '投標'}。</p>
     <label>座號</label><input type="tel" id="inSeat" inputmode="numeric" value="${esc(last.seat || '')}" placeholder="例如：7">
     <label>姓名</label><input type="text" id="inName" value="${esc(last.name || '')}" placeholder="全名">
     <label>學號</label><input type="text" id="inSid" value="${esc(last.sid || '')}" placeholder="例如：1130107">
     ${ST.err ? `<div class="alert">${esc(ST.err)}</div>` : ''}
-    <button class="btn" id="go">進入暗標</button></div>`;
+    <button class="btn" id="go">${ST.wish ? '開始選位' : '進入暗標'}</button></div>`;
 }
 function mapHTML() {
   const b = ST.board, L = { rows: b.rows, cols: b.cols, cells: b.cells || {}, marks: SC.toArr(b.marks) };
@@ -150,7 +152,7 @@ function mapHTML() {
     let cls = t === 's' ? '' : t, txt = '';
     if (t === 's') {
       if (reserved[k]) { cls = 'res'; txt = '已預留'; }
-      else if (biddable[k]) { cls = 'ok' + (ST.seat === k ? ' sel' : ''); txt = ST.seat === k ? '✔' : '可投'; }
+      else if (biddable[k]) { cls = 'ok' + (ST.seat === k ? ' sel' : ''); txt = ST.seat === k ? '✔' : (ST.wish ? '可選' : '可投'); }
     }
     cells += `<div class="cell ${cls}" data-k="${k}" style="${pos}">${txt}</div>`;
   }));
@@ -162,8 +164,9 @@ function mapHTML() {
   const sel = ST.seat ? SC.parseKey(ST.seat) : null;
   return `<div class="card"><h2>① 選一個想坐的座位</h2>
     <div class="map-box" style="text-align:center"><div class="cmap" style="grid-template-columns:20px repeat(${L.cols},${cw}px) 20px;grid-template-rows:auto repeat(${L.rows},${ch}px) auto">${marks}${cells}</div></div>
-    <div class="legend"><span style="--c:#d79a1e;--b:var(--gold-soft)">開放投標</span><span style="--c:var(--red);--b:var(--red)">我選的</span><span style="--c:#d6d1c4;--b:#eceae4">不開放</span></div>
-    <p class="big" style="text-align:center">${sel ? `已選：第 ${sel.r + 1} 排、左起第 ${sel.c + 1} 列` : '<span class="muted small">點黃色的座位</span>'}</p></div>`;
+    <div class="legend"><span style="--c:#d79a1e;--b:var(--gold-soft)">${ST.wish ? '開放選位' : '開放投標'}</span><span style="--c:var(--red);--b:var(--red)">我選的</span><span style="--c:#d6d1c4;--b:#eceae4">不開放</span></div>
+    <p class="big" style="text-align:center">${sel ? `已選：第 ${sel.r + 1} 排、左起第 ${sel.c + 1} 列` : '<span class="muted small">點黃色的座位</span>'}</p>
+    ${ST.wish ? '<button class="btn" id="send">確認送出</button>' : ''}</div>`;
 }
 function resHTML() {
   const R = ST.rules;
@@ -197,7 +200,7 @@ function bind() {
   const go = $('#go');
   if (go) go.onclick = login;
   const lo = $('#logout'); if (lo) lo.onclick = (e) => {
-    e.preventDefault(); if (!confirm('登出後，這支手機不會留下你的身分與投標紀錄（已送出的投標仍然有效）。確定登出？')) return;
+    e.preventDefault(); if (!confirm(ST.wish ? '登出後，這支手機不會留下你的身分與選位紀錄（已送出的選位仍然有效）。確定登出？' : '登出後，這支手機不會留下你的身分與投標紀錄（已送出的投標仍然有效）。確定登出？')) return;
     try { localStorage.removeItem(recKey()); localStorage.removeItem('bid_last'); } catch (x) { }
     ST.me = null; ST.seat = null; ST.vals = {}; ST.editing = false; LS.set('bid_me_' + CODE, null); render(); };
   const rb = $('#rebid'); if (rb) rb.onclick = () => { ST.editing = true; render(); };
@@ -229,14 +232,14 @@ async function login() {
 function confirmSend() {
   if (!isOpen()) return render();
   if (!ST.seat) return alert('請先在地圖上選一個座位');
-  const res = currentRes();
+  const res = ST.wish ? { w: 1 } : currentRes();
   if (!SC.bidValid(res, ST.rules)) return alert(ST.rules.allowMix ? '請至少填一種資源的數量' : '請選一種資源並填寫數量');
   const { r, c } = SC.parseKey(ST.seat);
-  const text = `第 ${r + 1} 排、左起第 ${c + 1} 列｜${SC.resText(res, ST.rules)}`;
+  const text = `第 ${r + 1} 排、左起第 ${c + 1} 列` + (ST.wish ? '' : `｜${SC.resText(res, ST.rules)}`);
   const bg = document.createElement('div'); bg.className = 'sheet-bg';
-  bg.innerHTML = `<div class="sheet"><h3>📜 確認投標</h3>
+  bg.innerHTML = `<div class="sheet"><h3>📜 確認${ST.wish ? '選位' : '投標'}</h3>
     <p class="big">${esc(text)}</p>
-    <div class="alert warn small">⚠️ 投入的數量如果超過自己擁有的數量，視為詐欺，需要接受代價。</div>
+    ${ST.wish ? '' : '<div class="alert warn small">⚠️ 投入的數量如果超過自己擁有的數量，視為詐欺，需要接受代價。</div>'}
     <button class="btn" id="ok">確定送出</button><button class="btn ghost" id="cancel">再想想</button></div>`;
   document.body.appendChild(bg);
   bg.querySelector('#cancel').onclick = () => bg.remove();
@@ -249,7 +252,7 @@ function confirmSend() {
     } catch (e) {
       bg.remove();
       try { ST.meta = await api('meta'); } catch (x) { }
-      alert(!isOpen() ? '送出失敗：暗標已經截止了。' : e.message === 'denied' ? '送出失敗：可能是這個座位已不開放，或身分資料有誤。請重新整理再試一次。' : '送出失敗：網路不穩，請再按一次。');
+      alert(!isOpen() ? '送出失敗：已經截止了。' : e.message === 'denied' ? '送出失敗：可能是這個座位已不開放，或身分資料有誤。請重新整理再試一次。' : '送出失敗：網路不穩，請再按一次。');
       render();
     }
   };
