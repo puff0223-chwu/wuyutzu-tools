@@ -86,6 +86,14 @@ table.list th{background:#f3eee2;font-weight:700}
 .map-layout{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;align-items:start}
 @media(max-width:1000px){.map-layout{grid-template-columns:minmax(0,1fr)}}
 .map-card{display:flex;flex-direction:column}
+.pick-grid{display:flex;flex-wrap:wrap;gap:6px;max-height:210px;overflow:auto;padding:8px;border:2px solid var(--line);border-radius:10px;background:#fff}
+.pick{border:1.5px solid var(--line);border-radius:999px;padding:3px 10px;background:#fdfbf6;cursor:pointer;font-size:.86em;white-space:nowrap}
+.pick:hover{border-color:var(--ink)}
+.pick.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0 12px}
+.stat-row>div{background:#f3eee2;border-radius:10px;padding:8px 4px;text-align:center;display:flex;flex-direction:column}
+.stat-row b{font-size:1.5em;line-height:1.1}.stat-row span{font-size:.8em;color:var(--ink2)}
+.btn.wide{width:100%;justify-content:center;padding:10px 14px;font-size:1.05em}
 .mark-item{border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:8px;background:#fdfbf6}
 .mark-item select,.mark-item input{padding:4px 8px}
 
@@ -203,7 +211,7 @@ table.list th{background:#f3eee2;font-weight:700}
 <div id="printRoot"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="core.js?v=20261009c"></script>
+<script src="core.js?v=20261010a"></script>
 <script type="module">
 /* Firebase 只用來「老師登入＋存班級資料」。載入失敗（沒網路）時仍可用本機模式 */
 const firebaseConfig = {
@@ -231,7 +239,7 @@ try {
     remove: (path) => D.remove(D.ref(db, path))
   };
 } catch (e) { console.warn('Firebase 載入失敗，只能用本機模式', e); window.FB = null; }
-await import('./app.js?v=20261009c');
+await import('./app.js?v=20261010a');
 </script>
 </body>
 </html>

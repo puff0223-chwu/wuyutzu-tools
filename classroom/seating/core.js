@@ -9,7 +9,7 @@
 (function (root) {
   'use strict';
 
-  const VERSION = '20261009c';
+  const VERSION = '20261010a';
 
   /* ---------------- 小工具 ---------------- */
   const key = (r, c) => r + '-' + c;
@@ -124,8 +124,15 @@
   }
 
   /* ---------------- 秘密規則 ----------------
-     { id, type:'apart', a, b, on }          兩人不相鄰
-     { id, type:'zone', who, mode:'rows'|'cols'|'cells', list:[], on }   某人只能坐在：某幾排（0＝最前排）／某幾列（0＝學生左手邊）／指定座位 */
+     { id, type:'apart', who:[座號…], on }   這幾個人彼此都不相鄰（2 人以上）
+     { id, type:'zone',  who:[座號…], mode:'rows'|'cols'|'cells', list:[], on }   這幾個人都只能坐在：某幾排（0＝最前排）／某幾列（0＝學生左手邊）／指定座位
+     舊格式（apart 的 a、b；zone 的 who 是單一座號）讀取時自動轉換 */
+  function members(rule) {
+    if (!rule) return [];
+    if (rule.who != null) return [...new Set(toArr(Array.isArray(rule.who) || typeof rule.who === 'object' ? rule.who : [rule.who]).map(Number))].filter(Number.isFinite);
+    return [rule.a, rule.b].filter((x) => x != null).map(Number);
+  }
+  const pairsOf = (arr) => { const out = []; for (let i = 0; i < arr.length; i++) for (let j = i + 1; j < arr.length; j++) out.push([arr[i], arr[j]]); return out; };
   function zoneAllows(rule, k) {
     const { r, c } = parseKey(k); const list = toArr(rule.list);
     if (rule.mode === 'rows') return list.map(Number).includes(r);
@@ -141,11 +148,12 @@
     const out = [];
     activeRules(rules).forEach((rule) => {
       if (rule.type === 'apart') {
-        const ka = where[rule.a], kb = where[rule.b];
-        if (ka && kb && adj(ka, kb)) out.push({ rule, seats: [rule.a, rule.b], keys: [ka, kb] });
+        pairsOf(members(rule)).forEach(([a, b]) => {
+          const ka = where[a], kb = where[b];
+          if (ka && kb && adj(ka, kb)) out.push({ rule, seats: [a, b], keys: [ka, kb] });
+        });
       } else if (rule.type === 'zone') {
-        const k = where[rule.who];
-        if (k && !zoneAllows(rule, k)) out.push({ rule, seats: [rule.who], keys: [k] });
+        members(rule).forEach((m) => { const k = where[m]; if (k && !zoneAllows(rule, k)) out.push({ rule, seats: [m], keys: [k] }); });
       }
     });
     return out;
@@ -167,13 +175,12 @@
     const adj = adjacency(layout);
     const apart = {}; // 座號 → [對象座號]
     act.filter((x) => x.type === 'apart').forEach((x) => {
-      const a = Number(x.a), b = Number(x.b);
-      (apart[a] = apart[a] || []).push(b); (apart[b] = apart[b] || []).push(a);
+      pairsOf(members(x)).forEach(([a, b]) => { (apart[a] = apart[a] || []).push(b); (apart[b] = apart[b] || []).push(a); });
     });
     const domain = {};
     for (const s of students) {
       let d = free;
-      act.filter((x) => x.type === 'zone' && Number(x.who) === s).forEach((x) => { d = d.filter((k) => zoneAllows(x, k)); });
+      act.filter((x) => x.type === 'zone' && members(x).includes(s)).forEach((x) => { d = d.filter((k) => zoneAllows(x, k)); });
       if (!d.length) return { ok: false, reason: 'empty-zone', detail: { seat: s } };
       domain[s] = d;
     }
@@ -258,7 +265,7 @@
     return { students: out, errors };
   }
 
-  /** 打掃徵才結果（依項目）：支援 v4「打掃項目」與 v3.4「中籤打掃項目」
+  /** 打掃工作內容（Excel，一列一人）：欄位「打掃項目」（或「中籤打掃項目」）、「座號」、「姓名」（可省略）
       「[教室]地板天花板」→ 區域「教室」、項目「地板天花板」 */
   function parseCleaning(rows) {
     const items = [], index = {}, errors = [];
@@ -273,7 +280,7 @@
       if (!index[k]) { index[k] = { area, name, seats: [], names: [] }; items.push(index[k]); }
       if (!index[k].seats.includes(seat)) { index[k].seats.push(seat); index[k].names.push(clean(o['姓名'])); }
     });
-    if (!items.length) errors.push('找不到「打掃項目」或「中籤打掃項目」欄位的資料，請確認是打掃徵才系統「依項目」匯出的檔案');
+    if (!items.length) errors.push('找不到「打掃項目」欄位的資料，請確認檔案有「打掃項目」和「座號」兩欄（可以先下載範例檔參考）');
     return { items, errors };
   }
 
@@ -307,7 +314,7 @@
     out.cadres = c.cadres ? toArr(c.cadres).map((x) => ({ id: x.id || uid('c'), role: x.role || '', seat: x.seat == null ? null : Number(x.seat), join: !!x.join })) : (c.id ? [] : d.cadres);
     const normClean = (list) => toArr(list).map((a) => ({ id: a.id || uid('a'), name: a.name || '', items: toArr(a.items).map((it) => ({ id: it.id || uid('i'), name: it.name || '', seats: toArr(it.seats).map(Number) })) }));
     out.cleaning = c.cleaning ? normClean(c.cleaning) : [];
-    out.secret = toArr(c.secret).map((x) => ({ ...x, list: toArr(x.list) }));
+    out.secret = toArr(c.secret).map((x) => { const y = { ...x, who: members(x), list: toArr(x.list) }; delete y.a; delete y.b; return y; });
     out.settings = { ...d.settings, ...(c.settings || {}) };
     out.rounds = toArr(c.rounds).map((rd) => ({
       id: rd.id || uid('rd'), title: rd.title || '換座位', period: rd.period || '', createdAt: rd.createdAt || Date.now(),
@@ -327,7 +334,7 @@
     VERSION, key, parseKey, pad2, uid, toArr, toNum, shuffle, seatsText,
     DEFAULT_CADRES, DEFAULT_CLEANING, DEFAULT_NOTE,
     newLayout, resizeLayout, cellType, seatKeys, viewOf, adjacency,
-    zoneAllows, activeRules, violations, solve, diagnose,
+    members, zoneAllows, activeRules, violations, solve, diagnose,
     parseRoster, parseCleaning, newClass, normalizeClass, sanitize
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

@@ -81,7 +81,7 @@ const Store = {
 const S = {
   classes: [], cls: null, tab: LS.get('seating3_tab', 'info'),
   roundId: null, roundMode: 'lock', swapSel: null,
-  paint: 's', editView: 'teacher', ruleDraft: { type: 'apart', mode: 'rows', list: [] },
+  paint: 's', editView: 'teacher', ruleDraft: { id: null, type: 'apart', who: [], mode: 'rows', list: [] },
   saveState: '', saveErr: '', rosterDraft: null, cloudErr: '',
   privacy: LS.get('seating3_privacy', false),           // 🙈 上課模式：藏起秘密規則與相關提醒
   stageOnly: /^#stage/.test(location.hash)               // 📺 投影專用連結：直接進投影舞台、不顯示後台
@@ -115,12 +115,12 @@ const stuLabel = (seat) => { const s = stu(seat); return s ? `${pad2(s.seat)} ${
 const round = () => C() && C().rounds.find((r) => r.id === S.roundId) || null;
 const rosterSeats = () => C().roster.map((s) => s.seat);
 function ruleText(r) {
-  if (r.type === 'apart') return `🚫 ${stuLabel(r.a)} 與 ${stuLabel(r.b)} 不相鄰`;
+  if (r.type === 'apart') return `🚫 ${SC.members(r).map(stuLabel).join('、')} 互不相鄰`;
   const list = toArr(r.list);
   const where = r.mode === 'rows' ? '第 ' + list.map((x) => Number(x) + 1).sort((a, b) => a - b).join('、') + ' 排'
     : r.mode === 'cols' ? '左起第 ' + list.map((x) => Number(x) + 1).sort((a, b) => a - b).join('、') + ' 列'
       : `指定的 ${list.length} 個座位`;
-  return `📍 ${stuLabel(r.who)} 只能坐在 ${where}`;
+  return `📍 ${SC.members(r).map(stuLabel).join('、')} 只能坐在 ${where}`;
 }
 function studentOptions(selected, opts = {}) {
   return `<option value="">${opts.blank || '（選擇學生）'}</option>` + C().roster.map((s) =>
@@ -338,7 +338,7 @@ TABV.info = () => {
           <button class="btn sm ghost" data-act="rosterSample">下載名單範例</button>
         </div>
         <label class="f">或直接貼上（每行：座號 姓名 學號，用空白或 Tab 隔開；可直接從 Excel 複製貼上）</label>
-        <textarea id="rosterText" rows="5" placeholder="1 王宥翎 1130101&#10;2 李○○ 1130102"></textarea>
+        <textarea id="rosterText" rows="5" placeholder="1 王小明 1130101&#10;2 李小華 1130102"></textarea>
         <div class="row" style="margin-top:8px"><button class="btn sm" data-act="rosterPaste">檢查貼上的名單</button></div>
         ${d ? rosterDraftHTML(d) : ''}
       </div>
@@ -477,18 +477,18 @@ TABV.cleaning = () => {
   <div class="cols wide-left">
     <div>
       <h2>🧹 打掃工作</h2>
-      <p class="lead">打掃工作跟著每次換座位的回合記錄。可以沿用上一回合、匯入打掃徵才的結果，或自己新增修改。</p>
+      <p class="lead">每次換座位各自記錄${C().rounds.length ? '' : '（還沒有回合：這裡先當預設，開第一個回合時自動帶入）'}。</p>
       <div class="toolbar">
         ${C().rounds.length ? `<div class="tool-grp"><span class="tool-lbl">回合</span>
-          <select class="inline" id="cleanRound">${C().rounds.map((r) => `<option value="${r.id}" ${r.id === S.roundId ? 'selected' : ''}>${esc(r.title)}</option>`).join('')}</select></div>`
-          : '<span class="small muted">還沒有換座位回合：這裡先當作預設，開第一個回合時會自動帶入。</span>'}
+          <select class="inline" id="cleanRound">${C().rounds.map((r) => `<option value="${r.id}" ${r.id === S.roundId ? 'selected' : ''}>${esc(r.title)}</option>`).join('')}</select></div>` : ''}
         <div class="tool-grp">
-          ${prev ? `<button class="btn sm" data-act="cleanPrev">📋 沿用上一回合（${esc(prev.title)}）</button>` : ''}
-          <button class="btn sm primary" data-act="cleanImport">📥 匯入打掃徵才結果（Excel）</button>
+          ${prev ? `<button class="btn sm" data-act="cleanPrev">📋 沿用上一回合</button>` : ''}
+          <button class="btn sm primary" data-act="cleanImport">📥 匯入打掃工作內容</button>
+          <button class="btn sm ghost" data-act="cleanSample" title="下載 Excel 範例檔">範例檔</button>
           <button class="btn sm" data-act="areaAdd">＋ 新增區域</button>
         </div>
       </div>
-      ${!areas.length ? `<p class="muted">目前沒有打掃工作。${prev ? '可以沿用上一回合、' : ''}匯入打掃徵才的結果，或自己新增區域；不需要的話座位表也可以不印打掃欄。</p>` : ''}
+      ${!areas.length ? `<p class="muted small">目前沒有打掃工作。不需要的話，座位表版型選「只有座位圖」就不會印打掃欄。</p>` : ''}
       ${areas.map((a, ai) => `<div class="card">
         <div class="row"><b>區域</b><input type="text" class="inline" data-area="${a.id}" data-f="name" value="${esc(a.name)}" style="width:140px">
           <span class="spacer"></span>
@@ -514,48 +514,46 @@ TABV.cleaning = () => {
 TABV.rules = () => {
   const c = C(), rules = c.secret, d = S.ruleDraft;
   const L = (round() || {}).layout || c.layout;
+  const editing = !!d.id;
   return `
-  <div class="row"><h2>🔒 秘密規則</h2><span class="secret-badge">🙈 這一頁請勿投影</span></div>
-  <p class="lead">只在抽籤分配時默默生效，投影舞台與座位表上完全不會出現。</p>
-  <div class="alert teal row"><span>🙈 <b>上課前記得開「上課模式」</b>：點畫面頂端的「上課模式」後，這一頁（連同分頁按鈕）會整個消失，換座位頁的規則提醒也會藏起來，公開投影時不會不小心露餡。</span>
-    <span class="spacer"></span><button class="btn sm" data-act="privacy">🙈 現在開啟上課模式</button></div>
+  <div class="row" style="margin-bottom:4px"><h2>🔒 秘密規則</h2><span class="secret-badge">🙈 請勿投影</span>
+    <span class="spacer"></span><span class="small muted">開啟頂端「上課模式」後這一頁會隱藏</span><button class="btn sm" data-act="privacy">🙈 開啟上課模式</button></div>
+  <p class="lead">只在抽籤時默默生效，投影舞台與座位表上看不到。</p>
   <div class="cols">
-    <div>
-      <div class="card">
-        <h3 style="margin-top:0">目前的規則（${rules.length}）</h3>
-        ${rules.length ? `<table class="list"><tbody>${rules.map((r) => `<tr style="${r.on === false ? 'opacity:.45' : ''}">
-          <td>${esc(ruleText(r))}</td>
-          <td style="width:150px;text-align:right"><button class="btn sm ghost" data-act="ruleToggle" data-v="${r.id}">${r.on === false ? '▶️ 啟用' : '⏸ 暫停'}</button>
-          <button class="btn sm ghost" data-act="ruleDel" data-v="${r.id}">✕</button></td></tr>`).join('')}</tbody></table>` : '<p class="muted">還沒有規則。</p>'}
-      </div>
-      <div class="card">
-        <h3 style="margin-top:0">🔍 規則能不能同時成立？</h3>
-        <p class="small muted">用「${esc((round() || {}).title || '班級地圖')}」的座位與鎖定狀態試算。</p>
-        <button class="btn sm" data-act="ruleCheck" style="margin-top:6px">開始檢查</button>
-        <div id="ruleCheckOut"></div>
-      </div>
+    <div class="card">
+      <div class="row"><h3 style="margin:0">目前的規則（${rules.length}）</h3><span class="spacer"></span>
+        ${rules.length ? '<button class="btn sm" data-act="ruleCheck">🔍 檢查能否同時成立</button>' : ''}</div>
+      <div id="ruleCheckOut"></div>
+      ${rules.length ? `<table class="list" style="margin-top:8px"><tbody>${rules.map((r) => `<tr style="${r.on === false ? 'opacity:.45' : ''}${d.id === r.id ? ';background:var(--gold-soft)' : ''}">
+        <td>${esc(ruleText(r))}</td>
+        <td style="width:170px;text-align:right;white-space:nowrap">
+          <button class="btn sm ghost" data-act="ruleEdit" data-v="${r.id}" title="修改">✏️</button>
+          <button class="btn sm ghost" data-act="ruleToggle" data-v="${r.id}" title="${r.on === false ? '啟用' : '暫停'}">${r.on === false ? '▶️' : '⏸'}</button>
+          <button class="btn sm ghost" data-act="ruleDel" data-v="${r.id}" title="刪除">✕</button></td></tr>`).join('')}</tbody></table>`
+        : '<p class="muted" style="margin-top:8px">還沒有規則。</p>'}
     </div>
     <div class="card">
-      <h3 style="margin-top:0">＋ 新增規則</h3>
-      <div class="seg" style="margin-bottom:10px">
-        <button class="${d.type === 'apart' ? 'on' : ''}" data-act="ruleType" data-v="apart">🚫 兩人不相鄰</button>
+      <h3 style="margin-top:0">${editing ? '✏️ 修改規則' : '＋ 新增規則'}</h3>
+      <div class="seg" style="margin-bottom:6px">
+        <button class="${d.type === 'apart' ? 'on' : ''}" data-act="ruleType" data-v="apart">🚫 互不相鄰</button>
         <button class="${d.type === 'zone' ? 'on' : ''}" data-act="ruleType" data-v="zone">📍 限定區域</button>
       </div>
-      ${d.type === 'apart' ? `
-        <p class="small muted">周圍八格（前後左右、斜角）都不能是對方；中間隔著走道也算相鄰。</p>
-        <label class="f">學生 A</label><select id="rA">${studentOptions(d.a)}</select>
-        <label class="f">學生 B</label><select id="rB">${studentOptions(d.b)}</select>
-        <button class="btn primary" data-act="ruleAdd" style="margin-top:12px">加入規則</button>` : `
-        <label class="f">學生</label><select id="rWho">${studentOptions(d.who)}</select>
+      <p class="small muted">${d.type === 'apart' ? '選 2 人以上：他們彼此的周圍八格（前後左右、斜角，隔走道也算）都不會出現對方。' : '選 1 人以上：這些同學都只會被分到指定的範圍。'}</p>
+      <label class="f">選擇學生 <span class="chip ${d.who.length ? 'teal' : ''}">已選 ${d.who.length} 人</span></label>
+      <div class="pick-grid">${c.roster.map((st) => `<button type="button" class="pick ${d.who.includes(st.seat) ? 'on' : ''}" data-act="ruleWho" data-v="${st.seat}">${pad2(st.seat)} ${esc(st.name)}</button>`).join('') || '<span class="muted small">請先匯入學生名單</span>'}</div>
+      ${d.type === 'zone' ? `
         <label class="f">只能坐在</label>
         <div class="seg">${[['rows', '某幾排'], ['cols', '某幾列'], ['cells', '指定座位']].map(([v, t]) => `<button class="${d.mode === v ? 'on' : ''}" data-act="ruleMode" data-v="${v}">${t}</button>`).join('')}</div>
         <div style="margin-top:10px">
         ${d.mode === 'rows' ? Array.from({ length: L.rows }, (_, i) => `<label style="margin-right:12px;white-space:nowrap"><input type="checkbox" data-zone="${i}" ${d.list.includes(i) ? 'checked' : ''}> 第${i + 1}排${i === 0 ? '（最前）' : ''}</label>`).join('')
           : d.mode === 'cols' ? Array.from({ length: L.cols }, (_, i) => `<label style="margin-right:12px;white-space:nowrap"><input type="checkbox" data-zone="${i}" ${d.list.includes(i) ? 'checked' : ''}> 左起第${i + 1}列</label>`).join('')
-            : `<p class="small muted">點地圖上的座位來選取（講台視角）。已選 ${d.list.length} 個。</p>
-               <div class="map-wrap" style="--cw:48px;--ch:36px">${mapHTML(L, { view: 'teacher', act: 'zoneCell', cell: (k) => ({ cls: d.list.includes(k) ? 'filled' : '' }) })}</div>`}
-        </div>
-        <button class="btn primary" data-act="ruleAdd" style="margin-top:12px">加入規則</button>`}
+            : `<p class="small muted">點地圖上的座位來選取（講台視角），已選 ${d.list.length} 個。</p>
+               <div class="map-wrap" style="--cw:44px;--ch:34px">${mapHTML(L, { view: 'teacher', act: 'zoneCell', cell: (k) => ({ cls: d.list.includes(k) ? 'filled' : '' }) })}</div>`}
+        </div>` : ''}
+      <div class="row" style="margin-top:14px">
+        <button class="btn primary" data-act="ruleSave">${editing ? '💾 儲存修改' : '加入規則'}</button>
+        ${editing || d.who.length ? '<button class="btn ghost" data-act="ruleCancel">取消</button>' : ''}
+      </div>
     </div>
   </div>`;
 };
@@ -563,83 +561,92 @@ TABV.rules = () => {
 /* ---------- 🎲 換座位回合 ---------- */
 TABV.round = () => {
   const c = C(), rd = round();
-  const roundList = `<div class="row" style="margin-bottom:14px">
-    ${c.rounds.map((r) => `<button class="btn sm ${r.id === S.roundId ? 'ink' : ''}" data-act="pickRound" data-v="${r.id}">${esc(r.title)} ${r.status === 'final' ? '✅' : r.status === 'drawn' ? '🎲' : '📝'}</button>`).join('')}
-    <button class="btn sm primary" data-act="newRound">➕ 開新回合</button></div>`;
-  if (!rd) return `<h2>🎲 換座位</h2><p class="lead">每次換座位開一個「回合」：先${isGame() ? '鎖定得標與老師預留的座位' : '指定需要固定的座位'}，再到投影舞台抽籤。</p>${roundList}
+  const head = `
+  <h2>🎲 換座位</h2>
+  <div class="toolbar">
+    <div class="tool-grp"><span class="tool-lbl">回合</span>
+      ${c.rounds.length ? `<select class="inline" id="roundSel">${c.rounds.map((r) => `<option value="${r.id}" ${r.id === S.roundId ? 'selected' : ''}>${esc(r.title)}${r.status === 'final' ? '（已定案）' : r.status === 'drawn' ? '（已抽籤）' : ''}</option>`).join('')}</select>` : '<span class="muted small">還沒有回合</span>'}
+      <button class="btn sm primary" data-act="newRound">＋ 開新回合</button></div>
+    ${rd ? `<div class="tool-grp"><span class="tool-lbl">名稱</span><input type="text" class="inline" data-round="title" value="${esc(rd.title)}" style="width:150px">
+      <span class="tool-lbl">適用期間</span><input type="text" class="inline" data-round="period" value="${esc(rd.period)}" placeholder="開學－1段之間" style="width:150px"></div>
+      <span class="spacer"></span><button class="btn sm ghost" data-act="roundDel" title="刪除這個回合">🗑️</button>` : ''}
+  </div>`;
+  if (!rd) return head + `<p class="lead">每次換座位開一個回合：先${isGame() ? '鎖定得標與老師預留的座位' : '指定需要固定的座位'}，再開啟投影舞台抽籤。</p>
     ${!c.roster.length ? '<div class="alert red">請先到「📋 班級資料」匯入學生名單。</div>' : ''}`;
   const L = rd.layout, drawn = !!rd.assign, final = rd.status === 'final';
   const lockedSeats = Object.values(rd.locked).map(Number);
   const free = SC.seatKeys(L).filter((k) => !(k in rd.locked));
   const toPlace = c.roster.filter((s) => !lockedSeats.includes(s.seat));
+  const hide = S.privacy;            // 上課模式：不顯示任何和秘密規則有關的提醒
   const lockViol = SC.violations(L, rd.locked, c.secret);
   const assignViol = drawn ? SC.violations(L, rd.assign, c.secret) : [];
-  const hide = S.privacy;            // 上課模式：不顯示任何和秘密規則有關的提醒
+  const short = toPlace.length - free.length;
+  const solvable = drawn || short > 0 || !SC.activeRules(c.secret).length ? true
+    : SC.solve({ layout: L, locked: rd.locked, students: rosterSeats(), rules: c.secret, restarts: 8, maxSteps: 6000 }).ok;
   const unseated = drawn ? c.roster.filter((s) => !Object.values(rd.assign).map(Number).includes(s.seat)) : [];
   const mode = drawn ? 'swap' : S.roundMode;
   const showMap = drawn ? rd.assign : rd.locked;
+  const view = c.settings.printView || 'teacher';
   const cellFn = (k, t) => {
     if (t !== 's') return { cls: S.swapSel === k ? 'sel' : '' };
     const s = showMap[k]; const info = rd.lockInfo[k] || {};
     const lockedHere = k in rd.locked;
-    let cls = s != null ? (lockedHere ? 'lock-' + (info.kind || 'reserve') : 'filled') : '';
+    let cls = s != null ? (lockedHere ? 'lock-' + (isGame() ? info.kind || 'reserve' : 'reserve') : 'filled') : '';
     if (S.swapSel === k) cls += ' sel';
     if (!hide && (drawn ? assignViol : lockViol).some((v) => v.keys.includes(k))) cls += ' warn';
     const tag = lockedHere && s != null ? `<span class="tag">${info.kind === 'bid' && isGame() ? '🏆' : '📌'}</span>` : '';
     return { cls, html: s != null ? `${tag}<span class="no">${pad2(s)}</span><span class="nm">${esc((stu(s) || {}).name || '')}</span>` : '' };
   };
-  return `
-  <div class="row"><h2>🎲 換座位</h2>${hide ? '' : '<span class="secret-badge">🙈 後台畫面請勿投影，投影請用「📺 投影專用連結」</span>'}</div>
-  ${roundList}
-  <div class="cols wide-left">
-    <div>
-      <div class="row" style="margin-bottom:8px">
-        <input type="text" class="inline" data-round="title" value="${esc(rd.title)}" style="width:190px" ${final ? 'disabled' : ''}>
-        <span class="small">適用期間</span><input type="text" class="inline" data-round="period" value="${esc(rd.period)}" placeholder="開學－1段之間" style="width:170px">
-        <span class="chip ${final ? 'teal' : drawn ? 'blue' : ''}">${final ? '✅ 已定案' : drawn ? '🎲 已抽籤（可微調）' : '📝 準備中'}</span>
+  const hint = final ? '已定案。要修改請先「解除定案」。'
+    : drawn ? '點一個座位、再點另一個座位，兩人就會交換（也可以移到空位）。'
+      : mode === 'lock' ? (isGame() ? '點座位，指定得標者或老師預留的同學。' : '點座位，指定這個座位給哪位同學。') : '點座位切換「可坐 ↔ 關閉」，只影響這一回合。';
+  const warns = [];
+  if (short > 0) warns.push(`座位不夠：還差 ${short} 個，請先開放座位。`);
+  if (!hide && lockViol.length && !drawn) warns.push(`⏸ 待老師決定：已鎖定的座位違反秘密規則（${lockViol.map((v) => esc(ruleText(v.rule))).join('；')}）`);
+  if (!hide && assignViol.length) warns.push(`目前座位違反秘密規則（${assignViol.map((v) => esc(ruleText(v.rule))).join('；')}）`);
+  if (!hide && !solvable) warns.push('目前的秘密規則排不出來，請到「🔒 秘密規則」檢查。');
+  if (hide && (lockViol.length || assignViol.length || !solvable)) warns.push('有設定需要確認（關閉上課模式後查看）');
+  if (unseated.length) warns.push(`還沒有座位：${unseated.map((s) => esc(pad2(s.seat) + ' ' + s.name)).join('、')}`);
+  return head + `
+  <div class="map-layout">
+    <div class="card">
+      <div class="row" style="margin-bottom:6px">
+        ${!drawn ? `<div class="seg"><button class="${mode === 'lock' ? 'on' : ''}" data-act="roundMode" data-v="lock">🔒 鎖定座位</button>
+          <button class="${mode === 'paint' ? 'on' : ''}" data-act="roundMode" data-v="paint">✏️ 開關座位</button></div>` : `<span class="chip ${final ? 'teal' : 'blue'}">${final ? '✅ 已定案' : '🔁 互換模式'}</span>`}
+        <span class="spacer"></span>
+        <div class="seg">${[['teacher', '講台視角'], ['student', '學生視角']].map(([v, t]) => `<button class="${view === v ? 'on' : ''}" data-act="printView" data-v="${v}">${t}</button>`).join('')}</div>
       </div>
-      ${!drawn ? `<div class="row" style="margin-bottom:8px"><div class="seg">
-        <button class="${mode === 'lock' ? 'on' : ''}" data-act="roundMode" data-v="lock">🔒 鎖定座位</button>
-        <button class="${mode === 'paint' ? 'on' : ''}" data-act="roundMode" data-v="paint">✏️ 調整本回合座位</button></div>
-        <span class="small muted">${mode === 'lock' ? (isGame() ? '點座位 → 指定得標者或老師預留的同學' : '點座位 → 指定這個座位給哪位同學') : '點座位切換「座位 ↔ 關閉」'}</span></div>`
-      : `<p class="small muted" style="margin-bottom:8px">${final ? '已定案；如需修改請按右側「解除定案」。' : '🔁 互換模式：先點一個座位、再點另一個座位，兩人就會交換（也可以移到空位）。'}</p>`}
-      <div class="legend">
+      <p class="small muted" style="margin-bottom:6px">${hint}</p>
+      <div class="map-wrap" style="--cw:70px;--ch:52px;text-align:center">${mapHTML(L, { view, act: final ? '' : 'roundCell', cell: cellFn })}</div>
+      <div class="legend" style="justify-content:center">
         <span style="--c:#d79a1e;--b:var(--gold-soft)">📌 ${isGame() ? '老師預留' : '指定座位'}</span>${isGame() ? '<span style="--c:var(--purple);--b:var(--purple-soft)">🏆 得標</span>' : ''}
         <span style="--c:var(--blue);--b:var(--blue-soft)">抽籤分配</span><span style="--c:#e4a594;--b:#fbe9e5">關閉</span>
-        ${hide ? '' : '<span style="--c:var(--red);--b:#fff">違反秘密規則</span>'}
       </div>
-      <div class="map-wrap" style="--cw:72px;--ch:54px">${mapHTML(L, { view: c.settings.printView || 'teacher', act: final ? '' : 'roundCell', cell: cellFn })}</div>
-      <div class="row small muted"><span>地圖視角：</span><div class="seg">${[['teacher', '講台視角'], ['student', '學生視角']].map(([v, t]) => `<button class="${(c.settings.printView || 'teacher') === v ? 'on' : ''}" data-act="printView" data-v="${v}">${t}</button>`).join('')}</div></div>
     </div>
     <div>
       <div class="card">
-        <h3 style="margin-top:0">📊 本回合</h3>
-        <p>全班 <b>${c.roster.length}</b> 人｜已鎖定 <b>${lockedSeats.length}</b> 人｜可分配座位 <b>${free.length}</b> 個｜待分配 <b>${toPlace.length}</b> 人</p>
-        ${toPlace.length > free.length ? `<div class="alert red">座位不夠：還差 ${toPlace.length - free.length} 個座位，請先開放座位。</div>` : ''}
-        ${hide && (lockViol.length || assignViol.length) ? '<div class="alert">⚙️ 有設定需要確認（關閉上課模式後查看）</div>' : ''}
-        ${!hide && lockViol.length && !drawn ? `<div class="alert red"><b>⏸ 待老師決定：</b>已鎖定的座位違反秘密規則<ul style="margin:4px 0 0 18px">${lockViol.map((v) => `<li>${esc(ruleText(v.rule))}</li>`).join('')}</ul><span class="small">可以維持（暗標是學生用資源換來的），或點座位改成其他同學。</span></div>` : ''}
-        ${!hide && assignViol.length ? `<div class="alert red"><b>⚠️ 目前座位違反秘密規則：</b><ul style="margin:4px 0 0 18px">${assignViol.map((v) => `<li>${esc(ruleText(v.rule))}</li>`).join('')}</ul></div>` : ''}
-        ${unseated.length ? `<div class="alert red">還沒有座位：${unseated.map((s) => esc(pad2(s.seat) + ' ' + s.name)).join('、')}</div>` : ''}
-        <div class="row" style="margin-top:12px">
-          <button class="btn primary" data-act="stageLink" ${c.roster.length ? '' : 'disabled'}>📺 投影專用連結</button>
-          <button class="btn sm" data-act="openStage" ${c.roster.length ? '' : 'disabled'}>🎬 在這裡開投影舞台</button>
-          ${!drawn && !hide ? '<button class="btn sm" data-act="ruleCheckRound">🔍 先檢查規則</button>' : ''}
-          ${drawn && !final ? '<button class="btn teal" data-act="finalize">✅ 定案</button><button class="btn sm ghost" data-act="redraw">🔁 清除結果、重新抽籤</button>' : ''}
-          ${final ? '<button class="btn sm ghost" data-act="unfinal">解除定案</button>' : ''}
-          <button class="btn sm" data-act="tab" data-v="print">🖨️ 座位表</button>
+        <h3 style="margin-top:0">🎬 投影抽籤</h3>
+        <div class="stat-row">
+          <div><b>${c.roster.length}</b><span>全班</span></div>
+          <div><b>${lockedSeats.length}</b><span>已鎖定</span></div>
+          <div><b>${toPlace.length}</b><span>待分配</span></div>
+          <div><b>${free.length}</b><span>空位</span></div>
         </div>
-        <div id="ruleCheckOut"></div>
+        ${warns.map((w) => `<div class="alert red small">${w}</div>`).join('')}
+        ${final ? '<button class="btn wide" data-act="unfinal">解除定案</button>'
+          : drawn ? `<button class="btn teal wide" data-act="finalize">✅ 定案</button>
+              <div class="row small" style="margin-top:10px;justify-content:center"><button class="btn sm ghost" data-act="openProjector">📺 再開一次投影</button><button class="btn sm ghost" data-act="redraw">🔁 清除結果重抽</button></div>`
+            : `<button class="btn primary wide" data-act="openProjector" ${c.roster.length ? '' : 'disabled'}>📺 開啟投影舞台</button>
+               <p class="small muted" style="margin-top:8px;text-align:center">會在新分頁開啟，只顯示舞台、看不到後台。<br>要用別台裝置投影？<a href="#" data-act="copyStageLink">複製投影連結</a></p>`}
       </div>
       <div class="card">
         <h3 style="margin-top:0">🔒 已鎖定（${lockedSeats.length}）</h3>
         ${lockedSeats.length ? `<table class="list"><tbody>${Object.entries(rd.locked).sort((a, b) => a[1] - b[1]).map(([k, s]) => {
           const info = rd.lockInfo[k] || {};
-          return `<tr><td>${!isGame() ? '📌 指定' : info.kind === 'bid' ? '🏆 得標' : '📌 預留'}</td><td>${esc(stuLabel(s))}</td><td class="small muted">${esc(info.note || '')}</td>
-          <td>${drawn ? '' : `<button class="btn sm ghost" data-act="unlock" data-v="${k}">解除</button>`}</td></tr>`;
-        }).join('')}</tbody></table>` : `<p class="small muted">還沒有。${isGame() ? '暗標得標者與老師指定的座位' : '老師指定的座位'}都在這裡鎖定，抽籤時不會被動到。</p>`}
-        ${drawn || !isGame() ? '' : '<p class="small muted" style="margin-top:8px">（線上暗標與自動開標會在第二階段加入）</p>'}
+          return `<tr><td>${!isGame() ? '📌' : info.kind === 'bid' ? '🏆' : '📌'}</td><td>${esc(stuLabel(s))}</td><td class="small muted">${esc(info.note || '')}</td>
+          <td style="text-align:right">${drawn ? '' : `<button class="btn sm ghost" data-act="unlock" data-v="${k}">解除</button>`}</td></tr>`;
+        }).join('')}</tbody></table>` : `<p class="small muted">點左邊地圖的座位來鎖定。鎖定的同學抽籤時不會被動到。</p>`}
       </div>
-      <div class="row"><span class="spacer"></span><button class="btn sm ghost" data-act="roundDel">🗑️ 刪除這個回合</button></div>
     </div>
   </div>`;
 };
@@ -1069,7 +1076,7 @@ act.rosterApply = () => {
   c.roster = list;
   c.cadres.forEach((x) => { if (x.seat != null && !ok.has(x.seat)) x.seat = null; });
   [c.cleaning, ...c.rounds.map((rd) => rd.cleaning || [])].forEach((list) => list.forEach((a) => a.items.forEach((it) => { it.seats = it.seats.filter((s) => ok.has(s)); })));
-  c.secret = c.secret.filter((r) => r.type === 'apart' ? ok.has(Number(r.a)) && ok.has(Number(r.b)) : ok.has(Number(r.who)));
+  c.secret = c.secret.map((r) => ({ ...r, who: SC.members(r).filter((x) => ok.has(x)) })).filter((r) => r.who.length >= (r.type === 'apart' ? 2 : 1));
   c.rounds.forEach((rd) => {
     Object.entries(rd.locked).forEach(([k, s]) => { if (!ok.has(Number(s))) { delete rd.locked[k]; delete rd.lockInfo[k]; } });
     if (rd.assign) Object.entries(rd.assign).forEach(([k, s]) => { if (!ok.has(Number(s))) delete rd.assign[k]; });
@@ -1109,7 +1116,7 @@ act.cleanImport = async () => {
   const areaNames = [...new Set([...CL().map((a) => a.name), ...parsed.items.map((i) => i.area).filter(Boolean), '教室', '外掃'])];
   const mism = [];
   parsed.items.forEach((it) => it.seats.forEach((s, i) => { const p = stu(s); if (!p) mism.push(`${s} 號不在名單`); else if (it.names[i] && it.names[i] !== p.name) mism.push(`${s} 號：檔案是「${it.names[i]}」，名單是「${p.name}」`); }));
-  modal(`<h3>📥 匯入打掃結果</h3>
+  modal(`<h3>📥 匯入打掃工作內容</h3>
     <p class="small muted">讀到 ${parsed.items.length} 個項目。沒有標示區域的項目，請選擇要放在哪個區域。</p>
     ${mism.length ? `<div class="alert red small">姓名比對提醒（${mism.length} 筆，請確認座號是否正確）：<br>${mism.slice(0, 6).map(esc).join('<br>')}${mism.length > 6 ? `<br>…還有 ${mism.length - 6} 筆` : ''}</div>` : ''}
     <table class="list"><thead><tr><th>區域</th><th>項目</th><th>座號</th></tr></thead><tbody>
@@ -1135,28 +1142,35 @@ act.cleanImport = async () => {
   } });
 };
 /* 秘密規則 */
-act.ruleType = (b) => { S.ruleDraft = { type: b.dataset.v, mode: 'rows', list: [] }; render(); };
-act.ruleMode = (b) => { S.ruleDraft.who = ($('#rWho') || {}).value; S.ruleDraft.mode = b.dataset.v; S.ruleDraft.list = []; render(); };
+const newDraft = (type) => ({ id: null, type: type || 'apart', who: [], mode: 'rows', list: [] });
+act.ruleType = (b) => { const d = S.ruleDraft; S.ruleDraft = { ...newDraft(b.dataset.v), id: d.id, who: d.who }; render(); };
+act.ruleMode = (b) => { S.ruleDraft.mode = b.dataset.v; S.ruleDraft.list = []; render(); };
+act.ruleWho = (b) => { const d = S.ruleDraft, v = Number(b.dataset.v); d.who = d.who.includes(v) ? d.who.filter((x) => x !== v) : [...d.who, v].sort((x, y) => x - y); render(); };
 act.zoneCell = (b) => {
   const k = b.dataset.k, d = S.ruleDraft; if (SC.cellType(((round() || {}).layout || C().layout), k) !== 's') return;
-  d.who = ($('#rWho') || {}).value; d.list = d.list.includes(k) ? d.list.filter((x) => x !== k) : [...d.list, k]; render();
+  d.list = d.list.includes(k) ? d.list.filter((x) => x !== k) : [...d.list, k]; render();
 };
-act.ruleAdd = () => {
+act.ruleSave = () => {
   const d = S.ruleDraft, c = C();
-  if (d.type === 'apart') {
-    const a = Number($('#rA').value), b = Number($('#rB').value);
-    if (!a || !b) return toast('請選兩位學生', true); if (a === b) return toast('請選兩位不同的學生', true);
-    c.secret.push({ id: uid('r'), type: 'apart', a, b, on: true });
-  } else {
-    const who = Number($('#rWho').value); if (!who) return toast('請選學生', true);
-    const list = d.mode === 'cells' ? d.list : $$('[data-zone]:checked').map((x) => Number(x.dataset.zone));
-    if (!list.length) return toast('請至少選一個範圍', true);
-    c.secret.push({ id: uid('r'), type: 'zone', who, mode: d.mode, list, on: true });
-  }
-  S.ruleDraft = { type: d.type, mode: d.mode, list: [] }; touch(true); toast('🔒 已加入規則');
+  if (d.type === 'apart' && d.who.length < 2) return toast('「互不相鄰」請至少選 2 位學生', true);
+  if (d.type === 'zone' && !d.who.length) return toast('請至少選 1 位學生', true);
+  if (d.type === 'zone' && !d.list.length) return toast('請至少選一個範圍', true);
+  const rule = { id: d.id || uid('r'), type: d.type, who: d.who.slice(), on: true };
+  if (d.type === 'zone') { rule.mode = d.mode; rule.list = d.list.slice(); }
+  const i = c.secret.findIndex((x) => x.id === d.id);
+  if (i >= 0) { rule.on = c.secret[i].on; c.secret[i] = rule; } else c.secret.push(rule);
+  S.ruleDraft = newDraft(d.type); touch(true); toast(i >= 0 ? '💾 已儲存修改' : '🔒 已加入規則');
 };
+act.ruleEdit = (b) => {
+  const r = C().secret.find((x) => x.id === b.dataset.v); if (!r) return;
+  S.ruleDraft = { id: r.id, type: r.type, who: SC.members(r), mode: r.mode || 'rows', list: toArr(r.list).slice() }; render();
+};
+act.ruleCancel = () => { S.ruleDraft = newDraft(S.ruleDraft.type); render(); };
 act.ruleToggle = (b) => { const r = C().secret.find((x) => x.id === b.dataset.v); r.on = r.on === false; touch(true); };
-act.ruleDel = (b) => { C().secret = C().secret.filter((x) => x.id !== b.dataset.v); touch(true); };
+act.ruleDel = (b) => {
+  const r = C().secret.find((x) => x.id === b.dataset.v); if (!r || !confirm(`刪除這條規則？\n${ruleText(r)}`)) return;
+  C().secret = C().secret.filter((x) => x !== r); if (S.ruleDraft.id === r.id) S.ruleDraft = newDraft(); touch(true);
+};
 act.ruleCheck = act.ruleCheckRound = () => {
   const out = $('#ruleCheckOut'); if (!out) return;
   out.innerHTML = '<p class="small muted">計算中…</p>';
@@ -1247,6 +1261,37 @@ function swapCell(k, t) {
   touch(true);
 }
 act.unlock = (b) => { const rd = round(); delete rd.locked[b.dataset.v]; delete rd.lockInfo[b.dataset.v]; touch(true); };
+/** 進投影舞台前的檢查（座位不夠、待老師決定） */
+function stageReady() {
+  const rd = round(); if (!rd) return false;
+  if (!rd.assign) {
+    const freeN = SC.seatKeys(rd.layout).filter((k) => !(k in rd.locked)).length;
+    const need = C().roster.filter((s) => !Object.values(rd.locked).map(Number).includes(s.seat)).length;
+    if (need > freeN) { toast(`座位不夠：還差 ${need - freeN} 個`, true); return false; }
+    if (SC.violations(rd.layout, rd.locked, C().secret).length && !confirm(S.privacy ? '有設定尚待確認，確定要繼續嗎？' : '有鎖定的座位違反秘密規則（待老師決定）。確定維持現狀、開啟投影舞台嗎？')) return false;
+  }
+  return true;
+}
+const stageURL = () => location.href.split('#')[0] + '#stage=' + encodeURIComponent(C().id);
+act.openProjector = () => {
+  if (!stageReady()) return;
+  C().currentRound = S.roundId; touch();
+  clearTimeout(saveTimer); Store.save(C()).catch(() => {}).finally(() => {   // 先存好，新分頁才會讀到最新的回合
+    const w = window.open(stageURL(), '_blank');
+    if (!w) { toast('瀏覽器擋下了新分頁，改在這裡開啟投影舞台'); openStage(); }
+  });
+};
+act.copyStageLink = async (b, e) => {
+  if (e) e.preventDefault();
+  C().currentRound = S.roundId; touch();
+  try { await navigator.clipboard.writeText(stageURL()); toast('已複製投影連結，在投影用的裝置打開即可（第一次需要登入）'); }
+  catch (err) { prompt('請複製這個連結：', stageURL()); }
+};
+act.cleanSample = () => {
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['打掃項目', '座號', '姓名'], ['[教室]地板', 1, '王小明'], ['[教室]地板', 2, '李小華'], ['[教室]黑板', 3, '陳小美'], ['[外掃]樓梯', 4, '林小志']]), '打掃工作');
+  XLSX.writeFile(wb, '座位大作戰_打掃工作範例.xlsx');
+};
 act.openStage = () => {
   const rd = round();
   if (!rd.assign) {
@@ -1274,23 +1319,6 @@ act.cleanPrev = () => {
   setCL(cloneClean(cleanOf(prev)).map((a) => ({ ...a, id: uid('a'), items: a.items.map((it) => ({ ...it, id: uid('i') })) }))); touch(true); toast('📋 已沿用上一回合的打掃工作');
 };
 act.sheetTpl = (b) => { const t = SHEET_TPL.find((x) => x[0] === b.dataset.v); C().settings.showCadres = t[2]; C().settings.showCleaning = t[3]; touch(true); };
-act.stageLink = () => {
-  const c = C(); c.currentRound = S.roundId; touch();
-  const url = location.href.split('#')[0] + '#stage=' + encodeURIComponent(c.id);
-  modal(`<h3>📺 投影專用連結</h3>
-    <p>在<b>要接投影機的那台裝置</b>（平板或教室電腦）打開這個連結，會<b>直接進入投影舞台</b>，完全不會出現後台畫面。</p>
-    <input type="text" readonly value="${esc(url)}" id="slUrl" style="margin:10px 0">
-    <ul class="small" style="margin:0 0 0 18px;line-height:1.8">
-      <li>第一次在那台裝置打開需要登入一次，之後就會記住</li>
-      <li>建議加入書籤；連結會自動打開「目前選取的回合」</li>
-      <li>在後台改了設定，回到投影分頁時會自動更新成最新版</li>
-    </ul>
-    <div class="row" style="margin-top:14px"><button class="btn primary" id="slCopy">📋 複製連結</button><button class="btn" id="slOpen">↗️ 在新分頁開啟</button><button class="btn ghost" data-close>關閉</button></div>`,
-  { mount: (m) => {
-    $('#slCopy', m).onclick = async () => { try { await navigator.clipboard.writeText(url); toast('已複製連結'); } catch (e) { $('#slUrl', m).select(); toast('請按 Ctrl+C 複製', true); } };
-    $('#slOpen', m).onclick = () => window.open(url, '_blank');
-  } });
-};
 act.standbyStage = () => { if (round()) openStage(); };
 act.standbyBack = () => {
   if (!confirm('要切換到後台嗎？（如果正在投影，學生會看到後台畫面）')) return;
@@ -1321,6 +1349,8 @@ document.addEventListener('change', (e) => {
   if (t.id === 'printRound') return render();
   if (t.id === 'sheetTpl') { const x = SHEET_TPL.find((y) => y[0] === t.value); C().settings.showCadres = x[2]; C().settings.showCleaning = x[3]; return touch(true); }
   if (t.id === 'cleanRound') { S.roundId = t.value; return render(); }
+  if (t.id === 'roundSel') { S.roundId = t.value; C().currentRound = t.value; S.swapSel = null; return touch(true); }
+  if (t.dataset.zone != null) { const v = Number(t.dataset.zone), d = S.ruleDraft; d.list = t.checked ? [...new Set([...d.list, v])] : d.list.filter((x) => x !== v); return; }
   if (t.dataset.bind || t.dataset.round) return refreshPreview();
   if (t.dataset.opt) { C().settings[t.dataset.opt] = t.checked; return touch(true); }
   if (t.dataset.mark) {
