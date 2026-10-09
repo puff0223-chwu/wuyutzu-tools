@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🪑 座位暗標</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f7f3ea;--paper:#fffdf8;--ink:#1f2a44;--ink2:#4a5470;--muted:#7a8196;--line:#d9d2c3;--gold:#f2b134;--gold-soft:#fdf1d6;--red:#e4572e;--red-soft:#fde7e0;--teal:#1f9e8f;--teal-soft:#e3f4f1}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--ink);font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif;line-height:1.55}
+button,input{font:inherit;color:inherit}
+.wrap{max-width:560px;margin:0 auto;padding:14px 14px 40px}
+.head{background:var(--ink);color:#fff;border-radius:16px;padding:16px 18px;margin-bottom:14px;box-shadow:4px 4px 0 var(--gold)}
+.head .en{font-family:'Bebas Neue',sans-serif;letter-spacing:.2em;color:var(--gold);font-size:.9em}
+.head h1{font-family:'Noto Serif TC',serif;font-weight:900;font-size:1.45em;line-height:1.3}
+.head .sub{opacity:.85;font-size:.92em;margin-top:2px}
+.clock{display:inline-block;margin-top:8px;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.3);border-radius:999px;padding:2px 12px;font-weight:700;font-size:.9em}
+.clock.end{background:var(--red);border-color:var(--red)}
+.card{background:var(--paper);border:2px solid var(--ink);border-radius:14px;box-shadow:3px 3px 0 var(--ink);padding:16px;margin-bottom:14px}
+.card h2{font-size:1.1em;margin-bottom:8px}
+label{display:block;font-weight:700;margin:10px 0 4px;font-size:.95em}
+input[type=text],input[type=number],input[type=tel]{width:100%;border:2px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;font-size:1.05em}
+input:focus{outline:none;border-color:var(--gold)}
+.btn{display:block;width:100%;background:var(--gold);border:2.5px solid var(--ink);border-radius:12px;padding:12px;font-weight:900;font-size:1.08em;cursor:pointer;box-shadow:3px 3px 0 var(--ink);margin-top:14px}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.btn:disabled{opacity:.45}
+.btn.ghost{background:#fff;font-size:.95em;padding:9px}
+.small{font-size:.86em}.muted{color:var(--muted)}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.spacer{flex:1}
+.who{display:flex;align-items:center;gap:8px;background:var(--teal-soft);border-radius:10px;padding:8px 12px;font-weight:700;margin-bottom:12px}
+.who button{margin-left:auto;background:none;border:1.5px solid var(--teal);border-radius:8px;padding:2px 10px;color:#11685e;cursor:pointer;font-size:.85em}
+.alert{border-left:5px solid var(--red);background:var(--red-soft);padding:10px 12px;border-radius:8px;margin:10px 0;font-size:.95em}
+.alert.ok{border-color:var(--teal);background:var(--teal-soft)}
+.alert.warn{border-color:var(--gold);background:var(--gold-soft)}
+/* 地圖 */
+.map-box{overflow-x:auto;padding:4px 0}
+.cmap{display:inline-grid;gap:5px;padding:8px;border:2px solid var(--ink);border-radius:10px;background:#fff;margin:0 auto}
+.cell{border-radius:7px;border:2px solid #e5e0d3;background:#f4f1ea;display:flex;align-items:center;justify-content:center;font-size:.72em;color:#b5ad9a;line-height:1.1;text-align:center;user-select:none}
+.cell.x,.cell.a{border-style:dashed;background:transparent;border-color:#eee9dd}
+.cell.ok{background:var(--gold-soft);border-color:#d79a1e;color:#7a4e06;cursor:pointer;font-weight:700}
+.cell.res{background:#eceae4;color:#9a937f}
+.cell.sel{background:var(--red);border-color:var(--red);color:#fff;box-shadow:0 0 0 3px rgba(228,87,46,.3)}
+.mark{background:var(--ink);color:#fff;border-radius:6px;font-size:.72em;display:flex;align-items:center;justify-content:center;font-weight:700;padding:2px 4px;min-height:22px}
+.mark.door{background:transparent;color:var(--red);border:1.5px solid var(--red);writing-mode:vertical-rl;min-height:0}
+.legend{display:flex;gap:12px;justify-content:center;font-size:.8em;margin-top:8px;flex-wrap:wrap}
+.legend span::before{content:'';display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-1px;border:2px solid var(--c);background:var(--b)}
+/* 資源 */
+.res-pick{display:grid;gap:8px}
+.res-opt{display:flex;align-items:center;gap:10px;border:2px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff;cursor:pointer}
+.res-opt.on{border-color:var(--ink);background:var(--gold-soft)}
+.res-opt .ic{font-size:1.4em}
+.res-opt b{flex:1}
+.qty{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-top:10px}
+.qty label{margin:0 0 2px;font-size:.85em}
+.total{margin-top:8px;font-weight:900}
+.receipt{background:var(--teal-soft);border:2px dashed var(--teal);border-radius:12px;padding:12px;font-size:.95em}
+.sheet-bg{position:fixed;inset:0;background:rgba(20,26,44,.6);display:flex;align-items:flex-end;justify-content:center;z-index:50}
+.sheet{background:var(--paper);border-radius:18px 18px 0 0;max-width:560px;width:100%;padding:20px 18px 26px;border-top:3px solid var(--ink)}
+.sheet h3{font-family:'Noto Serif TC',serif;font-size:1.3em;margin-bottom:8px}
+.big{font-size:1.15em;font-weight:900;margin:6px 0}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><p class="muted" style="text-align:center;margin-top:30vh">載入中…</p></div>
+<script src="core.js?v=20261010c"></script>
+<script>
+/* =====================================================================
+   🪑 座位暗標：學生頁（bid.html?code=回合代碼）
+   - 只讀公開的 meta（是否開放、截止時間）與 board（地圖、可投標座位、資源種類）
+   - 身分：座號＋姓名＋學號 → 暗號；資料庫裡只有暗號，學生看不到別人的資料
+   - 投標寫到 bids/<暗號>，可以重複送出，只採最後一次；看不到任何人的出價
+   ===================================================================== */
+const SC = window.SeatCore;
+const DB = 'https://point-collection-stash-default-rtdb.asia-southeast1.firebasedatabase.app/seating/rounds/';
+const CODE = (new URLSearchParams(location.search).get('code') || '').toUpperCase().replace(/[^0-9A-Z]/g, '');
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } } };
+const ST = { meta: null, board: null, me: LS.get('bid_me_' + CODE, null), seat: null, resId: null, vals: {}, sending: false, err: '' };
+
+async function api(path, method, body) {
+  const r = await fetch(DB + CODE + '/' + path + '.json', { method: method || 'GET', headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
+  if (!r.ok) { const e = new Error(r.status === 401 || r.status === 403 ? 'denied' : 'net'); e.status = r.status; throw e; }
+  return r.json();
+}
+const isOpen = () => ST.meta && ST.meta.open === true && Date.now() <= (ST.meta.deadline || 0);
+const fmtTime = (ms) => new Date(ms).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+function clockText() {
+  if (!ST.meta) return '';
+  if (!isOpen()) return '⛔ 暗標已截止';
+  const left = ST.meta.deadline - Date.now(), h = Math.floor(left / 3600000), m = Math.floor(left % 3600000 / 60000), s = Math.floor(left % 60000 / 1000);
+  return `⏳ 截止：${fmtTime(ST.meta.deadline)}（剩 ${h ? h + ' 小時 ' : ''}${m} 分 ${h ? '' : s + ' 秒'}）`;
+}
+
+async function boot() {
+  if (!CODE) return fatal('連結少了回合代碼，請向老師確認連結。');
+  try { [ST.meta, ST.board] = await Promise.all([api('meta'), api('board')]); }
+  catch (e) { return fatal('連不上暗標系統，請確認網路後重新整理。'); }
+  if (!ST.meta || !ST.board) return fatal('找不到這個暗標（代碼 ' + esc(CODE) + '），請向老師確認連結。');
+  ST.rules = SC.normalizeBidRules({ resources: ST.board.resources, allowMix: ST.board.allowMix });
+  if (!ST.rules.allowMix) ST.resId = ST.rules.resources[0] && ST.rules.resources[0].id;
+  render();
+  setInterval(() => { const c = $('#clock'); if (c) { c.textContent = clockText(); c.classList.toggle('end', !isOpen()); } }, 1000);
+  setInterval(async () => { try { const m = await api('meta'); if (m) { const was = isOpen(); ST.meta = m; if (was !== isOpen()) render(); } } catch (e) { } }, 30000);
+}
+function fatal(msg) { $('#app').innerHTML = `<div class="head"><div class="en">SEAT AUCTION</div><h1>🪑 座位暗標</h1></div><div class="alert">${msg}</div>`; }
+
+function render() {
+  const m = ST.meta, rec = LS.get('bid_rec_' + CODE, null);
+  let html = `<div class="head"><div class="en">SEAT AUCTION · ${esc(m.className || '')}</div>
+    <h1>🪑 ${esc(m.title || '座位暗標')}</h1>
+    <div class="sub">每人只能投一個座位；可以重複送出，系統只採計最後一次。</div>
+    <div class="clock ${isOpen() ? '' : 'end'}" id="clock">${clockText()}</div></div>`;
+  if (!ST.me) html += loginHTML();
+  else {
+    html += `<div class="who">🙋 ${esc(SC.pad2(ST.me.seat))} ${esc(ST.me.name)}<button id="logout">換人</button></div>`;
+    if (rec) html += `<div class="card"><h2>🧾 我最後一次送出的投標</h2><div class="receipt">${esc(rec.text)}<br><span class="small muted">送出時間：${fmtTime(rec.at)}</span></div>
+      ${isOpen() ? '<p class="small muted" style="margin-top:6px">想改的話，在下面重新選擇後送出即可（只採計最後一次）。</p>' : ''}</div>`;
+    if (isOpen()) html += mapHTML() + resHTML();
+    else html += `<div class="alert warn">暗標已經截止，等待老師開標吧！${rec ? '' : '（這一次你沒有送出投標）'}</div>`;
+  }
+  $('#app').innerHTML = html;
+  bind();
+}
+function loginHTML() {
+  const last = LS.get('bid_last', {});
+  return `<div class="card"><h2>👤 先確認身分</h2>
+    <p class="small muted">三項都要和老師的名單一樣才能投標。</p>
+    <label>座號</label><input type="tel" id="inSeat" inputmode="numeric" value="${esc(last.seat || '')}" placeholder="例如：7">
+    <label>姓名</label><input type="text" id="inName" value="${esc(last.name || '')}" placeholder="全名">
+    <label>學號</label><input type="text" id="inSid" value="${esc(last.sid || '')}" placeholder="例如：1130107">
+    ${ST.err ? `<div class="alert">${esc(ST.err)}</div>` : ''}
+    <button class="btn" id="go">進入暗標</button></div>`;
+}
+function mapHTML() {
+  const b = ST.board, L = { rows: b.rows, cols: b.cols, cells: b.cells || {}, marks: SC.toArr(b.marks) };
+  const V = SC.viewOf(L, 'student'), biddable = b.biddable || {}, reserved = b.reserved || {};
+  // 可用寬度＝螢幕 − 外框留白(28) − 卡片內距(36) − 兩側門的欄(40) − 地圖內距與邊框(20) − 格子間距
+  const avail = Math.min(window.innerWidth, 560) - 28 - 36 - 40 - 20 - 5 * (L.cols + 1);
+  const cw = Math.max(30, Math.min(58, Math.floor(avail / L.cols)));
+  const ch = Math.round(cw * 0.78);
+  let cells = '';
+  V.grid.forEach((row, dr) => row.forEach((k, dc) => {
+    const t = SC.cellType(L, k), pos = `grid-row:${dr + 2};grid-column:${dc + 2}`;
+    let cls = t === 's' ? '' : t, txt = '';
+    if (t === 's') {
+      if (reserved[k]) { cls = 'res'; txt = '已預留'; }
+      else if (biddable[k]) { cls = 'ok' + (ST.seat === k ? ' sel' : ''); txt = ST.seat === k ? '✔' : '可投'; }
+    }
+    cells += `<div class="cell ${cls}" data-k="${k}" style="${pos}">${txt}</div>`;
+  }));
+  const marks = L.marks.map((mk) => {
+    const sd = V.side(mk), st = V.start(mk);
+    const p = sd === 'top' || sd === 'bottom' ? `grid-row:${sd === 'top' ? 1 : L.rows + 2};grid-column:${st + 2} / span ${mk.span || 1}` : `grid-row:${st + 2};grid-column:${sd === 'left' ? 1 : L.cols + 2}`;
+    return `<div class="mark ${sd === 'left' || sd === 'right' ? 'door' : ''}" style="${p}">${esc(mk.label || '')}</div>`;
+  }).join('');
+  const sel = ST.seat ? SC.parseKey(ST.seat) : null;
+  return `<div class="card"><h2>① 選一個想坐的座位</h2>
+    <div class="map-box" style="text-align:center"><div class="cmap" style="grid-template-columns:20px repeat(${L.cols},${cw}px) 20px;grid-template-rows:auto repeat(${L.rows},${ch}px) auto">${marks}${cells}</div></div>
+    <div class="legend"><span style="--c:#d79a1e;--b:var(--gold-soft)">開放投標</span><span style="--c:var(--red);--b:var(--red)">我選的</span><span style="--c:#d6d1c4;--b:#eceae4">不開放</span></div>
+    <p class="big" style="text-align:center">${sel ? `已選：第 ${sel.r + 1} 排、左起第 ${sel.c + 1} 列` : '<span class="muted small">點黃色的座位</span>'}</p></div>`;
+}
+function resHTML() {
+  const R = ST.rules;
+  const one = (r) => {
+    const v = ST.vals[r.id] || {};
+    if (r.subs.length && r.detail) return `<div class="qty">${r.subs.map((x) => `<div><label>${esc(r.name)}「${esc(x.name)}」</label><input type="number" min="0" max="999" inputmode="numeric" data-r="${r.id}" data-s="${x.id}" value="${(v.sub || {})[x.id] || ''}" placeholder="0"></div>`).join('')}</div>
+      <div class="total" id="tot_${r.id}">合計 ${SC.resTotal(r, v)} 張</div>`;
+    return `<div class="qty"><div><label>${esc(r.name)} 數量</label><input type="number" min="0" max="99999" inputmode="numeric" data-r="${r.id}" value="${v.n || ''}" placeholder="0"></div></div>`;
+  };
+  let body;
+  if (R.allowMix) body = R.resources.map((r) => `<div style="margin-bottom:12px"><b>${esc(r.icon)} ${esc(r.name)}</b>${one(r)}</div>`).join('');
+  else body = `<div class="res-pick">${R.resources.map((r) => `<div class="res-opt ${ST.resId === r.id ? 'on' : ''}" data-res="${r.id}"><span class="ic">${esc(r.icon)}</span><b>${esc(r.name)}</b>${ST.resId === r.id ? '✔' : ''}</div>`).join('')}</div>
+      ${ST.resId ? one(R.resources.find((r) => r.id === ST.resId)) : ''}`;
+  return `<div class="card"><h2>② ${R.allowMix ? '填寫要投入的資源（可以混搭）' : '選一種資源，填寫數量'}</h2>
+    <p class="small muted" style="margin-bottom:8px">比序：${R.resources.map((r) => esc(r.name)).join(' ＞ ')}；同一種資源比數量${R.resources.some((r) => r.subs.length && r.detail) ? '，再依序比字' : ''}。</p>
+    ${body}
+    <button class="btn" id="send">確認送出</button></div>`;
+}
+function currentRes() {
+  const R = ST.rules, out = {};
+  R.resources.forEach((r) => {
+    if (!R.allowMix && r.id !== ST.resId) return;
+    const v = ST.vals[r.id]; if (!v) return;
+    const tot = SC.resTotal(r, v); if (tot <= 0) return;
+    if (r.subs.length && r.detail) { const sub = {}; r.subs.forEach((x) => { const n = Math.floor(Number((v.sub || {})[x.id]) || 0); if (n > 0) sub[x.id] = n; }); out[r.id] = { n: tot, sub }; }
+    else out[r.id] = { n: Math.floor(tot) };
+  });
+  return out;
+}
+function bind() {
+  const go = $('#go');
+  if (go) go.onclick = login;
+  const lo = $('#logout'); if (lo) lo.onclick = () => { ST.me = null; ST.seat = null; LS.set('bid_me_' + CODE, null); render(); };
+  document.querySelectorAll('.cell.ok').forEach((c) => c.onclick = () => { ST.seat = c.dataset.k; render(); });
+  document.querySelectorAll('[data-res]').forEach((c) => c.onclick = () => { ST.resId = c.dataset.res; render(); });
+  document.querySelectorAll('input[data-r]').forEach((i) => i.oninput = () => {
+    const r = ST.rules.resources.find((x) => x.id === i.dataset.r), v = ST.vals[r.id] = ST.vals[r.id] || {};
+    const n = Math.max(0, Math.floor(Number(i.value) || 0));
+    if (i.dataset.s) { v.sub = v.sub || {}; v.sub[i.dataset.s] = n; const t = $('#tot_' + r.id); if (t) t.textContent = `合計 ${SC.resTotal(r, v)} 張`; } else v.n = n;
+  });
+  const send = $('#send'); if (send) send.onclick = confirmSend;
+}
+async function login() {
+  const seat = $('#inSeat').value.trim(), name = $('#inName').value.trim(), sid = $('#inSid').value.trim();
+  if (!seat || !name || !sid) { ST.err = '三個欄位都要填喔'; return render(); }
+  LS.set('bid_last', { seat, name, sid });
+  $('#go').disabled = true; $('#go').textContent = '確認中…';
+  try {
+    const key = await SC.studentKey(CODE, seat, sid, name);
+    await api('checkin/' + key, 'PUT', { '.sv': 'timestamp' });   // 規則：名單裡有這個暗號才寫得進去
+    ST.me = { seat: SC.toNum(seat), name: SC.normName(name), key }; ST.err = '';
+    LS.set('bid_me_' + CODE, ST.me);
+  } catch (e) {
+    ST.err = e.message === 'denied' ? '資料比對不符：請確認座號、姓名、學號都和老師的名單一樣。' : '連線失敗，請稍後再試。';
+  }
+  render();
+}
+function confirmSend() {
+  if (!isOpen()) return render();
+  if (!ST.seat) return alert('請先在地圖上選一個座位');
+  const res = currentRes();
+  if (!SC.bidValid(res, ST.rules)) return alert(ST.rules.allowMix ? '請至少填一種資源的數量' : '請選一種資源並填寫數量');
+  const { r, c } = SC.parseKey(ST.seat);
+  const text = `第 ${r + 1} 排、左起第 ${c + 1} 列｜${SC.resText(res, ST.rules)}`;
+  const bg = document.createElement('div'); bg.className = 'sheet-bg';
+  bg.innerHTML = `<div class="sheet"><h3>📜 確認投標</h3>
+    <p class="big">${esc(text)}</p>
+    <div class="alert warn small">⚠️ 投入的數量如果超過自己擁有的數量，視為詐欺，需要接受代價。</div>
+    <button class="btn" id="ok">確定送出</button><button class="btn ghost" id="cancel">再想想</button></div>`;
+  document.body.appendChild(bg);
+  bg.querySelector('#cancel').onclick = () => bg.remove();
+  bg.querySelector('#ok').onclick = async () => {
+    const b = bg.querySelector('#ok'); b.disabled = true; b.textContent = '送出中…';
+    try {
+      await api('bids/' + ST.me.key, 'PUT', { seat: ST.seat, res, ts: { '.sv': 'timestamp' } });
+      LS.set('bid_rec_' + CODE, { text, at: Date.now() });
+      bg.remove(); ST.seat = null; ST.vals = {}; render(); window.scrollTo(0, 0);
+    } catch (e) {
+      bg.remove();
+      try { ST.meta = await api('meta'); } catch (x) { }
+      alert(!isOpen() ? '送出失敗：暗標已經截止了。' : e.message === 'denied' ? '送出失敗：可能是這個座位已不開放，或身分資料有誤。請重新整理再試一次。' : '送出失敗：網路不穩，請再按一次。');
+      render();
+    }
+  };
+}
+boot();
+</script>
+</body>
+</html>

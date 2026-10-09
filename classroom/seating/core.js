@@ -9,7 +9,7 @@
 (function (root) {
   'use strict';
 
-  const VERSION = '20261010a';
+  const VERSION = '20261010b';
 
   /* ---------------- 小工具 ---------------- */
   const key = (r, c) => r + '-' + c;
@@ -284,6 +284,103 @@
     return { items, errors };
   }
 
+  /* ---------------- 暗標（遊戲化模式） ----------------
+     資源：[{ id, name, icon, subs:[{ id, name }], detail }]
+       subs：子項目（依順位，例如簽名卡的 魚＞昕＞昶＞巫）；detail=true 時學生分別填每個子項目的張數
+     出價 res：{ 資源id: { n: 總數, sub: { 子項目id: 張數 } } }
+     比序（老師決定）：資源順位前者勝 → 同資源比總數 → 有子項目時依順位逐字比張數 → 全同進平手處理
+     做法：把出價轉成一串數字（依資源順位：總數、各子項目張數…），由左到右比大小；
+     沒用到的資源算 0，所以「用王牌 1 張」自然贏過「用簽名卡 5 張」，混搭時也通用 */
+  const DEFAULT_RESOURCES = [
+    { id: 'ace', name: '王牌', icon: '🃏', subs: [], detail: false },
+    { id: 'card', name: '巫魚子簽名卡', icon: '✍️', subs: [{ id: 's1', name: '魚' }, { id: 's2', name: '昕' }, { id: 's3', name: '昶' }, { id: 's4', name: '巫' }], detail: true },
+    { id: 'mana', name: 'ClassMana 幣', icon: '💎', subs: [], detail: false }
+  ];
+  const DEFAULT_BID_RULES = { resources: DEFAULT_RESOURCES, allowMix: false, tieBreak: 'rps' };   // tieBreak：rps 猜拳／random 系統抽籤／early 先送出者勝
+
+  function normalizeBidRules(b) {
+    b = b || {};
+    const res = b.resources ? toArr(b.resources) : DEFAULT_RESOURCES;
+    return {
+      resources: res.map((r) => ({ id: r.id || uid('res'), name: r.name || '資源', icon: r.icon || '', detail: !!r.detail, subs: toArr(r.subs).map((x) => ({ id: x.id || uid('sub'), name: x.name || '' })) })),
+      allowMix: !!b.allowMix, tieBreak: ['rps', 'random', 'early'].includes(b.tieBreak) ? b.tieBreak : 'rps'
+    };
+  }
+  const resTotal = (r, v) => {
+    if (!v) return 0;
+    if (r.subs.length && r.detail) return r.subs.reduce((s, x) => s + (Math.max(0, Number((v.sub || {})[x.id]) || 0)), 0);
+    return Math.max(0, Number(v.n) || 0);
+  };
+  /** 出價 → 比序用的一串數字 */
+  function bidVector(res, rules) {
+    const out = [];
+    rules.resources.forEach((r) => {
+      const v = (res || {})[r.id];
+      out.push(resTotal(r, v));
+      if (r.subs.length && r.detail) r.subs.forEach((x) => out.push(Math.max(0, Number(((v || {}).sub || {})[x.id]) || 0)));
+    });
+    return out;
+  }
+  /** 正數＝a 比較大（a 贏） */
+  function compareBids(a, b, rules) {
+    const va = bidVector(a.res, rules), vb = bidVector(b.res, rules);
+    for (let i = 0; i < va.length; i++) if (va[i] !== vb[i]) return va[i] - vb[i];
+    return 0;
+  }
+  /** 出價是否有效：至少投一個；不允許混搭時只能用一種資源 */
+  function bidUsed(res, rules) { return rules.resources.filter((r) => resTotal(r, (res || {})[r.id]) > 0); }
+  function bidValid(res, rules) { const u = bidUsed(res, rules); return u.length > 0 && (rules.allowMix || u.length === 1); }
+  /** 出價 → 文字（例：王牌×1、巫魚子簽名卡×3（魚1、巫2）） */
+  function resText(res, rules) {
+    return bidUsed(res, rules).map((r) => {
+      const v = res[r.id]; let t = `${r.name}×${resTotal(r, v)}`;
+      if (r.subs.length && r.detail) { const parts = r.subs.filter((x) => Number((v.sub || {})[x.id]) > 0).map((x) => `${x.name}${Number(v.sub[x.id])}`); if (parts.length) t += `（${parts.join('、')}）`; }
+      return t;
+    }).join('＋');
+  }
+  /** 開標：bids=[{ stu:座號, seat:座位key, res, ts }] → { 座位key: [[同分的一組出價…], [下一名…], …] }（無效出價丟掉） */
+  function rankBids(bids, rules) {
+    const by = {};
+    toArr(bids).filter((b) => b && b.seat && bidValid(b.res, rules)).forEach((b) => { (by[b.seat] = by[b.seat] || []).push(b); });
+    const out = {};
+    Object.entries(by).forEach(([k, list]) => {
+      list.sort((a, b) => compareBids(b, a, rules));
+      const groups = [];
+      list.forEach((b) => { const g = groups[groups.length - 1]; if (g && compareBids(g[0], b, rules) === 0) g.push(b); else groups.push([b]); });
+      out[k] = groups;
+    });
+    return out;
+  }
+  /** 依排名、平手選擇、取消資格算出每個座位的得標者
+      opts: { tieBreak, tiePick:{座位key:座號}, disq:{座號:true} } → { wins:{座位key: 出價}, ties:{座位key:[同分出價…]}（還要老師決定的猜拳） } */
+  function decideWinners(ranked, opts) {
+    const wins = {}, ties = {}; const disq = opts.disq || {}, pick = opts.tiePick || {};
+    Object.entries(ranked).forEach(([k, groups]) => {
+      for (const g0 of groups) {
+        const g = g0.filter((b) => !disq[b.stu]);
+        if (!g.length) continue;
+        if (g.length === 1) { wins[k] = g[0]; break; }
+        const chosen = g.find((b) => Number(b.stu) === Number(pick[k]));
+        if (chosen) { wins[k] = chosen; break; }
+        if (opts.tieBreak === 'early') { wins[k] = g.slice().sort((a, b) => (a.ts || 0) - (b.ts || 0))[0]; break; }
+        ties[k] = g; break;       // 猜拳或尚未抽籤：等老師決定
+      }
+    });
+    return { wins, ties };
+  }
+
+  /** 學生身分暗號：SHA-256(回合代碼|座號|學號|姓名) 取前 32 碼；資料庫只存暗號，學生看不到別人的學號 */
+  const normName = (s) => clean(s).replace(/\s+/g, '');
+  const normSid = (s) => clean(s).replace(/[０-９Ａ-Ｚａ-ｚ]/g, (d) => String.fromCharCode(d.charCodeAt(0) - 65248)).replace(/\s+/g, '').toUpperCase();
+  async function studentKey(code, seat, sid, name) {
+    const text = `${code}|${toNum(seat)}|${normSid(sid)}|${normName(name)}`;
+    const buf = await (root.crypto || globalThis.crypto).subtle.digest('SHA-256', new TextEncoder().encode(text));
+    return [...new Uint8Array(buf)].map((x) => x.toString(16).padStart(2, '0')).join('').slice(0, 32);
+  }
+  /** 回合代碼：6 碼，不含容易看錯的 0 O 1 I */
+  const CODE_CHARS = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const newCode = () => Array.from({ length: 6 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join('');
+
   /* ---------------- 班級資料正規化（Firebase 會把陣列存成物件、空陣列會消失） ---------------- */
   function newClass(name, tpl) {
     const blank = tpl === 'blank';
@@ -292,7 +389,7 @@
       layout: newLayout(7, 6),
       cadres: blank ? [] : DEFAULT_CADRES.map((c) => ({ ...c, id: uid('c') })),
       cleaning: [],   // 打掃工作每位老師、每次換座位都不同 → 不預設，靠匯入、沿用上一回合或手動新增
-      secret: [], rounds: [], currentRound: null,
+      secret: [], rounds: [], currentRound: null, bidRules: normalizeBidRules(null),
       settings: { note: blank ? '' : DEFAULT_NOTE, stageView: 'student', printView: 'teacher', gameMode: blank ? 'plain' : 'game',
         showCadres: !blank, showCleaning: !blank, sheetTitle: '' },
       createdAt: Date.now(), updatedAt: Date.now()
@@ -316,10 +413,13 @@
     out.cleaning = c.cleaning ? normClean(c.cleaning) : [];
     out.secret = toArr(c.secret).map((x) => { const y = { ...x, who: members(x), list: toArr(x.list) }; delete y.a; delete y.b; return y; });
     out.settings = { ...d.settings, ...(c.settings || {}) };
+    out.bidRules = normalizeBidRules(c.bidRules);
     out.rounds = toArr(c.rounds).map((rd) => ({
       id: rd.id || uid('rd'), title: rd.title || '換座位', period: rd.period || '', createdAt: rd.createdAt || Date.now(),
       status: rd.status || 'prep', layout: normalizeLayout(rd.layout),
       locked: rd.locked || {}, lockInfo: rd.lockInfo || {}, assign: rd.assign || null,
+      biddable: rd.biddable || {},          // 本回合開放暗標的座位
+      bid: rd.bid ? { ...rd.bid, raw: toArr(rd.bid.raw), tiePick: rd.bid.tiePick || {}, disq: rd.bid.disq || {}, keep: rd.bid.keep || {} } : null,
       drawnAt: rd.drawnAt || null, finalAt: rd.finalAt || null,
       // 每回合自己的打掃工作；cleaningSet＝這回合已經有自己的打掃資料（空陣列會被 Firebase 吃掉，靠這個旗標分辨）
       cleaning: rd.cleaning ? normClean(rd.cleaning) : (rd.cleaningSet ? [] : null), cleaningSet: !!(rd.cleaning || rd.cleaningSet)
@@ -333,6 +433,8 @@
   const api = {
     VERSION, key, parseKey, pad2, uid, toArr, toNum, shuffle, seatsText,
     DEFAULT_CADRES, DEFAULT_CLEANING, DEFAULT_NOTE,
+    DEFAULT_RESOURCES, DEFAULT_BID_RULES, normalizeBidRules, resTotal, bidVector, compareBids, bidUsed, bidValid, resText, rankBids, decideWinners,
+    studentKey, normName, normSid, newCode, CODE_CHARS,
     newLayout, resizeLayout, cellType, seatKeys, viewOf, adjacency,
     members, zoneAllows, activeRules, violations, solve, diagnose,
     parseRoster, parseCleaning, newClass, normalizeClass, sanitize

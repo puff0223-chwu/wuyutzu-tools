@@ -113,6 +113,10 @@ table.list th{background:#f3eee2;font-weight:700}
 .cell.sel{outline:4px solid var(--red);outline-offset:1px}
 .cell.warn{box-shadow:0 0 0 3px var(--red) inset}
 .cell.zone{outline:3px dashed var(--teal);outline-offset:-5px}
+.cell.bidzone{outline:3px dashed #d79a1e;outline-offset:-6px;background:#fff8e6}
+.ann-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;width:min(1100px,94vw);margin-top:18px}
+.ann{background:#fffaf0;color:var(--ink);border:3px solid var(--gold);border-radius:14px;padding:12px 16px;display:flex;flex-direction:column;gap:2px}
+.ann b{font-size:1.5em}.ann span{color:var(--ink2)}.ann em{font-style:normal;font-weight:700;color:#7a4e06}
 .cell:hover{filter:brightness(.96)}
 .mark{background:var(--ink);color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85em;min-height:30px;padding:2px 6px}
 .mark.door{background:transparent;color:var(--red);border:2px solid var(--red);writing-mode:vertical-rl;letter-spacing:.2em;min-height:0}
@@ -211,7 +215,7 @@ table.list th{background:#f3eee2;font-weight:700}
 <div id="printRoot"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="core.js?v=20261010a"></script>
+<script src="core.js?v=20261010c"></script>
 <script type="module">
 /* Firebase 只用來「老師登入＋存班級資料」。載入失敗（沒網路）時仍可用本機模式 */
 const firebaseConfig = {
@@ -239,7 +243,7 @@ try {
     remove: (path) => D.remove(D.ref(db, path))
   };
 } catch (e) { console.warn('Firebase 載入失敗，只能用本機模式', e); window.FB = null; }
-await import('./app.js?v=20261010a');
+await import('./app.js?v=20261010c');
 </script>
 </body>
 </html>

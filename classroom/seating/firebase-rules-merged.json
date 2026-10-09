@@ -160,6 +160,37 @@
      ".write": "auth != null && $cid.matches(/^cls[a-z0-9]{6,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)",
      ".validate": "newData.child('owner').val() === auth.uid"
     }
+   },
+   "rounds": {
+    "$code": {
+     ".write": "auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid))",
+     "meta": {
+      ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)",
+      ".write": "auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)",
+      ".validate": "newData.hasChildren(['owner','open','deadline']) && newData.child('owner').val() === auth.uid && newData.child('deadline').isNumber()"
+     },
+     "board": {
+      ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)",
+      ".write": "auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid"
+     },
+     "keys": {
+      ".write": "auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid"
+     },
+     "checkin": {
+      "$h": {
+       ".write": "newData.exists() && root.child('seating/rounds/'+$code+'/keys/'+$h).val() === true",
+       ".validate": "newData.val() == now"
+      }
+     },
+     "bids": {
+      ".read": "auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid",
+      ".write": "auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid",
+      "$h": {
+       ".write": "newData.exists() && root.child('seating/rounds/'+$code+'/keys/'+$h).val() === true && root.child('seating/rounds/'+$code+'/meta/open').val() === true && now <= root.child('seating/rounds/'+$code+'/meta/deadline').val()",
+       ".validate": "newData.hasChildren(['seat','res','ts']) && newData.child('ts').val() == now && newData.child('seat').isString() && root.child('seating/rounds/'+$code+'/board/biddable/'+newData.child('seat').val()).val() === true"
+      }
+     }
+    }
    }
   }
  }

@@ -36,7 +36,8 @@ wuyutzu-tools/
 │   ├── seating/                  # 🪑 座位大作戰（新版換座位整合系統，2026-10-09 第一階段）
 │   │   ├── index.html            #   老師後台（登入、7 個分頁、投影舞台、A4 列印）
 │   │   ├── app.js                #   老師後台程式
-│   │   ├── core.js               #   共用核心：地圖、相鄰判斷、受限隨機分配、匯入解析
+│   │   ├── bid.html              #   學生暗標頁（bid.html?code=回合代碼，手機用，不連回首頁）
+│   │   ├── core.js               #   共用核心：地圖、相鄰判斷、受限隨機分配、匯入解析、比序引擎、學生暗號
 │   │   └── firebase-rules-merged.json # 加上 seating 後的完整 Firebase 規則
 │   ├── cleaning-jobs-admin.html  # 打掃徵才 v4：老師管理頁
 │   ├── cleaning-jobs-signup.html # 打掃徵才 v4：學生志願登記頁
@@ -169,7 +170,13 @@ wuyutzu-tools/
               status：open 待承接 → taken 偵辦中 → done 已破案；另有 cancelled（委託人撤回）、removed（老師移除）
 └── seating/                                   ← 座位大作戰（需登入，只有班級擁有者能讀寫）
     ├── owners/<老師uid>/<班級id>: { name, updatedAt }   ← 班級清單索引
-    └── classes/<班級id>: { owner, name, teacherTitle, roster[], layout, cadres[], cleaning[], secret[], settings, rounds[], currentRound, … }
+    ├── classes/<班級id>: { owner, name, teacherTitle, roster[], layout, cadres[], cleaning[], secret[], bidRules, settings, rounds[], currentRound, … }
+    └── rounds/<回合代碼 6 碼>/               ← 線上暗標（第二階段）
+        ├── meta: { owner, title, className, open, deadline, createdAt }   ← 公開可讀
+        ├── board: { rows, cols, cells, marks, biddable, reserved, resources, allowMix }   ← 公開可讀（不含姓名）
+        ├── keys/<暗號>: true        ← 名單暗號，學生讀不到
+        ├── checkin/<暗號>: 時間     ← 學生登入確認身分用
+        └── bids/<暗號>: { seat, res, ts }   ← 只有老師讀得到；學生只能寫自己那格、開放中且未截止
 ```
 
 - **安全規則**（2026-10-03 發布）：根目錄全部上鎖。
@@ -411,7 +418,14 @@ wuyutzu-tools/
 - **A4 座位表**：仿老師的 Excel 版面（座位圖＋幹部框＋打掃區域＋底部備註＋適用期間）；版面依內容自動分欄（幹部或打掃太長就分兩欄）、整體縮放、被寬度卡住時自動把格子拉高填滿；列印用 `@page A4 landscape`，只印座位表；也可下載 Excel（座位表／幹部／打掃三張表）
 - **打掃匯入**（介面稱「匯入打掃工作內容」，不出現「打掃徵才」字樣）：Excel 一列一人，欄位 `打掃項目`（也接受打掃徵才 v3.4 的 `中籤打掃項目`）、`座號`、`姓名`（可省略）；「[教室]地板天花板」自動拆成區域＋項目；有「範例檔」可下載；單向匯入，不連動打掃徵才系統
 - **備份**：班級資料可下載／還原 JSON；雲端寫入失敗時會在本機留一份暫存（`seating3_cache_<班級id>`）
-- 第二階段（未做）：學生暗標頁 `bid.html`、比序規則編輯器、自動開標、截止時間、資源回收清單；Firebase 會再加 `seating/rounds/<回合代碼>`（規格書第 8 節）
+- **第二階段：線上暗標**（2026-10-10，只在遊戲化模式、雲端登入時可用）
+  - **暗標規則**（班級資料 →「🎮 暗標規則 ⚙️ 編輯」，存在 `bidRules`）：資源清單（名稱、圖示、子項目、是否分別填子項目張數）可新增、修改、排序、刪除；是否允許混搭；平手處理（✊ 現場猜拳／🎲 系統抽籤／⏱️ 先送出者勝）。預設：王牌 ＞ 巫魚子簽名卡（魚＞昕＞昶＞巫，分別填）＞ ClassMana 幣，不混搭，平手猜拳
+  - **比序引擎** `SeatCore.bidVector/compareBids`：出價轉成一串數字（依資源順位：總數、各子項目張數…）由左到右比大小，沒用到的資源算 0 → 自然達成「資源順位 → 總數 → 逐字」，混搭也通用。`rankBids` 依座位排名並把同分歸成一組，`decideWinners` 依平手選擇與取消資格算出得標者
+  - **開放暗標**（換座位頁）：地圖切到「🎯 暗標區」點選開放的座位 → 設截止時間 → 🚀 開放暗標。產生 6 碼回合代碼，雲端寫入 meta、board、keys（每位學生的暗號＝SHA-256(代碼|座號|學號|姓名) 前 32 碼）。開放中修改暗標區、鎖定座位、暗標規則會自動更新 board
+  - **學生頁** `bid.html?code=…`：輸入座號、姓名、學號（全形半形、空白都會自動整理）→ 寫 checkin 確認身分 → 地圖點黃色座位 → 選資源填數量 → 確認（含詐欺警告）→ 送出。可重複送出，只採最後一次；收據只存在學生手機；看不到任何人的出價；截止時間由 Firebase 伺服器時間把關
+  - **開標**：讀回 bids，用名單暗號對回座號，存成 `rd.bid.raw`；結果視窗逐座位顯示得標者、出價、其他投標；平手（猜拳）由老師點勝者；得標者之間違反「互不相鄰」先不鎖定（⏸ 待老師決定：兩人都保留／取消其中一人）；可「取消得標」由下一位遞補（詐欺處理）；全部決定後「🔒 鎖定得標座位」寫入 `locked`＋`lockInfo{kind:'bid', note, res}`
+  - **💰 資源回收清單**：得標者各資源（含子項目）數量與合計，可下載 Excel；**📢 開標公告**：投影舞台上的按鈕，只公布得標者、座位與出價
+  - ⚠️ 需要在 Firebase 貼上加了 `seating/rounds` 的新規則（`classroom/seating/firebase-rules-merged.json`）
 - **兩種模式**（`settings.gameMode` = game／plain）：新增班級時選「🎮 巫魚子老師遊戲化模式」或「🪑 一般模式」，說明收在 ❓ 按鈕裡；之後在「班級資料」用「切換模式」改。一般模式下不出現任何暗標、得標、🏆 等遊戲用語與設定（「🎮 遊戲化設定」卡片也只在遊戲化模式出現），鎖定座位只叫「📌 指定」
 - 遊戲化模式預設帶入 16 個幹部職位與任課老師備註；一般模式不預設幹部、座位表只印座位圖。新增班級可勾「複製目前班級的教室地圖、幹部職位與備註」。已存在的班級沒有幹部欄位時視為「清空」，不會補回預設（Firebase 會吃掉空陣列）
 - **打掃工作跟著回合走**（2026-10-09 改）：老師換打掃的頻率不同（一學期一次、每次段考、每月），所以每個回合有自己的 `cleaning`；開新回合時選「沿用上一回合」或「先空白」，打掃分頁可切換回合、「📋 沿用上一回合」、匯入打掃徵才結果、手動新增。`cleaningSet` 旗標用來分辨「這回合清空了」與「舊資料還沒有自己的打掃」（後者沿用班級層 `cleaning`）。不再提供預設打掃項目
@@ -422,7 +436,7 @@ wuyutzu-tools/
 - **換座位頁**（2026-10-10 重排）：上方工具列（回合下拉、開新回合、名稱、適用期間、刪除）；左邊地圖（🔒 鎖定座位／✏️ 開關座位、視角）；右邊「🎬 投影抽籤」卡片：四格數字（全班、已鎖定、待分配、空位）、需要時才出現的紅色提醒（含自動試算秘密規則能否排出）、一顆「📺 開啟投影舞台」（在新分頁開投影專用連結，被擋時改在原分頁開）＋「複製投影連結」；抽籤後變成「✅ 定案」與「再開一次投影／清除結果重抽」
 - **🙈 上課模式**（頂部按鈕，記在這台裝置）：藏起「秘密規則」分頁、違規紅框與相關提醒、「檢查規則」按鈕；關閉時要確認
 - **多分頁同步**：回到分頁（focus／切回畫面）時，若雲端或本機有更新的版本就自動換成最新版，避免投影分頁的抽籤結果被後台分頁的舊資料蓋掉
-- 第三階段（未做）：遊戲化關閉時的「志願模式」（學生線上選位、衝突抽籤）
+- 第三階段（未做）：一般模式的「志願模式」（學生線上選位、衝突抽籤）
 - ⚠️ 需要老師在 Firebase 後台手動做：Authentication 新增座位系統專用帳號、貼上 `classroom/seating/firebase-rules-merged.json` 規則
 
 ### 💰 集點小金庫（family-points/index.html，2026-10-06 新增）
@@ -488,7 +502,7 @@ fp/
 
 ---
 
-## 附錄：Firebase 安全規則全文（2026-10-09，新增座位大作戰 seating：老師登入後只能讀寫自己的班級）
+## 附錄：Firebase 安全規則全文（2026-10-10，座位大作戰加上線上暗標 seating/rounds）
 
 ```json
 {
@@ -652,6 +666,37 @@ fp/
      ".read": "auth != null && data.child('owner').val() === auth.uid",
      ".write": "auth != null && $cid.matches(/^cls[a-z0-9]{6,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)",
      ".validate": "newData.child('owner').val() === auth.uid"
+    }
+   },
+   "rounds": {
+    "$code": {
+     ".write": "auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid))",
+     "meta": {
+      ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)",
+      ".write": "auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)",
+      ".validate": "newData.hasChildren(['owner','open','deadline']) && newData.child('owner').val() === auth.uid && newData.child('deadline').isNumber()"
+     },
+     "board": {
+      ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)",
+      ".write": "auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid"
+     },
+     "keys": {
+      ".write": "auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid"
+     },
+     "checkin": {
+      "$h": {
+       ".write": "newData.exists() && root.child('seating/rounds/'+$code+'/keys/'+$h).val() === true",
+       ".validate": "newData.val() == now"
+      }
+     },
+     "bids": {
+      ".read": "auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid",
+      ".write": "auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid",
+      "$h": {
+       ".write": "newData.exists() && root.child('seating/rounds/'+$code+'/keys/'+$h).val() === true && root.child('seating/rounds/'+$code+'/meta/open').val() === true && now <= root.child('seating/rounds/'+$code+'/meta/deadline').val()",
+       ".validate": "newData.hasChildren(['seat','res','ts']) && newData.child('ts').val() == now && newData.child('seat').isString() && root.child('seating/rounds/'+$code+'/board/biddable/'+newData.child('seat').val()).val() === true"
+      }
+     }
     }
    }
   }

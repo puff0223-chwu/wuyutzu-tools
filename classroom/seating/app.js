@@ -93,6 +93,7 @@ const HELP = {
   plain: ['🪑 一般模式', '老師可以先指定部分同學的座位，其餘同學在投影舞台抽籤分配。<br><br>畫面不會出現任何暗標、得標等遊戲用語；不預設幹部職位，座位表預設只印座位圖（幹部、打掃之後都能自己加）。']
 };
 const helpBtn = (k) => `<button type="button" class="help" data-act="help" data-v="${k}" title="說明">?</button>`;
+const act = {};          // 所有按鈕動作（data-act）
 let saveTimer = null;
 function touch(rerender) {
   if (!S.cls) return;
@@ -112,7 +113,7 @@ function paintSave() { const el = $('#saveState'); if (el) { el.textContent = S.
 const C = () => S.cls;
 const stu = (seat) => C().roster.find((s) => s.seat === Number(seat));
 const stuLabel = (seat) => { const s = stu(seat); return s ? `${pad2(s.seat)} ${s.name}` : `${pad2(seat)}（名單外）`; };
-const round = () => C() && C().rounds.find((r) => r.id === S.roundId) || null;
+const round = () => { const r = C() && C().rounds.find((x) => x.id === S.roundId) || null; if (r && !r.biddable) r.biddable = {}; return r; };
 const rosterSeats = () => C().roster.map((s) => s.seat);
 function ruleText(r) {
   if (r.type === 'apart') return `🚫 ${SC.members(r).map(stuLabel).join('、')} 互不相鄰`;
@@ -315,8 +316,8 @@ TABV.info = () => {
         </div>
       </div>
       ${isGame() ? `<div class="card">
-        <h3 style="margin-top:0">🎮 遊戲化設定</h3>
-        <p class="small muted">暗標資源（王牌、巫魚子簽名卡、ClassMana 幣）與比序規則的編輯，會在第二階段加在這裡。</p>
+        <div class="row"><h3 style="margin:0">🎮 暗標規則</h3><span class="spacer"></span><button class="btn sm" data-act="bidRulesEdit">⚙️ 編輯</button></div>
+        ${bidRulesSummary()}
       </div>` : ''}
       <div class="card">
         <h3 style="margin-top:0">🗄️ 備份與還原</h3>
@@ -593,12 +594,14 @@ TABV.round = () => {
     const lockedHere = k in rd.locked;
     let cls = s != null ? (lockedHere ? 'lock-' + (isGame() ? info.kind || 'reserve' : 'reserve') : 'filled') : '';
     if (S.swapSel === k) cls += ' sel';
+    if (isGame() && !drawn && rd.biddable[k] && !lockedHere) cls += ' bidzone';
     if (!hide && (drawn ? assignViol : lockViol).some((v) => v.keys.includes(k))) cls += ' warn';
     const tag = lockedHere && s != null ? `<span class="tag">${info.kind === 'bid' && isGame() ? '🏆' : '📌'}</span>` : '';
     return { cls, html: s != null ? `${tag}<span class="no">${pad2(s)}</span><span class="nm">${esc((stu(s) || {}).name || '')}</span>` : '' };
   };
   const hint = final ? '已定案。要修改請先「解除定案」。'
     : drawn ? '點一個座位、再點另一個座位，兩人就會交換（也可以移到空位）。'
+      : mode === 'bid' ? '點座位設定「開放暗標」的座位（黃色虛線框），學生只能投這些座位。'
       : mode === 'lock' ? (isGame() ? '點座位，指定得標者或老師預留的同學。' : '點座位，指定這個座位給哪位同學。') : '點座位切換「可坐 ↔ 關閉」，只影響這一回合。';
   const warns = [];
   if (short > 0) warns.push(`座位不夠：還差 ${short} 個，請先開放座位。`);
@@ -611,7 +614,7 @@ TABV.round = () => {
   <div class="map-layout">
     <div class="card">
       <div class="row" style="margin-bottom:6px">
-        ${!drawn ? `<div class="seg"><button class="${mode === 'lock' ? 'on' : ''}" data-act="roundMode" data-v="lock">🔒 鎖定座位</button>
+        ${!drawn ? `<div class="seg">${isGame() ? `<button class="${mode === 'bid' ? 'on' : ''}" data-act="roundMode" data-v="bid">🎯 暗標區</button>` : ''}<button class="${mode === 'lock' ? 'on' : ''}" data-act="roundMode" data-v="lock">🔒 鎖定座位</button>
           <button class="${mode === 'paint' ? 'on' : ''}" data-act="roundMode" data-v="paint">✏️ 開關座位</button></div>` : `<span class="chip ${final ? 'teal' : 'blue'}">${final ? '✅ 已定案' : '🔁 互換模式'}</span>`}
         <span class="spacer"></span>
         <div class="seg">${[['teacher', '講台視角'], ['student', '學生視角']].map(([v, t]) => `<button class="${view === v ? 'on' : ''}" data-act="printView" data-v="${v}">${t}</button>`).join('')}</div>
@@ -620,10 +623,11 @@ TABV.round = () => {
       <div class="map-wrap" style="--cw:70px;--ch:52px;text-align:center">${mapHTML(L, { view, act: final ? '' : 'roundCell', cell: cellFn })}</div>
       <div class="legend" style="justify-content:center">
         <span style="--c:#d79a1e;--b:var(--gold-soft)">📌 ${isGame() ? '老師預留' : '指定座位'}</span>${isGame() ? '<span style="--c:var(--purple);--b:var(--purple-soft)">🏆 得標</span>' : ''}
-        <span style="--c:var(--blue);--b:var(--blue-soft)">抽籤分配</span><span style="--c:#e4a594;--b:#fbe9e5">關閉</span>
+        ${isGame() && !drawn ? '<span style="--c:#d79a1e;--b:#fff">🎯 開放暗標</span>' : ''}<span style="--c:var(--blue);--b:var(--blue-soft)">抽籤分配</span><span style="--c:#e4a594;--b:#fbe9e5">關閉</span>
       </div>
     </div>
     <div>
+      ${isGame() && !drawn ? bidCardHTML(rd) : ''}
       <div class="card">
         <h3 style="margin-top:0">🎬 投影抽籤</h3>
         <div class="stat-row">
@@ -876,6 +880,7 @@ function openStage() {
       <div class="st-title"><small>SEAT AUCTION · ${esc(c.name)}班</small>${esc(rd.title)}</div>
       <div class="st-count" id="stCount"></div>
       <span class="spacer"></span>
+      ${isGame() && Object.values(rd.lockInfo).some((x) => x.kind === 'bid') ? '<button class="st-btn ghost" data-st="announce">📢 開標公告</button>' : ''}
       <button class="st-btn ghost" data-st="pick">🎯 抽一位同學</button>
       <button class="st-btn" data-st="draw" id="stDraw">🎲 開始分配</button>
       <select class="st-btn ghost" id="stSpeed" style="padding:7px 8px;width:auto">${[['slow', '🐢 慢'], ['normal', '🚶 中'], ['fast', '🐇 快']].map(([v, t]) => `<option value="${v}" ${ST.speed === v ? 'selected' : ''} style="color:#000">${t}</option>`).join('')}</select>
@@ -939,6 +944,7 @@ async function stageClick(e) {
   if (a === 'sound') { b.textContent = Snd.toggle() ? '🔊' : '🔇'; return; }
   if (a === 'skip') { ST.skip = true; return; }
   if (a === 'pick') return pickVolunteer();
+  if (a === 'announce') return announce();
   if (a === 'draw') return runDraw();
 }
 function pickVolunteer() {
@@ -990,9 +996,298 @@ async function runDraw() {
 }
 
 /* =====================================================================
+   🎮 線上暗標（遊戲化模式）
+   雲端位置 seating/rounds/<代碼>/：meta（公開：是否開放、截止）、board（公開：地圖、可投座位、資源）、
+   keys/<暗號>（名單暗號，學生讀不到）、checkin/<暗號>、bids/<暗號>（只有老師讀得到）
+   ===================================================================== */
+function bidRulesSummary() {
+  const R = C().bidRules;
+  return `<p class="small" style="margin-top:8px;line-height:1.8">比序：${R.resources.map((r) => `${esc(r.icon)} ${esc(r.name)}${r.subs.length ? `（${r.subs.map((x) => esc(x.name)).join('＞')}）` : ''}`).join(' ＞ ')}<br>
+    <span class="muted">${R.allowMix ? '可以混搭多種資源' : '每次只能選一種資源'}｜平手：${TIE_NAME[R.tieBreak]}</span></p>`;
+}
+const TIE_NAME = { rps: '✊ 現場猜拳', random: '🎲 系統抽籤', early: '⏱️ 先送出者勝' };
+const stuBySeat = (n) => C().roster.find((s) => s.seat === Number(n));
+const seatLabel = (k) => { const { r, c } = SC.parseKey(k); return `第${r + 1}排 左起第${c + 1}列`; };
+
+act.bidRulesEdit = () => {
+  const draft = JSON.parse(JSON.stringify(C().bidRules));
+  modal('<div id="brBody"></div>', { wide: true, sticky: true, mount: (m, close) => {
+    const body = $('#brBody', m);
+    const draw = () => {
+      body.innerHTML = `<h3>⚙️ 暗標規則</h3>
+        <p class="small muted">資源由上往下就是比序順位（上面的資源比較大）。有子項目的資源（例如簽名卡的字），同張數時依子項目順位逐字比張數。</p>
+        ${draft.resources.map((r, i) => `<div class="mark-item">
+          <div class="row">
+            <input type="text" class="inline" data-br="${i}" data-f="icon" value="${esc(r.icon)}" style="width:52px;text-align:center" title="圖示">
+            <input type="text" class="inline" data-br="${i}" data-f="name" value="${esc(r.name)}" style="flex:1;min-width:120px" placeholder="資源名稱">
+            <button class="btn sm ghost" data-brmove="${i}" data-d="-1" ${i ? '' : 'disabled'}>↑</button>
+            <button class="btn sm ghost" data-brmove="${i}" data-d="1" ${i < draft.resources.length - 1 ? '' : 'disabled'}>↓</button>
+            <button class="btn sm ghost" data-brdel="${i}">✕</button>
+          </div>
+          <div class="row small" style="margin-top:6px"><span>子項目（依順位，用逗號隔開，可空白）</span>
+            <input type="text" class="inline" data-br="${i}" data-f="subs" value="${esc(r.subs.map((x) => x.name).join(','))}" placeholder="例如：魚,昕,昶,巫" style="flex:1;min-width:140px"></div>
+          ${r.subs.length ? `<label class="small" style="display:block;margin-top:6px"><input type="checkbox" data-br="${i}" data-f="detail" ${r.detail ? 'checked' : ''}> 學生分別填每個子項目的張數（才能逐字比序）</label>` : ''}
+        </div>`).join('')}
+        <button class="btn sm" id="brAdd">＋ 新增資源</button>
+        <h3 style="font-size:1em;margin-top:16px">投標方式</h3>
+        <label><input type="checkbox" id="brMix" ${draft.allowMix ? 'checked' : ''}> 允許混搭多種資源（不勾＝每次只能選一種）</label>
+        <h3 style="font-size:1em;margin-top:14px">完全平手時</h3>
+        ${Object.entries(TIE_NAME).map(([v, t]) => `<label style="margin-right:16px"><input type="radio" name="brTie" value="${v}" ${draft.tieBreak === v ? 'checked' : ''}> ${t}</label>`).join('')}
+        <div class="row" style="margin-top:18px"><button class="btn primary" id="brSave">💾 儲存</button><button class="btn ghost" id="brReset">恢復預設</button><span class="spacer"></span><button class="btn ghost" id="brCancel">取消</button></div>`;
+      body.querySelectorAll('[data-br]').forEach((el) => el.onchange = () => {
+        const r = draft.resources[Number(el.dataset.br)], f = el.dataset.f;
+        if (f === 'subs') { const names = el.value.split(/[,，、\s]+/).map((x) => x.trim()).filter(Boolean); r.subs = names.map((n, j) => ({ id: (r.subs.find((x) => x.name === n) || {}).id || uid('sub'), name: n })); if (r.subs.length && r.detail == null) r.detail = true; draw(); }
+        else if (f === 'detail') r.detail = el.checked; else r[f] = el.value;
+      });
+      body.querySelectorAll('[data-brmove]').forEach((el) => el.onclick = () => { const i = Number(el.dataset.brmove), j = i + Number(el.dataset.d), a = draft.resources; [a[i], a[j]] = [a[j], a[i]]; draw(); });
+      body.querySelectorAll('[data-brdel]').forEach((el) => el.onclick = () => { if (draft.resources.length <= 1) return toast('至少要有一種資源', true); draft.resources.splice(Number(el.dataset.brdel), 1); draw(); });
+      $('#brAdd', body).onclick = () => { draft.resources.push({ id: uid('res'), name: '新資源', icon: '⭐', subs: [], detail: false }); draw(); };
+      $('#brMix', body).onchange = (e) => { draft.allowMix = e.target.checked; };
+      body.querySelectorAll('input[name=brTie]').forEach((el) => el.onchange = () => { draft.tieBreak = el.value; });
+      $('#brReset', body).onclick = () => { if (confirm('恢復成預設的王牌、巫魚子簽名卡、ClassMana 幣？')) { Object.assign(draft, JSON.parse(JSON.stringify(SC.DEFAULT_BID_RULES))); draw(); } };
+      $('#brCancel', body).onclick = close;
+      $('#brSave', body).onclick = () => {
+        if (draft.resources.some((r) => !r.name.trim())) return toast('資源名稱不能空白', true);
+        C().bidRules = SC.normalizeBidRules(draft); close(); touch(true); Bid.pushBoardSoon(); toast('💾 已儲存暗標規則');
+      };
+    };
+    draw();
+  } });
+};
+
+/* ---------- 開放／截止／開標 ---------- */
+const Bid = {
+  board(rd) {
+    const c = C(), reserved = {};
+    Object.keys(rd.locked).forEach((k) => { reserved[k] = true; });
+    const biddable = {}; Object.keys(rd.biddable).forEach((k) => { if (SC.cellType(rd.layout, k) === 's' && !(k in rd.locked)) biddable[k] = true; });
+    return SC.sanitize({ rows: rd.layout.rows, cols: rd.layout.cols, cells: rd.layout.cells, marks: rd.layout.marks, biddable, reserved,
+      resources: c.bidRules.resources, allowMix: c.bidRules.allowMix });
+  },
+  live(rd) { return rd && rd.bid && rd.bid.code && !rd.bid.raw.length && Store.mode === 'cloud'; },
+  _t: null,
+  pushBoardSoon() {
+    const rd = round(); if (!this.live(rd)) return;
+    clearTimeout(this._t);
+    this._t = setTimeout(() => FB.set(`seating/rounds/${rd.bid.code}/board`, this.board(rd)).catch((e) => toast('更新暗標地圖失敗：' + (e.code || e.message), true)), 700);
+  },
+  async keys(code) {
+    const out = {};
+    for (const s of C().roster) if (s.sid) out[await SC.studentKey(code, s.seat, s.sid, s.name)] = s.seat;
+    return out;   // 暗號 → 座號
+  },
+  async publish(rd, deadline) {
+    const c = C();
+    let code = SC.newCode();
+    for (let i = 0; i < 5 && await FB.get(`seating/rounds/${code}/meta`); i++) code = SC.newCode();
+    const keys = await this.keys(code), keyTrue = {}; Object.keys(keys).forEach((h) => { keyTrue[h] = true; });
+    await FB.set(`seating/rounds/${code}/meta`, { owner: Store.uid, title: rd.title, className: c.name || '', open: true, deadline, createdAt: Date.now() });
+    await FB.set(`seating/rounds/${code}/board`, this.board(rd));
+    await FB.set(`seating/rounds/${code}/keys`, keyTrue);
+    rd.bid = { code, deadline, publishedAt: Date.now(), raw: [], tiePick: {}, disq: {}, keep: {} };
+  },
+  async fetch(rd) {
+    const [bids, keys] = await Promise.all([FB.get(`seating/rounds/${rd.bid.code}/bids`), this.keys(rd.bid.code)]);
+    return Object.entries(bids || {}).map(([h, b]) => ({ stu: keys[h], seat: b.seat, res: b.res || {}, ts: b.ts || 0 })).filter((b) => b.stu != null);
+  },
+  /** 目前的開標結果（含平手、規則衝突） */
+  result(rd) {
+    const c = C(), R = c.bidRules;
+    const ranked = SC.rankBids(rd.bid.raw, R);
+    const { wins, ties } = SC.decideWinners(ranked, { tieBreak: R.tieBreak, tiePick: rd.bid.tiePick, disq: rd.bid.disq });
+    // 得標者之間違反「互不相鄰」：先不鎖定，等老師決定
+    const tmp = {}; Object.entries(wins).forEach(([k, b]) => { tmp[k] = b.stu; }); Object.entries(rd.locked).forEach(([k, s]) => { if ((rd.lockInfo[k] || {}).kind !== 'bid') tmp[k] = s; });
+    const conflicts = SC.violations(rd.layout, tmp, c.secret).filter((v) => v.rule.type === 'apart' && v.keys.some((k) => wins[k]))
+      .map((v) => ({ ...v, id: v.seats.slice().sort((a, b) => a - b).join('-') })).filter((v) => !rd.bid.keep[v.id]);
+    return { ranked, wins, ties, conflicts };
+  }
+};
+function bidCardHTML(rd) {
+  const c = C(), b = rd.bid, n = Object.keys(rd.biddable).filter((k) => !(k in rd.locked)).length;
+  const head = '<h3 style="margin-top:0">📜 線上暗標</h3>';
+  if (Store.mode !== 'cloud') return `<div class="card">${head}<p class="small muted">線上暗標需要用雲端帳號登入（本機模式無法讓學生用手機投標）。也可以先用其他方式收集，再到地圖上「🔒 鎖定座位」。</p></div>`;
+  if (!b || !b.code) {
+    const def = new Date(Date.now() + 86400000); def.setHours(7, 30, 0, 0);
+    const noSid = c.roster.filter((s) => !s.sid).length;
+    return `<div class="card">${head}
+      <p class="small">開放暗標的座位：<b>${n}</b> 個 <span class="muted">（用左邊「🎯 暗標區」點選）</span></p>
+      ${noSid ? `<div class="alert red small">有 ${noSid} 位同學沒有學號，他們無法登入投標。</div>` : ''}
+      <label class="f">截止時間</label><input type="datetime-local" id="bidDeadline" value="${toLocalInput(def.getTime())}">
+      <button class="btn primary wide" data-act="bidPublish" style="margin-top:10px" ${n ? '' : 'disabled'}>🚀 開放暗標</button></div>`;
+  }
+  const open = Date.now() <= b.deadline && !b.closed, judged = b.raw.length > 0 || b.judgedAt;
+  if (!judged) return `<div class="card">${head}
+    <div class="row"><span class="chip ${open ? 'teal' : 'red'}">${open ? '🟢 開放中' : '⛔ 已截止'}</span><span class="small">代碼 <b style="letter-spacing:.1em">${esc(b.code)}</b></span></div>
+    <p class="small" style="margin-top:6px">截止：${fmtDT(b.deadline)} <a href="#" data-act="bidDeadline">修改</a></p>
+    <p class="small" id="bidCount">已投標：<a href="#" data-act="bidCount">點我更新</a></p>
+    <div class="row" style="margin-top:8px"><button class="btn sm" data-act="bidLink">📋 複製學生連結</button><button class="btn sm" data-act="bidQR">📱 顯示 QR</button>
+      ${open ? '<button class="btn sm ghost" data-act="bidClose">⏹ 提早截止</button>' : ''}</div>
+    <button class="btn primary wide" data-act="bidJudge" style="margin-top:12px">⚖️ 開標</button>
+    <p class="small" style="margin-top:8px;text-align:right"><a href="#" data-act="bidCancel">取消這次暗標</a></p></div>`;
+  const res = Bid.result(rd), pend = Object.keys(res.ties).length + res.conflicts.length;
+  if (!b.lockedAt) return `<div class="card">${head}
+    <p class="small">共 ${b.raw.length} 人投標，${Object.keys(res.wins).length} 個座位有得標者${pend ? `，<b style="color:var(--red)">${pend} 項待老師決定</b>` : ''}。</p>
+    <button class="btn primary wide" data-act="bidResult">⚖️ 查看開標結果</button></div>`;
+  return `<div class="card">${head}
+    <p class="small">✅ 已鎖定 ${Object.values(rd.lockInfo).filter((x) => x.kind === 'bid').length} 個得標座位。投影舞台可按「📢 開標公告」。</p>
+    <div class="row" style="margin-top:8px"><button class="btn sm" data-act="bidRefund">💰 資源回收清單</button><button class="btn sm ghost" data-act="bidResult">⚖️ 開標結果</button></div></div>`;
+}
+const pad = (n) => String(n).padStart(2, '0');
+const toLocalInput = (ms) => { const d = new Date(ms); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const fmtDT = (ms) => new Date(ms).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
+const bidURL = (code) => location.href.split('#')[0].replace(/index\.html$/, '').replace(/\/?$/, '/') + 'bid.html?code=' + code;
+
+act.bidPublish = async () => {
+  const rd = round(), dl = new Date($('#bidDeadline').value).getTime();
+  if (!dl || dl <= Date.now()) return toast('截止時間要在未來', true);
+  if (!confirm(`開放「${rd.title}」的線上暗標？\n開放座位 ${Object.keys(rd.biddable).length} 個，截止 ${fmtDT(dl)}`)) return;
+  try { await Bid.publish(rd, dl); touch(true); toast('🚀 已開放暗標，把學生連結或 QR 給學生吧！'); }
+  catch (e) { toast('開放失敗：' + (e.code || e.message) + '（Firebase 規則可能還沒更新）', true); }
+};
+act.bidLink = async (b, e) => { if (e) e.preventDefault(); const url = bidURL(round().bid.code); try { await navigator.clipboard.writeText(url); toast('已複製學生連結'); } catch (x) { prompt('學生連結：', url); } };
+act.bidQR = () => {
+  const rd = round(), url = bidURL(rd.bid.code);
+  modal(`<div style="text-align:center"><h3>📱 掃描 QR 進入暗標</h3><div id="qrBox" style="display:inline-block;padding:14px;background:#fff;border-radius:12px;margin:8px 0"></div>
+    <p style="font-size:1.3em;font-weight:900;letter-spacing:.15em">代碼 ${esc(rd.bid.code)}</p><p class="small muted" style="word-break:break-all">${esc(url)}</p>
+    <p class="small">截止：${fmtDT(rd.bid.deadline)}</p><button class="btn primary" data-close style="margin-top:10px">關閉</button></div>`, { mount: (m) => {
+    const box = $('#qrBox', m);
+    const draw = () => { try { new QRCode(box, { text: url, width: 260, height: 260 }); } catch (e) { box.textContent = '（QR 產生失敗，請改用連結）'; } };
+    if (window.QRCode) draw();
+    else { const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'; sc.onload = draw; sc.onerror = () => { box.textContent = '（QR 載入失敗，請改用連結）'; }; document.head.appendChild(sc); }
+  } });
+};
+act.bidCount = async (b, e) => {
+  if (e) e.preventDefault();
+  const rd = round(), out = $('#bidCount');
+  try {
+    const list = await Bid.fetch(rd), done = new Set(list.map((x) => x.stu));
+    const miss = C().roster.filter((s) => !done.has(s.seat));
+    out.innerHTML = `已投標：<b>${done.size}</b> / ${C().roster.length} 人 <a href="#" data-act="bidCount">更新</a>${miss.length && miss.length <= 20 ? `<br><span class="muted">未投標：${miss.map((s) => esc(pad2(s.seat) + ' ' + s.name)).join('、')}</span>` : ''}`;
+  } catch (x) { out.textContent = '讀取失敗：' + (x.code || x.message); }
+};
+act.bidDeadline = (b, e) => {
+  if (e) e.preventDefault();
+  const rd = round();
+  modal(`<h3>⏰ 修改截止時間</h3><input type="datetime-local" id="dlIn" value="${toLocalInput(rd.bid.deadline)}">
+    <div class="row" style="margin-top:14px"><button class="btn primary" id="dlOk">儲存</button><button class="btn ghost" data-close>取消</button></div>`, { mount: (m, close) => {
+    $('#dlOk', m).onclick = async () => {
+      const dl = new Date($('#dlIn', m).value).getTime(); if (!dl) return;
+      try { await FB.update(`seating/rounds/${rd.bid.code}/meta`, { deadline: dl, open: true }); rd.bid.deadline = dl; rd.bid.closed = false; close(); touch(true); toast('已更新截止時間'); }
+      catch (x) { toast('更新失敗：' + (x.code || x.message), true); }
+    };
+  } });
+};
+act.bidClose = async () => {
+  const rd = round(); if (!confirm('現在就截止暗標？學生將無法再送出。')) return;
+  try { await FB.update(`seating/rounds/${rd.bid.code}/meta`, { open: false }); rd.bid.closed = true; touch(true); toast('⏹ 已截止'); }
+  catch (x) { toast('截止失敗：' + (x.code || x.message), true); }
+};
+act.bidCancel = async (b, e) => {
+  if (e) e.preventDefault();
+  const rd = round(); if (!confirm('取消這次線上暗標？學生已送出的投標會全部刪除。')) return;
+  try { await FB.remove(`seating/rounds/${rd.bid.code}`); } catch (x) { }
+  rd.bid = null; touch(true);
+};
+act.bidJudge = async () => {
+  const rd = round(), b = rd.bid;
+  const open = Date.now() <= b.deadline && !b.closed;
+  if (open && !confirm('暗標還沒截止，現在開標會同時截止暗標。確定嗎？')) return;
+  try {
+    if (open) { await FB.update(`seating/rounds/${b.code}/meta`, { open: false }); b.closed = true; }
+    b.raw = await Bid.fetch(rd); b.judgedAt = Date.now();
+    if (C().bidRules.tieBreak === 'random') {   // 系統抽籤：開標時一次抽好並記錄
+      const { ties } = Bid.result(rd);
+      Object.entries(ties).forEach(([k, g]) => { b.tiePick[k] = SC.shuffle(g)[0].stu; });
+    }
+    touch(true);
+    if (!b.raw.length) return toast('沒有收到任何投標', true);
+    act.bidResult();
+  } catch (x) { toast('開標失敗：' + (x.code || x.message), true); }
+};
+act.bidResult = () => {
+  modal('<div id="brRes"></div>', { wide: true, mount: (m, close) => {
+    const box = $('#brRes', m);
+    const draw = () => {
+      const rd = round(), c = C(), R = c.bidRules, res = Bid.result(rd), hide = S.privacy, b = rd.bid;
+      const seats = Object.keys(res.ranked).sort((x, y) => { const a = SC.parseKey(x), bb = SC.parseKey(y); return a.r - bb.r || a.c - bb.c; });
+      const pend = Object.keys(res.ties).length + res.conflicts.length;
+      box.innerHTML = `<h3>⚖️ 開標結果（${esc(rd.title)}）</h3>
+        <p class="small muted">共 ${b.raw.length} 人投標。比序：${R.resources.map((r) => esc(r.name)).join(' ＞ ')}；平手：${TIE_NAME[R.tieBreak]}。按「取消得標」會由下一位遞補。</p>
+        ${res.conflicts.length ? `<div class="alert red"><b>⏸ 待老師決定：得標者違反「互不相鄰」${hide ? '設定' : '秘密規則'}</b>${res.conflicts.map((v) => `<div class="row" style="margin-top:6px">
+          <span>${v.seats.map((x) => esc(stuLabel(x))).join(' 與 ')}${hide ? '' : `（${esc(ruleText(v.rule))}）`}</span><span class="spacer"></span>
+          <button class="btn sm" data-keep="${v.id}">兩人都保留</button>${v.seats.map((x) => `<button class="btn sm ghost" data-dq="${x}">取消 ${esc(pad2(x))} 得標</button>`).join('')}</div>`).join('')}</div>` : ''}
+        <table class="list"><thead><tr><th>座位</th><th>得標</th><th>出價</th><th>其他投標</th><th></th></tr></thead><tbody>
+        ${seats.map((k) => {
+          const w = res.wins[k], t = res.ties[k];
+          const others = res.ranked[k].flat().filter((x) => (!w || x.stu !== w.stu) && !(t && t.includes(x)));
+          return `<tr><td class="small">${seatLabel(k)}</td>
+            <td>${w ? `<b>${esc(stuLabel(w.stu))}</b>` : t ? `<span class="chip red">⚔️ ${R.tieBreak === 'rps' ? '猜拳決勝' : '平手'}</span><div class="row" style="margin-top:4px">${t.map((x) => `<button class="btn sm" data-tie="${k}" data-v="${x.stu}">${esc(stuLabel(x.stu))} 勝</button>`).join('')}</div>` : '<span class="muted">（無人得標）</span>'}</td>
+            <td class="small">${w ? esc(SC.resText(w.res, R)) : t ? esc(SC.resText(t[0].res, R)) : ''}</td>
+            <td class="small muted">${others.map((x) => `${esc(pad2(x.stu))}${rd.bid.disq[x.stu] ? '（已取消）' : ''}：${esc(SC.resText(x.res, R))}`).join('<br>')}</td>
+            <td>${w ? `<button class="btn sm ghost" data-dq="${w.stu}">取消得標</button>` : ''}${rd.bid.tiePick[k] ? `<button class="btn sm ghost" data-untie="${k}">重選</button>` : ''}</td></tr>`;
+        }).join('')}
+        </tbody></table>
+        ${Object.keys(b.disq).length ? `<p class="small" style="margin-top:8px">已取消得標：${Object.keys(b.disq).map((x) => `${esc(stuLabel(x))} <a href="#" data-undq="${x}">恢復</a>`).join('、')}</p>` : ''}
+        <div class="row" style="margin-top:16px">
+          <button class="btn primary" id="brLock" ${pend ? 'disabled' : ''}>🔒 ${b.lockedAt ? '重新鎖定' : '鎖定'}得標座位</button>
+          ${pend ? `<span class="small" style="color:var(--red)">還有 ${pend} 項待決定</span>` : ''}
+          <span class="spacer"></span>
+          <button class="btn sm ghost" id="brRefetch">🔄 重新讀取投標</button><button class="btn ghost" data-close>關閉</button></div>`;
+      $$('[data-close]', box).forEach((x) => x.onclick = () => { close(); render(); });
+      $$('[data-tie]', box).forEach((x) => x.onclick = () => { rd.bid.tiePick[x.dataset.tie] = Number(x.dataset.v); touch(); draw(); });
+      $$('[data-untie]', box).forEach((x) => x.onclick = () => { delete rd.bid.tiePick[x.dataset.untie]; touch(); draw(); });
+      $$('[data-dq]', box).forEach((x) => x.onclick = () => { rd.bid.disq[x.dataset.dq] = true; touch(); draw(); });
+      $$('[data-undq]', box).forEach((x) => x.onclick = (e) => { e.preventDefault(); delete rd.bid.disq[x.dataset.undq]; touch(); draw(); });
+      $$('[data-keep]', box).forEach((x) => x.onclick = () => { rd.bid.keep[x.dataset.keep] = true; touch(); draw(); });
+      $('#brRefetch', box).onclick = async () => { try { rd.bid.raw = await Bid.fetch(rd); touch(); draw(); toast('已重新讀取'); } catch (e) { toast('讀取失敗', true); } };
+      $('#brLock', box).onclick = () => {
+        const r2 = Bid.result(rd);
+        Object.keys(rd.lockInfo).forEach((k) => { if (rd.lockInfo[k].kind === 'bid') { delete rd.locked[k]; delete rd.lockInfo[k]; } });
+        const skipped = [];
+        Object.entries(r2.wins).forEach(([k, w]) => {
+          if (Object.values(rd.locked).map(Number).includes(Number(w.stu))) return skipped.push(stuLabel(w.stu));
+          rd.locked[k] = Number(w.stu); rd.lockInfo[k] = { kind: 'bid', note: SC.resText(w.res, R), res: w.res };
+        });
+        rd.bid.lockedAt = Date.now(); touch(true); close();
+        toast(`🔒 已鎖定 ${Object.keys(r2.wins).length - skipped.length} 個得標座位${skipped.length ? `（${skipped.join('、')} 已有預留座位，略過）` : ''}`);
+      };
+    };
+    draw();
+  } });
+};
+act.bidRefund = () => {
+  const rd = round(), R = C().bidRules;
+  const rows = Object.entries(rd.lockInfo).filter(([, x]) => x.kind === 'bid').map(([k, x]) => ({ k, stu: rd.locked[k], res: x.res || {} })).sort((a, b) => a.stu - b.stu);
+  const cols = []; R.resources.forEach((r) => { cols.push({ r, sub: null }); if (r.subs.length && r.detail) r.subs.forEach((x) => cols.push({ r, sub: x })); });
+  const val = (row, col) => { const v = row.res[col.r.id]; if (!v) return 0; return col.sub ? Number((v.sub || {})[col.sub.id]) || 0 : SC.resTotal(col.r, v); };
+  const head = cols.map((c) => c.sub ? `${c.r.name}「${c.sub.name}」` : c.r.name);
+  const sum = cols.map((c) => rows.reduce((s, row) => s + val(row, c), 0));
+  modal(`<h3>💰 資源回收清單</h3><p class="small muted">得標者要繳回的資源（Mana 幣請到 ClassMana 扣除）。</p>
+    <div style="overflow:auto"><table class="list"><thead><tr><th>座號</th><th>姓名</th><th>座位</th>${head.map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>
+    ${rows.map((row) => `<tr><td>${pad2(row.stu)}</td><td>${esc((stuBySeat(row.stu) || {}).name || '')}</td><td class="small">${seatLabel(row.k)}</td>${cols.map((c) => `<td>${val(row, c) || ''}</td>`).join('')}</tr>`).join('')}
+    <tr style="font-weight:900"><td colspan="3">合計</td>${sum.map((n) => `<td>${n || ''}</td>`).join('')}</tr></tbody></table></div>
+    <div class="row" style="margin-top:14px"><button class="btn primary" id="rfX">⬇️ 下載 Excel</button><button class="btn ghost" data-close>關閉</button></div>`, { wide: true, mount: (m) => {
+    $('#rfX', m).onclick = () => {
+      const aoa = [['座號', '姓名', '座位', ...head], ...rows.map((row) => [row.stu, (stuBySeat(row.stu) || {}).name || '', seatLabel(row.k), ...cols.map((c) => val(row, c))]), ['合計', '', '', ...sum]];
+      const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), '資源回收');
+      XLSX.writeFile(wb, `${C().name}班_${rd.title}_資源回收_${today()}.xlsx`);
+    };
+  } });
+};
+/* 投影舞台：開標公告（只公布得標者） */
+function announce() {
+  const rd = round(), list = Object.entries(rd.lockInfo).filter(([, x]) => x.kind === 'bid').map(([k, x]) => ({ k, stu: rd.locked[k], note: x.note })).sort((a, b) => a.stu - b.stu);
+  const ov = document.createElement('div'); ov.className = 'st-pick'; ov.style.justifyContent = 'flex-start'; ov.style.overflow = 'auto'; ov.style.padding = '30px 20px';
+  ov.innerHTML = `<div class="sub" style="font-size:2em;font-family:'Noto Serif TC',serif;font-weight:900;color:var(--gold)">📢 開標公告</div>
+    <div class="ann-list">${list.map((x) => `<div class="ann"><b>${esc(stuLabel(x.stu))}</b><span>${seatLabel(x.k)}</span><em>${esc(x.note || '')}</em></div>`).join('')}</div>
+    <button class="st-btn" style="margin-top:20px">好</button>`;
+  $('#stage').appendChild(ov); Snd.win();
+  ov.querySelector('button').onclick = () => ov.remove();
+}
+
+/* =====================================================================
    動作
    ===================================================================== */
-const act = {};
 act.login = async () => {
   const email = $('#lgEmail').value.trim(), pw = $('#lgPw').value;
   if (!email || !pw) return toast('請輸入 Email 與密碼', true);
@@ -1201,24 +1496,30 @@ act.newRound = () => {
     $('#nrOk', m).onclick = () => {
       const from = ($('input[name=nrFrom]:checked', m) || {}).value;
       const rd = { id: uid('rd'), title: $('#nrTitle', m).value.trim() || `第${n}次換座位`, period: $('#nrPeriod', m).value.trim(), createdAt: Date.now(),
-        status: 'prep', layout: JSON.parse(JSON.stringify(from === 'prev' && prev ? prev.layout : c.layout)), locked: {}, lockInfo: {}, assign: null,
+        status: 'prep', layout: JSON.parse(JSON.stringify(from === 'prev' && prev ? prev.layout : c.layout)), locked: {}, lockInfo: {}, assign: null, biddable: {}, bid: null,
         cleaning: ($('input[name=nrClean]:checked', m) || {}).value === 'prev' && prev ? cloneClean(cleanOf(prev)) : (prev ? [] : cloneClean(c.cleaning)), cleaningSet: true };
       c.rounds.push(rd); c.currentRound = rd.id; S.roundId = rd.id; S.roundMode = 'lock'; close(); touch(true);
     };
   } });
 };
 act.roundDel = () => {
-  const c = C(), rd = round(); if (!confirm(`刪除「${rd.title}」？`)) return;
+  const c = C(), rd = round(); if (!confirm(`刪除「${rd.title}」？${rd.bid && rd.bid.code ? '\n（線上暗標的資料也會一起刪除）' : ''}`)) return;
+  if (rd.bid && rd.bid.code && Store.mode === 'cloud') FB.remove('seating/rounds/' + rd.bid.code).catch(() => {});
   c.rounds = c.rounds.filter((x) => x !== rd); S.roundId = (c.rounds[c.rounds.length - 1] || {}).id || null; c.currentRound = S.roundId; touch(true);
 };
 act.roundMode = (b) => { S.roundMode = b.dataset.v; render(); };
 act.roundCell = (b) => {
   const rd = round(), k = b.dataset.k, t = SC.cellType(rd.layout, k);
   if (rd.assign) return swapCell(k, t);
+  if (S.roundMode === 'bid' && isGame()) {
+    if (t !== 's' || k in rd.locked) return toast('已鎖定或關閉的座位不能開放暗標', true);
+    if (rd.biddable[k]) delete rd.biddable[k]; else rd.biddable[k] = true;
+    touch(true); return Bid.pushBoardSoon();
+  }
   if (S.roundMode === 'paint') {
     if (t === 'a') return;
-    if (t === 's') { rd.layout.cells[k] = 'x'; delete rd.locked[k]; delete rd.lockInfo[k]; } else delete rd.layout.cells[k];
-    return touch(true);
+    if (t === 's') { rd.layout.cells[k] = 'x'; delete rd.locked[k]; delete rd.lockInfo[k]; delete rd.biddable[k]; } else delete rd.layout.cells[k];
+    touch(true); return Bid.pushBoardSoon();
   }
   if (t !== 's') return;
   lockModal(k);
@@ -1241,7 +1542,8 @@ function lockModal(k) {
       const s = Number($('#lkWho', m).value); if (!s) return toast('請選同學', true);
       if (where[s] && where[s] !== k) { delete rd.locked[where[s]]; delete rd.lockInfo[where[s]]; }
       rd.locked[k] = s; rd.lockInfo[k] = { kind: $('input[name=lkKind]:checked', m).value, note: $('#lkNote', m).value.trim() };
-      close(); touch(true);
+      delete rd.biddable[k];
+      close(); touch(true); Bid.pushBoardSoon();
     };
     const del = $('#lkDel', m); if (del) del.onclick = () => { delete rd.locked[k]; delete rd.lockInfo[k]; close(); touch(true); };
   } });
@@ -1260,7 +1562,7 @@ function swapCell(k, t) {
   if (after.length > before) toast('⚠️ 換完後違反秘密規則：' + after.map((v) => ruleText(v.rule)).join('；'), true);
   touch(true);
 }
-act.unlock = (b) => { const rd = round(); delete rd.locked[b.dataset.v]; delete rd.lockInfo[b.dataset.v]; touch(true); };
+act.unlock = (b) => { const rd = round(); delete rd.locked[b.dataset.v]; delete rd.lockInfo[b.dataset.v]; touch(true); Bid.pushBoardSoon(); };
 /** 進投影舞台前的檢查（座位不夠、待老師決定） */
 function stageReady() {
   const rd = round(); if (!rd) return false;
