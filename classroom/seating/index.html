@@ -196,11 +196,14 @@ table.list th{background:#f3eee2;font-weight:700}
 .sh-group{border-collapse:collapse}
 .sh-group td{height:var(--rh,25px);font-size:15px;padding:0 6px;white-space:nowrap}
 .sh-group td.role{border:1.3px solid #000;text-align:center;width:64px}
-.sh-group td.who{border-bottom:1px solid #000;min-width:96px}
+.sh-group td.who{border:1.3px solid #000;min-width:104px}
+.sh-group td .sn{display:inline-block;font-variant-numeric:tabular-nums}
+.sh-group td .sn i{visibility:hidden;font-style:normal}
 .sh-group.clean td.role{width:auto;min-width:72px;text-align:center}
-.sh-group.clean td.who{text-align:right;min-width:104px;border-bottom:1px solid #000}
+.sh-group.clean td.who{text-align:right;min-width:104px}
 .sh-area{font-weight:900;font-size:16px;text-align:center;border:1.3px solid #000;padding:2px 8px}
 .sh-foot{margin-top:10px;font-size:15px;line-height:1.5}
+.sh-period{font-weight:700}
 #printRoot{position:fixed;left:-20000px;top:0}
 @media(max-width:640px){
   .topbar{padding:8px 10px;gap:8px}.brand small{display:none}
@@ -252,7 +255,7 @@ try {
     remove: (path) => D.remove(D.ref(db, path))
   };
 } catch (e) { console.warn('Firebase 載入失敗，只能用本機模式', e); window.FB = null; }
-await import('./app.js?v=20261010f');
+await import('./app.js?v=20261010g');
 </script>
 </body>
 </html>

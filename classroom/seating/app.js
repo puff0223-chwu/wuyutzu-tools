@@ -308,8 +308,6 @@ TABV.info = () => {
       <div class="card">
         <label class="f">班級名稱</label><input type="text" data-bind="name" value="${esc(c.name)}" placeholder="例如：309">
         <label class="f">導師稱謂（印在座位表右上角）</label><input type="text" data-bind="teacherTitle" value="${esc(c.teacherTitle)}" placeholder="例如：巫昶昕 老師">
-        <label class="f">座位表底部備註</label><textarea data-bind="settings.note" rows="3">${esc(c.settings.note)}</textarea>
-        <p class="small muted">每次換座位設定的「適用期間」會自動接在備註後面。</p>
         <div class="row small" style="margin-top:12px;padding-top:10px;border-top:1.5px dashed var(--line)">
           <span class="muted">模式</span><b>${isGame() ? MODE_NAME.game : MODE_NAME.plain}</b>${helpBtn(isGame() ? 'game' : 'plain')}
           <span class="spacer"></span><button class="btn sm ghost" data-act="switchMode">切換模式</button>
@@ -568,8 +566,7 @@ TABV.round = () => {
     <div class="tool-grp"><span class="tool-lbl">回合</span>
       ${c.rounds.length ? `<select class="inline" id="roundSel">${c.rounds.map((r) => `<option value="${r.id}" ${r.id === S.roundId ? 'selected' : ''}>${esc(r.title)}${r.status === 'final' ? '（已定案）' : r.status === 'drawn' ? '（已抽籤）' : ''}</option>`).join('')}</select>` : '<span class="muted small">還沒有回合</span>'}
       <button class="btn sm primary" data-act="newRound">＋ 開新回合</button></div>
-    ${rd ? `<div class="tool-grp"><span class="tool-lbl">名稱</span><input type="text" class="inline" data-round="title" value="${esc(rd.title)}" style="width:150px">
-      <span class="tool-lbl">適用期間</span><input type="text" class="inline" data-round="period" value="${esc(rd.period)}" placeholder="開學－1段之間" style="width:150px"></div>
+    ${rd ? `<div class="tool-grp"><span class="tool-lbl">名稱</span><input type="text" class="inline" data-round="title" value="${esc(rd.title)}" style="width:150px"></div>
       <span class="spacer"></span><button class="btn sm ghost" data-act="roundDel" title="刪除這個回合">🗑️</button>` : ''}
   </div>`;
   if (!rd) return head + `<p class="lead">每次換座位開一個回合：先${isGame() ? '鎖定得標與老師預留的座位' : '指定需要固定的座位'}，再開啟投影舞台抽籤。</p>
@@ -685,9 +682,15 @@ TABV.print = () => {
     <span class="bold" style="margin-left:8px">標題</span>
     <input type="text" class="inline" data-bind="settings.sheetTitle" value="${esc(st.sheetTitle || '')}" placeholder="${esc(autoTitle(c))}" style="width:260px">
   </div>
+  <div class="toolbar" style="align-items:flex-start">
+    <div class="tool-grp"><span class="tool-lbl">適用期間</span>
+      ${printRound() ? `<input type="text" class="inline" data-pperiod="1" value="${esc(printRound().period || '')}" placeholder="例如：開學-1段之間" style="width:200px">` : '<span class="small muted">（開回合後才能填）</span>'}</div>
+    <div class="tool-grp" style="flex:1;min-width:260px;align-items:flex-start"><span class="tool-lbl" style="padding-top:6px">底部備註</span>
+      <textarea data-bind="settings.note" rows="2" style="flex:1;min-height:56px" placeholder="例如：請任課老師協助注意…">${esc(st.note || '')}</textarea></div>
+  </div>
   <div class="sheet-preview"><div class="sheet-holder" data-auto="1"></div></div>
   <p class="small muted" id="fitNote" style="margin-top:8px"></p>
-  <p class="small muted">標題空著會自動產生；底部備註在「📋 班級資料」修改。列印時請在印表機設定選「橫向」、邊界「預設」；想存檔可選「另存為 PDF」。</p>`;
+  <p class="small muted">標題空著會自動產生；適用期間每個回合各自記錄，底部備註全班共用。列印時請在印表機設定選「橫向」、邊界「預設」；想存檔可選「另存為 PDF」。</p>`;
 };
 function previewCard() {
   return `<div class="card" style="position:sticky;top:70px"><h3 style="margin-top:0">👀 版面預覽</h3>
@@ -742,7 +745,7 @@ function sheetHTML(c, rd, opt = {}) {
     c.cadres.forEach((x, i) => { if (!i || !x.join) groups.push([]); groups[groups.length - 1].push(x); });
     const blocks = groups.map((g) => ({
       h: g.length * ROW + 7,
-      html: `<table class="sh-group"><tbody>${g.map((x) => { const p = x.seat != null ? stu(x.seat) : null; return `<tr><td class="role">${esc(x.role)}</td><td class="who">${p ? `${p.seat} ${esc(p.name)}` : ''}</td></tr>`; }).join('')}</tbody></table>`
+      html: `<table class="sh-group"><tbody>${g.map((x) => { const p = x.seat != null ? stu(x.seat) : null; return `<tr><td class="role">${esc(x.role)}</td><td class="who">${p ? `<span class="sn">${p.seat < 10 ? '<i>0</i>' : ''}${p.seat}</span> ${esc(p.name)}` : ''}</td></tr>`; }).join('')}</tbody></table>`
     }));
     cadCols = splitCols(blocks, mapH * 1.12).map((col) => `<div class="sh-col">${col.map((b) => b.html).join('')}</div>`).join('');
   }
@@ -758,11 +761,11 @@ function sheetHTML(c, rd, opt = {}) {
     clnCols = splitCols(blocks, mapH * 1.12).map((col) => `<div class="sh-col" style="gap:10px">${col.map((b) => b.html).join('')}</div>`).join('');
   }
   const title = esc(c.settings.sheetTitle || autoTitle(c));
-  const period = rd && rd.period ? `(適用期間：${esc(rd.period)})` : '';
+  const period = rd && rd.period ? `適用期間：${esc(rd.period)}` : '';
   return `<div class="sheet-inner" style="--rh:${ROW}px">
     <div class="sh-head"><div class="t">${title}</div>${c.teacherTitle ? `<div class="tc">導師：${esc(c.teacherTitle)}</div>` : ''}</div>
     <div class="sh-body">${mapBox}${cadCols ? `<div class="sh-cols">${cadCols}</div>` : ''}${clnCols ? `<div class="sh-cols">${clnCols}</div>` : ''}</div>
-    ${(c.settings.note || period) ? `<div class="sh-foot">${esc(c.settings.note || '')}${period}</div>` : ''}
+    ${(c.settings.note || period) ? `<div class="sh-foot">${period ? `<div class="sh-period">${period}</div>` : ''}${c.settings.note ? `<div>${esc(c.settings.note)}</div>` : ''}</div>` : ''}
   </div>`;
 }
 /** 量測後縮放到 A4 可列印範圍（1062×733 px ＝ 281×194 mm） */
@@ -1498,7 +1501,6 @@ act.newRound = () => {
   const c = C(), n = c.rounds.length + 1, prev = c.rounds[c.rounds.length - 1];
   modal(`<h3>➕ 開新回合</h3>
     <label class="f">名稱</label><input type="text" id="nrTitle" value="第${n}次換座位">
-    <label class="f">適用期間（印在座位表備註）</label><input type="text" id="nrPeriod" placeholder="例如：開學－1段之間">
     <label class="f">座位地圖</label>
     <label><input type="radio" name="nrFrom" value="class" checked> 用班級的基本地圖</label><br>
     ${prev ? `<label><input type="radio" name="nrFrom" value="prev"> 沿用上一回合（${esc(prev.title)}）的地圖</label>` : ''}
@@ -1509,7 +1511,7 @@ act.newRound = () => {
   { mount: (m, close) => {
     $('#nrOk', m).onclick = () => {
       const from = ($('input[name=nrFrom]:checked', m) || {}).value;
-      const rd = { id: uid('rd'), title: $('#nrTitle', m).value.trim() || `第${n}次換座位`, period: $('#nrPeriod', m).value.trim(), createdAt: Date.now(),
+      const rd = { id: uid('rd'), title: $('#nrTitle', m).value.trim() || `第${n}次換座位`, period: '', createdAt: Date.now(),
         status: 'prep', layout: JSON.parse(JSON.stringify(from === 'prev' && prev ? prev.layout : c.layout)), locked: {}, lockInfo: {}, assign: null, biddable: {}, bid: null,
         cleaning: ($('input[name=nrClean]:checked', m) || {}).value === 'prev' && prev ? cloneClean(cleanOf(prev)) : (prev ? [] : cloneClean(c.cleaning)), cleaningSet: true };
       c.rounds.push(rd); c.currentRound = rd.id; S.roundId = rd.id; S.roundMode = 'lock'; close(); touch(true);
@@ -1659,6 +1661,7 @@ document.addEventListener('input', (e) => {
   const t = e.target; if (!C()) return;
   if (t.dataset.bind) { setPath(C(), t.dataset.bind, t.value); return touch(); }
   if (t.dataset.round) { round()[t.dataset.round] = t.value; return touch(); }
+  if (t.dataset.pperiod) { const r = printRound(); if (r) { r.period = t.value; touch(); clearTimeout(window.__pp); window.__pp = setTimeout(refreshPreview, 400); } return; }
 });
 document.addEventListener('change', (e) => {
   const t = e.target; if (!C()) return;
