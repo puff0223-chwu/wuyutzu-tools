@@ -1127,10 +1127,12 @@ function bidCardHTML(rd) {
   const res = Bid.result(rd), pend = Object.keys(res.ties).length + res.conflicts.length;
   if (!b.lockedAt) return `<div class="card">${head}
     <p class="small">共 ${b.raw.length} 人投標，${Object.keys(res.wins).length} 個座位有得標者${pend ? `，<b style="color:var(--red)">${pend} 項待老師決定</b>` : ''}。</p>
-    <button class="btn primary wide" data-act="bidResult">⚖️ 查看開標結果</button></div>`;
+    <button class="btn primary wide" data-act="bidResult">⚖️ 查看開標結果</button>
+    <p class="small" style="margin-top:8px;text-align:right"><a href="#" data-act="bidCancel">取消這次暗標</a></p></div>`;
   return `<div class="card">${head}
     <p class="small">✅ 已鎖定 ${Object.values(rd.lockInfo).filter((x) => x.kind === 'bid').length} 個得標座位。投影舞台可按「📢 開標公告」。</p>
-    <div class="row" style="margin-top:8px"><button class="btn sm" data-act="bidRefund">💰 資源回收清單</button><button class="btn sm ghost" data-act="bidResult">⚖️ 開標結果</button></div></div>`;
+    <div class="row" style="margin-top:8px"><button class="btn sm" data-act="bidRefund">💰 資源回收清單</button><button class="btn sm ghost" data-act="bidResult">⚖️ 開標結果</button></div>
+    <p class="small" style="margin-top:8px;text-align:right"><a href="#" data-act="bidCancel">取消這次暗標</a></p></div>`;
 }
 const pad = (n) => String(n).padStart(2, '0');
 const toLocalInput = (ms) => { const d = new Date(ms); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; };
@@ -1184,9 +1186,11 @@ act.bidClose = async () => {
 };
 act.bidCancel = async (b, e) => {
   if (e) e.preventDefault();
-  const rd = round(); if (!confirm('取消這次線上暗標？學生已送出的投標會全部刪除。')) return;
+  const rd = round(), nLock = Object.values(rd.lockInfo).filter((x) => x.kind === 'bid').length;
+  if (!confirm(`取消這次線上暗標？\n・學生已送出的投標會全部刪除${nLock ? `\n・已鎖定的 ${nLock} 個得標座位會解除` : ''}\n・開放暗標的座位（黃色虛線框）會保留，可以重新開放`)) return;
   try { await FB.remove(`seating/rounds/${rd.bid.code}`); } catch (x) { }
-  rd.bid = null; touch(true);
+  Object.keys(rd.lockInfo).forEach((k) => { if (rd.lockInfo[k].kind === 'bid') { delete rd.locked[k]; delete rd.lockInfo[k]; } });
+  rd.bid = null; touch(true); toast('已取消這次暗標');
 };
 act.bidJudge = async () => {
   const rd = round(), b = rd.bid;
