@@ -579,7 +579,9 @@ TABV.round = () => {
   const free = SC.seatKeys(L).filter((k) => !(k in rd.locked));
   const toPlace = c.roster.filter((s) => !lockedSeats.includes(s.seat));
   const hide = S.privacy;            // 上課模式：不顯示任何和秘密規則有關的提醒
-  const lockViol = SC.violations(L, rd.locked, c.secret);
+  // 開標時老師已選「兩人都保留」的衝突，不再提醒
+  const kept = (v) => rd.bid && rd.bid.keep && rd.bid.keep[v.seats.slice().sort((x, y) => x - y).join('-')];
+  const lockViol = SC.violations(L, rd.locked, c.secret).filter((v) => !kept(v));
   const assignViol = drawn ? SC.violations(L, rd.assign, c.secret) : [];
   const short = toPlace.length - free.length;
   const solvable = drawn || short > 0 || !SC.activeRules(c.secret).length ? true
@@ -644,16 +646,24 @@ TABV.round = () => {
                <p class="small muted" style="margin-top:8px;text-align:center">會在新分頁開啟，只顯示舞台、看不到後台。<br>要用別台裝置投影？<a href="#" data-act="copyStageLink">複製投影連結</a></p>`}
       </div>
       <div class="card">
-        <h3 style="margin-top:0">🔒 已鎖定（${lockedSeats.length}）</h3>
-        ${lockedSeats.length ? `<table class="list"><tbody>${Object.entries(rd.locked).sort((a, b) => a[1] - b[1]).map(([k, s]) => {
-          const info = rd.lockInfo[k] || {};
-          return `<tr><td>${!isGame() ? '📌' : info.kind === 'bid' ? '🏆' : '📌'}</td><td>${esc(stuLabel(s))}</td><td class="small muted">${esc(info.note || '')}</td>
-          <td style="text-align:right">${drawn ? '' : `<button class="btn sm ghost" data-act="unlock" data-v="${k}">解除</button>`}</td></tr>`;
-        }).join('')}</tbody></table>` : `<p class="small muted">點左邊地圖的座位來鎖定。鎖定的同學抽籤時不會被動到。</p>`}
+        ${lockedListHTML(rd, drawn)}
       </div>
     </div>
   </div>`;
 };
+
+/** 已鎖定清單：平常只顯示一行統計，展開後是緊湊小卡片（座位圖上已經看得到，不必長長一串） */
+function lockedListHTML(rd, drawn) {
+  const items = Object.entries(rd.locked).sort((a, b) => a[1] - b[1]).map(([k, s]) => ({ k, s, info: rd.lockInfo[k] || {} }));
+  if (!items.length) return '<h3 style="margin:0">🔒 已鎖定（0）</h3><p class="small muted" style="margin-top:6px">點左邊地圖的座位來鎖定。鎖定的同學抽籤時不會被動到。</p>';
+  const nBid = items.filter((x) => isGame() && x.info.kind === 'bid').length, nRes = items.length - nBid;
+  return `<details class="lock-box" ${S.lockOpen ? 'open' : ''}>
+    <summary><b>🔒 已鎖定（${items.length}）</b>${nBid ? `<span class="chip purple">🏆 得標 ${nBid}</span>` : ''}${nRes ? `<span class="chip">📌 ${isGame() ? '預留' : '指定'} ${nRes}</span>` : ''}<span class="spacer"></span><span class="small muted">展開</span></summary>
+    <div class="lock-grid">${items.map((x) => `<div class="lock-chip ${isGame() && x.info.kind === 'bid' ? 'bid' : ''}" title="${esc(seatLabel(x.k) + (x.info.note ? '｜' + x.info.note : ''))}">
+      <span>${isGame() && x.info.kind === 'bid' ? '🏆' : '📌'} ${esc(stuLabel(x.s))}</span>${x.info.note ? `<em>${esc(x.info.note)}</em>` : ''}
+      ${drawn ? '' : `<button class="x" data-act="unlock" data-v="${x.k}" title="解除">✕</button>`}</div>`).join('')}</div>
+  </details>`;
+}
 
 /* ---------- 🖨️ 座位表 ---------- */
 TABV.print = () => {
@@ -1123,16 +1133,16 @@ function bidCardHTML(rd) {
     <div class="row" style="margin-top:8px"><button class="btn sm" data-act="bidLink">📋 複製學生連結</button><button class="btn sm" data-act="bidQR">📱 顯示 QR</button>
       ${open ? '<button class="btn sm ghost" data-act="bidClose">⏹ 提早截止</button>' : ''}</div>
     <button class="btn primary wide" data-act="bidJudge" style="margin-top:12px">⚖️ 開標</button>
-    <p class="small" style="margin-top:8px;text-align:right"><a href="#" data-act="bidCancel">取消這次暗標</a></p></div>`;
+    <button class="btn sm ghost wide" data-act="bidCancel" style="margin-top:10px;font-size:.9em">🗑️ 取消這次暗標</button></div>`;
   const res = Bid.result(rd), pend = Object.keys(res.ties).length + res.conflicts.length;
   if (!b.lockedAt) return `<div class="card">${head}
     <p class="small">共 ${b.raw.length} 人投標，${Object.keys(res.wins).length} 個座位有得標者${pend ? `，<b style="color:var(--red)">${pend} 項待老師決定</b>` : ''}。</p>
     <button class="btn primary wide" data-act="bidResult">⚖️ 查看開標結果</button>
-    <p class="small" style="margin-top:8px;text-align:right"><a href="#" data-act="bidCancel">取消這次暗標</a></p></div>`;
+    <button class="btn sm ghost wide" data-act="bidCancel" style="margin-top:10px;font-size:.9em">🗑️ 取消這次暗標</button></div>`;
   return `<div class="card">${head}
     <p class="small">✅ 已鎖定 ${Object.values(rd.lockInfo).filter((x) => x.kind === 'bid').length} 個得標座位。投影舞台可按「📢 開標公告」。</p>
     <div class="row" style="margin-top:8px"><button class="btn sm" data-act="bidRefund">💰 資源回收清單</button><button class="btn sm ghost" data-act="bidResult">⚖️ 開標結果</button></div>
-    <p class="small" style="margin-top:8px;text-align:right"><a href="#" data-act="bidCancel">取消這次暗標</a></p></div>`;
+    <button class="btn sm ghost wide" data-act="bidCancel" style="margin-top:10px;font-size:.9em">🗑️ 取消這次暗標</button></div>`;
 }
 const pad = (n) => String(n).padStart(2, '0');
 const toLocalInput = (ms) => { const d = new Date(ms); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; };
@@ -1574,7 +1584,8 @@ function stageReady() {
     const freeN = SC.seatKeys(rd.layout).filter((k) => !(k in rd.locked)).length;
     const need = C().roster.filter((s) => !Object.values(rd.locked).map(Number).includes(s.seat)).length;
     if (need > freeN) { toast(`座位不夠：還差 ${need - freeN} 個`, true); return false; }
-    if (SC.violations(rd.layout, rd.locked, C().secret).length && !confirm(S.privacy ? '有設定尚待確認，確定要繼續嗎？' : '有鎖定的座位違反秘密規則（待老師決定）。確定維持現狀、開啟投影舞台嗎？')) return false;
+    const kept = (v) => rd.bid && rd.bid.keep && rd.bid.keep[v.seats.slice().sort((x, y) => x - y).join('-')];
+    if (SC.violations(rd.layout, rd.locked, C().secret).filter((v) => !kept(v)).length && !confirm(S.privacy ? '有設定尚待確認，確定要繼續嗎？' : '有鎖定的座位違反秘密規則（待老師決定）。確定維持現狀、開啟投影舞台嗎？')) return false;
   }
   return true;
 }
@@ -1680,6 +1691,7 @@ document.addEventListener('change', (e) => {
   }
   if (t.dataset.zone != null) return;
 });
+document.addEventListener('toggle', (e) => { if (e.target.classList && e.target.classList.contains('lock-box')) S.lockOpen = e.target.open; }, true);
 function refreshPreview() { $$('.sheet-holder[data-auto]').forEach((h) => mountPreview(h)); }
 window.addEventListener('resize', () => { clearTimeout(window.__rz); window.__rz = setTimeout(refreshPreview, 200); });
 window.addEventListener('beforeunload', (e) => { if (S.saveState === '儲存中…') { e.preventDefault(); e.returnValue = ''; } });

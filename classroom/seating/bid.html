@@ -79,7 +79,8 @@ const CODE = (new URLSearchParams(location.search).get('code') || '').toUpperCas
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } } };
-const ST = { meta: null, board: null, me: LS.get('bid_me_' + CODE, null), seat: null, resId: null, vals: {}, sending: false, err: '' };
+const ST = { meta: null, board: null, me: LS.get('bid_me_' + CODE, null), seat: null, resId: null, vals: {}, sending: false, err: '', editing: false };
+const recKey = () => 'bid_rec_' + CODE + '_' + (ST.me ? ST.me.seat : '');   // 收據跟著人走，同一支手機換人不會看到別人的
 
 async function api(path, method, body) {
   const r = await fetch(DB + CODE + '/' + path + '.json', { method: method || 'GET', headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
@@ -109,18 +110,19 @@ async function boot() {
 function fatal(msg) { $('#app').innerHTML = `<div class="head"><div class="en">SEAT AUCTION</div><h1>🪑 座位暗標</h1></div><div class="alert">${msg}</div>`; }
 
 function render() {
-  const m = ST.meta, rec = LS.get('bid_rec_' + CODE, null);
+  const m = ST.meta, rec = ST.me ? LS.get(recKey(), null) : null;
   let html = `<div class="head"><div class="en">SEAT AUCTION · ${esc(m.className || '')}</div>
     <h1>🪑 ${esc(m.title || '座位暗標')}</h1>
     <div class="sub">每人只能投一個座位；可以重複送出，系統只採計最後一次。</div>
     <div class="clock ${isOpen() ? '' : 'end'}" id="clock">${clockText()}</div></div>`;
   if (!ST.me) html += loginHTML();
   else {
-    html += `<div class="who">🙋 ${esc(SC.pad2(ST.me.seat))} ${esc(ST.me.name)}<button id="logout">換人</button></div>`;
+    html += `<div class="who">🙋 ${esc(SC.pad2(ST.me.seat))} ${esc(ST.me.name)}</div>`;
     if (rec) html += `<div class="card"><h2>🧾 我最後一次送出的投標</h2><div class="receipt">${esc(rec.text)}<br><span class="small muted">送出時間：${fmtTime(rec.at)}</span></div>
-      ${isOpen() ? '<p class="small muted" style="margin-top:6px">想改的話，在下面重新選擇後送出即可（只採計最後一次）。</p>' : ''}</div>`;
-    if (isOpen()) html += mapHTML() + resHTML();
-    else html += `<div class="alert warn">暗標已經截止，等待老師開標吧！${rec ? '' : '（這一次你沒有送出投標）'}</div>`;
+      ${isOpen() && !ST.editing ? '<button class="btn" id="rebid">✏️ 重新投標</button><p class="small muted" style="margin-top:6px;text-align:center">重新送出後，只採計最後一次。</p>' : ''}</div>`;
+    if (isOpen() && (!rec || ST.editing)) html += mapHTML() + resHTML() + (rec ? '<button class="btn ghost" id="noedit">取消，維持原本的投標</button>' : '');
+    if (!isOpen()) html += `<div class="alert warn">暗標已經截止，等待老師開標吧！${rec ? '' : '（這一次你沒有送出投標）'}</div>`;
+    html += `<p class="small muted" style="text-align:center;margin-top:26px">不是 ${esc(ST.me.name)}？<a href="#" id="logout">登出</a>（借用別人手機投標後請記得登出）</p>`;
   }
   $('#app').innerHTML = html;
   bind();
@@ -194,7 +196,12 @@ function currentRes() {
 function bind() {
   const go = $('#go');
   if (go) go.onclick = login;
-  const lo = $('#logout'); if (lo) lo.onclick = () => { ST.me = null; ST.seat = null; LS.set('bid_me_' + CODE, null); render(); };
+  const lo = $('#logout'); if (lo) lo.onclick = (e) => {
+    e.preventDefault(); if (!confirm('登出後，這支手機不會留下你的身分與投標紀錄（已送出的投標仍然有效）。確定登出？')) return;
+    try { localStorage.removeItem(recKey()); localStorage.removeItem('bid_last'); } catch (x) { }
+    ST.me = null; ST.seat = null; ST.vals = {}; ST.editing = false; LS.set('bid_me_' + CODE, null); render(); };
+  const rb = $('#rebid'); if (rb) rb.onclick = () => { ST.editing = true; render(); };
+  const ne = $('#noedit'); if (ne) ne.onclick = () => { ST.editing = false; ST.seat = null; ST.vals = {}; render(); window.scrollTo(0, 0); };
   document.querySelectorAll('.cell.ok').forEach((c) => c.onclick = () => { ST.seat = c.dataset.k; render(); });
   document.querySelectorAll('[data-res]').forEach((c) => c.onclick = () => { ST.resId = c.dataset.res; render(); });
   document.querySelectorAll('input[data-r]').forEach((i) => i.oninput = () => {
@@ -237,8 +244,8 @@ function confirmSend() {
     const b = bg.querySelector('#ok'); b.disabled = true; b.textContent = '送出中…';
     try {
       await api('bids/' + ST.me.key, 'PUT', { seat: ST.seat, res, ts: { '.sv': 'timestamp' } });
-      LS.set('bid_rec_' + CODE, { text, at: Date.now() });
-      bg.remove(); ST.seat = null; ST.vals = {}; render(); window.scrollTo(0, 0);
+      LS.set(recKey(), { text, at: Date.now() });
+      bg.remove(); ST.seat = null; ST.vals = {}; ST.editing = false; render(); window.scrollTo(0, 0);
     } catch (e) {
       bg.remove();
       try { ST.meta = await api('meta'); } catch (x) { }
