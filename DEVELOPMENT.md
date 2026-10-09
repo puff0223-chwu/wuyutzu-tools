@@ -2,7 +2,7 @@
 
 > 給未來的自己（和 Claude）看的說明書：這個網站怎麼組成、資料放哪裡、要新增工具時怎麼接進來。
 > **每次開發的過程與決定記在 [CHANGELOG.md](CHANGELOG.md)（開發歷程）**，每次開發結束都要同步更新本檔與 CHANGELOG。
-> 最後更新：2026-10-06
+> 最後更新：2026-10-09
 
 ---
 
@@ -32,7 +32,12 @@ wuyutzu-tools/
 ├── README.md                     # 專案簡介
 │
 ├── classroom/                    # 🏫 導師班工具
-│   ├── seating.html              # 座位安排系統
+│   ├── seating.html              # 舊版座位安排系統（新版確認可用前，首頁仍連到這裡）
+│   ├── seating/                  # 🪑 座位大作戰（新版換座位整合系統，2026-10-09 第一階段）
+│   │   ├── index.html            #   老師後台（登入、7 個分頁、投影舞台、A4 列印）
+│   │   ├── app.js                #   老師後台程式
+│   │   ├── core.js               #   共用核心：地圖、相鄰判斷、受限隨機分配、匯入解析
+│   │   └── firebase-rules-merged.json # 加上 seating 後的完整 Firebase 規則
 │   ├── cleaning-jobs-admin.html  # 打掃徵才 v4：老師管理頁
 │   ├── cleaning-jobs-signup.html # 打掃徵才 v4：學生志願登記頁
 │   ├── cleaning-jobs.html        # 打掃徵才 v3.4（舊版，首頁已不連結）
@@ -129,9 +134,9 @@ wuyutzu-tools/
 | 方式 | 用在 | 特性 |
 |---|---|---|
 | **不存資料** | 詩籤、金曲歌王、真心話、抽籤、形容詞 | 打開就能用，最單純 |
-| **瀏覽器 localStorage** | 座位、打掃徵才管理頁、選人 | 只存在那一台電腦的瀏覽器，換電腦就沒了；常搭配 Excel 匯出備份 |
+| **瀏覽器 localStorage** | 舊版座位、打掃徵才管理頁、選人 | 只存在那一台電腦的瀏覽器，換電腦就沒了；常搭配 Excel 匯出備份 |
 | **Google 表單無聲送出** | DISC、貝爾賓、打掃徵才學生頁 | 學生送出→進老師的 Google 表單；只能「寫入」，網頁讀不回來 |
-| **Firebase Realtime Database** | 消失的實驗器材（排行榜）、pH 練習與單位換算練習（作答紀錄）、No.940 案件委託公告欄（委託與成員） | 可寫可讀、即時；全班共用 |
+| **Firebase Realtime Database** | 消失的實驗器材（排行榜）、pH 練習與單位換算練習（作答紀錄）、No.940 案件委託公告欄（委託與成員）、座位大作戰（老師登入後的班級資料） | 可寫可讀、即時；全班共用 |
 | **固定亂數（不存資料）** | pH 練習、單位換算練習的出題 | 同一個「題組碼＋班級＋座號」永遠算出同一組題目，老師頁可重算全班題目與答案 |
 
 ### Firebase 設定
@@ -162,6 +167,9 @@ wuyutzu-tools/
                               solver, solverName, solverSeat, solverCls, stars, tries[], reopened,
                               createdAt, takenAt, doneAt }
               status：open 待承接 → taken 偵辦中 → done 已破案；另有 cancelled（委託人撤回）、removed（老師移除）
+└── seating/                                   ← 座位大作戰（需登入，只有班級擁有者能讀寫）
+    ├── owners/<老師uid>/<班級id>: { name, updatedAt }   ← 班級清單索引
+    └── classes/<班級id>: { owner, name, teacherTitle, roster[], layout, cadres[], cleaning[], secret[], settings, rounds[], currentRound, … }
 ```
 
 - **安全規則**（2026-10-03 發布）：根目錄全部上鎖。
@@ -169,7 +177,8 @@ wuyutzu-tools/
   - `ph-generator/<題組碼>`、`unit-convert/<題組碼>`：可讀；題組碼必須是 7 碼合法字元；可新增或更新，但**交卷（submitted=true）後就不能再改**，不能刪除。
   - 規則全文見本檔最後的附錄。
 - ⚠️ **之後新工具要用 Firebase**：要在規則裡為它新增一個抽屜的規則，否則會被擋（HTTP 401/403）。
-- **`fp/` 抽屜（集點小金庫，2026-10-06）**：唯一使用 Firebase Authentication（登入）的工具，規則依登入身分判斷（admins／users／kids／config／ledger），詳見第 6 節「集點小金庫」與附錄規則。
+- **`seating/` 抽屜（座位大作戰，2026-10-09）**：老師用 Email 登入（座位系統專用帳號），每個班級記錄 `owner`，規則只讓擁有者讀寫；未來分享給其他老師只要幫對方開帳號。
+- **`fp/` 抽屜（集點小金庫，2026-10-06）**：使用 Firebase Authentication（登入）的工具，規則依登入身分判斷（admins／users／kids／config／ledger），詳見第 6 節「集點小金庫」與附錄規則。
 - 與「科學任務偵探所」的 Supabase 完全分開：**Supabase 給大系統、Firebase 給輕量小工具**。
 
 ---
@@ -387,6 +396,25 @@ wuyutzu-tools/
 - 已知限制：沒有登入，懂技術的學生可以直接改資料庫裡自己的分數（同其他小工具）
 - 舊的 RPG 版移到 `sci-history-rpg/`：老師試玩後認為走路、閃躲佔掉太多思考時間、開發成本高，不適合科學史；鑑識課這類「探索本身就是學習」的主題可以再用
 
+### 🪑 座位大作戰（classroom/seating/，2026-10-09 第一階段）
+
+- 取代舊的 `classroom/seating.html`，把「Google 表單暗標 → 手動比序 → 舊座位系統 → 投影隨機 → Excel 座位表」整合成一個系統；完整規格見專案文件「座位大作戰_開發規格書.md」
+- **登入**：Firebase Auth Email（座位系統專用帳號，和集點小金庫分開）；也可選「本機模式」（只存在那台裝置，給試用或沒有帳號的老師）
+- **資料分兩層**：班級層（名單、地圖、幹部、打掃、秘密規則、設定，整學期沿用）＋回合層（每次換座位一個回合：地圖快照、鎖定座位、抽籤結果、狀態 prep → drawn → final）
+- **地圖座標**一律存「學生視角」：r=0 最前排（靠講台）、c=0 學生左手邊；`cells` 只記關閉 `x`／走道 `a`；周邊標示 `marks` 的 side 是 front/back/left/right。`SeatCore.viewOf()` 負責轉成講台視角（整張圖轉 180°）
+- **相鄰**（老師決定：隔走道也算相鄰）：先抽掉「整排或整列都是走道」的排／列，再看周圍八格
+- **秘密規則**：`apart`（兩人不相鄰）、`zone`（只能坐某幾排／某幾列／指定座位），可暫停；只在後台出現，投影舞台與座位表看不到
+- **受限隨機**：沒有規則時直接 Fisher–Yates 洗牌（已測 4000 次，每格機率平均）；有規則時限制多的人先排＋隨機回溯；排不出來時投影只顯示「請老師確認設定」，後台的「檢查規則」會逐條暫停找出是哪幾條互相衝突
+- **鎖定座位**（第一階段手動）：🏆 得標／📌 老師預留＋老師備註；鎖定的人違反「不相鄰」時標成「⏸ 待老師決定」，進投影舞台前會再確認
+- **投影舞台**：🎯 抽一位同學（跑馬燈）→ 🎲 開始分配（先一次算好，再一格一格翻牌揭曉，可調速度、⏩ 全部揭曉）；自動螢幕常亮；預設學生視角
+- **揭曉後**：後台點兩個座位互換（違反規則會提醒），✅ 定案
+- **A4 座位表**：仿老師的 Excel 版面（座位圖＋幹部框＋打掃區域＋底部備註＋適用期間）；版面依內容自動分欄（幹部或打掃太長就分兩欄）、整體縮放、被寬度卡住時自動把格子拉高填滿；列印用 `@page A4 landscape`，只印座位表；也可下載 Excel（座位表／幹部／打掃三張表）
+- **打掃匯入**：讀打掃徵才 v4「依項目」（`打掃項目`）或 v3.4（`中籤打掃項目`）的 Excel；「[教室]地板天花板」自動拆成區域＋項目；單向匯入，不連動打掃系統
+- **備份**：班級資料可下載／還原 JSON；雲端寫入失敗時會在本機留一份暫存（`seating3_cache_<班級id>`）
+- 第二階段（未做）：學生暗標頁 `bid.html`、比序規則編輯器、自動開標、截止時間、資源回收清單；Firebase 會再加 `seating/rounds/<回合代碼>`（規格書第 8 節）
+- 第三階段（未做）：遊戲化開關（志願模式／純隨機）
+- ⚠️ 需要老師在 Firebase 後台手動做：Authentication 新增座位系統專用帳號、貼上 `classroom/seating/firebase-rules-merged.json` 規則
+
 ### 💰 集點小金庫（family-points/index.html，2026-10-06 新增）
 
 - 用途：家庭用的集點系統（爸爸＝管理員、小孩＝使用者）。孩子回報表現得點、兌換獎品；爸爸審核。
@@ -450,7 +478,7 @@ fp/
 
 ---
 
-## 附錄：Firebase 安全規則全文（2026-10-08，時光手稿允許老師刪除測試資料＋刪除紀錄 deleted）
+## 附錄：Firebase 安全規則全文（2026-10-09，新增座位大作戰 seating：老師登入後只能讀寫自己的班級）
 
 ```json
 {
@@ -599,6 +627,21 @@ fp/
     "$sid": {
      ".write": "$sid.length <= 30",
      ".validate": "newData.isNumber()"
+    }
+   }
+  },
+  "seating": {
+   "owners": {
+    "$uid": {
+     ".read": "auth != null && auth.uid === $uid",
+     ".write": "auth != null && auth.uid === $uid"
+    }
+   },
+   "classes": {
+    "$cid": {
+     ".read": "auth != null && data.child('owner').val() === auth.uid",
+     ".write": "auth != null && $cid.matches(/^cls[a-z0-9]{6,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)",
+     ".validate": "newData.child('owner').val() === auth.uid"
     }
    }
   }

@@ -1,0 +1,166 @@
+{
+ "rules": {
+  ".read": false,
+  ".write": false,
+  "missing-equipment": {
+   "scores": {
+    ".read": true,
+    "$id": {
+     ".write": "newData.exists() && (!data.exists() || newData.child('score').val() > data.child('score').val() || (newData.child('score').val() == data.child('score').val() && newData.child('seconds').val() < data.child('seconds').val()))",
+     ".validate": "newData.hasChildren(['cls','seat','name','score','correct','wrong','seconds','ts']) && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 3000 && newData.child('seconds').isNumber() && newData.child('correct').isNumber() && newData.child('correct').val() <= 30 && newData.child('name').isString() && newData.child('name').val().length <= 12"
+    }
+   }
+  },
+  "unit-convert": {
+   "$code": {
+    ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{7}$/)",
+    "$sid": {
+     ".write": "newData.exists() && $code.matches(/^[2-9A-HJ-NP-Z]{7}$/) && data.child('submitted').val() != true",
+     ".validate": "newData.hasChildren(['cls','seat','name','ts']) && newData.child('cls').isString() && newData.child('cls').val().length <= 10 && newData.child('seat').isNumber() && newData.child('name').isString() && newData.child('name').val().length <= 12"
+    }
+   }
+  },
+  "ph-generator": {
+   "$code": {
+    ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{7}$/)",
+    "$sid": {
+     ".write": "newData.exists() && $code.matches(/^[2-9A-HJ-NP-Z]{7}$/) && data.child('submitted').val() != true",
+     ".validate": "newData.hasChildren(['cls','seat','name','ts']) && newData.child('cls').isString() && newData.child('cls').val().length <= 10 && newData.child('seat').isNumber() && newData.child('name').isString() && newData.child('name').val().length <= 12"
+    }
+   }
+  },
+  "case-board": {
+   "$code": {
+    ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)",
+    "meta": {
+     ".write": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && newData.exists()",
+     ".validate": "newData.hasChildren(['title','createdAt']) && newData.child('title').isString() && newData.child('title').val().length <= 40"
+    },
+    "members": {
+     "$sid": {
+      ".write": "newData.exists() && root.child('case-board').child($code).child('meta').exists()",
+      ".validate": "newData.hasChildren(['cls','seat','name']) && newData.child('cls').isString() && newData.child('cls').val().length <= 10 && newData.child('name').isString() && newData.child('name').val().length <= 12"
+     }
+    },
+    "tasks": {
+     "$tid": {
+      ".write": "newData.exists() && root.child('case-board').child($code).child('meta').exists() && (data.exists() || (newData.child('status').val() == 'open' && root.child('case-board').child($code).child('meta').child('open').val() != false))",
+      ".validate": "newData.hasChildren(['sid','name','seat','status','createdAt']) && newData.child('status').val().matches(/^(open|taken|done|cancelled|removed)$/) && (!data.exists() || newData.child('sid').val() == data.child('sid').val()) && (!(data.child('status').val() == 'taken' && newData.child('status').val() == 'taken') || newData.child('solver').val() == data.child('solver').val()) && (data.child('status').val() != 'done' || newData.child('status').val() == 'done' || newData.child('status').val() == 'removed') && (newData.child('status').val() != 'taken' || (newData.child('solver').isString() && newData.child('solver').val() != newData.child('sid').val())) && (newData.child('status').val() != 'done' || (newData.child('stars').isNumber() && newData.child('stars').val() >= 1 && newData.child('stars').val() <= 3)) && (!newData.child('note').exists() || (newData.child('note').isString() && newData.child('note').val().length <= 80))"
+     }
+    }
+   }
+  },
+  "excel-rescue": {
+   "$sem": {
+    ".read": "$sem.matches(/^[A-Z0-9-]{1,16}$/)",
+    "$id": {
+     ".write": "newData.exists() && $sem.matches(/^[A-Z0-9-]{1,16}$/) && $id.matches(/^[A-Z0-9]{3,12}$/)",
+     ".validate": "newData.hasChildren(['name','ts']) && newData.child('name').isString() && newData.child('name').val().length <= 12 && newData.child('ts').isNumber()",
+     "name": {
+      ".validate": "newData.isString()"
+     },
+     "ts": {
+      ".validate": "newData.isNumber()"
+     },
+     "passed": {
+      "$lv": {
+       ".validate": "$lv.matches(/^(L[1-6]|H)$/) && newData.isNumber()"
+      }
+     },
+     "att": {
+      "$lv": {
+       ".validate": "$lv.matches(/^(L[1-6]|H)$/) && newData.isNumber() && newData.val() >= 0 && newData.val() <= 9999"
+      }
+     },
+     "closedAt": {
+      ".validate": "newData.isNumber()"
+     },
+     "check": {
+      ".validate": "newData.hasChildren(['score','max','at']) && newData.child('score').isNumber() && newData.child('max').isNumber() && newData.child('at').isNumber()"
+     },
+     "$other": {
+      ".validate": false
+     }
+    }
+   }
+  },
+  "fp": {
+   "admins": {
+    "$uid": {
+     ".read": "auth != null && auth.uid === $uid"
+    }
+   },
+   "users": {
+    ".read": "auth != null && root.child('fp/admins').child(auth.uid).val() === true",
+    "$uid": {
+     ".read": "auth != null && auth.uid === $uid",
+     ".write": "auth != null && root.child('fp/admins').child(auth.uid).val() === true"
+    }
+   },
+   "kids": {
+    ".read": "auth != null && root.child('fp/admins').child(auth.uid).val() === true",
+    "$kid": {
+     ".read": "auth != null && root.child('fp/users').child(auth.uid).child('kidId').val() === $kid",
+     ".write": "auth != null && root.child('fp/admins').child(auth.uid).val() === true"
+    }
+   },
+   "config": {
+    ".read": "auth != null && (root.child('fp/admins').child(auth.uid).val() === true || root.child('fp/users').child(auth.uid).exists())",
+    ".write": "auth != null && root.child('fp/admins').child(auth.uid).val() === true"
+   },
+   "ledger": {
+    ".read": "auth != null && root.child('fp/admins').child(auth.uid).val() === true",
+    "$kid": {
+     ".read": "auth != null && root.child('fp/users').child(auth.uid).child('kidId').val() === $kid",
+     "$entry": {
+      ".write": "auth != null && (root.child('fp/admins').child(auth.uid).val() === true || (root.child('fp/users').child(auth.uid).child('kidId').val() === $kid && !data.exists() && newData.exists() && newData.child('status').val() === 'pending' && (newData.child('kind').val() === 'earn' || newData.child('kind').val() === 'redeem') && newData.child('amount').val() > 0))",
+      ".validate": "newData.hasChildren(['kidId', 'kind', 'refName', 'amount', 'status', 'createdAt']) && newData.child('kidId').val() === $kid && newData.child('amount').isNumber() && newData.child('refName').isString() && newData.child('refName').val().length < 60 && (newData.child('status').val() === 'pending' || newData.child('status').val() === 'approved' || newData.child('status').val() === 'rejected')"
+     }
+    }
+   }
+  },
+  "sci-history": {
+   "players": {
+    ".read": true,
+    "$sid": {
+     ".write": "$sid.length <= 30",
+     ".validate": "newData.hasChildren(['sid','cls','seat','name','term','coins','score','updatedAt']) && newData.child('sid').val() == $sid && newData.child('name').isString() && newData.child('name').val().length <= 12 && newData.child('cls').isString() && newData.child('cls').val().length <= 10 && newData.child('coins').isNumber() && newData.child('score').isNumber()"
+    }
+   },
+   "logs": {
+    ".read": true,
+    "$sid": {
+     ".write": "$sid.length <= 30",
+     ".validate": "newData.hasChildren()"
+    }
+   },
+   "config": {
+    ".read": true,
+    ".write": "newData.exists()",
+    ".validate": "newData.hasChildren(['current','terms']) && newData.child('current').isString() && newData.child('current').val().length <= 6"
+   },
+   "deleted": {
+    ".read": true,
+    "$sid": {
+     ".write": "$sid.length <= 30",
+     ".validate": "newData.isNumber()"
+    }
+   }
+  },
+  "seating": {
+   "owners": {
+    "$uid": {
+     ".read": "auth != null && auth.uid === $uid",
+     ".write": "auth != null && auth.uid === $uid"
+    }
+   },
+   "classes": {
+    "$cid": {
+     ".read": "auth != null && data.child('owner').val() === auth.uid",
+     ".write": "auth != null && $cid.matches(/^cls[a-z0-9]{6,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)",
+     ".validate": "newData.child('owner').val() === auth.uid"
+    }
+   }
+  }
+ }
+}
