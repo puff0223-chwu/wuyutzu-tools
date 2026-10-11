@@ -245,6 +245,14 @@
   .gb-heat small{position:absolute;top:100%;margin-top:3px;white-space:nowrap;font-size:.55em;color:#1f2a44;background:rgba(255,255,255,.9);padding:0 6px;border-radius:6px}
   .gb-rank{background:#fffdf8;color:#1f2a44;border-radius:14px;padding:12px 14px;overflow:hidden;display:flex;flex-direction:column;gap:6px}
   .gb-row{display:grid;grid-template-columns:44px minmax(0,1fr) 120px 80px;align-items:center;gap:10px;padding:5px 8px;border-radius:10px;background:#f3eee2;font-size:1.15em}
+  .gb-rank.c2,.gb-rank.c3{display:grid;grid-auto-flow:column;gap:5px 10px;align-content:start}
+  .gb-rank.c2{grid-template-columns:1fr 1fr;grid-template-rows:repeat(13,auto)}
+  .gb-rank.c3{grid-template-columns:1fr 1fr 1fr;grid-template-rows:repeat(20,auto)}
+  .gb-rank.c2 .gb-row{font-size:.92em;grid-template-columns:30px minmax(0,1fr) 70px 46px;padding:3px 6px;gap:6px}
+  .gb-rank.c3 .gb-row{font-size:.74em;grid-template-columns:24px minmax(0,1fr) 54px 40px;padding:2px 5px;gap:5px;border-radius:7px}
+  .gb-rank.c2 .rk,.gb-rank.c3 .rk{font-size:1.3em}
+  .gb-rank.c3 .bar{height:8px}
+  .gb-row .dn{font-size:.72em;text-align:center}
   .gb-row.fin{background:#fdf1d6}
   .gb-row .rk{font-family:'Bebas Neue',sans-serif;font-size:1.6em;text-align:center;color:#e4572e}
   .gb-row .nm{font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -259,30 +267,50 @@
   @media(max-width:900px){.gb{grid-template-columns:1fr;grid-template-rows:auto auto auto auto}.gb-head,.gb-foot{grid-column:1}.gb-map{min-height:45vh}}`;
   // board：{ title, status, clock, target, teams{tid:{name,done,finished,finishSec,penalty}}, heat{zone:count}, events[], badges[] }
   // pub：{ map, zones[], crop{top,bot} }
-  function boardHTML(board, pub, now, opt) {
+  // 看板拆成幾塊：地圖底圖固定不動，時鐘、人數圈、排行、動態有變才更新（50 組時也不會閃）
+  function boardParts(board, pub, now, opt) {
     board = board || {}; pub = pub || {};
     const sec = gameSeconds(board.clock, now), lim = (board.limitMin || 0) * 60;
-    const ranked = rankTeams(board.teams, sec);
-    const crop = pub.crop || { top: 0, bot: 100 }, span = (crop.bot - crop.top) / 100;
-    const map = pub.map || { src: 'r:map', w: 1117, h: 1579 };
+    const ranked = rankTeams(board.teams, sec), n = ranked.length;
     const heat = board.heat || {};
     const zones = (pub.zones || []).filter((z) => z.x != null);
     const stateTxt = { ready: '準備中', running: '', paused: '⏸ 暫停中', ended: '🏁 已結束' }[board.status] || '';
+    const cols = n > 26 ? 3 : n > 12 ? 2 : 1;
+    return {
+      head: `<div><div class="en">THE LOST PLACES</div><h1>🧭 ${esc(board.title || '遺落的地點')}</h1></div>
+        ${stateTxt ? `<span class="gb-state">${stateTxt}</span>` : ''}
+        <div class="gb-clock">${lim ? fmtTime(Math.max(0, lim - sec)) : fmtTime(sec)}<small>${lim ? '剩餘時間' : '經過時間'}${n > 12 ? `・${n} 組` : ''}</small></div>`,
+      heat: zones.map((z) => { const k = heat[z.id] || 0; const sz = 30 + Math.min(k, 6) * 7; return `<div class="gb-heat" style="left:${z.x}%;top:${z.y}%;width:${sz}px;height:${sz}px;background:${k ? z.color : 'rgba(120,120,120,.35)'};opacity:${k ? 1 : .7}">${k || ''}<small>${esc(z.name)}</small></div>`; }).join(''),
+      rankCls: 'gb-rank c' + cols,
+      rank: ranked.map((t) => `<div class="gb-row ${t.finished ? 'fin' : ''}"><div class="rk">${t.rank}</div><div class="nm">${t.finished ? '🏁 ' : ''}${esc(t.name)}</div>
+        <div><div class="bar"><i style="width:${Math.min(100, Math.round((t.done || 0) / Math.max(1, board.target || 1) * 100))}%"></i></div><div class="dn">${t.done || 0} / ${board.target || 0}</div></div>
+        <div class="tm">${t.finished ? fmtTime(t.finishSec) : ''}</div></div>`).join('') || '<p style="opacity:.6">等待開始…</p>',
+      foot: (board.badges || []).map((b) => `<span class="gb-badge">${esc(b)}</span>`).join('') + (board.events || []).slice(-6).reverse().map((e) => `<span class="gb-ev">${esc(e)}</span>`).join('')
+    };
+  }
+  function boardHTML(board, pub, now, opt) {
+    pub = pub || {};
+    const P = boardParts(board, pub, now, opt);
+    const crop = pub.crop || { top: 0, bot: 100 }, span = (crop.bot - crop.top) / 100;
+    const map = pub.map || { src: 'r:map', w: 1117, h: 1579 };
     return `<div class="gb">
       ${opt && opt.close ? '<button class="gb-close" data-gbclose>✕ 關閉投影</button>' : ''}
-      <div class="gb-head"><div><div class="en">THE LOST PLACES</div><h1>🧭 ${esc(board.title || '遺落的地點')}</h1></div>
-        ${stateTxt ? `<span class="gb-state">${stateTxt}</span>` : ''}
-        <div class="gb-clock">${lim ? fmtTime(Math.max(0, lim - sec)) : fmtTime(sec)}<small>${lim ? '剩餘時間' : '經過時間'}</small></div></div>
+      <div class="gb-head" data-p="head">${P.head}</div>
       <div class="gb-map"><div class="mi" style="--ar:${map.w}/${(map.h * span).toFixed(1)}"><div class="in" style="top:${(-crop.top / span).toFixed(3)}%;height:${(100 / span).toFixed(3)}%">
-        <img src="${esc(photoURL(map.src, opt && opt.base))}">
-        ${zones.map((z) => { const n = heat[z.id] || 0; const s = 34 + n * 16; return `<div class="gb-heat" style="left:${z.x}%;top:${z.y}%;width:${s}px;height:${s}px;background:${n ? z.color : 'rgba(120,120,120,.35)'};opacity:${n ? 1 : .7}">${n || ''}<small>${esc(z.name)}</small></div>`; }).join('')}
+        <img src="${esc(photoURL(map.src, opt && opt.base))}"><div data-p="heat">${P.heat}</div>
       </div></div></div>
-      <div class="gb-rank">${ranked.map((t) => `<div class="gb-row ${t.finished ? 'fin' : ''}"><div class="rk">${t.rank}</div><div class="nm">${t.finished ? '🏁 ' : ''}${esc(t.name)}</div>
-        <div><div class="bar"><i style="width:${Math.min(100, Math.round((t.done || 0) / Math.max(1, board.target || 1) * 100))}%"></i></div><div style="font-size:.72em;text-align:center">${t.done || 0} / ${board.target || 0}</div></div>
-        <div class="tm">${t.finished ? fmtTime(t.finishSec) : ''}</div></div>`).join('') || '<p style="opacity:.6">等待開始…</p>'}</div>
-      <div class="gb-foot">${(board.badges || []).map((b) => `<span class="gb-badge">${esc(b)}</span>`).join('')}${(board.events || []).slice(-6).reverse().map((e) => `<span class="gb-ev">${esc(e)}</span>`).join('')}</div>
+      <div class="${P.rankCls}" data-p="rank">${P.rank}</div>
+      <div class="gb-foot" data-p="foot">${P.foot}</div>
     </div>`;
   }
+  // 已經畫過就只換有變的那幾塊
+  function boardPaint(el, board, pub, now, opt) {
+    if (!el.querySelector('.gb')) { el.innerHTML = boardHTML(board, pub, now, opt); return; }
+    const P = boardParts(board, pub, now, opt);
+    ['head', 'heat', 'rank', 'foot'].forEach((k) => { const box = el.querySelector(`[data-p="${k}"]`); if (box && box.innerHTML !== P[k] && box._last !== P[k]) { box.innerHTML = P[k]; box._last = P[k]; } });
+    const rk = el.querySelector('[data-p="rank"]'); if (rk && rk.className !== P.rankCls) rk.className = P.rankCls;
+  }
+
 
   window.GPS = {
     DB_URL, VIEW_DIST, VIEW_ANGLE, DIRS, ZONE_COLORS,
@@ -291,6 +319,6 @@
     photoURL, loadPhoto, compressImage, makeVersions,
     cachePhoto: (id, data) => { photoCache[id] = data; },
     // 第二階段
-    CODE_CH, makeCode, sha, DEFAULT_RUN, viewLevel, chooseBatch, gameSeconds, fmtTime, rankTeams, boardHTML, BOARD_CSS
+    CODE_CH, makeCode, sha, DEFAULT_RUN, viewLevel, chooseBatch, gameSeconds, fmtTime, rankTeams, boardHTML, boardPaint, BOARD_CSS
   };
 })();

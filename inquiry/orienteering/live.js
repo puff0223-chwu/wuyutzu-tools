@@ -25,6 +25,7 @@ export function renderBadge() {
 export async function renderLiveTab() {
   if (R.code && R.meta) return drawDash();
   const panel = $('#panel');
+  delete panel.dataset.dash; R.lastDash = null;
   panel.innerHTML = '<p class="muted">讀取活動中…</p>';
   try { R.runs = (await FB.get('orienteering/myruns/' + S.user.uid)) || {}; } catch (e) { panel.innerHTML = `<div class="alert red">讀取失敗：${esc(e.code || e.message)}（Firebase 規則可能還沒更新）</div>`; return; }
   const last = LS.get('gps_live', '');
@@ -58,7 +59,7 @@ function newRunModal() {
     <label class="f">活動名稱</label><input type="text" id="rTitle" value="探究與實作 校園定向 ${now.getMonth() + 1}/${now.getDate()}">
     <div class="grid2">
       <div><label class="f">賽制</label><select id="rMode"><option value="race">🏁 闖關競速</option><option value="score" disabled>🎯 積分賽（第三階段）</option></select></div>
-      <div><label class="f">組數</label><input type="number" id="rN" value="${LS.get('gps_teams', 10)}" min="1" max="20"></div>
+      <div><label class="f">組數</label><input type="number" id="rN" value="${LS.get('gps_teams', 10)}" min="1" max="60"></div>
     </div>
     <label class="f">組名（選填，一行一組；空白就用「第 1 組」…）</label><textarea id="rNames" placeholder="第 1 組\n第 2 組" style="min-height:52px">${esc(LS.get('gps_teamnames', ''))}</textarea>
     <div class="grid2">
@@ -101,14 +102,15 @@ function newRunModal() {
     const cap = b.zones.filter((z) => !set.zones.length || set.zones.includes(z.id)).reduce((s, z) => s + z.cap, 0);
     const w = [];
     if (pool.length < set.target) w.push(`可用點位只有 ${pool.length} 個，少於每組要完成的 ${set.target} 題，請減少題數或多選區域。`);
-    if (n > cap) w.push(`${n} 組超過所選區域的容量（合計 ${cap} 組），有些區域會比較擠。可到「🧩 區域」調高「同時最多幾組」。`);
-    $('#rWarn', m.el).innerHTML = w.map((x) => `<div class="alert red small">${x}</div>`).join('') + `<p class="small muted" style="margin-top:6px">可用點位 ${pool.length} 個。</p>`;
+    const nz = b.zones.filter((z) => !set.zones.length || set.zones.includes(z.id)).length || 1;
+    if (n > cap) w.push(`ℹ️ ${n} 組比區域容量（合計 ${cap} 組）多，系統會平均分散，每區大約同時 ${Math.ceil(n / nz)} 組。人數多時建議每組人數少一點，或分兩批出發。`);
+    $('#rWarn', m.el).innerHTML = w.map((x) => `<div class="alert ${x.startsWith('ℹ️') ? 'blue' : 'red'} small">${x}</div>`).join('') + `<p class="small muted" style="margin-top:6px">可用點位 ${pool.length} 個。</p>`;
     return !w.length || !w[0].startsWith('可用');
   };
   m.el.addEventListener('change', check); check();
   $('#rGo', m.el).onclick = async () => {
     if (!check()) return toast('可用點位不夠', true);
-    const set = read(), n = Math.max(1, Math.min(20, +$('#rN', m.el).value || 10));
+    const set = read(), n = Math.max(1, Math.min(60, +$('#rN', m.el).value || 10));
     const names = $('#rNames', m.el).value.split('\n').map((x) => x.trim()).filter(Boolean);
     LS.set('gps_runset', set); LS.set('gps_teams', n); LS.set('gps_teamnames', $('#rNames', m.el).value);
     $('#rGo', m.el).disabled = true;
@@ -158,7 +160,7 @@ async function openRun(code) {
     R.st = unpackState(all.state || {});
     R.members = {}; Object.entries(all.teams || {}).forEach(([tid, t]) => { R.members[tid] = mergeMembers(t.members); });
     LS.set('gps_live', code);
-    startReferee(all);
+    await startReferee(all);
     drawDash();
   } catch (e) { toast('開啟失敗：' + (e.code || e.message), true); R.code = null; renderLiveTab(); }
 }
@@ -176,16 +178,17 @@ function unpackState(s) {
 }
 const packState = (st) => JSON.parse(JSON.stringify(st));
 
-function startReferee() {
+async function startReferee() {
   R.active = true; R.lost = false;
   const bp = base();
-  FB.set(bp + '/host', { id: R.hostId, beat: Date.now() }).catch(() => {});
+  // 先把「我是裁判」寫進去，再開始監聽，才不會誤以為被別台接手
+  try { await FB.set(bp + '/host', { id: R.hostId, beat: Date.now() }); } catch (e) { }
   R.unsubs.push(FB.listen(bp + '/host', (v) => {
     if (v && v.id && v.id !== R.hostId && R.active) { R.active = false; R.lost = true; toast('另一台裝置接手了自動裁判，這一頁改成只看不判', true); drawDash(); }
   }));
   Object.keys(R.st.teams).forEach((tid) => {
-    R.unsubs.push(FB.onChild(`${bp}/teams/${tid}/subs`, (k, v) => enqueue(() => onSub(tid, k, v))));
-    R.unsubs.push(FB.onChild(`${bp}/teams/${tid}/reqs`, (k, v) => enqueue(() => onReq(tid, k, v))));
+    R.unsubs.push(FB.onChild(`${bp}/teams/${tid}/subs`, (k, v) => enqueue((ctx) => onSub(ctx, tid, k, v))));
+    R.unsubs.push(FB.onChild(`${bp}/teams/${tid}/reqs`, (k, v) => enqueue((ctx) => onReq(ctx, tid, k, v))));
     R.unsubs.push(FB.listen(`${bp}/teams/${tid}/members`, (v) => { R.members[tid] = mergeMembers(v); redraw(); }));
   });
   let n = 0;
@@ -205,18 +208,37 @@ function startReferee() {
 }
 export function stopReferee() {
   R.unsubs.forEach((u) => { try { u(); } catch (e) { } }); R.unsubs = [];
-  clearInterval(R.tick); R.tick = null; R.active = false;
+  clearInterval(R.tick); R.tick = null; R.active = false; R.lastDash = null;
   if (R.proj) closeProj();
 }
-function enqueue(fn) { R.queue = R.queue.then(fn).catch((e) => { console.error(e); toast('裁判處理失敗：' + (e.code || e.message), true); }); return R.queue; }
+/* 裁判佇列（2026-10-12 為 50 組改成「整批處理」）：
+   學生的答案、求助、老師的按鈕都先排進佇列；裁判一次把排隊中的全部在記憶體判完，
+   再「一次」寫回雲端。50 組同時送答案也只要寫一兩次，不會一個一個排隊等。 */
+const Q = { list: [], busy: false, waiters: [] };
+function enqueue(fn) {
+  return new Promise((res) => { Q.list.push(fn); Q.waiters.push(res); pump(); });
+}
+async function pump() {
+  if (Q.busy) return; Q.busy = true;
+  try {
+    while (Q.list.length) {
+      const batch = Q.list.splice(0, 300), done = Q.waiters.splice(0, 300);
+      const ctx = { up: {}, tids: new Set(), all: false };
+      batch.forEach((fn) => { try { fn(ctx); } catch (e) { console.error(e); } });
+      await flush(ctx);
+      done.forEach((r) => r());
+    }
+  } catch (e) { console.error(e); toast('裁判處理失敗：' + (e.code || e.message), true); }
+  finally { Q.busy = false; }
+}
 
 // ---------- 判題 ----------
 const P = (key) => bank().points[key];
 const openCards = (t) => Object.entries(t.cards || {}).filter(([, c]) => c.state === 'open');
 function logEntry(tid, kind, extra) { return { t: Date.now(), tid, kind, ...extra }; }
-async function onSub(tid, sid, sub) {
-  const up = {}; up[`teams/${tid}/subs/${sid}`] = null;
+function onSub(ctx, tid, sid, sub) {
   if (!R.active) return;
+  const up = ctx.up; up[`teams/${tid}/subs/${sid}`] = null;
   const t = R.st.teams[tid], card = t && t.cards[sub.cid], now = Date.now();
   let log;
   if (R.meta.status !== 'running' || !card || card.state !== 'open' || t.finished) log = logEntry(tid, 'ignore', { ans: sub.ans });
@@ -238,13 +260,13 @@ async function onSub(tid, sid, sub) {
     }
   }
   up[`log/${FB.pushKey(base() + '/log')}`] = log;
-  await commit([tid], up);
+  ctx.tids.add(tid);
 }
-async function onReq(tid, rid, req) {
-  const up = {}; up[`teams/${tid}/reqs/${rid}`] = null;
+function onReq(ctx, tid, rid, req) {
   if (!R.active) return;
+  const up = ctx.up; up[`teams/${tid}/reqs/${rid}`] = null;
   const t = R.st.teams[tid], card = t && t.cards[req.cid], set = R.meta.settings, now = Date.now();
-  if (R.meta.status !== 'running' || !card || card.state !== 'open' || t.finished) return commit([], up);
+  if (R.meta.status !== 'running' || !card || card.state !== 'open' || t.finished) return;
   const p = P(card.key);
   if (req.type === 'hint' && set.hintOn && (card.hint || 0) < 2) {
     card.hint = (card.hint || 0) + 1; t.hints++; t.penalty += set.hintCost;
@@ -253,8 +275,8 @@ async function onReq(tid, rid, req) {
     card.pass = 'pending'; card.passAt = now; card.passNote = String(req.note || '').slice(0, 60);
     up[`log/${FB.pushKey(base() + '/log')}`] = logEntry(tid, 'passReq', { no: p.no, note: card.passNote });
     beep();
-  } else return commit([], up);
-  await commit([tid], up);
+  } else return;
+  ctx.tids.add(tid);
 }
 function dispatch(tid, now, size) {
   const t = R.st.teams[tid], set = R.meta.settings;
@@ -277,15 +299,15 @@ function finishTeam(tid, now) {
   const n = Object.values(R.st.teams).filter((x) => x.finished).length;
   if (n === 1) R.st.badges.push(`🏆 最快完成：${t.name}`);
   event(`🏁 ${t.name} 完成！第 ${n} 個抵達`);
-  if (Object.values(R.st.teams).every((x) => x.finished)) setTimeout(() => endRun('🏁 全部組別都完成了！'), 300);
+  if (Object.values(R.st.teams).every((x) => x.finished)) setTimeout(() => endRun('🏁 全部組別都完成了！'), 50);
 }
 function event(text) { R.st.events.push(text); if (R.st.events.length > 15) R.st.events.splice(0, R.st.events.length - 15); }
 
 // ---------- PASS／換題 ----------
 const pendingPasses = () => Object.entries(R.st.teams).flatMap(([tid, t]) => Object.entries(t.cards).filter(([, c]) => c.state === 'open' && c.pass === 'pending').map(([cid, c]) => ({ tid, cid, t, c })));
-async function decidePass(tid, cid, ok, byTeacher) {
+function decidePass(ctx, tid, cid, ok, byTeacher) {
   const t = R.st.teams[tid], c = t.cards[cid], now = Date.now(); if (!c || c.state !== 'open') return;
-  const up = {};
+  const up = ctx.up;
   if (ok) {
     c.state = 'gone'; c.pass = 'ok'; t.passed.push(c.key);
     if (!byTeacher) t.passes++;
@@ -293,7 +315,7 @@ async function decidePass(tid, cid, ok, byTeacher) {
     dispatch(tid, now, openCards(t).length ? 1 : 0);
   } else { c.pass = 'no'; c.passNo = now; }
   up[`log/${FB.pushKey(base() + '/log')}`] = logEntry(tid, ok ? (byTeacher ? 'skip' : 'passOK') : 'passNo', { no: P(c.key).no });
-  await commit([tid], up);
+  ctx.tids.add(tid);
 }
 
 // ---------- 寫回雲端 ----------
@@ -331,22 +353,25 @@ function boardFor() {
   });
   return { title: R.meta.title, status: R.meta.status, clock: R.st.clock, limitMin: R.meta.settings.limitMin, target: R.meta.settings.target, teams, heat, events: R.st.events, badges: R.st.badges };
 }
-async function commit(tids, extra) {
-  const up = { ...(extra || {}) };
+async function flush(ctx) {
+  const up = ctx.up, tids = ctx.all ? Object.keys(R.st.teams) : [...ctx.tids];
+  if (ctx.all) Object.assign(up, { 'meta/status': R.meta.status, 'meta/settings': R.meta.settings, 'state/clock': R.st.clock });
   tids.forEach((tid) => { up[`teams/${tid}/view`] = viewFor(tid); up[`state/teams/${tid}`] = packState(R.st.teams[tid]); });
   if (tids.length) { up['state/events'] = R.st.events; up['state/badges'] = R.st.badges; up.board = boardFor(); }
+  if (!Object.keys(up).length) return;
   try { await FB.update(base(), up); } catch (e) { toast('寫入雲端失敗：' + (e.code || e.message), true); }
+  if (ctx.all) FB.update(`orienteering/myruns/${S.user.uid}/${R.code}`, { status: R.meta.status }).catch(() => {});
   redraw();
-}
-async function commitAll(extra) {
-  const up = { ...(extra || {}), 'meta/status': R.meta.status, 'meta/settings': R.meta.settings, 'state/clock': R.st.clock };
-  await commit(Object.keys(R.st.teams), up);
-  FB.update(`orienteering/myruns/${S.user.uid}/${R.code}`, { status: R.meta.status }).catch(() => {});
 }
 
 // ---------- 開始、暫停、結束 ----------
 async function startRun() {
   if (!R.active) return toast('這一頁不是裁判（另一台裝置接手了）', true);
+  await enqueue((ctx) => startNow(ctx));
+  toast('▶ 開始！系統已自動派出第一批題目');
+}
+function startNow(ctx) {
+  if (R.meta.status !== 'ready') return;
   const now = Date.now();
   R.meta.status = 'running'; R.st.clock = { startAt: now };
   const order = G.shuffle(Object.keys(R.st.teams), Math.random);
@@ -359,10 +384,10 @@ async function startRun() {
     t.batchNo = 1; t.msg = `第一站：${(G.zoneById(bank())[t.zone] || {}).name || ''}`;
   });
   event('🚩 活動開始！');
-  await commitAll();
-  toast('▶ 開始！系統已自動派出第一批題目');
+  ctx.all = true;
 }
-async function pauseRun() {
+function pauseRun() { return enqueue((ctx) => pauseNow(ctx)); }
+function pauseNow(ctx) {
   const now = Date.now();
   if (R.meta.status === 'running') { R.meta.status = 'paused'; R.st.clock.pausedAt = now; event('⏸ 暫停'); }
   else if (R.meta.status === 'paused') {
@@ -371,22 +396,29 @@ async function pauseRun() {
     Object.values(R.st.teams).forEach((t) => Object.values(t.cards).forEach((c) => { if (c.state === 'open') { c.at += d; if (c.coolUntil) c.coolUntil += d; } }));
     R.meta.status = 'running'; event('▶ 繼續');
   }
-  await commitAll();
+  ctx.all = true;
 }
 async function endRun(why) {
+  if (R.meta.status === 'ended' || R.ending) return;
+  R.ending = true;
+  await enqueue((ctx) => endNow(ctx, why));
+  R.ending = false;
+  toast(why || '🏁 活動結束');
+}
+function endNow(ctx, why) {
   if (R.meta.status === 'ended') return;
   const now = Date.now();
   if (R.st.clock.pausedAt) { R.st.clock.pausedTotal = (R.st.clock.pausedTotal || 0) + now - R.st.clock.pausedAt; delete R.st.clock.pausedAt; }
   R.meta.status = 'ended'; R.st.clock.endAt = now;
   Object.values(R.st.teams).forEach((t) => Object.values(t.cards).forEach((c) => { if (c.state === 'open') c.state = 'gone'; }));
   event(why || '🏁 活動結束');
-  await commitAll();
-  toast(why || '🏁 活動結束');
+  ctx.all = true;
 }
-async function extendRun(min) { R.meta.settings.limitMin = (R.meta.settings.limitMin || 0) + min; event(`⏱ 延長 ${min} 分鐘`); await commitAll(); toast(`已延長 ${min} 分鐘`); }
+async function extendRun(min) { await enqueue((ctx) => { R.meta.settings.limitMin = (R.meta.settings.limitMin || 0) + min; event(`⏱ 延長 ${min} 分鐘`); ctx.all = true; }); toast(`已延長 ${min} 分鐘`); }
 
 // ---------- 戰況看板 ----------
-function redraw() { renderBadge(); if (R.proj) drawProj(); if (S.tab !== 'live' || !R.code) return; clearTimeout(R.drawT); R.drawT = setTimeout(drawDash, 150); }
+// 看板最多每 0.4 秒重畫一次（50 組同時答題時不會一直重畫）
+function redraw() { renderBadge(); if (R.proj) drawProj(); if (S.tab !== 'live' || !R.code || R.drawT) return; R.drawT = setTimeout(() => { R.drawT = null; drawDash(); }, 400); }
 function updateClock() {
   const el = $('#lvClock'); if (!el || !R.st) return;
   const sec = G.gameSeconds(R.st.clock, Date.now()), lim = (R.meta.settings.limitMin || 0) * 60;
@@ -402,8 +434,13 @@ function drawDash() {
   const ranked = G.rankTeams(Object.fromEntries(Object.entries(st.teams).map(([id, t]) => [id, { ...t, done: t.done.length }])), sec);
   const pend = pendingPasses();
   const stTxt = { ready: '<span class="chip">準備中</span>', running: '<span class="chip red">進行中</span>', paused: '<span class="chip">⏸ 暫停中</span>', ended: '<span class="chip gray">🏁 已結束</span>' }[m.status];
+  const nT = ranked.length, vmode = LS.get('gps_dashview', 'auto'), compact = vmode === 'compact' || (vmode === 'auto' && nT > 16);
+  const sortBy = LS.get('gps_dashsort', 'rank');
+  const oldestOf = (t) => { const o = openCards(t); return o.length ? Math.min(...o.map(([, c]) => c.at)) : Infinity; };
+  const list = sortBy === 'stuck' ? ranked.slice().sort((a, b) => oldestOf(st.teams[a.id]) - oldestOf(st.teams[b.id]))
+    : sortBy === 'order' ? ranked.slice().sort((a, b) => (st.teams[a.id].order || 0) - (st.teams[b.id].order || 0)) : ranked;
   const keepY = window.scrollY;
-  panel.innerHTML = `
+  const html = `
   <div class="toolbar" style="align-items:center">
     <button class="btn sm ghost" id="lvBack">← 活動列表</button>
     <div><div class="bold" style="font-size:1.15em">${esc(m.title)}</div><div class="small muted">代碼 <b style="font-size:1.2em;color:var(--ink);letter-spacing:.1em">${R.code}</b>・${set.easy ? '簡單' : '困難'}・每組 ${set.target} 題・一批 ${set.batch} 張${set.teaching ? '・🤫 避開教學區' : ''}</div></div>
@@ -423,8 +460,17 @@ function drawDash() {
       ${imgTag(p.photos[0], 'thumb', 'style="width:64px;height:64px" data-zoomsrc')}
       <div style="flex:1;min-width:180px"><b>${esc(t.name)}</b>　正確答案：<b>${p.no}</b> ${esc(p.name)}<div class="small muted">卡 ${Math.floor((now - c.at) / 60000)} 分鐘・用了 ${c.hint || 0} 層提示・答錯 ${c.wrong || 0} 次・已 PASS ${t.passes}/${set.passLimit}${c.passNote ? `<br>💬「${esc(c.passNote)}」` : ''}</div></div>
       <button class="btn teal" data-pass="${tid}|${cid}|1">✅ 准許（換一題）</button><button class="btn" data-pass="${tid}|${cid}|0">❌ 再找找</button></div>`; }).join('')}</div>` : ''}
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px;margin-top:12px">
-  ${ranked.map((r) => { const t = st.teams[r.id]; const open = openCards(t); const oldest = open.length ? Math.min(...open.map(([, c]) => c.at)) : 0; const z = zm[t.zone];
+  <div class="row small" style="margin-top:10px">
+    <b>${nT} 組</b>・完成 ${ranked.filter((r) => r.finished).length}・進行中 ${ranked.filter((r) => !r.finished).length}<span class="spacer"></span>
+    排序 <select class="inline" id="lvSort">${[['rank', '名次'], ['stuck', '卡最久的在前面'], ['order', '組別順序']].map(([v, t]) => `<option value="${v}" ${sortBy === v ? 'selected' : ''}>${t}</option>`).join('')}</select>
+    顯示 <select class="inline" id="lvView">${[['auto', '自動（16 組以上精簡）'], ['card', '詳細卡片'], ['compact', '精簡']].map(([v, t]) => `<option value="${v}" ${vmode === v ? 'selected' : ''}>${t}</option>`).join('')}</select>
+  </div>
+  ${compact ? `<div class="dgrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(205px,1fr));gap:6px;margin-top:8px">${list.map((r) => { const t = st.teams[r.id], open = openCards(t), oldest = open.length ? Math.min(...open.map(([, c]) => c.at)) : 0, z = zm[t.zone];
+    return `<div class="card" style="padding:6px 9px;${t.finished ? 'background:var(--gold-soft)' : ''}">
+      <div class="row" style="gap:5px;flex-wrap:nowrap"><span style="font-family:'Bebas Neue',sans-serif;font-size:1.25em;color:var(--red);min-width:20px">${m.status === 'ready' ? '' : r.rank}</span>${z && !t.finished ? `<i title="${esc(z.name)}" style="width:10px;height:10px;border-radius:50%;background:${z.color};flex:none"></i>` : ''}<b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.finished ? '🏁 ' : ''}${esc(t.name)}</b><span class="spacer"></span><b>${t.done.length}/${set.target}</b></div>
+      <div class="row small" style="gap:4px;margin-top:2px;flex-wrap:nowrap">${!t.finished && m.status === 'running' && oldest ? `<span data-stuck="${oldest}" class="chip gray"></span>` : t.finished ? `<span class="chip teal">${G.fmtTime(t.finishSec)}</span>` : ''}<span class="muted" style="white-space:nowrap">❌${t.wrong} 💡${t.hints} 🙋${t.passes}</span><span class="spacer"></span>${!t.finished && open.length && m.status === 'running' ? `<button class="btn sm ghost" style="padding:0 6px" data-skip="${r.id}" title="換掉卡最久的那題">🔄</button>` : ''}</div></div>`; }).join('')}</div>` : `
+  <div class="dgrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px;margin-top:12px">
+  ${list.map((r) => { const t = st.teams[r.id]; const open = openCards(t); const oldest = open.length ? Math.min(...open.map(([, c]) => c.at)) : 0; const z = zm[t.zone];
     return `<div class="card" style="${t.finished ? 'background:var(--gold-soft)' : ''}">
       <div class="row"><span style="font-family:'Bebas Neue',sans-serif;font-size:1.6em;color:var(--red)">${m.status === 'ready' ? '' : r.rank}</span><b style="font-size:1.1em">${t.finished ? '🏁 ' : ''}${esc(t.name)}</b><span class="spacer"></span><span class="chip blue" title="通行碼">🔑 ${t.pass}</span></div>
       <div class="small muted">${R.members[r.id] ? '座號 ' + esc(R.members[r.id]) : '還沒登入'}</div>
@@ -436,11 +482,14 @@ function drawDash() {
         <span class="spacer"></span>${open.length ? `<button class="btn sm ghost" data-skip="${r.id}" title="把卡最久的那題換掉（不算完成、不算 PASS 次數）">🔄 換題</button>` : ''}</div>` : ''}
       ${t.empty ? '<div class="small" style="color:var(--red)">⚠ 題庫沒有可派的題目了</div>' : ''}
     </div>`; }).join('')}
-  </div>
+  </div>`}
   <div class="card" style="margin-top:14px"><div class="row"><h3 style="margin:0">📜 動態</h3><span class="spacer"></span>${st.badges.map((b) => `<span class="chip">${esc(b)}</span>`).join('')}</div>
     <div class="small" style="margin-top:6px">${st.events.slice(-8).reverse().map((e) => esc(e)).join('<br>') || '<span class="muted">還沒有動態</span>'}</div></div>
   <div class="card" style="margin-top:14px"><div class="row"><h3 style="margin:0">📊 成績</h3><span class="spacer"></span><button class="btn sm primary" id="lvXlsx">⬇️ 下載成績 Excel</button></div>
     <p class="small muted" style="margin-top:4px">排名規則：完成的組比「用時＋罰秒」；沒完成的組比完成題數，再比用時＋罰秒。</p></div>`;
+  if (html === R.lastDash && panel.dataset.dash === R.code) return; // 沒變就不重畫
+  R.lastDash = html; panel.dataset.dash = R.code;
+  panel.innerHTML = html;
   window.scrollTo(0, keepY);
   updateClock();
   const on = (id, fn) => { const el = $('#' + id); if (el) el.onclick = fn; };
@@ -452,14 +501,16 @@ function drawDash() {
   on('lvProj', openProj);
   on('lvLink', linkModal);
   on('lvSlips', printSlips);
+  const so = $('#lvSort'); if (so) so.onchange = () => { LS.set('gps_dashsort', so.value); drawDash(); };
+  const vw = $('#lvView'); if (vw) vw.onchange = () => { LS.set('gps_dashview', vw.value); drawDash(); };
   on('lvXlsx', exportXlsx);
   on('lvTake', () => { R.lost = false; R.active = true; FB.set(base() + '/host', { id: R.hostId, beat: Date.now() }); toast('已由這台裝置接手自動裁判'); drawDash(); });
-  $$('[data-pass]').forEach((b) => { b.onclick = () => { const [tid, cid, ok] = b.dataset.pass.split('|'); enqueue(() => decidePass(tid, cid, ok === '1')); }; });
+  $$('[data-pass]').forEach((b) => { b.onclick = () => { const [tid, cid, ok] = b.dataset.pass.split('|'); enqueue((ctx) => decidePass(ctx, tid, cid, ok === '1')); }; });
   $$('[data-skip]').forEach((b) => {
     b.onclick = async () => {
       const t = st.teams[b.dataset.skip]; const open = openCards(t).sort((a, c) => a[1].at - c[1].at); if (!open.length) return;
       const p = P(open[0][1].key);
-      if (await confirmBox(`把 ${t.name} 卡最久的第 ${p.no} 號（${p.name}）換掉？\n不算完成，也不算他們的 PASS 次數。`, '🔄 換題')) enqueue(() => decidePass(b.dataset.skip, open[0][0], true, true));
+      if (await confirmBox(`把 ${t.name} 卡最久的第 ${p.no} 號（${p.name}）換掉？\n不算完成，也不算他們的 PASS 次數。`, '🔄 換題')) enqueue((ctx) => decidePass(ctx, b.dataset.skip, open[0][0], true, true));
     };
   });
   $$('[data-zoomsrc]').forEach((im) => { im.style.cursor = 'zoom-in'; im.onclick = () => zoomImg(im.src); });
@@ -512,7 +563,7 @@ function drawProj() {
   if (!R.proj) return;
   const b = bank(), centers = G.zoneCenters(b), ys = Object.values(b.points).map((p) => p.y);
   const pub = { map: b.map, zones: b.zones.map((z) => ({ ...z, ...(centers[z.id] || {}) })), crop: { top: Math.max(0, Math.min(12.5, Math.min(...ys) - 4)), bot: Math.min(100, Math.max(88, Math.max(...ys) + 4)) } };
-  R.proj.innerHTML = G.boardHTML(boardFor(), pub, Date.now(), { close: true });
+  G.boardPaint(R.proj, boardFor(), pub, Date.now(), { close: true });
 }
 function closeProj() { if (R.proj) R.proj.remove(); R.proj = null; try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { } }
 
