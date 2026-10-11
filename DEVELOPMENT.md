@@ -2,7 +2,7 @@
 
 > 給未來的自己（和 Claude）看的說明書：這個網站怎麼組成、資料放哪裡、要新增工具時怎麼接進來。
 > **每次開發的過程與決定記在 [CHANGELOG.md](CHANGELOG.md)（開發歷程）**，每次開發結束都要同步更新本檔與 CHANGELOG。
-> 最後更新：2026-10-09
+> 最後更新：2026-10-12
 
 ---
 
@@ -91,7 +91,14 @@ wuyutzu-tools/
 │   ├── excel-rescue-core.js      # 📊 消失的實驗數據：共用核心（學號→專屬數據、標準答案、對答案、結案代碼）
 │   ├── excel-rescue-checker.js   # 📊 消失的實驗數據：Excel 鑑識核心（拆開 .xlsx 檢查圖表／函數／格式化條件）
 │   ├── excel-rescue.html         # 消失的實驗數據：學生闖關頁
-│   └── excel-rescue-teacher.html # 消失的實驗數據：老師答案頁（首頁卡片連到這裡，請勿給學生）
+│   ├── excel-rescue-teacher.html # 消失的實驗數據：老師答案頁（首頁卡片連到這裡，請勿給學生）
+│   └── orienteering/             # 🧭 遺落的地點：校園照片定向越野（2026-10-12 第一階段）
+│       ├── index.html            #   老師後台（登入、地圖與點位、點位清單、區域與禁行區、紙本版、備份）
+│       ├── teacher.js            #   老師後台程式
+│       ├── core.js               #   共用核心：題庫格式、照片網址、壓縮、區域距離、紙本組題
+│       ├── map.png               #   乾淨版校園平面圖（16 階灰、121KB）
+│       ├── p/<亂數>.jpg          #   131 張題目照片（800px，檔名是亂數，看不出是幾號地點）
+│       └── firebase-rules-merged.json # 加上 orienteering 後的完整 Firebase 規則
 │
 └── christmas/                    # 🎄 聖誕節系列
     ├── lottery.html              # 交換禮物抽籤
@@ -113,6 +120,7 @@ wuyutzu-tools/
 | | 🎲 課堂遊戲化 | 選人系統、陣亡詛咒、戳戳樂、真心話大冒險 |
 | 🎮 遊戲設計思考 | — | 巴圖玩家類型 |
 | 🔬 探究與實作 | Excel 數據處理 | 消失的實驗數據（連到老師頁） |
+| | 校園定向越野 | 遺落的地點（連到老師後台 `inquiry/orienteering/`） |
 | 👨‍👩‍👧 親子 | 家庭與親子互動 | 集點小金庫（連到 `family-points/`，給家長與孩子用） |
 
 > 首頁是老師專用的工具箱，不會提供給學生；學生只會拿到各工具的「學生頁」連結（學生頁不連回首頁）。
@@ -177,6 +185,12 @@ wuyutzu-tools/
         ├── keys/<暗號>: true        ← 名單暗號，學生讀不到
         ├── checkin/<暗號>: 時間     ← 學生登入確認身分用
         └── bids/<暗號>: { seat, res, ts }   ← 只有老師讀得到；學生只能寫自己那格、開放中且未截止
+└── orienteering/                              ← 🧭 遺落的地點（需登入，題庫只有擁有者能讀寫）
+    ├── owners/<老師uid>/<題庫id>: { name, updatedAt }
+    ├── banks/<題庫id bk…>: { owner, name, map{src,w,h}, zones[], noGo[], points{ pt…: 點位 }, updatedAt }
+    │     點位：{ no, name, x, y(地圖百分比), zone, photos[], accept[], enabled, teach, base, hint1, hint2,
+    │            view{dist,angle,odd}, cam{x,y,dir}, reveal, task{q,a,open,bonus}, author, note }
+    └── photos/<亂數>: { owner, data(dataURL), w, h, ts }   ← 老師上傳的照片；知道代碼才讀得到，不能列出全部
 ```
 
 - **安全規則**（2026-10-03 發布）：根目錄全部上鎖。
@@ -186,6 +200,7 @@ wuyutzu-tools/
 - ⚠️ **之後新工具要用 Firebase**：要在規則裡為它新增一個抽屜的規則，否則會被擋（HTTP 401/403）。
 - **`seating/` 抽屜（座位大作戰，2026-10-09）**：老師用 Email 登入（座位系統專用帳號），每個班級記錄 `owner`，規則只讓擁有者讀寫；未來分享給其他老師只要幫對方開帳號。
 - **`fp/` 抽屜（集點小金庫，2026-10-06）**：使用 Firebase Authentication（登入）的工具，規則依登入身分判斷（admins／users／kids／config／ledger），詳見第 6 節「集點小金庫」與附錄規則。
+- **`orienteering/` 抽屜（遺落的地點，2026-10-12）**：老師用專用帳號 `puff0223+gps@gmail.com` 登入；照片代號 `r:<id>` 是網站 `p/` 資料夾裡的內建照片、`f:<id>` 是老師後來上傳存在 Firebase 的照片
 - 與「科學任務偵探所」的 Supabase 完全分開：**Supabase 給大系統、Firebase 給輕量小工具**。
 
 ---
@@ -444,6 +459,24 @@ wuyutzu-tools/
   - 首頁卡片改為「🪑 座位大作戰」連到 `classroom/seating/index.html`（老師專用）
 - ⚠️ 需要老師在 Firebase 後台手動做：Authentication 新增座位系統專用帳號、貼上 `classroom/seating/firebase-rules-merged.json` 規則
 
+### 🧭 遺落的地點（inquiry/orienteering/，2026-10-12 第一階段）
+
+- 把紙本「校園照片定向越野」（10 份 × 13 點＝130 點）做成系統；完整規格見專案文件「遺落的地點_開發規格書.md」（系統全自動派題、💡 求助提示、🙋 PASS 申請都寫在規格裡，第二階段做）
+- **登入**：Firebase Auth Email，專用帳號 `puff0223+gps@gmail.com`（Gmail 別名，忘記密碼的信寄到原信箱）；沒有本機模式
+- **題庫匯入**（2026-10-12 由 Claude 做好）：
+  - 照片：老師提供的 130 張原檔（檔名＝地點編號）縮成最長邊 800px（共約 10MB），以**亂數檔名**放在 `p/`；第 131 張「62備用」當第 62 點的第二張照片
+  - 座標：從 10 張分組紅圈地圖（舊版底圖）用影像辨識＋OCR 找出 130 個紅圈，以 6 個地標做仿射換算到乾淨版地圖（殘差 < 1px），再人工比對修正 OCR 誤讀（7 被讀成 1 等）
+  - 區域：依檔名的建築與樓層分成 12 區（每區 7～17 點）；提示一＝區域名＋樓層，提示二＝檔名的地點描述
+  - 🤫 教學區鄰近：學思樓 2F 以上、206 班外、藝文館 1F（301 旁）、專科教室外等 20 點（老師可改）；禁行區先畫 4 個框（學思樓教室走廊、藝文館 101/201/301、篤行樓 302–309、306/307/310/311）
+  - 第 19、119 兩張照片可互換 → 兩點都接受 19／119；第 96 點安全錐會移動 → 預設停用
+  - **編號→照片的對照（答案）只在題庫檔與 Firebase 裡**，網站公開的只有亂數檔名照片。題庫檔「遺落的地點_題庫.json」放在老師電腦的定向越野資料夾，第一次登入後在歡迎畫面匯入
+- **地圖與點位**分頁：模式（👆 選取／✋ 拖曳移動／➕ 新增點位／🚫 拉框畫禁行區）、縮放、只亮某區；地圖欄固定在畫面上（編輯欄很長時也看得到地圖）。右側編輯：照片（第一張＝題目、其他備用）、編號、基本分、區域、可接受答案、啟用、🤫、提示一二、視角（距離、角度、奇特）、🦶 拍攝站位（地圖點站位＋8 方位，地圖上方＝北，點站位時自動猜方向）、🖼️ 揭曉照片、🔍 觀察任務、出題者、備註。改了就自動存（0.8 秒後）
+- **點位清單**：篩選（區域、啟用、🤫、未標視角、未標站位、有觀察任務、沒照片）、搜尋、勾選後批次改區域／啟用停用／標 🤫／標距離角度；點一列跳到地圖編輯
+- **區域與禁行區**：區域顏色、名稱、排序、「同時最多幾組」（派題上限，預設 2）；禁行區改名、刪除；提醒「落在禁行區框內但沒標 🤫 的點」（地圖是平面，一樓點位可忽略）
+- **紙本版**：`GPS.makeVersions` 一輪一輪發點，每份優先拿「還沒去過、剩最多點」的區域，各份第一站在不同區域；130 點 10 份 × 13 點時每份涵蓋 10～12 區、不重複。版面仿原本學習單（A4 橫式：左地圖紅圈、右 2 欄照片＋底線），地圖自動裁掉上方大標題；最後一頁答案表（依照片順序，可互換的寫成 119(19)）
+- **備份**：下載題庫 JSON（老師上傳的 f: 照片會一起打包）、取代／匯入成新題庫、刪除題庫；雲端寫入失敗時本機暫存 `gps_cache_<題庫id>`，下次開啟會詢問
+- ⚠️ 需要老師在 Firebase 後台手動做：Authentication 新增 `puff0223+gps@gmail.com`、貼上 `inquiry/orienteering/firebase-rules-merged.json` 規則
+
 ### 💰 集點小金庫（family-points/index.html，2026-10-06 新增）
 
 - 用途：家庭用的集點系統（爸爸＝管理員、小孩＝使用者）。孩子回報表現得點、兌換獎品；爸爸審核。
@@ -507,7 +540,7 @@ fp/
 
 ---
 
-## 附錄：Firebase 安全規則全文（2026-10-10，座位大作戰加上線上暗標 seating/rounds）
+## 附錄：Firebase 安全規則全文（2026-10-12，加上遺落的地點 orienteering）
 
 ```json
 {
@@ -702,6 +735,28 @@ fp/
        ".validate": "newData.hasChildren(['seat','res','ts']) && newData.child('ts').val() == now && newData.child('seat').isString() && root.child('seating/rounds/'+$code+'/board/biddable/'+newData.child('seat').val()).val() === true"
       }
      }
+    }
+   }
+  },
+  "orienteering": {
+   "owners": {
+    "$uid": {
+     ".read": "auth != null && auth.uid === $uid",
+     ".write": "auth != null && auth.uid === $uid"
+    }
+   },
+   "banks": {
+    "$bid": {
+     ".read": "auth != null && data.child('owner').val() === auth.uid",
+     ".write": "auth != null && $bid.matches(/^bk[a-z0-9]{6,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)",
+     ".validate": "newData.child('owner').val() === auth.uid"
+    }
+   },
+   "photos": {
+    "$pid": {
+     ".read": "$pid.matches(/^[a-z0-9]{8,24}$/)",
+     ".write": "auth != null && $pid.matches(/^[a-z0-9]{8,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)",
+     ".validate": "newData.hasChildren(['owner','data']) && newData.child('owner').val() === auth.uid && newData.child('data').isString() && newData.child('data').val().length < 600000"
     }
    }
   }

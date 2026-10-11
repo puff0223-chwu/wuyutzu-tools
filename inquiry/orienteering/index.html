@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>🧭 遺落的地點｜老師後台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f7f3ea; --paper:#fffdf8; --ink:#1f2a44; --ink2:#4a5470; --muted:#7a8196; --line:#d9d2c3;
+  --gold:#f2b134; --gold-soft:#fdf1d6; --red:#e4572e; --red-soft:#fde7e0; --teal:#1f9e8f; --teal-soft:#e3f4f1;
+  --blue:#2f6db5; --blue-soft:#e4eefb; --orange:#f07c1f; --shadow:4px 4px 0 var(--ink); --r:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--ink);font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif;font-size:16px;line-height:1.55}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--blue)}
+.hidden{display:none!important}
+.muted{color:var(--muted)} .small{font-size:.86em} .bold{font-weight:700}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.spacer{flex:1}
+
+.topbar{position:sticky;top:0;z-index:30;background:var(--ink);color:#fff;display:flex;align-items:center;gap:14px;padding:10px 18px;flex-wrap:wrap}
+.brand{font-family:'Noto Serif TC',serif;font-weight:900;font-size:1.3em;letter-spacing:.04em;white-space:nowrap}
+.brand small{font-family:'Bebas Neue',sans-serif;color:var(--gold);font-size:.8em;letter-spacing:.12em;margin-left:6px}
+.topbar .tb-btn{background:transparent;color:#fff;border:1.5px solid #51608a;border-radius:8px;padding:5px 10px;cursor:pointer;white-space:nowrap}
+.topbar .tb-btn:hover{border-color:var(--gold);color:var(--gold)}
+.topbar a.home{color:#fff;text-decoration:none;border:1.5px solid var(--gold);padding:5px 12px;border-radius:8px;white-space:nowrap}
+.save-state{font-size:.85em;color:#c9d2ea;white-space:nowrap}
+.save-state.err{color:#ffb4a2}
+@media(max-width:1100px){.tb-email{display:none}.brand small{display:none}}
+
+.tabs{display:flex;gap:6px;padding:14px 18px 0;flex-wrap:wrap;max-width:1500px;margin:0 auto}
+.tab{background:var(--paper);border:2px solid var(--ink);border-bottom:none;border-radius:10px 10px 0 0;padding:8px 14px;cursor:pointer;font-weight:700;color:var(--ink2)}
+.tab.on{background:var(--gold);color:var(--ink)}
+.panel{background:var(--paper);border:2px solid var(--ink);border-radius:0 var(--r) var(--r) var(--r);box-shadow:var(--shadow);margin:0 18px 30px;padding:20px;max-width:1464px}
+@media(min-width:1500px){.panel{margin-left:auto;margin-right:auto}}
+h2{font-family:'Noto Serif TC',serif;font-weight:900;font-size:1.35em;margin-bottom:6px}
+h3{font-size:1.05em;margin:16px 0 8px}
+.lead{color:var(--ink2);margin-bottom:12px}
+.card{border:2px solid var(--line);border-radius:var(--r);padding:14px;background:#fff}
+.card + .card{margin-top:12px}
+
+.btn{display:inline-flex;align-items:center;gap:6px;background:#fff;border:2px solid var(--ink);border-radius:10px;padding:7px 14px;cursor:pointer;font-weight:700;box-shadow:2px 2px 0 var(--ink);transition:transform .08s;white-space:nowrap}
+.btn:hover{transform:translate(-1px,-1px);box-shadow:3px 3px 0 var(--ink)}
+.btn:active{transform:translate(1px,1px);box-shadow:1px 1px 0 var(--ink)}
+.btn.primary{background:var(--gold)} .btn.red{background:var(--red);color:#fff} .btn.teal{background:var(--teal);color:#fff} .btn.ink{background:var(--ink);color:#fff}
+.btn.sm{padding:3px 9px;font-size:.88em;box-shadow:1.5px 1.5px 0 var(--ink);border-width:1.5px}
+.btn.ghost{box-shadow:none;border-color:var(--line)}
+.btn.on{background:var(--ink);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+label.f{display:block;font-weight:700;margin:10px 0 4px;font-size:.92em}
+input[type=text],input[type=number],input[type=email],input[type=password],select,textarea{border:2px solid var(--line);border-radius:8px;padding:6px 10px;background:#fff;width:100%}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
+input.inline,select.inline{width:auto}
+textarea{resize:vertical;min-height:60px}
+.chk{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-weight:500}
+.chip{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:1px 9px;font-size:.8em;font-weight:700;background:var(--gold-soft);color:#8a5a0b;white-space:nowrap}
+.chip.teal{background:var(--teal-soft);color:#11685e} .chip.red{background:var(--red-soft);color:#a33316} .chip.blue{background:var(--blue-soft);color:#1d4d86} .chip.gray{background:#eceae4;color:#6b6656}
+.alert{border-left:5px solid var(--gold);background:var(--gold-soft);padding:10px 14px;border-radius:8px;margin:10px 0}
+.alert.red{border-color:var(--red);background:var(--red-soft)} .alert.teal{border-color:var(--teal);background:var(--teal-soft)} .alert.blue{border-color:var(--blue);background:var(--blue-soft)}
+table.list{width:100%;border-collapse:collapse;font-size:.92em}
+table.list th,table.list td{border-bottom:1px solid var(--line);padding:5px 7px;text-align:left;vertical-align:middle}
+table.list th{background:#f3eee2;font-weight:700;position:sticky;top:0;z-index:1}
+table.list tr.sel td{background:var(--gold-soft)}
+table.list tr.off td{color:#aaa}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;background:#f3eee2;border:2px solid var(--line);border-radius:var(--r);padding:8px 12px;margin-bottom:12px}
+.tool-grp{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tool-grp > b{font-size:.88em;color:var(--ink2)}
+
+/* ---------- 地圖 ---------- */
+.mapcols{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:18px;align-items:start}
+@media(max-width:1000px){.mapcols{grid-template-columns:minmax(0,1fr)}}
+.mapcols > .mapcol{position:sticky;top:64px}
+@media(max-width:1000px){.mapcols > .mapcol{position:static}}
+.mapscroll{overflow:auto;border:2px solid var(--ink);border-radius:10px;background:#fff;max-height:calc(100vh - 150px)}
+.mapwrap{position:relative;margin:0 auto;user-select:none;touch-action:none}
+.mapwrap img.base{display:block;width:100%;height:auto;pointer-events:none}
+.mapwrap svg.ov{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.pin{position:absolute;transform:translate(-50%,-50%);min-width:24px;height:24px;padding:0 4px;border-radius:999px;border:2px solid #fff;color:#fff;font-weight:900;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.45);z-index:2;line-height:1}
+.pin.off{background:#aaa!important;opacity:.75}
+.pin.teach{outline:2px dashed var(--red);outline-offset:1px}
+.pin.sel{z-index:5;transform:translate(-50%,-50%) scale(1.45);border-color:var(--gold);box-shadow:0 0 0 3px var(--ink)}
+.pin.dim{opacity:.25}
+.mapwrap.moving .pin{cursor:grab}
+.mapwrap.picking{cursor:crosshair}
+.camdot{position:absolute;width:30px;height:30px;transform:translate(-50%,-50%);z-index:4;pointer-events:none;font-size:22px;display:flex;align-items:center;justify-content:center}
+.legend{display:flex;gap:6px 12px;flex-wrap:wrap;font-size:.82em;margin-top:8px}
+.legend span{display:inline-flex;align-items:center;gap:4px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:50%}
+
+/* ---------- 點位編輯 ---------- */
+.ed h3:first-child{margin-top:0}
+.photos{display:flex;gap:8px;flex-wrap:wrap}
+.photos .ph{position:relative;width:110px;height:110px;border:2px solid var(--line);border-radius:8px;overflow:hidden;background:#f3f1ec}
+.photos .ph img{width:100%;height:100%;object-fit:cover;cursor:zoom-in}
+.photos .ph button{position:absolute;top:3px;right:3px;background:rgba(31,42,68,.85);color:#fff;border:none;border-radius:6px;font-size:.75em;padding:1px 6px;cursor:pointer}
+.photos .ph .main{position:absolute;left:3px;top:3px;background:var(--gold);font-size:.7em;font-weight:900;border-radius:5px;padding:0 5px}
+.addph{width:110px;height:110px;border:2px dashed var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-direction:column;cursor:pointer;color:var(--muted);font-size:.85em;text-align:center}
+.addph:hover{border-color:var(--gold);color:var(--ink)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.dirs{display:grid;grid-template-columns:repeat(3,38px);gap:3px}
+.dirs button{height:34px;border:1.5px solid var(--line);background:#fff;border-radius:6px;cursor:pointer;font-size:.8em}
+.dirs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.thumb{width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--line);display:block;background:#eee}
+
+/* ---------- 對話框、提示 ---------- */
+.modal-bg{position:fixed;inset:0;background:rgba(20,26,44,.55);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
+.modal{background:var(--paper);border:2px solid var(--ink);border-radius:16px;box-shadow:var(--shadow);max-width:560px;width:100%;max-height:90vh;overflow:auto;padding:22px}
+.modal.wide{max-width:900px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:10px;z-index:200;box-shadow:3px 3px 0 var(--gold);max-width:90vw}
+.toast.err{background:var(--red)}
+.zoom-bg{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:150;display:flex;align-items:center;justify-content:center;cursor:zoom-out}
+.zoom-bg img{max-width:94vw;max-height:94vh;border-radius:8px}
+
+.login{max-width:440px;margin:8vh auto;background:var(--paper);border:2px solid var(--ink);border-radius:18px;box-shadow:var(--shadow);padding:28px}
+.login h1{font-family:'Noto Serif TC',serif;font-weight:900;font-size:1.7em}
+.login .en{font-family:'Bebas Neue',sans-serif;color:var(--orange);letter-spacing:.2em}
+
+/* ---------- 紙本版 ---------- */
+#printRoot{display:none}
+.pv-wrap{background:#e9e5dc;border-radius:10px;padding:14px;overflow:auto;max-height:80vh}
+.pv-wrap .sheet{margin:0 auto 14px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.sheet{width:297mm;height:210mm;background:#fff;padding:9mm 10mm;display:flex;flex-direction:column;overflow:hidden;font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif;color:#000}
+.sheet .sh-head{display:flex;align-items:baseline;gap:10px;font-size:11pt;margin-bottom:3mm}
+.sheet .sh-head b{font-size:13pt}
+.sheet .sh-body{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 112mm;grid-template-rows:minmax(0,1fr);gap:6mm;min-height:0}
+.sheet .sh-map{position:relative;align-self:center;justify-self:center;max-height:100%;max-width:100%;height:100%;aspect-ratio:var(--ar);overflow:hidden}
+.sheet .sh-map .inner{position:absolute;left:0;width:100%}
+.sheet .sh-map img{width:100%;height:100%;display:block}
+.sheet .sh-map .ring{position:absolute;transform:translate(-50%,-50%);border:2.2px solid #d40000;border-radius:50%;color:#d40000;font-weight:900;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.85);font-size:9.5pt;width:9mm;height:7.4mm}
+.sheet .sh-photos{display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:1fr;border:1px solid #000;min-height:0}
+.sheet .sh-photos .c{border:.5px solid #000;padding:1.5mm 2mm;display:flex;gap:2mm;align-items:flex-end;min-height:0}
+.sheet .sh-photos .c img{height:100%;max-width:60%;object-fit:contain;flex:none}
+.sheet .sh-photos .c .ln{flex:1;border-bottom:1px solid #000;height:6mm;font-size:8pt;color:#888;display:flex;align-items:flex-end}
+.sheet table.ans{border-collapse:collapse;width:100%;font-size:10.5pt;text-align:center;table-layout:fixed}
+.sheet table.ans td,.sheet table.ans th{border:1px solid #000;padding:1.2mm}
+@media print{
+  @page{size:A4 landscape;margin:0}
+  body{background:#fff}
+  body > *:not(#printRoot){display:none!important}
+  #printRoot{display:block!important}
+  #printRoot .sheet{page-break-after:always;break-after:page;box-shadow:none;margin:0}
+}
+</style>
+</head>
+<body>
+<div id="app"><p style="text-align:center;margin-top:20vh" class="muted">載入中…</p></div>
+<div id="printRoot"></div>
+
+<script src="core.js?v=20261012a"></script>
+<script type="module">
+/* Firebase：老師登入＋存題庫（和座位大作戰同一個專案，不同帳號） */
+const firebaseConfig = {
+  apiKey: "AIzaSyCRrmtcQ8INfbK0XgwkAZCx8V5wXCwU1lg",
+  authDomain: "point-collection-stash.firebaseapp.com",
+  databaseURL: "https://point-collection-stash-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "point-collection-stash",
+  storageBucket: "point-collection-stash.firebasestorage.app",
+  messagingSenderId: "391627703615",
+  appId: "1:391627703615:web:f9b8c358f147949a1d7f8a"
+};
+try {
+  const V = '10.14.1', B = `https://www.gstatic.com/firebasejs/${V}/`;
+  const [{ initializeApp }, A, D] = await Promise.all([import(B + 'firebase-app.js'), import(B + 'firebase-auth.js'), import(B + 'firebase-database.js')]);
+  const app = initializeApp(firebaseConfig, 'gps');
+  const auth = A.getAuth(app), db = D.getDatabase(app);
+  window.FB = {
+    onUser: (cb) => A.onAuthStateChanged(auth, cb),
+    login: (email, pw) => A.signInWithEmailAndPassword(auth, email, pw),
+    logout: () => A.signOut(auth),
+    reset: (email) => A.sendPasswordResetEmail(auth, email),
+    get: async (path) => (await D.get(D.ref(db, path))).val(),
+    set: (path, val) => D.set(D.ref(db, path), val),
+    update: (path, val) => D.update(D.ref(db, path), val),
+    remove: (path) => D.remove(D.ref(db, path))
+  };
+} catch (e) { console.warn('Firebase 載入失敗', e); window.FB = null; }
+await import('./teacher.js?v=20261012a');
+</script>
+</body>
+</html>
