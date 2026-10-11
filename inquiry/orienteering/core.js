@@ -152,14 +152,85 @@
   async function sha(s) { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return Array.from(new Uint8Array(d), (b) => b.toString(16).padStart(2, '0')).join('').slice(0, 32); }
 
   const DEFAULT_RUN = {
-    mode: 'race', target: 13, batch: 3, limitMin: 40, easy: true, teaching: false, zones: [],
-    cool: 30, wrongPenalty: 30, hintOn: true, hintCost: 60, passLimit: 2, passUnlock: 3, viewProg: false, pref: 0.7
+    mode: 'race', target: 13, photos: 2, cands: 7, route: 'spread', limitMin: 40, teaching: false, zones: [],
+    cool: 30, wrongPenalty: 30, hintOn: true, hintCost: 60, passLimit: 2, passUnlock: 3, viewProg: false
   };
 
   // 視角難度：0＝遠景／中景／平視（或未標）、1＝特寫／仰俯斜角、2＝超特寫／奇特視角
   function viewLevel(p) { const v = p.view || {}; if (v.odd || v.dist === 'macro') return 2; if (v.dist === 'close' || ['up', 'down', 'tilt'].includes(v.angle)) return 1; return 0; }
 
-  /* 自動派題：替某一組挑下一批題目
+  /* 自動派題（2026-10-12 改版）：每關 1～2 張照片＋候選地點
+     - 每關 2 張（預設）：7 個候選地點，分在 4 個不同區域（2 個答案區＋2 個區各 1 個干擾），剩下 3 個從這 4 區隨機
+     - 每關 1 張：3～5 個候選地點，分在 3 個不同區域，剩下的從這 3 區隨機
+     答案的區域：避開這組最近去過的區域、避開人多的區域、加大隨機；同一關的兩個答案在不同區域
+     st = { settings, teams:{ tid:{ done[], passed[], cards{cid:{key,state}}, recent[] } } }
+     opt = { size(這關幾張), avoid(開場要避開的區域), rnd }
+     回傳 { keys:[答案…], cands:[候選…] }，題庫用完回傳 null */
+  function chooseNext(bank, st, tid, opt) {
+    opt = opt || {};
+    const S = st.settings, team = st.teams[tid], rnd = opt.rnd || Math.random;
+    const size = Math.max(1, Math.min(2, opt.size || S.photos || 1));
+    const K = Math.max(size + 2, Math.min(9, S.cands || (size === 2 ? 7 : 5)));
+    const zm = zoneById(bank);
+    const busy = {}, takenByOthers = new Set();
+    Object.entries(st.teams).forEach(([id, t]) => {
+      if (id === tid || t.finished) return;
+      Object.values(t.cards || {}).filter((c) => c.state === 'open').forEach((c) => {
+        takenByOthers.add(c.key);
+        const z = (bank.points[c.key] || {}).zone; if (z) busy[z] = (busy[z] || 0) + 1;
+      });
+    });
+    const usable = (p) => p.enabled && p.photos.length && (!S.zones || !S.zones.length || S.zones.includes(p.zone)) && !(S.teaching && p.teach);
+    const done = new Set([...(team.done || []), ...(team.passed || [])]);
+    let pool = sortedPoints(bank).filter((p) => usable(p) && !done.has(p.key));
+    if (S.viewProg && pool.length) {
+      const allow = Math.min(2, Math.floor(3 * (team.done || []).length / Math.max(1, S.target)));
+      const easier = pool.filter((p) => viewLevel(p) <= allow);
+      if (easier.length >= size) pool = easier;
+    }
+    if (!pool.length) return null;
+    const recent = team.recent || [];
+    // 「就近派發」：仍然換區域，但優先挑離上一關近的區域（時間短時少跑一點路）
+    const near = S.route === 'near', centers = near ? zoneCenters(bank) : null, here = near && recent[0] && centers[recent[0]];
+    const answers = [];
+    for (let n = 0; n < size; n++) {
+      const byZone = {};
+      pool.filter((p) => !answers.includes(p)).forEach((p) => { (byZone[p.zone] = byZone[p.zone] || []).push(p); });
+      const zs = Object.keys(byZone); if (!zs.length) break;
+      let best = null, bs = Infinity;
+      zs.forEach((z) => {
+        const crowd = busy[z] || 0, cap = (zm[z] && zm[z].cap) || 2;
+        let sc = (crowd >= cap ? 60 : 0) + crowd * 10 + rnd() * 25;
+        // 上一關的區域（2 張照片＝2 個區）大扣分，再前一點的小扣分 → 每關都換區
+        const r = recent.indexOf(z), ph = S.photos || 1; if (r >= 0 && r < ph) sc += 150; else if (r >= 0 && r < ph * 2) sc += 40;
+        if (answers.some((a) => a.zone === z)) sc += 200; // 同一關的兩張照片放在不同區域
+        if (opt.avoid && opt.avoid.includes(z)) sc += 30;
+        if (here && centers[z]) sc += dist(bank, here, centers[z]) * 0.9;
+        if (near && answers.length && centers[z] && centers[answers[0].zone]) sc += dist(bank, centers[answers[0].zone], centers[z]) * 0.9;
+        if (sc < bs) { bs = sc; best = z; }
+      });
+      const inZone = shuffle(byZone[best], rnd).sort((a, b) => (takenByOthers.has(a.key) ? 1 : 0) - (takenByOthers.has(b.key) ? 1 : 0));
+      answers.push(inZone[0]); busy[best] = (busy[best] || 0) + 1;
+    }
+    // 候選地點（干擾選項）：可以是任何可用的點，但不放這組已經找過的
+    const decoyPool = sortedPoints(bank).filter((p) => usable(p) && !answers.includes(p) && !done.has(p.key));
+    const dz = {};
+    decoyPool.forEach((p) => { (dz[p.zone] = dz[p.zone] || []).push(p); });
+    const ansZones = Array.from(new Set(answers.map((a) => a.zone)));
+    const needZones = size + 2; // 1 張→3 區、2 張→4 區
+    let otherZones = shuffle(Object.keys(dz).filter((z) => !ansZones.includes(z)), rnd);
+    if (near) { const c0 = centers[ansZones[0]]; otherZones = otherZones.sort((a, b) => dist(bank, c0, centers[a] || c0) - dist(bank, c0, centers[b] || c0)).slice(0, 4); otherZones = shuffle(otherZones, rnd); }
+    otherZones = otherZones.slice(0, Math.max(0, needZones - ansZones.length));
+    const zonesUsed = [...ansZones, ...otherZones];
+    const picked = [...answers];
+    otherZones.forEach((z) => { const p = shuffle(dz[z], rnd)[0]; if (p) picked.push(p); });
+    let extra = shuffle(decoyPool.filter((p) => zonesUsed.includes(p.zone) && !picked.includes(p)), rnd);
+    if (picked.length + extra.length < K) extra = extra.concat(shuffle(decoyPool.filter((p) => !picked.includes(p) && !extra.includes(p)), rnd));
+    while (picked.length < K && extra.length) picked.push(extra.shift());
+    return { keys: answers.map((a) => a.key), cands: shuffle(picked, rnd).map((p) => p.key) };
+  }
+
+  /* （舊版，保留給模擬比較用）替某一組挑下一批題目
      st = { settings, teams:{ tid:{ done[], passed[], cards{cid:{key,state}}, zone } } }
      opt = { size, from(上一區), avoid(要避開的區域，例如開場錯開起點), rnd }
      回傳點位 key 陣列（可能少於 size，代表題庫用完了） */
@@ -319,6 +390,6 @@
     photoURL, loadPhoto, compressImage, makeVersions,
     cachePhoto: (id, data) => { photoCache[id] = data; },
     // 第二階段
-    CODE_CH, makeCode, sha, DEFAULT_RUN, viewLevel, chooseBatch, gameSeconds, fmtTime, rankTeams, boardHTML, boardPaint, BOARD_CSS
+    CODE_CH, makeCode, sha, DEFAULT_RUN, viewLevel, chooseBatch, chooseNext, gameSeconds, fmtTime, rankTeams, boardHTML, boardPaint, BOARD_CSS
   };
 })();

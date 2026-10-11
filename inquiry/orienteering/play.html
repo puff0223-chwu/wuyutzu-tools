@@ -56,6 +56,11 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
 .pin.ok b{background:var(--teal)}
 .pin.ok i{background:var(--teal)}
 .pin.hot b{background:var(--red);transform:scale(1.25)}
+.pin.tried b{background:#9a9a9a;text-decoration:line-through}
+.pin.tried i{background:#9a9a9a}
+.nums button.tried{background:#eee;color:#999;text-decoration:line-through;border-color:#ccc}
+.pc.prev{opacity:.92}
+.pc.prev .ph img{max-height:22vh}
 .mapctl{display:flex;gap:6px;justify-content:flex-end;margin-top:6px}
 .mapctl button{border:2px solid var(--ink);background:#fff;border-radius:8px;width:38px;height:32px;font-weight:900;cursor:pointer}
 .legend{font-size:.75em;color:var(--muted);margin-top:4px}
@@ -105,7 +110,7 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
 <body>
 <div id="top"></div>
 <div class="wrap" id="app"><p style="text-align:center;margin-top:30vh" class="muted">載入中…</p></div>
-<script src="core.js?v=20261012c"></script>
+<script src="core.js?v=20261012d"></script>
 <script>
 (function () {
   'use strict';
@@ -117,7 +122,7 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
   const did = LS.get('gps_did', '') || (() => { const d = 'd' + G.rid(4); LS.set('gps_did', d); return d; })();
   const st = {
     me: LS.get('gps_join_' + CODE, null), pub: null, view: null, net: 'live', offset: 0, beatLocal: Date.now(), lastBeat: 0,
-    sel: {}, pending: {}, reqPending: {}, zoom: LS.get('gps_mapzoom', 2), lastHTML: '', center: true, es: null, poll: null, hiddenAt: 0, lastBatch: 0, shown: {}
+    sel: {}, pending: {}, reqPending: {}, zoom: 1, lastHTML: '', center: true, autoZoom: true, es: null, poll: null, hiddenAt: 0, lastBatch: 0, shown: {}
   };
   const q = { list: LS.get('gps_q_' + CODE, []), busy: false };
 
@@ -144,7 +149,7 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
       ${msg ? `<div class="alert">${esc(msg)}</div>` : ''}
       <input type="text" class="code" id="jPass" maxlength="4" autocomplete="off" autocapitalize="characters" placeholder="____">
       <button class="btn" id="jGo">進入</button></div>
-    <div class="card small"><b>怎麼玩？</b><br>系統一次給你們幾張校園照片，地圖上會標出（或圈出）可能的地點。到現場比對，找到照片拍的是哪裡，選出那個地點的編號送出！<br>🚫 斜線區是正在上課的教學區，請繞道、保持安靜。</div>`}`;
+    <div class="card small"><b>怎麼玩？</b><br>每一關系統給你們 1～2 張校園照片，地圖上會標出幾個「候選地點」，照片就是其中的地點！想一想、跑去現場比對，選出照片拍的是幾號送出。<br>🚫 斜線區是正在上課的教學區，請繞道、保持安靜。</div>`}`;
     if (!CODE) return;
     const go = async () => {
       const pass = $('#jPass').value.toUpperCase().replace(/[^0-9A-Z]/g, '');
@@ -224,7 +229,8 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
     // 判定結果出來了 → 清掉「判定中」
     Object.entries(st.pending).forEach(([cid, p]) => { const c = (v.cards || {})[cid]; if (!c || c.state !== 'open' || (c.wrong || 0) > p.wrong) { if (c && c.state === 'open' && (c.wrong || 0) > p.wrong) shakeCard(cid); delete st.pending[cid]; } });
     Object.entries(st.reqPending).forEach(([cid, p]) => { const c = (v.cards || {})[cid]; if (!c || c.state !== 'open' || (p.type === 'hint' && (c.hint1 ? 1 : 0) + (c.hint2 ? 1 : 0) > p.lv) || (p.type === 'pass' && c.pass === 'pending')) delete st.reqPending[cid]; });
-    if (v.batchNo && v.batchNo !== st.lastBatch) { if (st.lastBatch && !v.finished) toast('🎉 這一批完成！' + (v.msg || '')); st.lastBatch = v.batchNo; st.sel = {}; st.center = true; }
+    if (v.batchNo && v.batchNo !== st.lastBatch) { if (st.lastBatch && !v.finished) toast(((v.done || 0) > (st.lastDone || 0) ? '🎉 答對了！進入' : '🔄 換了一題：') + (v.msg || '下一關')); st.autoZoom = true; st.lastBatch = v.batchNo; st.sel = {}; st.center = true; }
+    st.lastDone = v.done || 0;
     render();
   }
   function shakeCard(cid) { setTimeout(() => { const el = $(`[data-card="${cid}"]`); if (el) { el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); } if (navigator.vibrate) navigator.vibrate(200); }, 30); }
@@ -258,12 +264,12 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
     const s = v.set || {};
     return `<div class="card" style="text-align:center;padding:24px"><div style="font-size:3em">⏳</div><h2>${esc(v.name)}，準備好了嗎？</h2><p class="muted">等待大師按下「開始」…</p></div>
     <div class="card small"><b>📜 規則</b><ul style="padding-left:18px;margin-top:4px">
-      <li>一次給 ${s.easy ? '幾張照片，地圖上會標出這幾個地點的編號' : '幾張照片，地圖上會亮出整區的編號，要自己找出是哪一個'}</li>
-      <li>到現場比對，選出照片拍的是幾號，送出</li>
+      <li>每一關給 ${s.photos || 1} 張照片，地圖上標出 ${s.cands || 5} 個候選地點（分在不同區域）${(s.photos || 1) > 1 ? '，兩張照片各是其中一個，先規劃路線再出發' : '，答案是其中一個'}</li>
+      <li>想一想、跑去現場比對，選出照片拍的是幾號，送出</li>
       <li>答錯要等 ${s.cool} 秒才能再答，並加罰 ${s.wrongPenalty} 秒</li>
       ${s.hintOn ? `<li>💡 求助：系統給提示，每次加罰 ${s.hintCost} 秒（最多兩層）</li>` : ''}
       ${s.passLimit ? `<li>🙋 卡關 ${s.passUnlock} 分鐘後可以申請 PASS，大師同意就換一題（不算完成，每組最多 ${s.passLimit} 次）</li>` : ''}
-      <li>完成 ${v.target} 題就過關！用時＋罰秒越少越厲害</li>
+      <li>找到 ${v.target} 個地點就完成！用時＋罰秒越少越厲害</li>
       <li>🚫 斜線區是正在上課的教學區，請繞道、保持安靜</li></ul></div>`;
   }
   function finishHTML(v) {
@@ -274,27 +280,31 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
   function mapHTML(v) {
     const pub = st.pub || {}, map = pub.map || { src: 'r:map', w: 1117, h: 1579 }, crop = pub.crop || { top: 0, bot: 100 }, span = (crop.bot - crop.top) / 100;
     const hot = Object.values(st.sel)[0];
+    // 每張照片都猜錯過的號碼才在地圖上變灰（兩張照片時，另一張的答案可能就是它）
+    const opens = Object.values(v.cards || {}).filter((c) => c.state === 'open');
+    const tried = opens.length ? (opens[0].tried || []).filter((n) => opens.every((c) => (c.tried || []).includes(n))) : [];
     const ng = (pub.noGo || []).map((r) => `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="url(#h)" stroke="#e4572e" stroke-width="1.2" vector-effect="non-scaling-stroke"/>`).join('');
     return `<div class="mapbox"><div class="mapin" style="width:${Math.round(st.zoom * 100)}%"><div class="crop" style="aspect-ratio:${map.w}/${(map.h * span).toFixed(1)}"><div class="inner" style="top:${(-crop.top / span).toFixed(3)}%;height:${(100 / span).toFixed(3)}%">
       <img class="base" src="${esc(G.photoURL(map.src))}" alt="校園地圖">
       <svg viewBox="0 0 100 100" preserveAspectRatio="none"><defs><pattern id="h" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" fill="rgba(228,87,46,.12)"/><line x1="0" y1="0" x2="0" y2="5" stroke="rgba(228,87,46,.5)" stroke-width="1.6"/></pattern></defs>${ng}</svg>
-      ${(v.pins || []).map((p) => `<div class="pin ${p.ok ? 'ok' : ''} ${hot === p.no ? 'hot' : ''}" style="left:${p.x}%;top:${p.y}%"><b>${p.ok ? '✓' : p.no}</b><i></i></div>`).join('')}
+      ${(v.pins || []).map((p) => `<div class="pin ${p.ok ? 'ok' : ''} ${tried.includes(p.no) ? 'tried' : ''} ${hot === p.no ? 'hot' : ''}" style="left:${p.x}%;top:${p.y}%"><b>${p.ok ? '✓' : p.no}</b><i></i></div>`).join('')}
     </div></div></div></div>
-    <div class="row"><span class="legend">🟧 ${v.set && v.set.easy ? '這一批的地點' : '這一區的地點'}　🟩 已找到　🚫 斜線＝教學區，請繞道</span><span class="spacer"></span><div class="mapctl"><button data-center title="回到這一批">🎯</button><button data-mz="-1">－</button><button data-mz="1">＋</button></div></div>`;
+    <div class="row"><span class="legend">🟧 這一關的候選地點　🟩 已找到　⬜ 已經猜錯　🚫 斜線＝教學區</span><span class="spacer"></span><div class="mapctl"><button data-center title="看全部候選地點">🎯</button><button data-mz="-1">－</button><button data-mz="1">＋</button></div></div>`;
   }
   function gameHTML(v) {
-    const s = v.set || {}, cards = Object.entries(v.cards || {}).sort((a, b) => (a[1].state === 'ok') - (b[1].state === 'ok') || a[1].at - b[1].at || a[0].localeCompare(b[0]));
+    const rank = (c) => (c.state === 'open' ? 0 : c.prev ? 2 : 1);
+    const s = v.set || {}, cards = Object.entries(v.cards || {}).sort((a, b) => rank(a[1]) - rank(b[1]) || a[1].at - b[1].at || a[0].localeCompare(b[0]));
     const nums = (v.pins || []).filter((p) => !p.ok).map((p) => p.no);
     return `
     ${v.status === 'paused' ? '<div class="cover"><div class="big">⏸</div><h2>暫停中</h2><p>請等大師宣布繼續</p></div>' : ''}
     ${v.msg ? `<div class="msg">🚩 ${esc(v.msg)}</div>` : ''}
     ${v.empty ? '<div class="alert warn">題目暫時派完了，請回集合地點找大師。</div>' : ''}
     <div class="card" style="padding:10px">${mapHTML(v)}</div>
-    ${cards.map(([cid, c], i) => cardHTML(cid, c, i, nums, s, v)).join('')}`;
+    ${cards.map(([cid, c], i) => cardHTML(cid, c, i, nums, s, v, c.tried || [])).join('')}`;
   }
-  function cardHTML(cid, c, i, nums, s, v) {
-    const ph = `<div class="ph"><img src="${esc(G.photoURL(c.photo))}" data-ref="${esc(c.photo)}" data-zoom alt="題目照片"><span class="tag">${c.state === 'ok' ? '✅' : '照片 ' + (i + 1)}</span></div>`;
-    if (c.state === 'ok') return `<div class="pc ok pop" data-card="${cid}">${ph}<div class="bd"><div class="okbox"><span class="big">✅</span><div><b style="font-size:1.15em">第 ${c.no} 號</b><div class="small muted">${esc(c.name)}</div></div></div>
+  function cardHTML(cid, c, i, nums, s, v, tried) {
+    const ph = `<div class="ph"><img src="${esc(G.photoURL(c.photo))}" data-ref="${esc(c.photo)}" data-zoom alt="題目照片"><span class="tag">${c.state === 'ok' ? (c.prev ? '✅ 上一關' : '✅ 找到了') : `第 ${v.batchNo || 1} 關・照片 ${i + 1}`}</span></div>`;
+    if (c.state === 'ok') return `<div class="pc ok ${c.prev ? 'prev' : ''}" data-card="${cid}">${ph}<div class="bd"><div class="okbox"><span class="big">✅</span><div><b style="font-size:1.15em">${c.prev ? '上一關答案：' : ''}第 ${c.no} 號</b><div class="small muted">${esc(c.name)}</div></div></div>
       ${c.reveal ? `<div class="reveal"><div class="small bold">🖼️ 原來是這裡！</div><img src="${esc(G.photoURL(c.reveal))}" data-ref="${esc(c.reveal)}" data-zoom></div>` : ''}</div></div>`;
     const t = now(), cool = c.coolUntil && c.coolUntil > t ? Math.ceil((c.coolUntil - t) / 1000) : 0;
     const pend = st.pending[cid], rp = st.reqPending[cid], sel = st.sel[cid];
@@ -309,33 +319,50 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
       </div>`;
     }
     return `<div class="pc" data-card="${cid}">${ph}<div class="bd">
-      <div class="bold">這是地圖上的第幾號？</div>
-      <div class="nums">${nums.map((n) => `<button data-num="${cid}|${n}" class="${sel === n ? 'sel' : ''}" ${cool || pend ? 'disabled' : ''}>${n}</button>`).join('')}</div>
+      <div class="bold">這張照片是地圖上的第幾號？</div><div class="small muted">${(s.photos || 1) > 1 ? '兩張照片各是候選地點中的一個，先規劃路線再出發！' : '答案是下面其中一個，跑去現場比對看看！'}</div>
+      <div class="nums">${nums.map((n) => tried.includes(n) ? `<button class="tried" disabled title="猜過了">❌${n}</button>` : `<button data-num="${cid}|${n}" class="${sel === n ? 'sel' : ''}" ${cool || pend ? 'disabled' : ''}>${n}</button>`).join('')}</div>
       ${pend ? `<div class="wait">⏳ 判定中…（第 ${pend.ans} 號）</div>` : cool ? `<div class="cool" data-cool="${c.coolUntil}">❌ 不對喔！${cool} 秒後可以再試</div>` : `<button class="btn" data-send="${cid}" ${sel ? '' : 'disabled'}>${sel ? `送出：第 ${sel} 號` : '先選一個號碼'}</button>`}
       ${c.hint1 ? `<div class="hint">💡 提示一：${esc(c.hint1)}</div>` : ''}${c.hint2 ? `<div class="hint">💡 提示二：${esc(c.hint2)}</div>` : ''}
       ${c.pass === 'no' ? '<div class="hint" style="background:var(--gold-soft)">🧙 大師說：再找找看！</div>' : ''}
       ${c.pass === 'pending' ? '<div class="hint">🙋 已申請 PASS，等待大師裁決…</div>' : ''}
       ${help}</div></div>`;
   }
-  // 把地圖捲到這一批點位的中間
+  // 新的一關：自動縮放到剛好看得到全部候選地點，再捲到中間
   function centerMap() {
     const box = $('.mapbox'), v = st.view; if (!box || !v) return;
     const pins = (v.pins || []).filter((p) => !p.ok); if (!pins.length) return;
     const img = $('.mapin img.base');
+    const crop = (st.pub && st.pub.crop) || { top: 0, bot: 100 }, span = (crop.bot - crop.top) / 100;
+    if (st.autoZoom) {
+      st.autoZoom = false;
+      const map = (st.pub && st.pub.map) || { w: 1117, h: 1579 }, a = map.w / (map.h * span);
+      const xs = pins.map((p) => p.x / 100), ys = pins.map((p) => (p.y - crop.top) / 100 / span);
+      const dx = Math.max(...xs) - Math.min(...xs) + 0.18, dy = Math.max(...ys) - Math.min(...ys) + 0.2;
+      const W = box.clientWidth, H = Math.min(box.clientHeight || 9999, window.innerHeight * 0.52);
+      const z = Math.max(1, Math.min(3.5, Math.floor(Math.min(1 / dx, H * a / (W * dy)) * 10) / 10));
+      if (Math.abs(z - st.zoom) > 0.05) { st.zoom = z; st.lastHTML = ''; st.center = true; render(); return; }
+    }
     const go = () => {
-      const crop = (st.pub && st.pub.crop) || { top: 0, bot: 100 }, span = (crop.bot - crop.top) / 100, inner = $('.mapin');
-      const cx = pins.reduce((a, p) => a + p.x, 0) / pins.length / 100, cy = (pins.reduce((a, p) => a + p.y, 0) / pins.length - crop.top) / 100 / span;
+      const inner = $('.mapin');
+      // 以全部候選地點的「外框中心」對齊（不是平均位置），邊緣的點才不會被切掉；標籤在點的上方，所以往上偏一點
+      const xs = pins.map((p) => p.x), ys = pins.map((p) => p.y);
+      const cx = (Math.min(...xs) + Math.max(...xs)) / 200, cy = ((Math.min(...ys) + Math.max(...ys)) / 2 - 1.5 - crop.top) / 100 / span;
       box.scrollLeft = Math.max(0, cx * inner.offsetWidth - box.clientWidth / 2);
       box.scrollTop = Math.max(0, cy * inner.offsetHeight - box.clientHeight / 2);
       st.center = false;
+      // 自我檢查：還有候選地點在畫面外，就再縮小一點重來（最多 4 次）
+      const r = box.getBoundingClientRect();
+      const out = $$('.mapin .pin b').some((el) => { const q = el.getBoundingClientRect(); return q.left < r.left - 1 || q.right > r.right + 1 || q.top < r.top - 1 || q.bottom > r.bottom + 1; });
+      if (out && st.zoom > 1 && (st.fitTry || 0) < 4) { st.fitTry = (st.fitTry || 0) + 1; st.zoom = Math.max(1, +(st.zoom - 0.25).toFixed(2)); st.lastHTML = ''; st.center = true; render(); }
+      else st.fitTry = 0;
     };
     if (img && !img.complete) img.addEventListener('load', go, { once: true }); else go();
   }
   function bind() {
     $$('[data-zoom]').forEach((im) => { im.onclick = () => { const z = document.createElement('div'); z.className = 'zoom'; z.innerHTML = `<button class="x">✕ 關閉</button><img src="${im.src}">`; z.querySelector('.x').onclick = () => z.remove(); document.body.appendChild(z); }; });
     $$('img[data-ref^="f:"]').forEach((im) => { if (!im.getAttribute('src')) G.loadPhoto(im.dataset.ref).then((d) => { im.src = d; }); });
-    $$('[data-mz]').forEach((b) => { b.onclick = () => { st.zoom = Math.max(1, Math.min(3.5, +(st.zoom + (+b.dataset.mz) * 0.5).toFixed(1))); LS.set('gps_mapzoom', st.zoom); st.center = true; render(); }; });
-    const ctr = $('[data-center]'); if (ctr) ctr.onclick = () => { st.center = true; centerMap(); };
+    $$('[data-mz]').forEach((b) => { b.onclick = () => { st.zoom = Math.max(1, Math.min(3.5, +(st.zoom + (+b.dataset.mz) * 0.5).toFixed(1))); st.center = true; st.lastHTML = ''; render(); }; });
+    const ctr = $('[data-center]'); if (ctr) ctr.onclick = () => { st.center = true; st.autoZoom = true; centerMap(); };
     $$('[data-num]').forEach((b) => { b.onclick = () => { const [cid, n] = b.dataset.num.split('|'); st.sel = { [cid]: +n }; render(); }; });
     $$('[data-send]').forEach((b) => {
       b.onclick = () => {
@@ -385,7 +412,7 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
       st.view = await api(`${RUN}/teams/${st.me.tid}/view`);
       if (!st.view) { LS.set('gps_join_' + CODE, null); st.me = null; return renderJoin('找不到你們的組別，請重新輸入通行碼'); }
     } catch (e) { return renderJoin('連線失敗，請確認網路後重新整理'); }
-    st.lastBatch = st.view.batchNo || 0;
+    st.lastBatch = st.view.batchNo || 0; st.lastDone = st.view.done || 0;
     onView(); connect(); flushQueue();
     if (!LS.get('gps_seats_' + CODE, '')) renderMembers();
   }
