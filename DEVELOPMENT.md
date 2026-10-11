@@ -92,9 +92,12 @@ wuyutzu-tools/
 │   ├── excel-rescue-checker.js   # 📊 消失的實驗數據：Excel 鑑識核心（拆開 .xlsx 檢查圖表／函數／格式化條件）
 │   ├── excel-rescue.html         # 消失的實驗數據：學生闖關頁
 │   ├── excel-rescue-teacher.html # 消失的實驗數據：老師答案頁（首頁卡片連到這裡，請勿給學生）
-│   └── orienteering/             # 🧭 遺落的地點：校園照片定向越野（2026-10-12 第一階段）
-│       ├── index.html            #   老師後台（登入、地圖與點位、點位清單、區域與禁行區、紙本版、備份）
-│       ├── teacher.js            #   老師後台程式
+│   └── orienteering/             # 🧭 遺落的地點：校園照片定向越野（2026-10-12 第一、二階段）
+│       ├── index.html            #   老師後台（登入、🏁 活動、地圖與點位、點位清單、區域與禁行區、紙本版、備份）
+│       ├── teacher.js            #   老師後台程式（題庫）
+│       ├── live.js               #   🏁 活動：開活動、自動裁判（判題、派題、提示、PASS）、戰況看板、投影、成績 Excel
+│       ├── play.html             #   學生闖關頁（play.html?code=活動代碼，手機用，不連回首頁）
+│       ├── board.html            #   公開戰況看板（board.html?code=…，給另一台投影裝置，不顯示答案）
 │       ├── core.js               #   共用核心：題庫格式、照片網址、壓縮、區域距離、紙本組題
 │       ├── map.png               #   乾淨版校園平面圖（16 階灰、121KB）
 │       ├── p/<亂數>.jpg          #   131 張題目照片（800px，檔名是亂數，看不出是幾號地點）
@@ -190,7 +193,21 @@ wuyutzu-tools/
     ├── banks/<題庫id bk…>: { owner, name, map{src,w,h}, zones[], noGo[], points{ pt…: 點位 }, updatedAt }
     │     點位：{ no, name, x, y(地圖百分比), zone, photos[], accept[], enabled, teach, base, hint1, hint2,
     │            view{dist,angle,odd}, cam{x,y,dir}, reveal, task{q,a,open,bonus}, author, note }
-    └── photos/<亂數>: { owner, data(dataURL), w, h, ts }   ← 老師上傳的照片；知道代碼才讀得到，不能列出全部
+    ├── photos/<亂數>: { owner, data(dataURL), w, h, ts }   ← 老師上傳的照片；知道代碼才讀得到，不能列出全部
+    ├── myruns/<老師uid>/<活動代碼>: { title, bankId, createdAt, status }
+    └── runs/<活動代碼 6 碼>/                  ← 一場活動（老師是 owner，整包可讀寫）
+        ├── meta: { owner, bankId, title, mode, status(ready/running/paused/ended), createdAt, settings }   ← 公開可讀
+        ├── pub: { title, map, noGo, zones[{id,name,color,x,y}], crop }   ← 公開可讀（學生地圖用，不含答案）
+        ├── board: { status, clock, teams{名稱、完成數、完成時間、罰秒}, heat{區域:組數}, events[], badges[] }   ← 公開可讀（投影）
+        ├── host: { id, beat }                 ← 自動裁判心跳；另一台裝置寫入＝接手
+        ├── keys/<SHA-256(代碼|通行碼) 前 32 碼>: 組別id   ← 知道通行碼才查得到，不能列出
+        ├── teams/<組別id>/
+        │   ├── view: { 組名、狀態、完成數、pins[{no,x,y,ok}]、cards{cid:{photo,state,at,coolUntil,hint1,hint2,pass,…}}、clock、beat、set }   ← 公開可讀（組別id 是亂數）
+        │   ├── members/<手機id>: { k, list(座號), ts }         ← 學生寫（要帶 k＝通行碼雜湊）
+        │   ├── subs/<push>: { k, cid, ans, by, ts }            ← 學生送答案（活動進行中才收）；裁判處理完就刪掉
+        │   └── reqs/<push>: { k, cid, type(hint/pass), note, ts }  ← 學生求助／申請 PASS
+        ├── state: { teams{done[],passed[],cards{cid:{key,…}},zone,wrong,hints,passes,penalty,finished,finishSec,pass(通行碼)…}, clock{startAt,pausedAt,pausedTotal,endAt}, events, badges }   ← 只有老師（含答案）
+        └── log/<push>: { t, tid, kind(ok/wrong/cool/hint/passReq/passOK/passNo/skip), no, ans, … }   ← 只有老師；Excel 作答明細
 ```
 
 - **安全規則**（2026-10-03 發布）：根目錄全部上鎖。
@@ -476,6 +493,25 @@ wuyutzu-tools/
 - **紙本版**：`GPS.makeVersions` 一輪一輪發點，每份優先拿「還沒去過、剩最多點」的區域，各份第一站在不同區域；130 點 10 份 × 13 點時每份涵蓋 10～12 區、不重複。版面仿原本學習單（A4 橫式：左地圖紅圈、右 2 欄照片＋底線），地圖自動裁掉上方大標題；最後一頁答案表（依照片順序，可互換的寫成 119(19)）
 - **備份**：下載題庫 JSON（老師上傳的 f: 照片會一起打包）、取代／匯入成新題庫、刪除題庫；雲端寫入失敗時本機暫存 `gps_cache_<題庫id>`，下次開啟會詢問
 - ⚠️ 需要老師在 Firebase 後台手動做：Authentication 新增 `puff0223+gps@gmail.com`、貼上 `inquiry/orienteering/firebase-rules-merged.json` 規則
+- **第二階段：🏁 活動（即時闖關，2026-10-12）**
+  - **開活動**：名稱、組數、組名、每組題數（預設 13）、一批幾張（預設 3）、時間限制、簡單（地圖只標這批的點）／困難（亮出整區所有點位）、🤫 其他班上課中、使用區域；進階：答錯冷卻與罰秒、求助開關與代價、PASS 上限與幾分鐘後可申請、視角循序漸進、派題偏好（分散↔少跑路）。設定記在老師瀏覽器當下次預設。每組自動產生 4 碼通行碼（排除 I、O 等易混字）
+  - **自動裁判**（`live.js`，老師後台開著就運作）：監聽各組 `subs`、`reqs` → 依序處理（一個 Promise 佇列）→ 寫回 `view`、`state`、`board`、`log`。學生端只拿得到照片代號與地圖編號，**哪張照片是幾號只有裁判知道**
+  - **派題** `GPS.chooseBatch`：排除已完成／PASS／停用／不在所選區域／（上課中）🤫 的點；每區分數＝（已達上限 +100）＋分散權重×目前在該區的組數×12＋少跑路權重×和上一區的距離＋點數不夠、會和別組撞題的小懲罰＋隨機；挑最低分的區域，同一批都從同一區拿，不夠才從最近的區補。開場依序替各組挑起點並避開已被選的區域。模擬 10 組×13 題（`batch 3`）：10 組起點 10 個不同區、任何時刻同一區最多 2 組（平均 1.0～1.3）、上課中模式 0 個教學區點
+  - **判題**：答案在 `accept` 裡＝答對（完成數＋1；整批都對完就自動派下一批）；答錯＝這張卡冷卻 N 秒＋罰秒；冷卻中送來的答案不判。完成題數達標＝完成（記錄遊戲時鐘秒數），全部組別完成或時間到自動結束
+  - **💡 求助**：系統自動回提示一、提示二（各罰 hintCost 秒），老師不用處理
+  - **🙋 PASS**：同一張卡出現滿 passUnlock 分鐘後學生才能申請，可留言；老師看板跳紅色卡片（含正確答案、卡多久、提示與答錯次數）＋提示音 → ✅ 准許：這題作廢、算一次 PASS、不算完成、補一題（整批都沒了就補一整批）／❌ 再找找：學生看到「🧙 大師說：再找找看！」。老師也可以在組別卡片按「🔄 換題」把卡最久的那題換掉（不算 PASS 次數）
+  - **遊戲時鐘**：`clock{startAt,pausedAt,pausedTotal,endAt}`，`GPS.gameSeconds` 扣掉暫停時間；暫停時規則擋住學生送答案；繼續時把每張卡的出現時間往後推（PASS 解鎖、冷卻不會因暫停而提早）
+  - **排名** `GPS.rankTeams`：完成的組比「用時＋罰秒」，沒完成的比完成題數、再比用時＋罰秒
+  - **戰況看板**（老師）：頂部開始／暫停／＋5 分／結束、📺 投影畫面、🔗 學生連結（QR＋board.html 連結）、🔑 通行碼小紙條（A4 一頁 10 張，含 QR）；各組卡片（名次、座號、進度、所在區域、卡關時間 3 分黃 5 分紅、答錯／提示／PASS／罰秒、目前照片＋編號）；動態與徽章（⚡ 首破、🏆 最快完成）；📊 成績 Excel（排名、作答明細、點位統計）
+  - **投影畫面**：在老師頁全螢幕顯示（裁判照常運作，單一平板也能投影）；另一台裝置可開 `board.html?code=…`（不用登入）。顯示校園地圖各區目前有幾組（圓圈大小）、排行榜進度條、徽章與動態跑馬燈、剩餘時間
+  - **單一裁判**：開啟活動時寫入 `host.id`；另一台裝置打開同一活動就會接手，原本那頁顯示「另一台裝置接手了」並停止判題，可按「🤖 由這台接手」搶回。老師頁重新整理會自動回到上次的活動並接著判（還沒處理的答案會補判）
+  - 每 10 秒寫心跳到 `host` 與各組 `view/beat`；學生超過 30 秒沒看到新心跳顯示「⏳ 等待大師連線」，答案先排隊
+  - 螢幕常亮（Wake Lock）在裁判運作與投影時自動開啟
+  - **學生頁** `play.html?code=…`：輸入 4 碼通行碼（SHA-256 查 `keys`）→ 第一次登記這支手機的組員座號 → 等待開始（顯示規則）→ 闖關：頂部組名、完成數、時鐘、連線狀態；🚩 下一站訊息；地圖（預設放大 2 倍並自動捲到這批點位的中間，🎯 回到這批、＋－縮放，斜線禁行區）；照片卡（點照片全螢幕、選號碼按鈕、送出、判定中、答錯冷卻倒數、提示、PASS 倒數與狀態、答對顯示編號地名與揭曉照片）；完成畫面（用時、罰秒、答錯、提示／PASS）；暫停時整頁蓋上「⏸ 暫停中」
+  - 學生端即時更新用 Firebase 推送（EventSource 監聽自己組的 `view`，**每支手機只佔 1 條連線**），連不上改每 3 秒輪詢；切到背景 60 秒自動斷線、回來自動重連；**只有畫面真的有變才重畫**（心跳不重畫，照片才不會閃）
+  - 送出答案、求助、PASS 先存在手機的佇列（localStorage），網路恢復自動補送，頂部顯示「📶 補送中」；被規則擋（暫停、結束）會提示並丟掉
+  - **規則重點**（`orienteering/runs/$code`）：老師（meta/owner）整包可讀寫；`meta`、`pub`、`board`、`host`、`teams/$tid/view` 公開可讀；`keys/$h` 只能讀單一筆（要知道雜湊）；學生寫 `members`、`subs`、`reqs` 必須帶 `k` 且 `keys/k` 等於該組、`subs`／`reqs` 只能新增且活動進行中、`ts == now`、欄位長度檢查
+  - ⚠️ Firebase 免費方案同時連線上限 100：10 組 × 每組 4 支手機＝40 條＋老師 1＋投影 1，綽綽有餘
 
 ### 💰 集點小金庫（family-points/index.html，2026-10-06 新增）
 
@@ -540,7 +576,7 @@ fp/
 
 ---
 
-## 附錄：Firebase 安全規則全文（2026-10-12，加上遺落的地點 orienteering）
+## 附錄：Firebase 安全規則全文（2026-10-12，遺落的地點第二階段 orienteering/runs、myruns）
 
 ```json
 {
@@ -757,6 +793,60 @@ fp/
      ".read": "$pid.matches(/^[a-z0-9]{8,24}$/)",
      ".write": "auth != null && $pid.matches(/^[a-z0-9]{8,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)",
      ".validate": "newData.hasChildren(['owner','data']) && newData.child('owner').val() === auth.uid && newData.child('data').isString() && newData.child('data').val().length < 600000"
+    }
+   },
+   "myruns": {
+    "$uid": {
+     ".read": "auth != null && auth.uid === $uid",
+     ".write": "auth != null && auth.uid === $uid"
+    }
+   },
+   "runs": {
+    "$code": {
+     ".read": "auth != null && root.child('orienteering/runs/'+$code+'/meta/owner').val() === auth.uid",
+     ".write": "auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid))",
+     "meta": {
+      ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)"
+     },
+     "pub": {
+      ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)"
+     },
+     "board": {
+      ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)"
+     },
+     "host": {
+      ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)"
+     },
+     "keys": {
+      "$h": {
+       ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && $h.matches(/^[0-9a-f]{32}$/)"
+      }
+     },
+     "teams": {
+      "$tid": {
+       "view": {
+        ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)"
+       },
+       "members": {
+        "$did": {
+         ".write": "newData.exists() && root.child('orienteering/runs/'+$code+'/keys/'+newData.child('k').val()).val() === $tid",
+         ".validate": "newData.hasChildren(['k','list','ts']) && newData.child('list').isString() && newData.child('list').val().length <= 60 && newData.child('ts').val() == now && $did.matches(/^d[0-9a-f]{8}$/)"
+        }
+       },
+       "subs": {
+        "$sid": {
+         ".write": "!data.exists() && newData.exists() && root.child('orienteering/runs/'+$code+'/keys/'+newData.child('k').val()).val() === $tid && root.child('orienteering/runs/'+$code+'/meta/status').val() === 'running'",
+         ".validate": "newData.hasChildren(['k','cid','ans','ts']) && newData.child('cid').isString() && newData.child('cid').val().length <= 16 && newData.child('ans').isNumber() && newData.child('ts').val() == now && (!newData.child('by').exists() || (newData.child('by').isString() && newData.child('by').val().length <= 60))"
+        }
+       },
+       "reqs": {
+        "$rid": {
+         ".write": "!data.exists() && newData.exists() && root.child('orienteering/runs/'+$code+'/keys/'+newData.child('k').val()).val() === $tid && root.child('orienteering/runs/'+$code+'/meta/status').val() === 'running'",
+         ".validate": "newData.hasChildren(['k','cid','type','ts']) && newData.child('cid').isString() && newData.child('cid').val().length <= 16 && newData.child('type').val().matches(/^(hint|pass)$/) && newData.child('ts').val() == now && (!newData.child('note').exists() || (newData.child('note').isString() && newData.child('note').val().length <= 60))"
+        }
+       }
+      }
+     }
     }
    }
   }

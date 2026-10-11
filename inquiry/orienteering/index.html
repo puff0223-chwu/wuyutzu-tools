@@ -150,7 +150,9 @@ table.list tr.off td{color:#aaa}
 <div id="app"><p style="text-align:center;margin-top:20vh" class="muted">載入中…</p></div>
 <div id="printRoot"></div>
 
-<script src="core.js?v=20261012a"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="core.js?v=20261012b"></script>
 <script type="module">
 /* Firebase：老師登入＋存題庫（和座位大作戰同一個專案，不同帳號） */
 const firebaseConfig = {
@@ -175,10 +177,14 @@ try {
     get: async (path) => (await D.get(D.ref(db, path))).val(),
     set: (path, val) => D.set(D.ref(db, path), val),
     update: (path, val) => D.update(D.ref(db, path), val),
-    remove: (path) => D.remove(D.ref(db, path))
+    remove: (path) => D.remove(D.ref(db, path)),
+    // 第二階段：即時監聽（回傳取消函式）
+    listen: (path, cb) => D.onValue(D.ref(db, path), (snap) => cb(snap.val())),
+    onChild: (path, cb) => D.onChildAdded(D.ref(db, path), (snap) => cb(snap.key, snap.val())),
+    pushKey: (path) => D.push(D.ref(db, path)).key
   };
 } catch (e) { console.warn('Firebase 載入失敗', e); window.FB = null; }
-await import('./teacher.js?v=20261012a');
+await import('./teacher.js?v=20261012b');
 </script>
 </body>
 </html>

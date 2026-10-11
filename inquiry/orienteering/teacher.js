@@ -127,7 +127,7 @@ async function openBank(id) {
 }
 
 // ---------- 主畫面 ----------
-const TABS = [['map', '🗺️ 地圖與點位'], ['list', '📋 點位清單'], ['zones', '🧩 區域與禁行區'], ['paper', '🖨️ 紙本版'], ['backup', '💾 備份與說明']];
+const TABS = [['live', '🏁 活動'], ['map', '🗺️ 地圖與點位'], ['list', '📋 點位清單'], ['zones', '🧩 區域與禁行區'], ['paper', '🖨️ 紙本版'], ['backup', '💾 備份與說明']];
 function render() {
   const ids = Object.keys(S.banks);
   $('#app').innerHTML = `
@@ -142,11 +142,12 @@ function render() {
   </div>
   ${S.bank ? `<div class="tabs">${TABS.map(([k, t]) => `<div class="tab ${S.tab === k ? 'on' : ''}" data-tab="${k}">${t}</div>`).join('')}</div>
   <div class="panel" id="panel"></div>` : `<div class="panel" style="margin-top:20px" id="panel"></div>`}`;
-  $('#tbLogout').onclick = async () => { await Store.flush(); await FB.logout(); };
+  $('#tbLogout').onclick = async () => { if (L.isRefereeing() && !(await confirmBox('活動進行中，登出後系統會停止自動派題。確定登出？', '登出'))) return; L.stopReferee(); await Store.flush(); await FB.logout(); };
   if ($('#bankSel')) $('#bankSel').onchange = (e) => openBank(e.target.value);
   $$('.tab').forEach((t) => { t.onclick = () => { S.tab = t.dataset.tab; LS.set('gps_tab', S.tab); S.mode = 'view'; render(); }; });
+  L.renderBadge();
   if (!S.bank) return renderWelcome();
-  ({ map: renderMapTab, list: renderListTab, zones: renderZonesTab, paper: renderPaperTab, backup: renderBackupTab }[S.tab] || renderMapTab)();
+  ({ live: () => L.renderLiveTab(), map: renderMapTab, list: renderListTab, zones: renderZonesTab, paper: renderPaperTab, backup: renderBackupTab }[S.tab] || renderMapTab)();
 }
 
 function renderWelcome() {
@@ -622,6 +623,12 @@ function renderBackupTab() {
 }
 
 // ---------- 啟動 ----------
-window.addEventListener('beforeunload', (e) => { if (Store._t && $('#saveState') && $('#saveState').textContent.includes('尚未')) { Store.flush(); e.preventDefault(); e.returnValue = ''; } });
+async function openBankSilently(id) { const b = await Store.load(id); if (b) { S.bankId = id; S.bank = b; LS.set('gps_bank', id); } }
+window.TT = { S, Store, LS, $, $$, esc, toast, modal, confirmBox, zoomImg, imgTag, download, render, pts, openBankSilently };
+const L = await import('./live.js?v=20261012b');
+window.addEventListener('beforeunload', (e) => {
+  if (Store._t && $('#saveState') && $('#saveState').textContent.includes('尚未')) { Store.flush(); e.preventDefault(); e.returnValue = ''; }
+  if (L.isRefereeing()) { e.preventDefault(); e.returnValue = ''; }
+});
 if (!window.FB) renderLogin('雲端服務載入失敗（可能沒有網路），請重新整理。');
 else FB.onUser((u) => { if (u) enter(u); else { S.user = null; S.bank = null; renderLogin(); } });

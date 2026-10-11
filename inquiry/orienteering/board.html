@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>🧭 遺落的地點｜戰況看板</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Noto+Serif+TC:wght@900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#1f2a44;color:#fff;font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif}
+.msg{text-align:center;margin-top:30vh;font-size:1.3em;opacity:.8}
+.awake{position:fixed;right:12px;bottom:10px;z-index:400;background:rgba(255,255,255,.12);color:#fff;border:1.5px solid rgba(255,255,255,.35);border-radius:8px;padding:4px 10px;font-size:.8em;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="app"><p class="msg">載入中…</p></div>
+<button class="awake" id="awake">☀️ 螢幕常亮</button>
+<script src="core.js?v=20261012b"></script>
+<script>
+(function () {
+  const G = window.GPS, DB = G.DB_URL;
+  const CODE = String(new URLSearchParams(location.search).get('code') || '').toUpperCase().replace(/[^0-9A-Z]/g, '');
+  const RUN = DB + 'orienteering/runs/' + CODE;
+  const s = document.createElement('style'); s.textContent = G.BOARD_CSS; document.head.appendChild(s);
+  let pub = null, board = null, es = null, poll = null, lock = null;
+  const draw = () => { if (pub && board) document.getElementById('app').innerHTML = G.boardHTML(board, pub, Date.now()); };
+  const apply = (path, data) => {
+    if (path === '/') { board = data; return; }
+    const ks = path.split('/').filter(Boolean); let o = board = board || {};
+    for (let i = 0; i < ks.length - 1; i++) o = o[ks[i]] = (o[ks[i]] && typeof o[ks[i]] === 'object') ? o[ks[i]] : {};
+    if (data === null) delete o[ks[ks.length - 1]]; else o[ks[ks.length - 1]] = data;
+  };
+  const startPoll = () => { if (poll) return; const f = async () => { try { board = await (await fetch(RUN + '/board.json')).json(); draw(); } catch (e) { } }; f(); poll = setInterval(f, 3000); };
+  async function start() {
+    if (!CODE) { document.getElementById('app').innerHTML = '<p class="msg">網址少了活動代碼（board.html?code=XXXXXX）</p>'; return; }
+    try { pub = await (await fetch(RUN + '/pub.json')).json(); } catch (e) { }
+    if (!pub) { document.getElementById('app').innerHTML = '<p class="msg">找不到這個活動</p>'; return; }
+    try {
+      es = new EventSource(RUN + '/board.json');
+      es.addEventListener('put', (e) => { const d = JSON.parse(e.data); apply(d.path, d.data); draw(); });
+      es.addEventListener('patch', (e) => { const d = JSON.parse(e.data); Object.entries(d.data || {}).forEach(([k, v]) => apply((d.path === '/' ? '' : d.path) + '/' + k, v)); draw(); });
+      es.onerror = () => { if (es.readyState === 2) startPoll(); };
+      setTimeout(() => { if (!board) startPoll(); }, 6000);
+    } catch (e) { startPoll(); }
+    setInterval(draw, 1000);
+  }
+  async function wake() { try { lock = await navigator.wakeLock.request('screen'); document.getElementById('awake').textContent = '☀️ 螢幕常亮：開'; } catch (e) { document.getElementById('awake').textContent = '⚠️ 無法常亮'; } }
+  document.getElementById('awake').onclick = () => { wake(); try { document.documentElement.requestFullscreen(); } catch (e) { } };
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && lock) wake(); });
+  start();
+})();
+</script>
+</body>
+</html>

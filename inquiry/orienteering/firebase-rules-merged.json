@@ -213,6 +213,60 @@
      ".write": "auth != null && $pid.matches(/^[a-z0-9]{8,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)",
      ".validate": "newData.hasChildren(['owner','data']) && newData.child('owner').val() === auth.uid && newData.child('data').isString() && newData.child('data').val().length < 600000"
     }
+   },
+   "myruns": {
+    "$uid": {
+     ".read": "auth != null && auth.uid === $uid",
+     ".write": "auth != null && auth.uid === $uid"
+    }
+   },
+   "runs": {
+    "$code": {
+     ".read": "auth != null && root.child('orienteering/runs/'+$code+'/meta/owner').val() === auth.uid",
+     ".write": "auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid))",
+     "meta": {
+      ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)"
+     },
+     "pub": {
+      ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)"
+     },
+     "board": {
+      ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)"
+     },
+     "host": {
+      ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)"
+     },
+     "keys": {
+      "$h": {
+       ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && $h.matches(/^[0-9a-f]{32}$/)"
+      }
+     },
+     "teams": {
+      "$tid": {
+       "view": {
+        ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)"
+       },
+       "members": {
+        "$did": {
+         ".write": "newData.exists() && root.child('orienteering/runs/'+$code+'/keys/'+newData.child('k').val()).val() === $tid",
+         ".validate": "newData.hasChildren(['k','list','ts']) && newData.child('list').isString() && newData.child('list').val().length <= 60 && newData.child('ts').val() == now && $did.matches(/^d[0-9a-f]{8}$/)"
+        }
+       },
+       "subs": {
+        "$sid": {
+         ".write": "!data.exists() && newData.exists() && root.child('orienteering/runs/'+$code+'/keys/'+newData.child('k').val()).val() === $tid && root.child('orienteering/runs/'+$code+'/meta/status').val() === 'running'",
+         ".validate": "newData.hasChildren(['k','cid','ans','ts']) && newData.child('cid').isString() && newData.child('cid').val().length <= 16 && newData.child('ans').isNumber() && newData.child('ts').val() == now && (!newData.child('by').exists() || (newData.child('by').isString() && newData.child('by').val().length <= 60))"
+        }
+       },
+       "reqs": {
+        "$rid": {
+         ".write": "!data.exists() && newData.exists() && root.child('orienteering/runs/'+$code+'/keys/'+newData.child('k').val()).val() === $tid && root.child('orienteering/runs/'+$code+'/meta/status').val() === 'running'",
+         ".validate": "newData.hasChildren(['k','cid','type','ts']) && newData.child('cid').isString() && newData.child('cid').val().length <= 16 && newData.child('type').val().matches(/^(hint|pass)$/) && newData.child('ts').val() == now && (!newData.child('note').exists() || (newData.child('note').isString() && newData.child('note').val().length <= 60))"
+        }
+       }
+      }
+     }
+    }
    }
   }
  }

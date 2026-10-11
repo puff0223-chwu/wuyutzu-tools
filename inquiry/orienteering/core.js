@@ -143,11 +143,154 @@
     return versions;
   }
 
+
+  // =====================================================================
+  // 第二階段：活動（即時闖關）
+  // =====================================================================
+  const CODE_CH = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  function makeCode(n) { const a = new Uint8Array(n); crypto.getRandomValues(a); return Array.from(a, (b) => CODE_CH[b % CODE_CH.length]).join(''); }
+  async function sha(s) { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return Array.from(new Uint8Array(d), (b) => b.toString(16).padStart(2, '0')).join('').slice(0, 32); }
+
+  const DEFAULT_RUN = {
+    mode: 'race', target: 13, batch: 3, limitMin: 40, easy: true, teaching: false, zones: [],
+    cool: 30, wrongPenalty: 30, hintOn: true, hintCost: 60, passLimit: 2, passUnlock: 3, viewProg: false, pref: 0.7
+  };
+
+  // 視角難度：0＝遠景／中景／平視（或未標）、1＝特寫／仰俯斜角、2＝超特寫／奇特視角
+  function viewLevel(p) { const v = p.view || {}; if (v.odd || v.dist === 'macro') return 2; if (v.dist === 'close' || ['up', 'down', 'tilt'].includes(v.angle)) return 1; return 0; }
+
+  /* 自動派題：替某一組挑下一批題目
+     st = { settings, teams:{ tid:{ done[], passed[], cards{cid:{key,state}}, zone } } }
+     opt = { size, from(上一區), avoid(要避開的區域，例如開場錯開起點), rnd }
+     回傳點位 key 陣列（可能少於 size，代表題庫用完了） */
+  function chooseBatch(bank, st, tid, opt) {
+    const S = st.settings, team = st.teams[tid], rnd = opt.rnd || Math.random, size = opt.size || 1;
+    const zm = zoneById(bank), centers = zoneCenters(bank);
+    const busy = {}, takenByOthers = new Set();
+    Object.entries(st.teams).forEach(([id, t]) => {
+      if (id === tid || t.finished) return;
+      const open = Object.values(t.cards || {}).filter((c) => c.state === 'open');
+      open.forEach((c) => takenByOthers.add(c.key));
+      const zs = new Set(open.map((c) => (bank.points[c.key] || {}).zone).filter(Boolean));
+      zs.forEach((z) => { busy[z] = (busy[z] || 0) + 1; });
+    });
+    const mine = new Set([...(team.done || []), ...(team.passed || []), ...Object.values(team.cards || {}).filter((c) => c.state === 'open').map((c) => c.key)]);
+    let pool = sortedPoints(bank).filter((p) => p.enabled && p.photos.length && (!S.zones || !S.zones.length || S.zones.includes(p.zone)) && !(S.teaching && p.teach) && !mine.has(p.key));
+    if (S.viewProg && pool.length) {
+      const allow = Math.min(2, Math.floor(3 * (team.done || []).length / Math.max(1, S.target)));
+      const easier = pool.filter((p) => viewLevel(p) <= allow);
+      if (easier.length >= size) pool = easier;
+    }
+    if (!pool.length) return [];
+    const byZone = {};
+    pool.forEach((p) => { (byZone[p.zone] = byZone[p.zone] || []).push(p); });
+    const from = opt.from && centers[opt.from];
+    const spreadW = S.pref == null ? 0.7 : S.pref, distW = 1 - spreadW;
+    let best = null, bs = Infinity;
+    Object.keys(byZone).forEach((z) => {
+      const list = byZone[z], crowd = busy[z] || 0, cap = (zm[z] && zm[z].cap) || 2;
+      const free = list.filter((p) => !takenByOthers.has(p.key)).length;
+      let sc = (crowd >= cap ? 100 : 0) + spreadW * crowd * 12 + (from && centers[z] ? distW * dist(bank, from, centers[z]) * 0.35 : 0);
+      if (list.length < size) sc += 6;
+      if (free < Math.min(size, list.length)) sc += 4;
+      if (opt.avoid && opt.avoid.includes(z)) sc += 50;
+      sc += rnd() * 3;
+      if (sc < bs) { bs = sc; best = z; }
+    });
+    const prefer = (arr) => shuffle(arr, rnd).sort((a, b) => (takenByOthers.has(a.key) ? 1 : 0) - (takenByOthers.has(b.key) ? 1 : 0));
+    const out = prefer(byZone[best]).slice(0, size);
+    if (out.length < size) {
+      // 這區不夠：從離這區最近的區域補
+      const c0 = centers[best];
+      const rest = pool.filter((p) => !out.includes(p)).sort((a, b) => dist(bank, a, c0) - dist(bank, b, c0) + (takenByOthers.has(a.key) ? 30 : 0) - (takenByOthers.has(b.key) ? 30 : 0));
+      out.push(...rest.slice(0, size - out.length));
+    }
+    return out.map((p) => p.key);
+  }
+
+  // 遊戲時鐘（扣掉暫停時間），單位秒
+  function gameSeconds(clock, now) {
+    if (!clock || !clock.startAt) return 0;
+    const end = clock.endAt || now;
+    const paused = (clock.pausedTotal || 0) + (clock.pausedAt && !clock.endAt ? end - clock.pausedAt : 0);
+    return Math.max(0, Math.floor((end - clock.startAt - paused) / 1000));
+  }
+  function fmtTime(sec) { sec = Math.max(0, Math.round(sec || 0)); const m = Math.floor(sec / 60), s = sec % 60; return `${m}:${String(s).padStart(2, '0')}`; }
+
+  // 排名：完成的組依（用時＋罰秒），沒完成的依完成題數多→（用時＋罰秒）少
+  function rankTeams(teams, nowSec) {
+    const arr = Object.entries(teams || {}).map(([id, t]) => {
+      const time = t.finished ? (t.finishSec || 0) : nowSec;
+      return { id, ...t, score: time + (t.penalty || 0) };
+    });
+    arr.sort((a, b) => (b.finished ? 1 : 0) - (a.finished ? 1 : 0) || (a.finished ? a.score - b.score : (b.done || 0) - (a.done || 0) || a.score - b.score) || String(a.name).localeCompare(String(b.name), 'zh-Hant', { numeric: true }));
+    let r = 0;
+    arr.forEach((t, i) => { if (i === 0 || t.finished !== arr[i - 1].finished || t.score !== arr[i - 1].score || (!t.finished && t.done !== arr[i - 1].done)) r = i + 1; t.rank = r; });
+    return arr;
+  }
+
+  // ---------- 戰況看板（老師頁投影與 board.html 共用） ----------
+  const BOARD_CSS = `
+  .gb{position:fixed;inset:0;background:#1f2a44;color:#fff;z-index:300;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;gap:14px;padding:16px 20px;font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif}
+  .gb-head{grid-column:1/3;display:flex;align-items:center;gap:18px}
+  .gb-head h1{font-family:'Noto Serif TC',serif;font-weight:900;font-size:2.1em;letter-spacing:.04em}
+  .gb-head .en{font-family:'Bebas Neue',sans-serif;letter-spacing:.2em;color:#f2b134;font-size:1em}
+  .gb-clock{margin-left:auto;font-family:'Bebas Neue',sans-serif;font-size:3.2em;letter-spacing:.06em;color:#f2b134;line-height:1}
+  .gb-clock small{display:block;font-family:'Noto Sans TC',sans-serif;font-size:.3em;letter-spacing:0;color:#c9d2ea;text-align:right}
+  .gb-map{position:relative;background:#fff;border-radius:14px;overflow:hidden;align-self:stretch;display:flex;align-items:center;justify-content:center}
+  .gb-map .mi{position:relative;height:100%;max-width:100%;aspect-ratio:var(--ar)}
+  .gb-map .mi .in{position:absolute;left:0;width:100%}
+  .gb-map img{width:100%;height:100%;display:block;opacity:.55}
+  .gb-heat{position:absolute;transform:translate(-50%,-50%);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:1.25em;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35);transition:all .4s}
+  .gb-heat small{position:absolute;top:100%;margin-top:3px;white-space:nowrap;font-size:.55em;color:#1f2a44;background:rgba(255,255,255,.9);padding:0 6px;border-radius:6px}
+  .gb-rank{background:#fffdf8;color:#1f2a44;border-radius:14px;padding:12px 14px;overflow:hidden;display:flex;flex-direction:column;gap:6px}
+  .gb-row{display:grid;grid-template-columns:44px minmax(0,1fr) 120px 80px;align-items:center;gap:10px;padding:5px 8px;border-radius:10px;background:#f3eee2;font-size:1.15em}
+  .gb-row.fin{background:#fdf1d6}
+  .gb-row .rk{font-family:'Bebas Neue',sans-serif;font-size:1.6em;text-align:center;color:#e4572e}
+  .gb-row .nm{font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .gb-row .bar{height:12px;border-radius:999px;background:#e2dccd;overflow:hidden}
+  .gb-row .bar i{display:block;height:100%;background:linear-gradient(90deg,#f07c1f,#f2b134);border-radius:999px;transition:width .5s}
+  .gb-row .tm{text-align:right;font-family:'Bebas Neue',sans-serif;font-size:1.3em;letter-spacing:.04em}
+  .gb-foot{grid-column:1/3;display:flex;gap:12px;align-items:center;overflow:hidden;white-space:nowrap}
+  .gb-ev{background:rgba(255,255,255,.1);border-radius:999px;padding:6px 14px;font-size:1.05em}
+  .gb-badge{background:#f2b134;color:#1f2a44;border-radius:999px;padding:6px 14px;font-weight:900}
+  .gb-close{position:absolute;bottom:14px;right:16px;background:rgba(255,255,255,.12);color:#fff;border:1.5px solid rgba(255,255,255,.4);border-radius:8px;padding:4px 12px;cursor:pointer;z-index:2}
+  .gb-state{font-size:1.05em;background:#e4572e;border-radius:999px;padding:4px 14px;font-weight:900}
+  @media(max-width:900px){.gb{grid-template-columns:1fr;grid-template-rows:auto auto auto auto}.gb-head,.gb-foot{grid-column:1}.gb-map{min-height:45vh}}`;
+  // board：{ title, status, clock, target, teams{tid:{name,done,finished,finishSec,penalty}}, heat{zone:count}, events[], badges[] }
+  // pub：{ map, zones[], crop{top,bot} }
+  function boardHTML(board, pub, now, opt) {
+    board = board || {}; pub = pub || {};
+    const sec = gameSeconds(board.clock, now), lim = (board.limitMin || 0) * 60;
+    const ranked = rankTeams(board.teams, sec);
+    const crop = pub.crop || { top: 0, bot: 100 }, span = (crop.bot - crop.top) / 100;
+    const map = pub.map || { src: 'r:map', w: 1117, h: 1579 };
+    const heat = board.heat || {};
+    const zones = (pub.zones || []).filter((z) => z.x != null);
+    const stateTxt = { ready: '準備中', running: '', paused: '⏸ 暫停中', ended: '🏁 已結束' }[board.status] || '';
+    return `<div class="gb">
+      ${opt && opt.close ? '<button class="gb-close" data-gbclose>✕ 關閉投影</button>' : ''}
+      <div class="gb-head"><div><div class="en">THE LOST PLACES</div><h1>🧭 ${esc(board.title || '遺落的地點')}</h1></div>
+        ${stateTxt ? `<span class="gb-state">${stateTxt}</span>` : ''}
+        <div class="gb-clock">${lim ? fmtTime(Math.max(0, lim - sec)) : fmtTime(sec)}<small>${lim ? '剩餘時間' : '經過時間'}</small></div></div>
+      <div class="gb-map"><div class="mi" style="--ar:${map.w}/${(map.h * span).toFixed(1)}"><div class="in" style="top:${(-crop.top / span).toFixed(3)}%;height:${(100 / span).toFixed(3)}%">
+        <img src="${esc(photoURL(map.src, opt && opt.base))}">
+        ${zones.map((z) => { const n = heat[z.id] || 0; const s = 34 + n * 16; return `<div class="gb-heat" style="left:${z.x}%;top:${z.y}%;width:${s}px;height:${s}px;background:${n ? z.color : 'rgba(120,120,120,.35)'};opacity:${n ? 1 : .7}">${n || ''}<small>${esc(z.name)}</small></div>`; }).join('')}
+      </div></div></div>
+      <div class="gb-rank">${ranked.map((t) => `<div class="gb-row ${t.finished ? 'fin' : ''}"><div class="rk">${t.rank}</div><div class="nm">${t.finished ? '🏁 ' : ''}${esc(t.name)}</div>
+        <div><div class="bar"><i style="width:${Math.min(100, Math.round((t.done || 0) / Math.max(1, board.target || 1) * 100))}%"></i></div><div style="font-size:.72em;text-align:center">${t.done || 0} / ${board.target || 0}</div></div>
+        <div class="tm">${t.finished ? fmtTime(t.finishSec) : ''}</div></div>`).join('') || '<p style="opacity:.6">等待開始…</p>'}</div>
+      <div class="gb-foot">${(board.badges || []).map((b) => `<span class="gb-badge">${esc(b)}</span>`).join('')}${(board.events || []).slice(-6).reverse().map((e) => `<span class="gb-ev">${esc(e)}</span>`).join('')}</div>
+    </div>`;
+  }
+
   window.GPS = {
     DB_URL, VIEW_DIST, VIEW_ANGLE, DIRS, ZONE_COLORS,
     esc, rid, mulberry, shuffle,
     normPoint, normalizeBank, packBank, sortedPoints, zoneById, zoneCenters, dist, inNoGo, viewLabel,
     photoURL, loadPhoto, compressImage, makeVersions,
-    cachePhoto: (id, data) => { photoCache[id] = data; }
+    cachePhoto: (id, data) => { photoCache[id] = data; },
+    // 第二階段
+    CODE_CH, makeCode, sha, DEFAULT_RUN, viewLevel, chooseBatch, gameSeconds, fmtTime, rankTeams, boardHTML, BOARD_CSS
   };
 })();

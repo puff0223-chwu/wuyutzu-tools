@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#1f2a44">
+<title>🧭 遺落的地點</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f7f3ea;--paper:#fffdf8;--ink:#1f2a44;--ink2:#4a5470;--muted:#7a8196;--line:#d9d2c3;--gold:#f2b134;--gold-soft:#fdf1d6;--red:#e4572e;--red-soft:#fde7e0;--teal:#1f9e8f;--teal-soft:#e3f4f1;--orange:#f07c1f;--blue-soft:#e4eefb}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--ink);font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif;line-height:1.5;-webkit-tap-highlight-color:transparent}
+button,input{font:inherit;color:inherit}
+.wrap{max-width:560px;margin:0 auto;padding:0 12px 60px}
+.hidden{display:none!important}
+.small{font-size:.86em}.muted{color:var(--muted)}.bold{font-weight:700}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.spacer{flex:1}
+/* 頂部 */
+.top{position:sticky;top:0;z-index:20;background:var(--ink);color:#fff;padding:8px 14px calc(8px);display:flex;align-items:center;gap:10px;box-shadow:0 3px 0 var(--gold)}
+.top .tn{font-weight:900;font-size:1.05em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40%}
+.top .prog{font-family:'Bebas Neue',sans-serif;font-size:1.6em;letter-spacing:.05em;color:var(--gold);line-height:1}
+.top .clk{margin-left:auto;font-family:'Bebas Neue',sans-serif;font-size:1.6em;letter-spacing:.05em;line-height:1;text-align:right}
+.top .clk small{display:block;font-family:'Noto Sans TC',sans-serif;font-size:.42em;letter-spacing:0;opacity:.75}
+.net{font-size:.72em;border-radius:999px;padding:1px 8px;background:rgba(255,255,255,.14);white-space:nowrap}
+.net.bad{background:var(--red)}
+.head{background:var(--ink);color:#fff;border-radius:16px;padding:18px;margin:14px 0;box-shadow:4px 4px 0 var(--gold)}
+.head .en{font-family:'Bebas Neue',sans-serif;letter-spacing:.22em;color:var(--orange);font-size:.95em}
+.head h1{font-family:'Noto Serif TC',serif;font-weight:900;font-size:1.6em;line-height:1.25}
+.card{background:var(--paper);border:2px solid var(--ink);border-radius:14px;box-shadow:3px 3px 0 var(--ink);padding:14px;margin:12px 0}
+.card h2{font-size:1.08em;margin-bottom:6px}
+label.f{display:block;font-weight:700;margin:10px 0 4px;font-size:.95em}
+input[type=text],input[type=tel]{width:100%;border:2px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;font-size:1.1em}
+input:focus{outline:none;border-color:var(--gold)}
+input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:center;text-transform:uppercase;font-weight:900}
+.btn{display:block;width:100%;background:var(--gold);border:2.5px solid var(--ink);border-radius:12px;padding:11px;font-weight:900;font-size:1.05em;cursor:pointer;box-shadow:3px 3px 0 var(--ink);margin-top:12px}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:#fff}
+.btn.sm{display:inline-block;width:auto;padding:6px 12px;font-size:.92em;margin-top:0;box-shadow:2px 2px 0 var(--ink);border-width:2px}
+.alert{border-left:5px solid var(--red);background:var(--red-soft);padding:10px 12px;border-radius:8px;margin:10px 0;font-size:.95em}
+.alert.ok{border-color:var(--teal);background:var(--teal-soft)}
+.alert.warn{border-color:var(--gold);background:var(--gold-soft)}
+.msg{background:var(--gold-soft);border:2px dashed #d79a1e;border-radius:12px;padding:8px 12px;margin-top:12px;font-weight:700;text-align:center}
+/* 地圖 */
+.mapbox{position:relative;overflow:auto;border:2px solid var(--ink);border-radius:12px;background:#fff;max-height:52vh;-webkit-overflow-scrolling:touch}
+.mapin{position:relative;margin:0 auto}
+.mapin .crop{position:relative;width:100%;overflow:hidden}
+.mapin .inner{position:absolute;left:0;width:100%}
+.mapin img.base{width:100%;height:100%;display:block}
+.mapin svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.pin{position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;pointer-events:none}
+.pin b{background:var(--orange);color:#fff;border:2px solid #fff;border-radius:8px;font-size:12px;padding:0 5px;min-width:24px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.4);line-height:18px}
+.pin i{width:2px;height:7px;background:var(--orange)}
+.pin.ok b{background:var(--teal)}
+.pin.ok i{background:var(--teal)}
+.pin.hot b{background:var(--red);transform:scale(1.25)}
+.mapctl{display:flex;gap:6px;justify-content:flex-end;margin-top:6px}
+.mapctl button{border:2px solid var(--ink);background:#fff;border-radius:8px;width:38px;height:32px;font-weight:900;cursor:pointer}
+.legend{font-size:.75em;color:var(--muted);margin-top:4px}
+/* 照片卡 */
+.pc{background:var(--paper);border:2.5px solid var(--ink);border-radius:16px;box-shadow:3px 3px 0 var(--ink);margin:14px 0;overflow:hidden}
+.pc.ok{border-color:var(--teal);box-shadow:3px 3px 0 var(--teal)}
+.pc .ph{position:relative;background:#222;display:flex;justify-content:center}
+.pc .ph img{max-width:100%;max-height:46vh;display:block;cursor:zoom-in}
+.pc .tag{position:absolute;left:8px;top:8px;background:var(--ink);color:var(--gold);font-weight:900;border-radius:8px;padding:1px 10px;font-size:.9em}
+.pc .bd{padding:12px}
+.nums{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px}
+.nums button{min-width:52px;padding:8px 6px;border:2px solid var(--ink);border-radius:10px;background:#fff;font-weight:900;font-size:1.1em;cursor:pointer}
+.nums button.sel{background:var(--orange);color:#fff;border-color:var(--orange)}
+.nums button:disabled{opacity:.3}
+.okbox{display:flex;align-items:center;gap:10px}
+.okbox .big{font-size:1.7em}
+.reveal{margin-top:10px}
+.reveal img{width:100%;border-radius:10px;display:block}
+.helps{display:flex;gap:8px;margin-top:12px}
+.helps .btn{margin-top:0;font-size:.95em;padding:9px 6px;background:#fff}
+.hint{background:var(--blue-soft);border-radius:10px;padding:8px 12px;margin-top:8px;font-size:.95em}
+.cool{background:var(--red-soft);border-radius:10px;padding:8px 12px;margin-top:8px;font-weight:700;color:#a33316;text-align:center}
+.wait{background:#f3eee2;border-radius:10px;padding:8px 12px;margin-top:8px;text-align:center}
+/* 全螢幕照片、對話框 */
+.zoom{position:fixed;inset:0;background:#000;z-index:100;overflow:auto;touch-action:pinch-zoom pan-x pan-y}
+.zoom img{width:100%;height:auto;display:block;margin:auto;min-height:100%;object-fit:contain}
+.zoom .x{position:fixed;top:12px;right:12px;background:rgba(255,255,255,.2);color:#fff;border:1.5px solid #fff;border-radius:10px;padding:6px 14px;z-index:2}
+.sheet-bg{position:fixed;inset:0;background:rgba(20,26,44,.6);display:flex;align-items:flex-end;justify-content:center;z-index:60}
+.sheet{background:var(--paper);border-radius:18px 18px 0 0;max-width:560px;width:100%;padding:20px 18px calc(22px + env(safe-area-inset-bottom));border-top:3px solid var(--ink)}
+.cover{position:fixed;inset:0;background:rgba(31,42,68,.92);color:#fff;z-index:50;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:30px}
+.cover .big{font-size:3.2em}
+.toast{position:fixed;left:50%;top:70px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:12px;z-index:200;box-shadow:3px 3px 0 var(--gold);max-width:92vw;text-align:center;font-weight:700}
+.toast.err{background:var(--red)}
+.finish{text-align:center;padding:26px 16px}
+.finish .big{font-size:4em}
+.finish .stat{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:14px}
+.finish .stat div{background:#f3eee2;border-radius:10px;padding:8px}
+.finish .stat b{display:block;font-size:1.4em}
+.foot{text-align:center;margin-top:20px}
+.foot button{background:none;border:none;color:var(--muted);text-decoration:underline;font-size:.85em;cursor:pointer}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+.shake{animation:shake .4s}
+@keyframes pop{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
+.pop{animation:pop .35s}
+</style>
+</head>
+<body>
+<div id="top"></div>
+<div class="wrap" id="app"><p style="text-align:center;margin-top:30vh" class="muted">載入中…</p></div>
+<script src="core.js?v=20261012b"></script>
+<script>
+(function () {
+  'use strict';
+  const G = window.GPS, esc = G.esc, DB = G.DB_URL;
+  const $ = (s, el) => (el || document).querySelector(s), $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
+  const LS = { get: (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } } };
+  const CODE = String(new URLSearchParams(location.search).get('code') || '').toUpperCase().replace(/[^0-9A-Z]/g, '');
+  const RUN = 'orienteering/runs/' + CODE;
+  const did = LS.get('gps_did', '') || (() => { const d = 'd' + G.rid(4); LS.set('gps_did', d); return d; })();
+  const st = {
+    me: LS.get('gps_join_' + CODE, null), pub: null, view: null, net: 'live', offset: 0, beatLocal: Date.now(), lastBeat: 0,
+    sel: {}, pending: {}, reqPending: {}, zoom: LS.get('gps_mapzoom', 2), lastHTML: '', center: true, es: null, poll: null, hiddenAt: 0, lastBatch: 0, shown: {}
+  };
+  const q = { list: LS.get('gps_q_' + CODE, []), busy: false };
+
+  function toast(msg, err) { const t = document.createElement('div'); t.className = 'toast' + (err ? ' err' : ''); t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), err ? 3800 : 2400); }
+  function sheet(html) {
+    const bg = document.createElement('div'); bg.className = 'sheet-bg'; bg.innerHTML = `<div class="sheet">${html}</div>`;
+    document.body.appendChild(bg); bg.addEventListener('click', (e) => { if (e.target === bg) bg.remove(); });
+    return { el: bg, close: () => bg.remove() };
+  }
+  async function api(path, method, body) {
+    const r = await fetch(DB + path + '.json', { method: method || 'GET', headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
+    if (!r.ok) { const e = new Error('HTTP ' + r.status); e.status = r.status; throw e; }
+    return r.json();
+  }
+  const now = () => Date.now() + st.offset; // 換算成「大師的時鐘」
+
+  // ---------- 加入 ----------
+  function renderJoin(msg) {
+    $('#top').innerHTML = '';
+    $('#app').innerHTML = `
+    <div class="head"><div class="en">THE LOST PLACES</div><h1>🧭 遺落的地點</h1><div class="small" style="opacity:.85">校園照片定向越野</div></div>
+    ${!CODE ? '<div class="alert">網址少了活動代碼，請重新掃老師給的 QR Code。</div>' : `
+    <div class="card"><h2>🔑 輸入你們這一組的通行碼</h2><p class="small muted">活動代碼 <b>${esc(CODE)}</b>・通行碼在老師發的小紙條上（4 碼）</p>
+      ${msg ? `<div class="alert">${esc(msg)}</div>` : ''}
+      <input type="text" class="code" id="jPass" maxlength="4" autocomplete="off" autocapitalize="characters" placeholder="____">
+      <button class="btn" id="jGo">進入</button></div>
+    <div class="card small"><b>怎麼玩？</b><br>系統一次給你們幾張校園照片，地圖上會標出（或圈出）可能的地點。到現場比對，找到照片拍的是哪裡，選出那個地點的編號送出！<br>🚫 斜線區是正在上課的教學區，請繞道、保持安靜。</div>`}`;
+    if (!CODE) return;
+    const go = async () => {
+      const pass = $('#jPass').value.toUpperCase().replace(/[^0-9A-Z]/g, '');
+      if (pass.length !== 4) return toast('通行碼是 4 碼', true);
+      $('#jGo').disabled = true;
+      try {
+        const k = await G.sha(CODE + '|' + pass);
+        const tid = await api(`${RUN}/keys/${k}`);
+        if (!tid) { $('#jGo').disabled = false; return toast('通行碼不對，請再確認一次', true); }
+        st.me = { tid, k }; LS.set('gps_join_' + CODE, st.me);
+        start();
+      } catch (e) { $('#jGo').disabled = false; toast('連線失敗，請確認網路後再試', true); }
+    };
+    $('#jGo').onclick = go; $('#jPass').onkeydown = (e) => { if (e.key === 'Enter') go(); };
+  }
+  function renderMembers() {
+    const s = sheet(`<h2 style="margin-bottom:6px">👋 這支手機是哪幾位同學？</h2><p class="small muted">輸入組員座號，用空白分開（例如：3 15 27）。老師打成績會用到。</p>
+      <input type="tel" id="mList" placeholder="3 15 27" value="${esc(LS.get('gps_seats_' + CODE, ''))}"><button class="btn" id="mGo">確定</button>`);
+    $('#mGo', s.el).onclick = async () => {
+      const list = $('#mList', s.el).value.replace(/[^\d\s,，、]/g, ' ').split(/[\s,，、]+/).filter(Boolean).join(' ');
+      if (!list) return toast('請輸入座號', true);
+      try { await api(`${RUN}/teams/${st.me.tid}/members/${did}`, 'PUT', { k: st.me.k, list, ts: { '.sv': 'timestamp' } }); LS.set('gps_seats_' + CODE, list); s.close(); toast('✅ 已登記'); }
+      catch (e) { toast('登記失敗，請再按一次', true); }
+    };
+  }
+
+  // ---------- 即時同步（Firebase 推送，不行就輪詢） ----------
+  function connect() {
+    disconnect();
+    const url = `${DB}${RUN}/teams/${st.me.tid}/view.json`;
+    const apply = (path, data) => {
+      if (path === '/') st.view = data;
+      else { const ks = path.split('/').filter(Boolean); let o = st.view = st.view || {}; for (let i = 0; i < ks.length - 1; i++) o = o[ks[i]] = (o[ks[i]] && typeof o[ks[i]] === 'object') ? o[ks[i]] : {}; if (data === null) delete o[ks[ks.length - 1]]; else o[ks[ks.length - 1]] = data; }
+    };
+    const poll = async () => { try { st.view = await api(`${RUN}/teams/${st.me.tid}/view`); setNet('poll'); onView(); } catch (e) { setNet('off'); } };
+    const startPoll = () => { if (st.poll) return; poll(); st.poll = setInterval(poll, 3000); };
+    if (typeof EventSource === 'undefined') return startPoll();
+    try {
+      const es = st.es = new EventSource(url);
+      es.addEventListener('put', (e) => { const d = JSON.parse(e.data); apply(d.path, d.data); setNet('live'); onView(); });
+      es.addEventListener('patch', (e) => { const d = JSON.parse(e.data); Object.entries(d.data || {}).forEach(([k, v]) => apply((d.path === '/' ? '' : d.path) + '/' + k, v)); setNet('live'); onView(); });
+      es.addEventListener('cancel', () => { es.close(); startPoll(); });
+      es.onerror = () => { if (es.readyState === 2) startPoll(); else setNet('re'); };
+      setTimeout(() => { if (!st.view) startPoll(); }, 6000);
+    } catch (e) { startPoll(); }
+  }
+  function disconnect() { if (st.es) { st.es.close(); st.es = null; } clearInterval(st.poll); st.poll = null; }
+  function setNet(n) { st.net = n; drawTop(); }
+  document.addEventListener('visibilitychange', () => {
+    if (!st.me) return;
+    if (document.visibilityState === 'hidden') { st.hiddenAt = Date.now(); setTimeout(() => { if (document.visibilityState === 'hidden' && Date.now() - st.hiddenAt >= 59000) disconnect(); }, 60000); }
+    else { if (!st.es && !st.poll) connect(); flushQueue(); }
+  });
+
+  // ---------- 送出（離線時先排隊） ----------
+  function enqueue(kind, body) { q.list.push({ kind, body, id: G.rid(4) }); LS.set('gps_q_' + CODE, q.list); flushQueue(); }
+  async function flushQueue() {
+    if (q.busy || !st.me) return; q.busy = true;
+    try {
+      while (q.list.length) {
+        const it = q.list[0];
+        try { await api(`${RUN}/teams/${st.me.tid}/${it.kind}`, 'POST', { ...it.body, k: st.me.k, ts: { '.sv': 'timestamp' } }); }
+        catch (e) {
+          if (e.status === 401 || e.status === 403) { q.list.shift(); LS.set('gps_q_' + CODE, q.list); toast(st.view && st.view.status === 'paused' ? '⏸ 暫停中，這次沒有送出' : '這次沒有送出（活動可能已暫停或結束）', true); clearPending(it); continue; }
+          setTimeout(flushQueue, 3000); break;
+        }
+        q.list.shift(); LS.set('gps_q_' + CODE, q.list);
+      }
+    } finally { q.busy = false; drawTop(); }
+  }
+  function clearPending(it) { if (it.kind === 'subs') delete st.pending[it.body.cid]; else delete st.reqPending[it.body.cid]; render(); }
+
+  // ---------- 畫面 ----------
+  function onView() {
+    const v = st.view; if (!v) return;
+    if (v.beat && v.beat !== st.lastBeat) { st.lastBeat = v.beat; st.beatLocal = Date.now(); st.offset = v.beat - Date.now(); }
+    // 判定結果出來了 → 清掉「判定中」
+    Object.entries(st.pending).forEach(([cid, p]) => { const c = (v.cards || {})[cid]; if (!c || c.state !== 'open' || (c.wrong || 0) > p.wrong) { if (c && c.state === 'open' && (c.wrong || 0) > p.wrong) shakeCard(cid); delete st.pending[cid]; } });
+    Object.entries(st.reqPending).forEach(([cid, p]) => { const c = (v.cards || {})[cid]; if (!c || c.state !== 'open' || (p.type === 'hint' && (c.hint1 ? 1 : 0) + (c.hint2 ? 1 : 0) > p.lv) || (p.type === 'pass' && c.pass === 'pending')) delete st.reqPending[cid]; });
+    if (v.batchNo && v.batchNo !== st.lastBatch) { if (st.lastBatch && !v.finished) toast('🎉 這一批完成！' + (v.msg || '')); st.lastBatch = v.batchNo; st.sel = {}; st.center = true; }
+    render();
+  }
+  function shakeCard(cid) { setTimeout(() => { const el = $(`[data-card="${cid}"]`); if (el) { el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); } if (navigator.vibrate) navigator.vibrate(200); }, 30); }
+  function drawTop() {
+    const v = st.view; if (!v || !st.me) return;
+    const sec = G.gameSeconds(v.clock, now()), lim = ((v.set || {}).limitMin || 0) * 60;
+    const stale = v.status === 'running' && Date.now() - st.beatLocal > 30000;
+    const net = q.list.length ? `📶 補送中 ${q.list.length}` : stale ? '⏳ 等待大師連線' : st.net === 'live' ? '🟢 連線中' : st.net === 'poll' ? '🟡 連線中' : st.net === 'off' ? '🔴 離線' : '🟡 重新連線';
+    $('#top').innerHTML = `<div class="top"><div class="tn">${esc(v.name)}</div><div class="prog">${v.done || 0}/${v.target}</div>
+      <span class="net ${q.list.length || stale || st.net === 'off' ? 'bad' : ''}">${net}</span>
+      <div class="clk">${v.clock && v.clock.startAt ? (lim ? G.fmtTime(Math.max(0, lim - sec)) : G.fmtTime(sec)) : '--:--'}<small>${lim ? '剩餘時間' : '經過時間'}</small></div></div>`;
+  }
+  function render() {
+    const v = st.view; if (!v) return;
+    drawTop();
+    const app = $('#app'), y = window.scrollY, mapScroll = $('.mapbox') ? [$('.mapbox').scrollLeft, $('.mapbox').scrollTop] : null;
+    let html;
+    if (v.finished) html = finishHTML(v);
+    else if (v.status === 'ready') html = readyHTML(v);
+    else if (v.status === 'ended') html = `<div class="card finish"><div class="big">🏁</div><h2>活動結束</h2><p>你們找到了 <b>${v.done}</b> 個地點，辛苦了！<br>大師會公布排名。</p></div>`;
+    else html = gameHTML(v);
+    html += `<div class="foot"><button id="logout">登出（換別組）</button></div>`;
+    if (html === st.lastHTML) return; // 只有心跳變了：不重畫，照片才不會閃
+    st.lastHTML = html; app.innerHTML = html;
+    window.scrollTo(0, y);
+    if (mapScroll && $('.mapbox')) { $('.mapbox').scrollLeft = mapScroll[0]; $('.mapbox').scrollTop = mapScroll[1]; }
+    if (st.center) centerMap();
+    bind();
+  }
+  function readyHTML(v) {
+    const s = v.set || {};
+    return `<div class="card" style="text-align:center;padding:24px"><div style="font-size:3em">⏳</div><h2>${esc(v.name)}，準備好了嗎？</h2><p class="muted">等待大師按下「開始」…</p></div>
+    <div class="card small"><b>📜 規則</b><ul style="padding-left:18px;margin-top:4px">
+      <li>一次給 ${s.easy ? '幾張照片，地圖上會標出這幾個地點的編號' : '幾張照片，地圖上會亮出整區的編號，要自己找出是哪一個'}</li>
+      <li>到現場比對，選出照片拍的是幾號，送出</li>
+      <li>答錯要等 ${s.cool} 秒才能再答，並加罰 ${s.wrongPenalty} 秒</li>
+      ${s.hintOn ? `<li>💡 求助：系統給提示，每次加罰 ${s.hintCost} 秒（最多兩層）</li>` : ''}
+      ${s.passLimit ? `<li>🙋 卡關 ${s.passUnlock} 分鐘後可以申請 PASS，大師同意就換一題（不算完成，每組最多 ${s.passLimit} 次）</li>` : ''}
+      <li>完成 ${v.target} 題就過關！用時＋罰秒越少越厲害</li>
+      <li>🚫 斜線區是正在上課的教學區，請繞道、保持安靜</li></ul></div>`;
+  }
+  function finishHTML(v) {
+    return `<div class="card finish pop"><div class="big">🏁</div><h2>${esc(v.name)} 完成任務！</h2><p class="muted">找齊 ${v.target} 個遺落的地點</p>
+      <div class="stat"><div>用時<b>${G.fmtTime(v.finishSec)}</b></div><div>罰秒<b>${v.penalty || 0}</b></div><div>答錯<b>${v.wrong || 0}</b></div><div>提示／PASS<b>${v.hints || 0}／${v.passes || 0}</b></div></div>
+      <p style="margin-top:14px">請回到集合地點，等大師公布排名 🏆</p></div>`;
+  }
+  function mapHTML(v) {
+    const pub = st.pub || {}, map = pub.map || { src: 'r:map', w: 1117, h: 1579 }, crop = pub.crop || { top: 0, bot: 100 }, span = (crop.bot - crop.top) / 100;
+    const hot = Object.values(st.sel)[0];
+    const ng = (pub.noGo || []).map((r) => `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="url(#h)" stroke="#e4572e" stroke-width="1.2" vector-effect="non-scaling-stroke"/>`).join('');
+    return `<div class="mapbox"><div class="mapin" style="width:${Math.round(st.zoom * 100)}%"><div class="crop" style="aspect-ratio:${map.w}/${(map.h * span).toFixed(1)}"><div class="inner" style="top:${(-crop.top / span).toFixed(3)}%;height:${(100 / span).toFixed(3)}%">
+      <img class="base" src="${esc(G.photoURL(map.src))}" alt="校園地圖">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none"><defs><pattern id="h" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" fill="rgba(228,87,46,.12)"/><line x1="0" y1="0" x2="0" y2="5" stroke="rgba(228,87,46,.5)" stroke-width="1.6"/></pattern></defs>${ng}</svg>
+      ${(v.pins || []).map((p) => `<div class="pin ${p.ok ? 'ok' : ''} ${hot === p.no ? 'hot' : ''}" style="left:${p.x}%;top:${p.y}%"><b>${p.ok ? '✓' : p.no}</b><i></i></div>`).join('')}
+    </div></div></div></div>
+    <div class="row"><span class="legend">🟧 ${v.set && v.set.easy ? '這一批的地點' : '這一區的地點'}　🟩 已找到　🚫 斜線＝教學區，請繞道</span><span class="spacer"></span><div class="mapctl"><button data-center title="回到這一批">🎯</button><button data-mz="-1">－</button><button data-mz="1">＋</button></div></div>`;
+  }
+  function gameHTML(v) {
+    const s = v.set || {}, cards = Object.entries(v.cards || {}).sort((a, b) => (a[1].state === 'ok') - (b[1].state === 'ok') || a[1].at - b[1].at || a[0].localeCompare(b[0]));
+    const nums = (v.pins || []).filter((p) => !p.ok).map((p) => p.no);
+    return `
+    ${v.status === 'paused' ? '<div class="cover"><div class="big">⏸</div><h2>暫停中</h2><p>請等大師宣布繼續</p></div>' : ''}
+    ${v.msg ? `<div class="msg">🚩 ${esc(v.msg)}</div>` : ''}
+    ${v.empty ? '<div class="alert warn">題目暫時派完了，請回集合地點找大師。</div>' : ''}
+    <div class="card" style="padding:10px">${mapHTML(v)}</div>
+    ${cards.map(([cid, c], i) => cardHTML(cid, c, i, nums, s, v)).join('')}`;
+  }
+  function cardHTML(cid, c, i, nums, s, v) {
+    const ph = `<div class="ph"><img src="${esc(G.photoURL(c.photo))}" data-ref="${esc(c.photo)}" data-zoom alt="題目照片"><span class="tag">${c.state === 'ok' ? '✅' : '照片 ' + (i + 1)}</span></div>`;
+    if (c.state === 'ok') return `<div class="pc ok pop" data-card="${cid}">${ph}<div class="bd"><div class="okbox"><span class="big">✅</span><div><b style="font-size:1.15em">第 ${c.no} 號</b><div class="small muted">${esc(c.name)}</div></div></div>
+      ${c.reveal ? `<div class="reveal"><div class="small bold">🖼️ 原來是這裡！</div><img src="${esc(G.photoURL(c.reveal))}" data-ref="${esc(c.reveal)}" data-zoom></div>` : ''}</div></div>`;
+    const t = now(), cool = c.coolUntil && c.coolUntil > t ? Math.ceil((c.coolUntil - t) / 1000) : 0;
+    const pend = st.pending[cid], rp = st.reqPending[cid], sel = st.sel[cid];
+    const hintLv = (c.hint1 ? 1 : 0) + (c.hint2 ? 1 : 0);
+    const passWait = Math.max(0, Math.ceil(((c.at || 0) + s.passUnlock * 60000 - t) / 1000));
+    const passLeft = (s.passLimit || 0) - (v.passes || 0);
+    let help = '';
+    if (s.hintOn || s.passLimit) {
+      help = `<div class="helps">
+        ${s.hintOn ? `<button class="btn" data-hint="${cid}" ${hintLv >= 2 || (rp && rp.type === 'hint') ? 'disabled' : ''}>💡 求助${hintLv >= 2 ? '（已用完）' : `（+${s.hintCost} 秒）`}</button>` : ''}
+        ${s.passLimit ? `<button class="btn" data-pass="${cid}" ${passWait > 0 && passLeft > 0 && c.pass !== 'pending' ? `data-passat="${(c.at || 0) + s.passUnlock * 60000}"` : ''} ${c.pass === 'pending' || passWait > 0 || passLeft <= 0 || (rp && rp.type === 'pass') ? 'disabled' : ''}>🙋 ${c.pass === 'pending' ? '等待大師裁決' : passLeft <= 0 ? 'PASS 已用完' : passWait > 0 ? `PASS（${G.fmtTime(passWait)}）` : `申請 PASS（剩 ${passLeft}）`}</button>` : ''}
+      </div>`;
+    }
+    return `<div class="pc" data-card="${cid}">${ph}<div class="bd">
+      <div class="bold">這是地圖上的第幾號？</div>
+      <div class="nums">${nums.map((n) => `<button data-num="${cid}|${n}" class="${sel === n ? 'sel' : ''}" ${cool || pend ? 'disabled' : ''}>${n}</button>`).join('')}</div>
+      ${pend ? `<div class="wait">⏳ 判定中…（第 ${pend.ans} 號）</div>` : cool ? `<div class="cool" data-cool="${c.coolUntil}">❌ 不對喔！${cool} 秒後可以再試</div>` : `<button class="btn" data-send="${cid}" ${sel ? '' : 'disabled'}>${sel ? `送出：第 ${sel} 號` : '先選一個號碼'}</button>`}
+      ${c.hint1 ? `<div class="hint">💡 提示一：${esc(c.hint1)}</div>` : ''}${c.hint2 ? `<div class="hint">💡 提示二：${esc(c.hint2)}</div>` : ''}
+      ${c.pass === 'no' ? '<div class="hint" style="background:var(--gold-soft)">🧙 大師說：再找找看！</div>' : ''}
+      ${c.pass === 'pending' ? '<div class="hint">🙋 已申請 PASS，等待大師裁決…</div>' : ''}
+      ${help}</div></div>`;
+  }
+  // 把地圖捲到這一批點位的中間
+  function centerMap() {
+    const box = $('.mapbox'), v = st.view; if (!box || !v) return;
+    const pins = (v.pins || []).filter((p) => !p.ok); if (!pins.length) return;
+    const img = $('.mapin img.base');
+    const go = () => {
+      const crop = (st.pub && st.pub.crop) || { top: 0, bot: 100 }, span = (crop.bot - crop.top) / 100, inner = $('.mapin');
+      const cx = pins.reduce((a, p) => a + p.x, 0) / pins.length / 100, cy = (pins.reduce((a, p) => a + p.y, 0) / pins.length - crop.top) / 100 / span;
+      box.scrollLeft = Math.max(0, cx * inner.offsetWidth - box.clientWidth / 2);
+      box.scrollTop = Math.max(0, cy * inner.offsetHeight - box.clientHeight / 2);
+      st.center = false;
+    };
+    if (img && !img.complete) img.addEventListener('load', go, { once: true }); else go();
+  }
+  function bind() {
+    $$('[data-zoom]').forEach((im) => { im.onclick = () => { const z = document.createElement('div'); z.className = 'zoom'; z.innerHTML = `<button class="x">✕ 關閉</button><img src="${im.src}">`; z.querySelector('.x').onclick = () => z.remove(); document.body.appendChild(z); }; });
+    $$('img[data-ref^="f:"]').forEach((im) => { if (!im.getAttribute('src')) G.loadPhoto(im.dataset.ref).then((d) => { im.src = d; }); });
+    $$('[data-mz]').forEach((b) => { b.onclick = () => { st.zoom = Math.max(1, Math.min(3.5, +(st.zoom + (+b.dataset.mz) * 0.5).toFixed(1))); LS.set('gps_mapzoom', st.zoom); st.center = true; render(); }; });
+    const ctr = $('[data-center]'); if (ctr) ctr.onclick = () => { st.center = true; centerMap(); };
+    $$('[data-num]').forEach((b) => { b.onclick = () => { const [cid, n] = b.dataset.num.split('|'); st.sel = { [cid]: +n }; render(); }; });
+    $$('[data-send]').forEach((b) => {
+      b.onclick = () => {
+        const cid = b.dataset.send, ans = st.sel[cid]; if (!ans) return;
+        const c = st.view.cards[cid];
+        st.pending[cid] = { ans, wrong: c.wrong || 0, at: Date.now() };
+        st.sel = {};
+        enqueue('subs', { cid, ans, by: LS.get('gps_seats_' + CODE, '') });
+        render();
+      };
+    });
+    $$('[data-hint]').forEach((b) => {
+      b.onclick = () => {
+        const cid = b.dataset.hint, c = st.view.cards[cid], s = st.view.set, lv = (c.hint1 ? 1 : 0) + (c.hint2 ? 1 : 0);
+        const sh = sheet(`<h2>💡 要求助嗎？</h2><p style="margin:8px 0">系統會給你${lv ? '第二層（更精確的）' : '第一層（大範圍的）'}提示，<b>罰 ${s.hintCost} 秒</b>。</p><button class="btn" data-ok>💡 給我提示</button><button class="btn ghost" data-no>再想想</button>`);
+        $('[data-no]', sh.el).onclick = sh.close;
+        $('[data-ok]', sh.el).onclick = () => { sh.close(); st.reqPending[cid] = { type: 'hint', lv }; enqueue('reqs', { cid, type: 'hint' }); render(); };
+      };
+    });
+    $$('[data-pass]').forEach((b) => {
+      b.onclick = () => {
+        const cid = b.dataset.pass;
+        const sh = sheet(`<h2>🙋 申請 PASS</h2><p class="small" style="margin:6px 0">大師同意後會換一題給你們。<b>PASS 的題目不算完成</b>，還是要湊滿 ${st.view.target} 題。</p>
+          <label class="f">想跟大師說什麼？（選填）</label><input type="text" id="pNote" maxlength="60" placeholder="例：這裡被圍起來了"><button class="btn" data-ok>送出申請</button><button class="btn ghost" data-no>先不要</button>`);
+        $('[data-no]', sh.el).onclick = sh.close;
+        $('[data-ok]', sh.el).onclick = () => { const note = $('#pNote', sh.el).value.trim().slice(0, 60); sh.close(); st.reqPending[cid] = { type: 'pass' }; enqueue('reqs', note ? { cid, type: 'pass', note } : { cid, type: 'pass' }); toast('已送出，等待大師裁決'); render(); };
+      };
+    });
+    const lo = $('#logout'); if (lo) lo.onclick = () => { if (!confirm('確定登出？（這支手機會忘記你們的組別）')) return; LS.set('gps_join_' + CODE, null); st.me = null; disconnect(); renderJoin(); };
+  }
+  // 每秒更新倒數（冷卻、PASS、時鐘），不重畫整頁
+  setInterval(() => {
+    if (!st.view || !st.me) return;
+    drawTop();
+    const t = now();
+    let need = false;
+    $$('[data-cool]').forEach((el) => { const left = Math.ceil((+el.dataset.cool - t) / 1000); if (left <= 0) need = true; else el.textContent = `❌ 不對喔！${left} 秒後可以再試`; });
+    $$('[data-passat]').forEach((b) => { const left = Math.ceil((+b.dataset.passat - t) / 1000); if (left <= 0) need = true; else b.textContent = `🙋 PASS（${G.fmtTime(left)}）`; });
+    Object.entries(st.pending).forEach(([cid, p]) => { if (Date.now() - p.at > 25000 && !q.list.length) { delete st.pending[cid]; need = true; toast('大師還沒回應，可以再送一次', true); } });
+    if (need) render();
+  }, 1000);
+
+  async function start() {
+    $('#app').innerHTML = '<p style="text-align:center;margin-top:30vh" class="muted">連線中…</p>';
+    try {
+      st.pub = await api(`${RUN}/pub`);
+      st.view = await api(`${RUN}/teams/${st.me.tid}/view`);
+      if (!st.view) { LS.set('gps_join_' + CODE, null); st.me = null; return renderJoin('找不到你們的組別，請重新輸入通行碼'); }
+    } catch (e) { return renderJoin('連線失敗，請確認網路後重新整理'); }
+    st.lastBatch = st.view.batchNo || 0;
+    onView(); connect(); flushQueue();
+    if (!LS.get('gps_seats_' + CODE, '')) renderMembers();
+  }
+  if (st.me && CODE) start(); else renderJoin();
+})();
+</script>
+</body>
+</html>
