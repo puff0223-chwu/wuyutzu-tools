@@ -54,85 +54,91 @@ export async function renderLiveTab() {
 const PRESETS = [
   { id: 'quick', name: '⚡ 快速版', sub: '約 15 分鐘', v: { limitMin: 15, target: 6, pc: '2-7', route: 'near', passUnlock: 2 }, sc: { limitMin: 15, wall: 3 } },
   { id: 'half', name: '⏱ 半節課', sub: '約 25 分鐘', v: { limitMin: 25, target: 9, pc: '2-7', route: 'near', passUnlock: 3 }, sc: { limitMin: 25, wall: 4 } },
-  { id: 'full', name: '🏁 整節課', sub: '約 40 分鐘', v: { limitMin: 40, target: 13, pc: '2-7', route: 'spread', passUnlock: 3 }, sc: { limitMin: 35, wall: 4 } }
+  { id: 'full', name: '🏁 整節課', sub: '約 40 分鐘', v: { limitMin: 40, target: 13, pc: '2-7', route: 'spread', passUnlock: 3 }, sc: { limitMin: 40, wall: 4 } }
 ];
 const newRunModal = () => runModal(null);
-// 開新活動，或在「開始前」修改設定（edit＝目前活動）
+const tip = (t) => `<i class="tipi" tabindex="0" data-tip="${esc(t)}">?</i>`;
+/* 開新活動，或在「開始前」修改設定（edit＝目前活動）
+   2026-10-12 改版：第一屏只有 名稱、賽制、組數、活動時間、上課中；其他用建議值，收在「⚙️ 自訂進階設定」 */
 function runModal(edit) {
   const b = bank(), d = edit ? { ...G.DEFAULT_RUN, ...edit.settings } : { ...G.DEFAULT_RUN, ...LS.get('gps_runset', {}) };
   const now = new Date();
   const all = TT.pts(), nCam = all.filter((p) => p.cam).length, nTask = all.filter((p) => p.task).length;
-  const num = (id, label, v, min, max) => `<div><label class="f">${label}</label><input type="number" id="${id}" value="${v}" min="${min}" max="${max}"></div>`;
+  let names = [];
+  const num = (id, label, v, min, max, t, cls) => `<div class="${cls || ''}"><label class="f">${label}${t ? tip(t) : ''}</label><input type="number" id="${id}" value="${v}" min="${min}" max="${max}"></div>`;
+  const chk = (id, on, label, t, cls) => `<label class="chk ${cls || ''}" style="margin-top:8px"><input type="checkbox" id="${id}" ${on ? 'checked' : ''}> ${label}${t ? tip(t) : ''}</label>`;
   const m = modal(`
     <h2>${edit ? '⚙️ 修改活動設定' : '➕ 開新活動'}</h2>
-    <div class="row" style="gap:6px;margin:6px 0 2px">${PRESETS.map((p) => `<button class="btn sm" data-preset="${p.id}" title="${p.sub}">${p.name}<span class="small muted" style="font-weight:400">${p.sub}</span></button>`).join('')}<span class="small muted">← 一鍵帶入建議值，之後還能改</span></div>
     <label class="f">活動名稱</label><input type="text" id="rTitle" value="${esc(edit ? edit.title : `探究與實作 校園定向 ${now.getMonth() + 1}/${now.getDate()}`)}">
-    ${edit ? `<p class="small muted" style="margin-top:6px">組數與通行碼建立後就固定了（小紙條可能已經發出去），其他設定在按 ▶ 開始前都可以改。</p>` : ''}
+    <label class="f">賽制</label>
+    <div class="modes"><button type="button" data-mode="race"><b>🏁 闖關競速</b><span>找齊指定數量的地點，比誰快</span></button><button type="button" data-mode="score"><b>🎯 積分賽</b><span>限時搶分，自己挑照片、分數會浮動</span></button></div>
+    <select id="rMode" style="display:none"><option value="race">race</option><option value="score">score</option></select>
     <div class="grid2">
-      <div><label class="f">賽制</label><select id="rMode"><option value="race" ${d.mode !== 'score' ? 'selected' : ''}>🏁 闖關競速</option><option value="score" ${d.mode === 'score' ? 'selected' : ''}>🎯 積分賽</option></select></div>
-      <div ${edit ? 'style="display:none"' : ''}><label class="f">組數</label><input type="number" id="rN" value="${LS.get('gps_teams', 10)}" min="1" max="60"></div>
+      ${edit ? '' : `<div><label class="f">組數</label><input type="number" id="rN" value="${LS.get('gps_teams', 10)}" min="1" max="60"></div>`}
+      <div><label class="f">活動時間</label><div class="seg" id="rSeg">${PRESETS.map((p) => `<button type="button" data-preset="${p.id}">${p.name.split(' ')[0]} ${p.id === 'quick' ? 15 : p.id === 'half' ? 25 : 40} 分</button>`).join('')}</div></div>
     </div>
-    <label class="f" ${edit ? 'style="display:none"' : ''}>組名（選填，一行一組；空白就用「第 1 組」…）</label><textarea ${edit ? 'style="display:none"' : ''} id="rNames" placeholder="第 1 組\n第 2 組" style="min-height:52px">${esc(LS.get('gps_teamnames', ''))}</textarea>
-    <div class="grid2">
-      <div class="raceOnly"><label class="f">每組要找到幾個地點</label><input type="number" id="rTarget" value="${d.target}" min="1" max="60"></div>
-      <div class="raceOnly"><label class="f">每關的題目</label><select id="rCands">${[['2-7', '2 張照片・7 個候選（推薦）'], ['2-6', '2 張照片・6 個候選'], ['1-5', '1 張照片・5 個候選'], ['1-4', '1 張照片・4 個候選'], ['1-3', '1 張照片・3 個候選']].map(([v, t]) => `<option value="${v}" ${`${d.photos || 1}-${d.cands || 5}` === v ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
-      <div class="scoreOnly"><label class="f">任務牆同時幾張照片</label><select id="rWall">${[2, 3, 4, 5, 6].map((n) => `<option value="${n}" ${+d.wall === n ? 'selected' : ''}>${n} 張${n === 4 ? '（推薦）' : ''}</option>`).join('')}</select></div>
-      <div class="scoreOnly"><label class="f">每張照片的候選地點</label><select id="rWallCands">${[3, 4, 5].map((n) => `<option value="${n}" ${+d.wallCands === n ? 'selected' : ''}>${n} 個（分在 3 個區域）</option>`).join('')}</select></div>
-      <div><label class="f">時間限制（分鐘<span class="raceOnly">，0＝不限</span>）</label><input type="number" id="rLimit" value="${d.limitMin}" min="0" max="180"></div>
-      <div class="raceOnly"><label class="f">派發方式</label><select id="rRoute"><option value="spread" ${d.route !== 'near' ? 'selected' : ''}>🌏 全校分散</option><option value="near" ${d.route === 'near' ? 'selected' : ''}>👣 就近派發（少跑路）</option></select></div>
-      ${num('rSkipCool', '⏭ 放棄一張後，隔幾秒才能再放棄', d.skipCool, 0, 600).replace('<div>', '<div class="scoreOnly">')}
-    </div>
-    <p class="small muted raceOnly" style="margin-top:6px">📸 地圖上只標出「候選地點」，學生要想一想、規劃路線、跑去比對，才知道照片是哪一個。2 張照片時：兩張一定在不同區域，7 個候選分在 4 個不同區域；1 張照片時：候選分在 3 個不同區域。每關都會換到上一關沒去過的區域。<br>🌏 全校分散：下一關可能在校園任何地方；👣 就近派發：一樣換區域，但挑附近的區域，大約少跑 3 成路，適合時間短的課。</p>
-    <p class="small muted scoreOnly" style="margin-top:6px">🎯 限時搶分：學生手機上是一面<b>任務牆</b>，同時亮出幾張照片（分在不同區域），每張標著<b>目前分值</b>，自己決定先找哪一張。找到或放棄就補一張新的。<br>💹 分值會浮動：<b>冷門區</b>（附近的組比平均少很多）×1.5 🔥、<b>熱門區</b>（附近的組超過區域容量、也比平均多）×0.5 🧊，以答對當下的分值計分 → 大家自然會散開。系統用「各組最近一次答對的地點」推算大家在哪裡。</p>
-    <label class="chk" style="margin-top:10px"><input type="checkbox" id="rTeach" ${d.teaching ? 'checked' : ''}> 🤫 其他班正在上課（不派教學區鄰近的點）</label>
-    <label class="f">使用的區域</label>
-    <div class="row small" id="rZones">${b.zones.map((z) => `<label class="chk"><input type="checkbox" value="${z.id}" ${!d.zones.length || d.zones.includes(z.id) ? 'checked' : ''}> <span style="color:${z.color}">●</span>${esc(z.name)}</label>`).join('')}</div>
-    <details class="scoreOnly" style="margin-top:12px" open><summary class="bold" style="cursor:pointer">🎯 積分規則</summary>
+    ${chk('rTeach', d.teaching, '🤫 其他班正在上課', '勾了就不派「教學區鄰近」的點，學生不會經過正在上課的教室走廊。')}
+    <div class="sumbox" id="rSum"></div>
+    ${edit ? '<p class="small muted" style="margin-top:6px">組數與通行碼建立後就固定了（小紙條可能已經發出去）。</p>' : `<div style="margin-top:10px"><div class="row"><b>隊名</b>${tip('系統隨機取探險風隊名。學生進入後可以自己改一次隊名，老師也能在戰況頁按 ✏️ 改。')}<span class="spacer"></span><button type="button" class="btn sm ghost" id="rReroll">🎲 重抽</button></div><div class="namechips" id="rNames"></div></div>`}
+    <details class="adv" id="rAdv"><summary>⚙️ 自訂進階設定 <span class="small muted" style="font-weight:400">（不打開就用上面的建議值）</span></summary><div class="advb">
+      <h4>📸 題目</h4>
       <div class="grid2">
+        ${num('rTarget', '每組要找到幾個地點', d.target, 1, 60, '', 'raceOnly')}
+        <div class="raceOnly"><label class="f">每關的題目${tip('2 張照片時：兩張一定在不同區域，7 個候選分在 4 個區域。1 張照片時：候選分在 3 個區域。每關都換到上一關沒去過的區域。')}</label><select id="rCands">${[['2-7', '2 張照片・7 個候選'], ['2-6', '2 張照片・6 個候選'], ['1-5', '1 張照片・5 個候選'], ['1-4', '1 張照片・4 個候選'], ['1-3', '1 張照片・3 個候選']].map(([v, t]) => `<option value="${v}" ${`${d.photos || 1}-${d.cands || 5}` === v ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+        <div class="raceOnly"><label class="f">派發方式${tip('全校分散：下一關可能在校園任何地方。就近派發：一樣換區域，但挑附近的區域，大約少跑 3 成路。')}</label><select id="rRoute"><option value="spread" ${d.route !== 'near' ? 'selected' : ''}>🌏 全校分散</option><option value="near" ${d.route === 'near' ? 'selected' : ''}>👣 就近派發</option></select></div>
+        <div class="scoreOnly"><label class="f">任務牆同時幾張照片${tip('學生手機上同時亮出幾張照片（分在不同區域），找到或放棄就補一張新的。')}</label><select id="rWall">${[2, 3, 4, 5, 6].map((n) => `<option value="${n}" ${+d.wall === n ? 'selected' : ''}>${n} 張</option>`).join('')}</select></div>
+        <div class="scoreOnly"><label class="f">每張照片的候選地點</label><select id="rWallCands">${[3, 4, 5].map((n) => `<option value="${n}" ${+d.wallCands === n ? 'selected' : ''}>${n} 個</option>`).join('')}</select></div>
+        ${num('rLimit', '時間限制（分鐘）', d.limitMin, 0, 180, '闖關競速填 0＝不限時；積分賽一定要有時間。')}
+      </div>
+      <label class="f">使用的區域</label>
+      <div class="row small" id="rZones">${b.zones.map((z) => `<label class="chk"><input type="checkbox" value="${z.id}" ${!d.zones.length || d.zones.includes(z.id) ? 'checked' : ''}> <span style="color:${z.color}">●</span>${esc(z.name)}</label>`).join('')}</div>
+      <h4 class="scoreOnly">🎯 積分規則</h4>
+      <div class="grid2 scoreOnly">
         ${num('rPtsWrong', '答錯扣幾分', d.ptsWrong, 0, 50)}
-        ${num('rHintPct', '💡 每層提示，這張卡打幾折（扣 %）', d.hintPct, 0, 100)}
+        ${num('rHintPct', '💡 每層提示扣這張的 %', d.hintPct, 0, 100)}
+        ${num('rSkipCool', '⏭ 放棄後幾秒才能再放棄', d.skipCool, 0, 600)}
       </div>
-      <label class="chk" style="margin-top:8px"><input type="checkbox" id="rViewBonus" ${d.viewBonus !== false ? 'checked' : ''}> 👁️ 視角越難分數越高（特寫、仰俯斜角 ×1.5；超特寫、奇特視角 ×2；要先在題庫標視角）</label>
-      <label class="chk" style="margin-top:8px"><input type="checkbox" id="rCheckin" ${d.checkin ? 'checked' : ''}> 🚩 時間到要回集合點報到（老師在戰況頁按「報到」，遲到扣分）</label>
-      <div class="grid2">${num('rGrace', '時間到後，幾分鐘內回來不扣分', d.grace, 0, 15)}${num('rLatePts', '之後每遲到 1 分鐘扣幾分', d.latePts, 0, 50)}</div>
-      <p class="small muted" style="margin-top:4px">每個點的「基本分」在題庫編輯器設定（預設 10 分）。</p>
-    </details>
-    <details style="margin-top:12px"><summary class="bold" style="cursor:pointer">🎁 加分挑戰（答對地點之後才出現）</summary>
-      <label class="chk" style="margin-top:8px"><input type="checkbox" id="rStance" ${d.stanceOn ? 'checked' : ''}> 🦶 站位挑戰：在地圖上點出「拍照的人站在哪裡、鏡頭朝哪個方向」</label>
-      <div class="small muted" style="margin-left:24px">題庫裡有 <b>${nCam}</b> 個點標了拍攝站位${nCam ? '' : '（還沒有，所以不會出現；到「🗺️ 地圖」頁點選點位 →「📷 在地圖上點站位」）'}</div>
-      <label class="chk" style="margin-top:8px"><input type="checkbox" id="rTask" ${d.taskOn ? 'checked' : ''}> 🔍 現場觀察任務：到現場才答得出來的小題</label>
-      <div class="small muted" style="margin-left:24px">題庫裡有 <b>${nTask}</b> 個點設了觀察任務${nTask ? '' : '（還沒有，所以不會出現；在點位編輯的「🔍 現場觀察任務」填題目）'}</div>
+      ${chk('rViewBonus', d.viewBonus !== false, '👁️ 視角越難分數越高', '特寫、仰俯斜角 ×1.5；超特寫、奇特視角 ×2。要先在題庫標視角。', 'scoreOnly')}
+      ${chk('rCheckin', d.checkin, '🚩 時間到要回集合點報到', '老師在戰況頁按該組的「報到」；超過寬限時間，每分鐘扣分。也可以提早回來報到收工。', 'scoreOnly')}
+      <div class="grid2 scoreOnly">${num('rGrace', '寬限幾分鐘不扣分', d.grace, 0, 15)}${num('rLatePts', '之後每分鐘扣幾分', d.latePts, 0, 50)}</div>
+      <h4>🎁 加分挑戰（答對地點後跳出來問要不要挑戰）</h4>
+      ${chk('rStance', d.stanceOn, `🦶 站位挑戰 <span class="small muted">（題庫有 ${nCam} 個點標了站位）</span>`, '在地圖上點出拍照的人站哪裡、鏡頭朝哪個方向。站位和方向都對＝全部獎勵；只有站位對＝一半。')}
+      ${chk('rTask', d.taskOn, `🔍 現場觀察任務 <span class="small muted">（題庫有 ${nTask} 個點設了題目）</span>`, '有標準答案的由系統直接判（錯字算錯）；沒填標準答案的由老師判。')}
       <div class="grid2">
-        <div class="raceOnly">${num('rBonusSec', '每答對一題加分挑戰，減掉幾秒', d.bonusSec, 0, 300).replace(/^<div>|<\/div>$/g, '')}</div>
-        <div class="scoreOnly">${num('rStancePts', '站位挑戰全對加幾分（觀察任務的分數在題庫設定）', d.stancePts, 0, 50).replace(/^<div>|<\/div>$/g, '')}</div>
-        ${num('rCamTol', '站位誤差容許（地圖寬度的 %）', d.camTol, 2, 20)}
+        ${num('rBonusSec', '每答對一題，減幾秒', d.bonusSec, 0, 300, '', 'raceOnly')}
+        ${num('rStancePts', '站位挑戰全對加幾分', d.stancePts, 0, 50, '觀察任務的分數在題庫每個點設定。', 'scoreOnly')}
+        ${num('rCamTol', '站位誤差容許（%）', d.camTol, 2, 20, '地圖寬度的幾 %。6 大約是教室 2～3 間的距離。')}
       </div>
-      <p class="small muted" style="margin-top:4px">站位對、方向也對（容許差一格）＝全部獎勵；只有站位對＝一半。</p>
-    </details>
-    <details style="margin-top:12px"><summary class="bold" style="cursor:pointer">⚙️ 進階設定（答錯、求助、PASS、派題）</summary>
+      <h4>❌ 答錯、求助${'<span class="raceOnly">、PASS</span>'}</h4>
       <div class="grid2">
-        <div><label class="f">答錯冷卻（秒）</label><input type="number" id="rCool" value="${d.cool}" min="0" max="300"></div>
-        <div class="raceOnly"><label class="f">答錯罰秒</label><input type="number" id="rWrongPen" value="${d.wrongPenalty}" min="0" max="600"></div>
-        <div class="raceOnly"><label class="f">💡 每層提示的代價（罰秒）</label><input type="number" id="rHintCost" value="${d.hintCost}" min="0" max="600"></div>
-        <div><label class="f" style="visibility:hidden">.</label><label class="chk"><input type="checkbox" id="rHintOn" ${d.hintOn ? 'checked' : ''}> 開放 💡 求助</label></div>
-        <div class="raceOnly"><label class="f">🙋 每組 PASS 上限</label><input type="number" id="rPassLimit" value="${d.passLimit}" min="0" max="10"></div>
-        <div class="raceOnly"><label class="f">卡關幾分鐘後可申請 PASS</label><input type="number" id="rPassUnlock" value="${d.passUnlock}" min="0" max="30"></div>
+        ${num('rCool', '答錯後等幾秒才能再答', d.cool, 0, 300)}
+        ${num('rWrongPen', '答錯罰幾秒', d.wrongPenalty, 0, 600, '', 'raceOnly')}
+        ${num('rHintCost', '💡 每層提示罰幾秒', d.hintCost, 0, 600, '', 'raceOnly')}
+        ${num('rPassLimit', '🙋 每組 PASS 上限', d.passLimit, 0, 10, '', 'raceOnly')}
+        ${num('rPassUnlock', '卡關幾分鐘後可申請 PASS', d.passUnlock, 0, 30, '', 'raceOnly')}
       </div>
-      <label class="chk raceOnly" style="margin-top:8px"><input type="checkbox" id="rViewProg" ${d.viewProg ? 'checked' : ''}> 👁️ 視角循序漸進（前面先派遠景、平視，後面才派特寫與奇特視角；要先在題庫標視角）</label>
-    </details>
+      ${chk('rHintOn', d.hintOn, '開放 💡 求助')}
+      ${chk('rViewProg', d.viewProg, '👁️ 視角循序漸進', '前面先派遠景、平視，後面才派特寫與奇特視角。要先在題庫標視角。', 'raceOnly')}
+    </div></details>
     <div id="rWarn"></div>
     <div class="row" style="margin-top:16px;justify-content:flex-end"><button class="btn ghost" data-x>取消</button><button class="btn primary" id="rGo">${edit ? '儲存設定' : '建立活動'}</button></div>`, { sticky: true });
   const v = (id) => $('#' + id, m.el);
+  v('rMode').value = d.mode === 'score' ? 'score' : 'race';
   const modeNow = () => v('rMode').value;
-  const showMode = () => { const sc = modeNow() === 'score'; $$('.raceOnly', m.el).forEach((e) => { e.style.display = sc ? 'none' : ''; }); $$('.scoreOnly', m.el).forEach((e) => { e.style.display = sc ? '' : 'none'; }); };
-  $$('[data-preset]', m.el).forEach((bt) => {
-    bt.onclick = () => {
-      const p = PRESETS.find((x) => x.id === bt.dataset.preset);
-      if (modeNow() === 'score') { v('rLimit').value = p.sc.limitMin; v('rWall').value = p.sc.wall; }
-      else { const x = p.v; v('rLimit').value = x.limitMin; v('rTarget').value = x.target; v('rCands').value = x.pc; v('rRoute').value = x.route; v('rPassUnlock').value = x.passUnlock; }
-      check(); toast('已帶入建議值，可以再微調');
-    };
-  });
+  const showMode = () => {
+    const sc = modeNow() === 'score';
+    $$('.raceOnly', m.el).forEach((e) => { e.style.display = sc ? 'none' : ''; }); $$('.scoreOnly', m.el).forEach((e) => { e.style.display = sc ? '' : 'none'; });
+    $$('[data-mode]', m.el).forEach((bt) => bt.classList.toggle('on', bt.dataset.mode === modeNow()));
+  };
+  const applyPreset = (id) => {
+    const p = PRESETS.find((x) => x.id === id);
+    if (modeNow() === 'score') { v('rLimit').value = p.sc.limitMin; v('rWall').value = p.sc.wall; }
+    else { const x = p.v; v('rLimit').value = x.limitMin; v('rTarget').value = x.target; v('rCands').value = x.pc; v('rRoute').value = x.route; v('rPassUnlock').value = x.passUnlock; }
+  };
+  $$('[data-mode]', m.el).forEach((bt) => { bt.onclick = () => { v('rMode').value = bt.dataset.mode; const on = $('#rSeg .on', m.el); if (on) applyPreset(on.dataset.preset); else if (bt.dataset.mode === 'score' && !+v('rLimit').value) applyPreset('half'); check(); }; });
+  $$('[data-preset]', m.el).forEach((bt) => { bt.onclick = () => { applyPreset(bt.dataset.preset); check(); }; });
+  const drawNames = () => { const el = $('#rNames', m.el); if (!el) return; const n = Math.max(1, Math.min(60, +v('rN').value || 1)); if (names.length !== n) names = G.teamNames(n); el.innerHTML = names.map((x) => `<span>${esc(x)}</span>`).join(''); };
+  if (v('rReroll')) v('rReroll').onclick = () => { names = []; drawNames(); };
   $('[data-x]', m.el).onclick = m.close;
   const read = () => {
     const zones = $$('#rZones input', m.el).filter((i) => i.checked).map((i) => i.value);
@@ -147,21 +153,28 @@ function runModal(edit) {
     };
   };
   const check = () => {
-    showMode();
+    showMode(); drawNames();
     const set = read(), n = edit ? Object.keys(R.st.teams).length : +v('rN').value || 0;
+    // 時間按鈕：目前設定剛好是哪個建議值就亮哪個
+    $$('#rSeg [data-preset]', m.el).forEach((bt) => { const p = PRESETS.find((x) => x.id === bt.dataset.preset), x = set.mode === 'score' ? p.sc : p.v; bt.classList.toggle('on', set.limitMin === x.limitMin && (set.mode === 'score' ? set.wall === x.wall : set.target === x.target)); });
     const pool = TT.pts().filter((p) => p.enabled && p.photos.length && (!set.zones.length || set.zones.includes(p.zone)) && !(set.teaching && p.teach));
     const cap = b.zones.filter((z) => !set.zones.length || set.zones.includes(z.id)).reduce((s, z) => s + z.cap, 0);
+    const bonus = [set.stanceOn && nCam ? '🦶 站位' : '', set.taskOn && nTask ? '🔍 觀察' : ''].filter(Boolean).join('、');
+    $('#rSum', m.el).innerHTML = '📋 ' + (set.mode === 'score'
+      ? `<b>${set.limitMin || '？'} 分鐘</b>限時搶分・任務牆 ${set.wall} 張照片（各 ${set.wallCands} 個候選）・答錯扣 ${set.ptsWrong} 分・${set.checkin ? `🚩 時間到回集合點報到（寬限 ${set.grace} 分）` : '不用回集合點報到'}`
+      : `每組找 <b>${set.target} 個地點</b>・每關 ${set.photos} 張照片／${set.cands} 個候選・${set.route === 'near' ? '👣 就近派發' : '🌏 全校分散'}・${set.limitMin ? `${set.limitMin} 分鐘` : '不限時'}・答錯罰 ${set.wrongPenalty} 秒`)
+      + `・🎁 加分挑戰：${bonus || '無（題庫還沒設定站位或觀察任務）'}<br><span class="muted">可用點位 ${pool.length} 個${set.zones.length ? `（${set.zones.length} 個區域）` : ''}。要改細節請打開下面的「⚙️ 自訂進階設定」。</span>`;
     const w = [];
     if (set.mode === 'score') {
       if (pool.length < set.wall + 3) w.push(`可用點位只有 ${pool.length} 個，任務牆至少要 ${set.wall + 3} 個點才補得了卡，請多選區域。`);
-      if (!set.limitMin) w.push('積分賽要設定時間限制（分鐘）。');
-    } else if (pool.length < set.target) w.push(`可用點位只有 ${pool.length} 個，少於每組要完成的 ${set.target} 題，請減少題數或多選區域。`);
+      if (!set.limitMin) w.push('積分賽要設定時間：按上面的時間按鈕。');
+    } else if (pool.length < set.target) w.push(`可用點位只有 ${pool.length} 個，少於每組要找的 ${set.target} 個，請減少數量或多選區域。`);
     const nz = b.zones.filter((z) => !set.zones.length || set.zones.includes(z.id)).length || 1;
-    if (n > cap) w.push(`ℹ️ ${n} 組比區域容量（合計 ${cap} 組）多，系統會平均分散，每區大約同時 ${Math.ceil(n / nz)} 組。人數多時建議每組人數少一點，或分兩批出發。`);
-    $('#rWarn', m.el).innerHTML = w.map((x) => `<div class="alert ${x.startsWith('ℹ️') ? 'blue' : 'red'} small">${x}</div>`).join('') + `<p class="small muted" style="margin-top:6px">可用點位 ${pool.length} 個。</p>`;
+    if (n > cap) w.push(`ℹ️ ${n} 組比區域容量（合計 ${cap} 組）多，系統會平均分散，每區大約同時 ${Math.ceil(n / nz)} 組。`);
+    $('#rWarn', m.el).innerHTML = w.map((x) => `<div class="alert ${x.startsWith('ℹ️') ? 'blue' : 'red'} small">${x}</div>`).join('');
     return !w.some((x) => !x.startsWith('ℹ️'));
   };
-  m.el.addEventListener('change', check); check();
+  m.el.addEventListener('change', check); m.el.addEventListener('input', (e) => { if (e.target.id === 'rN') check(); }); check();
   $('#rGo', m.el).onclick = async () => {
     if (!check()) return toast('設定還有問題，請看紅色提醒', true);
     if (edit) {
@@ -172,10 +185,10 @@ function runModal(edit) {
       m.close(); toast('✅ 設定已更新'); R.lastDash = null; drawDash(); return;
     }
     const set = read(), n = Math.max(1, Math.min(60, +v('rN').value || 10));
-    const names = $('#rNames', m.el).value.split('\n').map((x) => x.trim()).filter(Boolean);
-    LS.set('gps_runset', set); LS.set('gps_teams', n); LS.set('gps_teamnames', $('#rNames', m.el).value);
+    drawNames();
+    LS.set('gps_runset', set); LS.set('gps_teams', n);
     $('#rGo', m.el).disabled = true;
-    try { const code = await createRun($('#rTitle', m.el).value.trim() || '校園定向', set, n, names); m.close(); await openRun(code); }
+    try { const code = await createRun($('#rTitle', m.el).value.trim() || '校園定向', set, n, names.slice()); m.close(); await openRun(code); }
     catch (e) { $('#rGo', m.el).disabled = false; toast('建立失敗：' + (e.code || e.message), true); }
   };
 }
@@ -251,6 +264,8 @@ async function startReferee() {
     R.unsubs.push(FB.onChild(`${bp}/teams/${tid}/subs`, (k, v) => enqueue((ctx) => onSub(ctx, tid, k, v))));
     R.unsubs.push(FB.onChild(`${bp}/teams/${tid}/reqs`, (k, v) => enqueue((ctx) => onReq(ctx, tid, k, v))));
     R.unsubs.push(FB.listen(`${bp}/teams/${tid}/members`, (v) => { R.members[tid] = mergeMembers(v); redraw(); }));
+    // 學生改隊名（規則限制只能寫一次）
+    R.unsubs.push(FB.listen(`${bp}/teams/${tid}/rename`, (v) => { if (v && v.name) enqueue((ctx) => onRename(ctx, tid, v.name)); }));
   });
   let n = 0;
   R.tick = setInterval(() => {
@@ -348,7 +363,7 @@ function onSub(ctx, tid, sid, sub) {
 function onReq(ctx, tid, rid, req) {
   if (!R.active) return;
   const up = ctx.up; up[`teams/${tid}/reqs/${rid}`] = null;
-  if (req.type === 'cam' || req.type === 'task') return onChal(ctx, tid, req);
+  if (req.type === 'cam' || req.type === 'task' || req.type === 'cskip') return onChal(ctx, tid, req);
   const t = R.st.teams[tid], card = t && t.cards[req.cid], set = R.meta.settings, now = Date.now();
   if (R.meta.status !== 'running' || !card || card.state !== 'open' || t.finished) return;
   const p = P(card.key);
@@ -369,6 +384,23 @@ function onReq(ctx, tid, rid, req) {
   ctx.tids.add(tid);
 }
 
+// ---------- ✏️ 改隊名 ----------
+function onRename(ctx, tid, raw) {
+  const t = R.st.teams[tid]; if (!t || t.renamed) return;
+  const n = G.cleanName(raw); if (!n) return;
+  event(`✏️ ${t.name} 改名為「${n}」`);
+  t.name = n; t.renamed = true;
+  addLog(ctx, logEntry(tid, 'rename', { text: n }));
+  ctx.tids.add(tid);
+}
+function teacherRename(tid) {
+  const t = R.st.teams[tid];
+  const m = modal(`<h2>✏️ 改隊名</h2><input type="text" id="tnName" maxlength="10" value="${esc(t.name)}"><p class="small muted" style="margin-top:6px">最多 10 個字。${t.renamed ? '學生已經用掉自己改名的機會。' : '學生還有一次自己改名的機會。'}</p>
+    <div class="row" style="margin-top:12px;justify-content:flex-end"><button class="btn ghost" data-x>取消</button><button class="btn primary" data-ok>儲存</button></div>`);
+  $('[data-x]', m.el).onclick = m.close;
+  $('[data-ok]', m.el).onclick = () => { const n = G.cleanName($('#tnName', m.el).value); if (!n) return toast('隊名不能空白', true); m.close(); enqueue((ctx) => { t.name = n; ctx.tids.add(tid); }); };
+}
+
 // ---------- 🎁 加分挑戰（答對地點後才出現） ----------
 function addChal(t, key, now) {
   const p = P(key), set = R.meta.settings;
@@ -384,7 +416,10 @@ function onChal(ctx, tid, req) {
   const t = R.st.teams[tid], c = t && t.chal[req.cid], set = R.meta.settings, now = Date.now();
   if (R.meta.status !== 'running' || !c || c.state !== 'open') return;
   const p = P(c.key); if (!p) return;
-  if (c.kind === 'cam' && req.type === 'cam' && p.cam) {
+  if (req.type === 'cskip') { // 學生按「略過」：這個挑戰就消失（老師決定：略過不能回頭）
+    c.state = 'skipped'; c.doneAt = now;
+    addLog(ctx, logEntry(tid, 'chalSkip', { no: p.no, kind: c.kind }));
+  } else if (c.kind === 'cam' && req.type === 'cam' && p.cam) {
     const ans = { x: Math.max(0, Math.min(100, +req.x || 0)), y: Math.max(0, Math.min(100, +req.y || 0)), dir: (((+req.dir | 0) % 8) + 8) % 8 };
     const j = G.judgeCam(bank(), p.cam, ans, set.camTol);
     c.ans = ans; c.got = j.got; c.d = j.d; c.state = j.got === 1 ? 'ok' : j.got ? 'half' : 'no'; c.doneAt = now;
@@ -492,11 +527,11 @@ function decidePass(ctx, tid, cid, ok, byTeacher) {
 function chalView(t) {
   const out = {};
   Object.entries(t.chal || {}).forEach(([bid, c]) => {
-    const p = P(c.key); if (!p) return;
+    const p = P(c.key); if (!p || c.state === 'skipped') return;
     const done = c.state !== 'open';
     out[bid] = {
       kind: c.kind, state: c.state, at: c.at, no: p.no, name: p.name, photo: p.photos[0] || '', x: p.x, y: p.y, pts: c.pts || 0,
-      ...(c.kind === 'cam' ? { ans: c.ans || null, cam: done && p.cam ? p.cam : null } : { q: p.task ? p.task.q : '', bonus: p.task ? p.task.bonus : 0, text: c.text || '', a: done && c.state !== 'judge' && p.task && !p.task.open ? p.task.a : '', open: !!(p.task && p.task.open) })
+      ...(c.kind === 'cam' ? { ans: c.ans || null, cam: done && p.cam ? p.cam : null } : { q: p.task ? p.task.q : '', bonus: p.task ? p.task.bonus : 0, text: c.text || '', a: done && c.state !== 'judge' && p.task && !p.task.open ? p.task.a.split(/[\/|｜]/)[0].trim() : '', open: !!(p.task && p.task.open) })
     };
   });
   return out;
@@ -532,7 +567,7 @@ function viewFor(tid) {
     name: t.name, status: R.meta.status, mode: R.meta.mode, target: set.target, done: t.done.length,
     penalty: t.penalty, wrong: t.wrong, hints: t.hints, passes: t.passes, skips: t.skips || 0, finished: !!t.finished, finishSec: t.finishSec || 0,
     pts: t.pts || 0, bon: t.bon || 0, total: score ? G.teamTotal(t, set, R.st.clock) : 0, skipUntil: t.skipUntil || 0, checkAt: t.checkAt || 0,
-    msg: score ? '' : t.msg || '', batchNo: t.batchNo, empty: !!t.empty,
+    msg: score ? '' : t.msg || '', batchNo: t.batchNo, empty: !!t.empty, renamed: !!t.renamed,
     pins, cards, chal: chalView(t), clock: R.st.clock, beat: now,
     set: {
       photos: set.photos || 1, cands: set.cands || 5, cool: set.cool, hintOn: set.hintOn, hintCost: set.hintCost, passLimit: score ? 0 : set.passLimit, passUnlock: set.passUnlock, wrongPenalty: set.wrongPenalty, limitMin: set.limitMin,
@@ -701,7 +736,7 @@ function drawDash() {
   <div class="dgrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px;margin-top:12px">
   ${list.map((r) => { const t = st.teams[r.id]; const open = openCards(t); const oldest = open.length ? Math.min(...open.map(([, c]) => c.at)) : 0; const z = zm[t.zone];
     return `<div class="card" style="${t.finished ? 'background:var(--gold-soft)' : ''}">
-      <div class="row"><span style="font-family:'Bebas Neue',sans-serif;font-size:1.6em;color:var(--red)">${m.status === 'ready' ? '' : r.rank}</span><b style="font-size:1.1em">${t.finished ? (score ? '✅ ' : '🏁 ') : ''}${esc(t.name)}</b><span class="spacer"></span><span class="chip blue" title="通行碼">🔑 ${t.pass}</span></div>
+      <div class="row"><span style="font-family:'Bebas Neue',sans-serif;font-size:1.6em;color:var(--red)">${m.status === 'ready' ? '' : r.rank}</span><b style="font-size:1.1em">${t.finished ? (score ? '✅ ' : '🏁 ') : ''}${esc(t.name)}</b><button class="btn sm ghost" style="padding:0 5px;margin-left:-4px" data-rename="${r.id}" title="改隊名">✏️</button><span class="spacer"></span><span class="chip blue" title="通行碼">🔑 ${t.pass}</span></div>
       <div class="small muted">${R.members[r.id] ? '座號 ' + esc(R.members[r.id]) : '還沒登入'}</div>
       ${score ? `<div class="row" style="margin:6px 0 2px"><span style="font-family:'Bebas Neue',sans-serif;font-size:2em;line-height:1;color:var(--orange)">${r.total}</span><span class="small">分</span><span class="small muted">（答題 ${t.pts}${t.bon ? `＋加分 ${t.bon}` : ''}${G.lateMin(t, set, st.clock) ? `－遲到 ${G.lateMin(t, set, st.clock) * set.latePts}` : ''}）</span><span class="spacer"></span>${ckBtn(r)}</div>`
       : `<div style="height:10px;border-radius:999px;background:#eee;margin:8px 0 4px;overflow:hidden"><i style="display:block;height:100%;width:${Math.min(100, t.done.length / set.target * 100)}%;background:linear-gradient(90deg,var(--orange),var(--gold))"></i></div>
@@ -740,6 +775,7 @@ function drawDash() {
   on('lvXlsx', exportXlsx);
   on('lvTake', () => { R.lost = false; R.active = true; FB.set(base() + '/host', { id: R.hostId, beat: Date.now() }); toast('已由這台裝置接手自動裁判'); drawDash(); });
   $$('[data-pass]').forEach((b) => { b.onclick = () => { const [tid, cid, ok] = b.dataset.pass.split('|'); enqueue((ctx) => decidePass(ctx, tid, cid, ok === '1')); }; });
+  $$('[data-rename]').forEach((b) => { b.onclick = () => teacherRename(b.dataset.rename); });
   $$('[data-judge]').forEach((b) => { b.onclick = () => { const [tid, bid, ok] = b.dataset.judge.split('|'); enqueue((ctx) => judgeOpen(ctx, tid, bid, ok === '1')); }; });
   $$('[data-checkin]').forEach((b) => {
     b.onclick = async () => {
@@ -759,7 +795,7 @@ function drawDash() {
   $$('[data-zoomsrc]').forEach((im) => { im.style.cursor = 'zoom-in'; im.onclick = () => zoomImg(im.src); });
 }
 // 統計與路線回放放在另一個檔案，用到才載入
-const STATS = () => import('./stats.js?v=20261012e');
+const STATS = () => import('./stats.js?v=20261012f');
 function statsCtx() {
   const b = bank(), centers = G.zoneCenters(b), ys = Object.values(b.points).map((p) => p.y);
   return {
@@ -849,7 +885,7 @@ async function exportXlsx() {
   const SM = await STATS();
   const S2 = SM.computeStats(ctx, log);
   const byNo = Object.fromEntries(G.sortedPoints(bank()).map((p) => [p.no, p]));
-  const kind = { ok: '✅ 答對', wrong: '❌ 答錯', cool: '冷卻中（未判）', hint: '💡 提示', passReq: '🙋 申請 PASS', passOK: '🙋 PASS 准許', passNo: '🙋 PASS 駁回', skip: '🔄 老師換題', giveup: '⏭ 放棄', cam: '🦶 站位挑戰', task: '🔍 觀察任務', taskJudge: '🔍 老師判定', checkin: '🚩 報到', uncheck: '↩️ 取消報到', ignore: '（略過）' };
+  const kind = { rename: '✏️ 改隊名', chalSkip: '🎁 略過挑戰', ok: '✅ 答對', wrong: '❌ 答錯', cool: '冷卻中（未判）', hint: '💡 提示', passReq: '🙋 申請 PASS', passOK: '🙋 PASS 准許', passNo: '🙋 PASS 駁回', skip: '🔄 老師換題', giveup: '⏭ 放棄', cam: '🦶 站位挑戰', task: '🔍 觀察任務', taskJudge: '🔍 老師判定', checkin: '🚩 報到', uncheck: '↩️ 取消報到', ignore: '（略過）' };
   const det = Object.values(log).filter((l) => l.kind !== 'ignore').sort((a, b) => a.t - b.t).map((l) => {
     const t = st.teams[l.tid] || {}, p = byNo[l.no] || {};
     return { 時間: new Date(l.t).toLocaleTimeString('zh-TW', { hour12: false }), 組別: t.name || '', 事件: kind[l.kind] || l.kind, 地點編號: l.no || '', 地點: p.name || '', 學生回答: l.ans != null ? l.ans : l.text != null ? l.text : '', 得分: l.pts != null ? l.pts : l.got != null ? (l.got === 1 ? '全對' : l.got ? '一半' : '0') : l.ok != null ? (l.ok === 1 ? '對' : l.ok === -1 ? '待老師判' : '錯') : '', 提示層級: l.level || '', 'PASS 留言': l.note || '' };

@@ -340,33 +340,38 @@ function renderEditor() {
     <h3>💡 求助提示</h3>
     <label class="f">提示一（大範圍）</label><input type="text" data-f="hint1" value="${esc(p.hint1)}" placeholder="例：科學館區・3F">
     <label class="f">提示二（更精確）</label><input type="text" data-f="hint2" value="${esc(p.hint2)}" placeholder="例：管樂室外的欄杆">
-    <h3>👁️ 視角</h3>
-    <div class="grid2">
-      <div><label class="f">距離</label><select data-f="vdist">${G.VIEW_DIST.map(([v, t]) => `<option value="${v}" ${p.view.dist === v ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
-      <div><label class="f">角度</label><select data-f="vangle">${G.VIEW_ANGLE.map(([v, t]) => `<option value="${v}" ${p.view.angle === v ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
-    </div>
-    <label class="chk" style="margin-top:6px"><input type="checkbox" data-f="vodd" ${p.view.odd ? 'checked' : ''}> 奇特視角（倒置、局部、反光…）</label>
-    <h3>🦶 拍攝站位</h3>
-    <div class="row" style="align-items:flex-start">
-      <div>
-        <button class="btn sm ${S.mode === 'cam' ? 'on' : ''}" id="camPick">📷 在地圖上點站位</button>
-        ${p.cam ? `<button class="btn sm ghost" id="camClear" style="margin-top:6px">清除站位</button><p class="small muted" style="margin-top:6px">鏡頭朝向：<b>${G.DIRS[p.cam.dir]}</b>（地圖上方＝北）</p>` : '<p class="small muted" style="margin-top:6px">還沒標。站位挑戰會用到。</p>'}
+    <h3>🎁 視角與加分設定 <i class="tipi" tabindex="0" data-tip="點標題展開。標題列右邊直接看得到有沒有設定；沒設定的點，活動中就不會出現對應的加分挑戰。">?</i></h3>
+    <div class="fxs">
+    ${fx('view', '👁️ 視角', ...fxSt(p).view, `
+      <div class="grid2">
+        <div><label class="f">距離</label><select data-f="vdist">${G.VIEW_DIST.map(([v, t]) => `<option value="${v}" ${p.view.dist === v ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+        <div><label class="f">角度</label><select data-f="vangle">${G.VIEW_ANGLE.map(([v, t]) => `<option value="${v}" ${p.view.angle === v ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
       </div>
-      ${p.cam ? `<div class="dirs">${[7, 0, 1, 6, -1, 2, 5, 4, 3].map((d) => d < 0 ? '<span></span>' : `<button data-dir="${d}" class="${p.cam.dir === d ? 'on' : ''}" title="${G.DIRS[d]}">${['↑', '↗', '→', '↘', '↓', '↙', '←', '↖'][d]}</button>`).join('')}</div>` : ''}
-    </div>
-    <h3>🖼️ 揭曉照片（答對後顯示的全景，選填）</h3>
-    <div class="photos">${p.reveal ? `<div class="ph">${imgTag(p.reveal, '', 'data-zoomrev="1"')}<button id="revRm">✕</button></div>` : ''}<div class="addph" id="addRev">＋<br>${p.reveal ? '換一張' : '加揭曉照片'}</div></div>
-    <h3>🔍 現場觀察任務（選填）</h3>
-    <input type="text" data-f="tq" value="${esc(p.task ? p.task.q : '')}" placeholder="題目，例：這塊牌子上寫的年份是？">
-    <div class="grid2" style="margin-top:6px">
-      <div><input type="text" data-f="ta" value="${esc(p.task ? p.task.a : '')}" placeholder="標準答案（開放作答可空白）"></div>
-      <div class="row"><label class="chk small"><input type="checkbox" data-f="topen" ${p.task && p.task.open ? 'checked' : ''}> 開放作答</label>
-        <span class="small">加分</span><input type="number" class="inline" style="width:64px" data-f="tbonus" value="${p.task ? p.task.bonus : 5}"></div>
+      <label class="chk" style="margin-top:8px"><input type="checkbox" data-f="vodd" ${p.view.odd ? 'checked' : ''}> 奇特視角 <i class="tipi" tabindex="0" data-tip="倒置、局部、反光等不容易認出來的拍法。積分賽分數 ×2。">?</i></label>`)}
+    ${fx('cam', '🦶 拍攝站位', ...fxSt(p).cam, `
+      <div class="row" style="align-items:center;gap:14px;flex-wrap:nowrap">
+        <div style="flex:1">
+          <button class="btn sm ${S.mode === 'cam' ? 'on' : ''}" id="camPick">${S.mode === 'cam' ? '👆 請在地圖上點一下…' : p.cam ? '📷 重新點站位' : '📷 在地圖上點站位'}</button>
+          ${p.cam ? '<button class="btn sm ghost" id="camClear" style="margin-top:6px">清除站位</button>' : ''}
+          <p class="small muted" style="margin-top:6px">先點「拍照的人站的位置」，再按旁邊羅盤選鏡頭方向（地圖上方＝北）。</p>
+        </div>
+        ${p.cam ? `<div class="compass">${[0, 1, 2, 3, 4, 5, 6, 7].map((d) => { const a = d * Math.PI / 4; return `<button data-dir="${d}" class="${p.cam.dir === d ? 'on' : ''}" title="${G.DIRS[d]}" style="left:${(50 + 38 * Math.sin(a)).toFixed(1)}%;top:${(50 - 38 * Math.cos(a)).toFixed(1)}%">${['北', '↗', '東', '↘', '南', '↙', '西', '↖'][d]}</button>`; }).join('')}<div class="c">📷<br>朝${G.DIRS[p.cam.dir]}</div></div>` : ''}
+      </div>`)}
+    ${fx('task', '🔍 現場觀察任務', ...fxSt(p).task, `
+      <label class="f">題目</label><input type="text" data-f="tq" value="${esc(p.task ? p.task.q : '')}" placeholder="例：這塊牌子上寫的年份是？">
+      <div class="grid2">
+        <div style="grid-column:span 1"><label class="f">標準答案 <i class="tipi" tabindex="0" data-tip="有填就由系統直接比對：錯字算錯，全形半形、大小寫、空白不計較。可接受多個答案用 / 隔開（例：1998/民國87年）。空白＝學生答完由老師在戰況頁判定。">?</i></label><input type="text" data-f="ta" value="${esc(p.task ? p.task.a : '')}" placeholder="空白＝老師判"></div>
+        <div><label class="f">答對加幾分</label><input type="number" data-f="tbonus" value="${p.task ? p.task.bonus : 5}" min="0" max="50"></div>
+      </div>`)}
+    ${fx('rev', '🖼️ 揭曉照片', ...fxSt(p).rev, `
+      <p class="small muted">答對後顯示的全景照，讓學生看到「原來是這裡！」</p>
+      <div class="photos">${p.reveal ? `<div class="ph">${imgTag(p.reveal, '', 'data-zoomrev="1"')}<button id="revRm">✕</button></div>` : ''}<div class="addph" id="addRev">＋<br>${p.reveal ? '換一張' : '加揭曉照片'}</div></div>`)}
     </div>
     <label class="f">出題者</label><input type="text" data-f="author" value="${esc(p.author)}">
     <label class="f">老師備註</label><input type="text" data-f="note" value="${esc(p.note)}">
     <div class="row" style="margin-top:16px"><button class="btn sm red" id="delPt">🗑 刪除這個點位</button></div>`;
   $('#edClose').onclick = () => { S.sel = null; renderMapTab(); };
+  $$('details.fx', el).forEach((d) => { d.addEventListener('toggle', () => { if (d.open) fxOpen.add(d.dataset.fx); else fxOpen.delete(d.dataset.fx); }); });
   $$('[data-zoom]', el).forEach((im) => { im.onclick = () => zoomImg(im.src); });
   $$('[data-zoomrev]', el).forEach((im) => { im.onclick = () => zoomImg(im.src); });
   $$('[data-rm]', el).forEach((bt) => { bt.onclick = async () => { if (!(await confirmBox('移除這張照片？'))) return; p.photos.splice(+bt.dataset.rm, 1); Store.save(); renderEditor(); }; });
@@ -394,6 +399,16 @@ function renderEditor() {
     });
   });
 }
+// 可收合的設定區塊：記住老師打開了哪幾塊（編輯器常重畫）
+const fxOpen = new Set(['cam']);
+const fxSt = (p) => ({
+  view: [G.viewLabel(p.view) ? '✅ ' + G.viewLabel(p.view) : '⚪ 未標', !!G.viewLabel(p.view)],
+  cam: [p.cam ? `✅ 已標・鏡頭朝${G.DIRS[p.cam.dir]}` : '⚪ 未標（不會出現站位挑戰）', !!p.cam],
+  task: [p.task ? `✅ 有題目・${p.task.a ? '系統判' : '老師判'}・+${p.task.bonus}` : '⚪ 沒有', !!p.task],
+  rev: [p.reveal ? '✅ 有' : '⚪ 沒有（選填）', !!p.reveal]
+});
+function refreshFx(p) { const st = fxSt(p); Object.entries(st).forEach(([id, [txt, ok]]) => { const el = document.querySelector(`.fx[data-fx="${id}"] .st`); if (el) { el.innerHTML = txt; el.classList.toggle('ok', ok); } }); }
+function fx(id, title, status, ok, body) { return `<details class="fx" data-fx="${id}" ${fxOpen.has(id) ? 'open' : ''}><summary>${title}<span class="st ${ok ? 'ok' : ''}">${status}</span></summary><div class="fxb">${body}</div></details>`; }
 function applyField(p, f, v) {
   switch (f) {
     case 'no': { const n = parseInt(v, 10); if (!(n > 0)) return true; const dup = pts().find((q) => q.no === n && q.key !== p.key); if (dup) toast(`⚠ 第 ${n} 號已經有點位了（${dup.name}），兩個點會同號`, true); if (p.accept.length === 1 && p.accept[0] === p.no) p.accept = [n]; p.no = n; return true; }
@@ -401,13 +416,14 @@ function applyField(p, f, v) {
     case 'accept': { const a = String(v).split(/[,，、\s]+/).map((x) => parseInt(x, 10)).filter((x) => x > 0); p.accept = a.length ? Array.from(new Set(a)) : [p.no]; return false; }
     case 'enabled': case 'teach': p[f] = !!v; return true;
     case 'zone': p.zone = v; return true;
-    case 'vdist': p.view.dist = v; return false;
-    case 'vangle': p.view.angle = v; return false;
-    case 'vodd': p.view.odd = !!v; return false;
-    case 'tq': case 'ta': case 'topen': case 'tbonus': {
-      const t = p.task || { q: '', a: '', open: false, bonus: 5 };
-      if (f === 'tq') t.q = v.trim(); if (f === 'ta') t.a = v.trim(); if (f === 'topen') t.open = !!v; if (f === 'tbonus') t.bonus = Math.max(0, parseInt(v, 10) || 0);
-      p.task = t.q ? t : null; return false;
+    case 'vdist': p.view.dist = v; refreshFx(p); return false;
+    case 'vangle': p.view.angle = v; refreshFx(p); return false;
+    case 'vodd': p.view.odd = !!v; refreshFx(p); return false;
+    case 'tq': case 'ta': case 'tbonus': {
+      const t = p.task || { q: '', a: '', open: true, bonus: 5 };
+      if (f === 'tq') t.q = v.trim(); if (f === 'ta') t.a = v.trim(); if (f === 'tbonus') t.bonus = Math.max(0, parseInt(v, 10) || 0);
+      t.open = !t.a; // 2026-10-12：有標準答案就系統直接判，空白才由老師判
+      p.task = t.q ? t : null; refreshFx(p); return false;
     }
     default: p[f] = String(v).trim(); return f === 'name';
   }
@@ -625,7 +641,7 @@ function renderBackupTab() {
 // ---------- 啟動 ----------
 async function openBankSilently(id) { const b = await Store.load(id); if (b) { S.bankId = id; S.bank = b; LS.set('gps_bank', id); } }
 window.TT = { S, Store, LS, $, $$, esc, toast, modal, confirmBox, zoomImg, imgTag, download, render, pts, openBankSilently };
-const L = await import('./live.js?v=20261012e');
+const L = await import('./live.js?v=20261012f');
 window.addEventListener('beforeunload', (e) => {
   if (Store._t && $('#saveState') && $('#saveState').textContent.includes('尚未')) { Store.flush(); e.preventDefault(); e.returnValue = ''; }
   if (L.isRefereeing()) { e.preventDefault(); e.returnValue = ''; }

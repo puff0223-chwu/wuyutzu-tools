@@ -547,6 +547,13 @@ wuyutzu-tools/
   - **學生頁**：積分賽頂部顯示總分；任務牆 2×2（3 或 5 張以上 3 欄）縮圖＋分值（🔥 冷門、🧊 熱門）；點一張切換，地圖只標那張的候選地點；剩不到 3 分鐘時紅色提醒報到；時間到還沒報到顯示寬限倒數／已遲到幾分鐘。重畫時保留打到一半的文字與小地圖捲動位置
   - **規則變動**：`reqs.type` 增加 `skip`、`cam`、`task`；可帶 `text`（≤60 字）、`x`、`y`（0～100）、`dir`（0～7）
   - 📷 翻拍挑戰仍保留、**不開放**（老師決定，見上）
+- **第三階段改版（2026-10-12 下午，老師實測回饋）**
+  - **開新活動**：第一屏只有 名稱、賽制（兩張大卡片）、組數、活動時間（⚡15／⏱25／🏁40 分三顆按鈕，依賽制帶入建議值）、🤫 上課中；下面一行「📋 目前設定」摘要；其他全部收進「⚙️ 自訂進階設定」。說明文字改成 `?` 小圖示（`.tipi`，滑鼠移過去才顯示）
+  - **隊名**：不用輸入，`GPS.teamNames` 隨機探險風（24×24 組合，同一場盡量不重複），🎲 重抽；學生可以自己改**一次**（寫 `teams/$tid/rename`，規則 `!data.exists()` 擋第二次；裁判監聽後 `GPS.cleanName` 清理、最多 10 字、記 `renamed`），老師在戰況卡片按 ✏️ 隨時改
+  - **加分挑戰改成「答對就問」**：答對的點有挑戰 → 跳出全螢幕詢問（找到第 N 號＋照片＋各挑戰獎勵）→ 💪 挑戰：一次一題的挑戰畫面（觀察任務先、站位後；站位分「① 地圖點站位 ② 圓形羅盤選方向」兩步）→ 結果畫面 → 下一個挑戰／繼續找下一題；➡️ 略過＝`reqs.type='cskip'`，挑戰狀態 `skipped` **不能回頭**（老師決定）。頁面下方只剩可收合的「🎁 挑戰紀錄」
+  - **觀察任務判定**：有標準答案＝系統直接判（全形半形、大小寫、空白不計較，**錯字算錯**）；標準答案空白＝老師判。拿掉「開放作答」勾選（`normPoint` 依答案自動決定 `open`）。答錯時只顯示第一個標準答案
+  - **題庫編輯**：視角／拍攝站位／觀察任務／揭曉照片改成四個可收合區塊，標題列直接顯示狀態（✅ 已標…／⚪ 未設定），改欄位時只更新狀態文字（不整個重畫，游標不會跳掉）；站位方向改圓形羅盤
+  - **規則變動**：`reqs.type` 加 `cskip`；新增 `teams/$tid/rename`（只能寫一次、活動結束前、`name` 1～10 字）
 
 ### 💰 集點小金庫（family-points/index.html，2026-10-06 新增）
 
@@ -642,6 +649,14 @@ fp/
 - **「分」有兩個意思**：積分賽裡「分」是分數，統計的時間要寫「分鐘」
 - **資料量**：統計與回放不另外存資料，都從原本的 `log` 算；`stats.js` 用到才載入，老師頁開啟不會變慢
 
+### 7-6 遺落的地點・第三階段改版（介面減法）
+- **設定畫面做減法**：老師要的是「開得起來」，不是看完所有選項。第一屏只留會每次改的 4 樣，其他給建議值、收進進階；用「📋 目前設定」一行摘要讓老師不打開也知道會怎麼玩
+- **說明文字改成 ? 圖示**：純 CSS（`:hover`／`:focus` 顯示 `data-tip`），平板點一下也能看
+- **重要的事要在「當下」問**：加分挑戰放在頁面最下面，學生根本沒發現；改成答對的那一刻跳出來問，而且一次只做一題
+- **只能做一次的事交給規則擋**：改隊名用 `!data.exists()`，就算學生重新整理或用兩支手機也只能改一次，不用靠前端記
+- **測試要跟著改版改**：介面搬家後（欄位收進進階設定、跳窗擋住後面的按鈕），舊測試會失敗；先確認是「設計就是這樣」再改測試，不要為了測試改設計
+- **編輯器不要每改一格就整個重畫**：會把游標從下一個欄位搶走；只更新需要變的那段文字
+
 ## 8. 已知注意事項
 
 - **Firebase 免費額度（Spark，2026-10-06 查）**：儲存 1 GB、每月下載 10 GB、同時連線 100 條。估計每月下載不到 1 GB；要留意的是同時連線。pH、單位換算、器材排行榜都是「問完就走」的一次性請求，不長期佔連線；**長期佔連線的只有公告欄（SSE 即時同步）和集點小金庫**。公告欄學生頁切到背景超過 60 秒或關閉分頁就自動斷線、回到畫面自動重連（2026-10-06）。用量看 Firebase 控制台 → Realtime Database →「用量」
@@ -652,7 +667,7 @@ fp/
 
 ---
 
-## 附錄：Firebase 安全規則全文（2026-10-12，遺落的地點第三階段：reqs 增加 skip／cam／task）
+## 附錄：Firebase 安全規則全文（2026-10-12，遺落的地點第三階段改版：reqs 加 cskip、新增 rename）
 
 ```json
 {
@@ -918,8 +933,12 @@ fp/
        "reqs": {
         "$rid": {
          ".write": "!data.exists() && newData.exists() && root.child('orienteering/runs/'+$code+'/keys/'+newData.child('k').val()).val() === $tid && root.child('orienteering/runs/'+$code+'/meta/status').val() === 'running'",
-         ".validate": "newData.hasChildren(['k','cid','type','ts']) && newData.child('cid').isString() && newData.child('cid').val().length <= 16 && newData.child('type').val().matches(/^(hint|pass|skip|cam|task)$/) && newData.child('ts').val() == now && (!newData.child('note').exists() || (newData.child('note').isString() && newData.child('note').val().length <= 60)) && (!newData.child('text').exists() || (newData.child('text').isString() && newData.child('text').val().length <= 60)) && (!newData.child('x').exists() || (newData.child('x').isNumber() && newData.child('x').val() >= 0 && newData.child('x').val() <= 100)) && (!newData.child('y').exists() || (newData.child('y').isNumber() && newData.child('y').val() >= 0 && newData.child('y').val() <= 100)) && (!newData.child('dir').exists() || (newData.child('dir').isNumber() && newData.child('dir').val() >= 0 && newData.child('dir').val() <= 7))"
+         ".validate": "newData.hasChildren(['k','cid','type','ts']) && newData.child('cid').isString() && newData.child('cid').val().length <= 16 && newData.child('type').val().matches(/^(hint|pass|skip|cam|task|cskip)$/) && newData.child('ts').val() == now && (!newData.child('note').exists() || (newData.child('note').isString() && newData.child('note').val().length <= 60)) && (!newData.child('text').exists() || (newData.child('text').isString() && newData.child('text').val().length <= 60)) && (!newData.child('x').exists() || (newData.child('x').isNumber() && newData.child('x').val() >= 0 && newData.child('x').val() <= 100)) && (!newData.child('y').exists() || (newData.child('y').isNumber() && newData.child('y').val() >= 0 && newData.child('y').val() <= 100)) && (!newData.child('dir').exists() || (newData.child('dir').isNumber() && newData.child('dir').val() >= 0 && newData.child('dir').val() <= 7))"
         }
+       },
+       "rename": {
+        ".write": "!data.exists() && newData.exists() && root.child('orienteering/runs/'+$code+'/keys/'+newData.child('k').val()).val() === $tid && root.child('orienteering/runs/'+$code+'/meta/status').val() !== 'ended'",
+        ".validate": "newData.hasChildren(['k','name','ts']) && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 10 && newData.child('ts').val() == now"
        }
       }
      }

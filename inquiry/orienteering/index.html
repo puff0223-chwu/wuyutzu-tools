@@ -102,6 +102,41 @@ table.list tr.off td{color:#aaa}
 .addph{width:110px;height:110px;border:2px dashed var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-direction:column;cursor:pointer;color:var(--muted);font-size:.85em;text-align:center}
 .addph:hover{border-color:var(--gold);color:var(--ink)}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+/* 開新活動（2026-10-12 改版：第一屏只留必要的，其他收進進階設定） */
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:2px}
+.modes button{border:2px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;text-align:left;cursor:pointer;font:inherit}
+.modes button b{display:block;font-size:1.08em}
+.modes button span{font-size:.82em;color:var(--muted)}
+.modes button.on{border-color:var(--ink);background:var(--gold-soft,#fdf1d6);box-shadow:3px 3px 0 var(--ink)}
+.seg{display:flex;border:2px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{flex:1;border:none;border-right:1.5px solid var(--line);background:#fff;padding:7px 4px;cursor:pointer;font:inherit;font-weight:700;white-space:nowrap}
+.seg button:last-child{border-right:none}
+.seg button.on{background:var(--ink);color:#fff}
+.sumbox{background:#f3eee2;border-radius:10px;padding:8px 12px;margin-top:12px;font-size:.88em;line-height:1.6}
+.namechips{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.namechips span{background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:1px 9px;font-size:.84em}
+.adv{margin-top:12px;border:2px solid var(--line);border-radius:12px;background:#fff}
+.adv>summary{padding:9px 12px;cursor:pointer;font-weight:700}
+.adv[open]>summary{border-bottom:1.5px solid var(--line)}
+.adv .advb{padding:4px 12px 12px}
+.adv h4{margin:14px 0 2px;font-size:.95em;color:var(--ink2)}
+/* 題庫編輯：加分與視角設定（可收合，標題列直接看狀態） */
+.fxs{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.fx{border:2px solid var(--line);border-radius:10px;background:#fff}
+.fx[open]{border-color:var(--ink)}
+.fx>summary{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;list-style:none;font-weight:700;white-space:nowrap}
+.fx>summary::-webkit-details-marker{display:none}
+.fx>summary::after{content:'▸';margin-left:4px;color:var(--muted)}
+.fx[open]>summary::after{content:'▾'}
+.fx .st{margin-left:auto;font-size:.8em;font-weight:500;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%}
+.fx .st.ok{color:var(--teal,#1f9e8f);font-weight:700}
+.fx .fxb{padding:2px 12px 12px}
+.compass{position:relative;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,#fffdf8 55%,#f3eee2 56%);border:2px solid var(--line);flex:none}
+.compass button{position:absolute;width:36px;height:36px;margin:-18px 0 0 -18px;border-radius:50%;border:1.5px solid var(--line);background:#fff;cursor:pointer;font-weight:900}
+.compass button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.compass .c{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:.72em;text-align:center;color:var(--muted);line-height:1.3}
+.tipi{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;background:var(--line);color:var(--ink2);font-size:11px;font-weight:900;cursor:help;margin-left:4px;position:relative;vertical-align:middle;font-style:normal}
+.tipi:hover::after,.tipi:focus::after{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);width:max-content;max-width:260px;white-space:normal;background:var(--ink);color:#fff;font-weight:500;font-size:12.5px;line-height:1.5;padding:7px 10px;border-radius:8px;z-index:500;box-shadow:0 3px 10px rgba(0,0,0,.25);text-align:left}
 .dirs{display:grid;grid-template-columns:repeat(3,38px);gap:3px}
 .dirs button{height:34px;border:1.5px solid var(--line);background:#fff;border-radius:6px;cursor:pointer;font-size:.8em}
 .dirs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
@@ -153,7 +188,7 @@ table.list tr.off td{color:#aaa}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="core.js?v=20261012e"></script>
+<script src="core.js?v=20261012f"></script>
 <script type="module">
 /* Firebase：老師登入＋存題庫（和座位大作戰同一個專案，不同帳號） */
 const firebaseConfig = {
@@ -185,7 +220,7 @@ try {
     pushKey: (path) => D.push(D.ref(db, path)).key
   };
 } catch (e) { console.warn('Firebase 載入失敗', e); window.FB = null; }
-await import('./teacher.js?v=20261012e');
+await import('./teacher.js?v=20261012f');
 </script>
 </body>
 </html>

@@ -120,6 +120,37 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
 .found .f1{flex:none;width:118px;background:#fff;border:2px solid var(--teal);border-radius:10px;overflow:hidden;font-size:.78em}
 .found .f1 img{width:100%;height:70px;object-fit:cover;display:block}
 .found .f1 div{padding:3px 6px}
+/* 🎁 加分挑戰（2026-10-12 改版：答對就跳出來問、一次一題的全螢幕挑戰） */
+.offer{position:fixed;inset:0;background:rgba(20,26,44,.72);z-index:45;display:flex;align-items:center;justify-content:center;padding:18px}
+.offer .box{background:var(--paper);border:3px solid var(--ink);border-radius:20px;box-shadow:5px 5px 0 #7a4fd0;max-width:420px;width:100%;padding:18px;text-align:center}
+.offer .box img{width:100%;max-height:28vh;object-fit:cover;border-radius:12px;border:2px solid var(--ink)}
+.offer .gift{font-size:2.6em;line-height:1}
+.offer .list{display:flex;flex-direction:column;gap:6px;margin:12px 0 4px;text-align:left}
+.offer .list div{display:flex;align-items:center;gap:8px;background:#f3eee2;border-radius:10px;padding:8px 12px;font-weight:700}
+.offer .list b{margin-left:auto;color:#7a4fd0;white-space:nowrap}
+.btn.purple{background:#7a4fd0;color:#fff;border-color:#4b2e8a;box-shadow:3px 3px 0 #4b2e8a}
+.chv{margin-top:14px}
+.chv .hd{display:flex;align-items:center;gap:8px;background:#7a4fd0;color:#fff;border-radius:14px 14px 0 0;padding:9px 14px;font-weight:900}
+.chv .hd span{margin-left:auto;background:rgba(255,255,255,.22);border-radius:999px;padding:0 10px;font-size:.9em}
+.chv .bd{background:var(--paper);border:3px solid #7a4fd0;border-top:none;border-radius:0 0 14px 14px;padding:14px}
+.chv .ttl{font-weight:900;font-size:1.12em}
+.chv .ph1{width:100%;max-height:26vh;object-fit:cover;border-radius:10px;border:2px solid var(--ink);margin-top:8px;cursor:zoom-in;display:block}
+.chv .q{font-size:1.15em;font-weight:900;margin:12px 0 2px}
+.chv .stp{font-weight:900;margin-top:14px;display:flex;align-items:center;gap:6px}
+.chv .stp i{font-style:normal;background:var(--ink);color:#fff;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:.8em}
+.chv .stp.done i{background:var(--teal)}
+.chv .big{font-size:3em;text-align:center;line-height:1.1;margin-top:6px}
+.chv .skipl{display:block;margin:12px auto 0;background:none;border:none;color:var(--muted);text-decoration:underline;font-size:.9em;cursor:pointer}
+.compass{position:relative;width:200px;height:200px;margin:8px auto 0;border-radius:50%;background:radial-gradient(circle,#fffdf8 52%,#f3eee2 53%);border:2.5px solid var(--ink)}
+.compass button{position:absolute;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;border:2px solid var(--ink);background:#fff;font-size:1.15em;font-weight:900;cursor:pointer}
+.compass button.on{background:var(--orange);color:#fff;border-color:var(--orange)}
+.compass .c{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;font-size:.85em;color:var(--muted);line-height:1.3}
+.compass .c b{display:block;color:var(--ink);font-size:1.15em}
+.chrec{margin-top:12px}
+.chrec summary{cursor:pointer;font-weight:900}
+.chrec .r{display:flex;gap:8px;align-items:center;border-top:1px dashed var(--line);padding:6px 0;font-size:.9em}
+.chrec .r b{margin-left:auto;white-space:nowrap}
+.top .tn button{background:none;border:none;color:var(--gold);font-size:.85em;cursor:pointer;padding:0 0 0 4px}
 /* 🎁 加分挑戰 */
 .chal{border-color:#7a4fd0;box-shadow:3px 3px 0 #7a4fd0}
 .cb{border-top:1.5px dashed var(--line);padding-top:10px;margin-top:10px}
@@ -145,7 +176,7 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
 <body>
 <div id="top"></div>
 <div class="wrap" id="app"><p style="text-align:center;margin-top:30vh" class="muted">載入中…</p></div>
-<script src="core.js?v=20261012e"></script>
+<script src="core.js?v=20261012f"></script>
 <script>
 (function () {
   'use strict';
@@ -158,7 +189,7 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
   const st = {
     me: LS.get('gps_join_' + CODE, null), pub: null, view: null, net: 'live', offset: 0, beatLocal: Date.now(), lastBeat: 0,
     sel: {}, pending: {}, reqPending: {}, zoom: 1, lastHTML: '', center: true, autoZoom: true, es: null, poll: null, hiddenAt: 0, lastBatch: 0, shown: {},
-    focus: null, camSel: {}, chalPend: {}, taskText: {}, lastChal: -1, mapPins: [], bannerOn: false
+    focus: null, camSel: {}, chalPend: {}, taskText: {}, lastChal: -1, mapPins: [], bannerOn: false, chalNo: 0, chalShow: null, chalHide: {}
   };
   const q = { list: LS.get('gps_q_' + CODE, []), busy: false };
 
@@ -271,8 +302,10 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
     Object.keys(st.chalPend).forEach((bid) => {
       const c = (v.chal || {})[bid]; if (c && c.state === 'open') return;
       delete st.chalPend[bid];
-      if (c) setTimeout(() => toast(c.state === 'ok' ? `🎁 加分挑戰成功！${reward(v, c)}` : c.state === 'half' ? `🟡 站位對了！${reward(v, c)}` : c.state === 'judge' ? '📨 已送出，等大師判定' : '這次沒拿到加分，看看正確答案', c.state === 'no'), 200);
+      if (c && st.chalNo === c.no) st.chalShow = bid; // 正在挑戰中：直接顯示結果畫面
     });
+    // 另一支手機已經略過或答完 → 這支跟著離開挑戰
+    if (st.chalNo && !st.chalShow && !Object.values(v.chal || {}).some((c) => c.no === st.chalNo && c.state === 'open')) st.chalNo = 0;
     if (v.batchNo && v.batchNo !== st.lastBatch) {
       if (st.lastBatch && !v.finished) {
         if (v.mode === 'score') {
@@ -283,7 +316,6 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
       st.autoZoom = true; st.lastBatch = v.batchNo; st.sel = {}; st.center = true;
     }
     const nChal = Object.values(v.chal || {}).filter((c) => c.state === 'open').length;
-    if (st.lastChal >= 0 && nChal > st.lastChal) setTimeout(() => toast('🎁 加分挑戰出現了！往下滑看看'), 1800);
     st.lastChal = nChal;
     st.lastDone = v.done || 0;
     render();
@@ -294,9 +326,10 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
     const sec = G.gameSeconds(v.clock, now()), lim = ((v.set || {}).limitMin || 0) * 60;
     const stale = v.status === 'running' && Date.now() - st.beatLocal > 30000;
     const net = q.list.length ? `📶 補送中 ${q.list.length}` : stale ? '⏳ 等待大師連線' : st.net === 'live' ? '🟢 連線中' : st.net === 'poll' ? '🟡 連線中' : st.net === 'off' ? '🔴 離線' : '🟡 重新連線';
-    $('#top').innerHTML = `<div class="top"><div class="tn">${esc(v.name)}</div><div class="prog">${v.mode === 'score' ? `${v.total || 0}<span style="font-size:.5em"> 分</span>` : `${v.done || 0}/${v.target}`}</div>
+    $('#top').innerHTML = `<div class="top"><div class="tn">${esc(v.name)}${!v.renamed && v.status !== 'ended' ? '<button data-rename title="改隊名（只能一次）">✏️</button>' : ''}</div><div class="prog">${v.mode === 'score' ? `${v.total || 0}<span style="font-size:.5em"> 分</span>` : `${v.done || 0}/${v.target}`}</div>
       <span class="net ${q.list.length || stale || st.net === 'off' ? 'bad' : ''}">${net}</span>
       <div class="clk">${v.status === 'ended' ? '⏹<small>已結束</small>' : `${v.clock && v.clock.startAt ? (lim ? G.fmtTime(Math.max(0, lim - sec)) : G.fmtTime(sec)) : '--:--'}<small>${lim ? '剩餘時間' : '經過時間'}</small>`}</div></div>`;
+    const rb = $('#top [data-rename]'); if (rb) rb.onclick = openRename;
   }
   // 積分賽：時間快到了，提醒回集合點
   function bannerCond(v) { const s = v.set || {}, lim = (s.limitMin || 0) * 60, left = lim - G.gameSeconds(v.clock, now()); return v.mode === 'score' && v.status === 'running' && !!s.checkin && !!lim && left <= 180 && left > 0; }
@@ -305,10 +338,13 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
     drawTop();
     const app = $('#app'), y = window.scrollY, mb = $('.mapbox.main'), mapScroll = mb ? [mb.scrollLeft, mb.scrollTop] : null;
     let html;
-    if (v.finished) html = finishHTML(v);
+    const chv = v.status === 'running' ? challengeHTML(v) : '';
+    if (chv) html = chv;
+    else if (v.finished) html = finishHTML(v);
     else if (v.status === 'ready') html = readyHTML(v);
     else if (v.status === 'ended') html = endedHTML(v);
     else html = gameHTML(v);
+    if (!chv && v.status === 'running') html += offerHTML(v) + chalRecHTML(v);
     html += `<div class="foot"><button id="logout">登出（換別組）</button></div>`;
     if (html === st.lastHTML) return; // 只有心跳變了：不重畫，照片才不會閃
     // 重畫前記住：打到一半的字、小地圖捲到哪
@@ -342,17 +378,18 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
       ${s.hintOn ? `<li>💡 求助：系統給提示，每次加罰 ${s.hintCost} 秒（最多兩層）</li>` : ''}
       ${s.passLimit ? `<li>🙋 卡關 ${s.passUnlock} 分鐘後可以申請 PASS，大師同意就換一題（不算完成，每組最多 ${s.passLimit} 次）</li>` : ''}
       <li>找到 ${v.target} 個地點就完成！用時＋罰秒越少越厲害</li>`;
-    return `<div class="card" style="text-align:center;padding:24px"><div style="font-size:3em">⏳</div><h2>${esc(v.name)}，準備好了嗎？</h2><p class="muted">等待大師按下「開始」…</p></div>
+    return `<div class="card" style="text-align:center;padding:24px"><div style="font-size:3em">⏳</div><h2>${esc(v.name)}，準備好了嗎？</h2><p class="muted">等待大師按下「開始」…</p>
+      ${v.renamed ? '' : '<button class="btn sm ghost" data-rename style="margin-top:10px">✏️ 想換隊名？（只能改一次）</button>'}</div>
     <div class="card small"><b>📜 規則</b><ul style="padding-left:18px;margin-top:4px">${rules}${chal}
       <li>🚫 斜線區是正在上課的教學區，請繞道、保持安靜</li></ul></div>`;
   }
   function finishHTML(v) {
     if (v.mode === 'score') return `<div class="card finish pop"><div class="big">🚩</div><h2>${esc(v.name)} 已報到收工</h2><p class="muted">總分</p><div style="font-family:'Bebas Neue',sans-serif;font-size:3.4em;line-height:1;color:var(--orange)">${v.total || 0}</div>
       <div class="stat"><div>答題得分<b>${v.pts || 0}</b></div><div>加分挑戰<b>${v.bon || 0}</b></div><div>找到地點<b>${v.done || 0}</b></div><div>答錯／放棄<b>${v.wrong || 0}／${v.skips || 0}</b></div></div>
-      <p style="margin-top:14px">等大師公布排名 🏆</p></div>${chalHTML(v)}`;
+      <p style="margin-top:14px">等大師公布排名 🏆</p></div>`;
     return `<div class="card finish pop"><div class="big">🏁</div><h2>${esc(v.name)} 完成任務！</h2><p class="muted">找齊 ${v.target} 個遺落的地點</p>
       <div class="stat"><div>用時<b>${G.fmtTime(v.finishSec)}</b></div><div>罰秒<b>${v.penalty || 0}</b></div><div>答錯<b>${v.wrong || 0}</b></div><div>提示／PASS<b>${v.hints || 0}／${v.passes || 0}</b></div>${v.bon ? `<div style="grid-column:1/3">🎁 加分挑戰<b>減 ${v.bon} 秒</b></div>` : ''}</div>
-      <p style="margin-top:14px">請回到集合地點，等大師公布排名 🏆</p></div>${chalHTML(v)}`;
+      <p style="margin-top:14px">請回到集合地點，等大師公布排名 🏆</p></div>`;
   }
   function endedHTML(v) {
     const s = v.set || {};
@@ -393,8 +430,7 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
     ${v.msg ? `<div class="msg">🚩 ${esc(v.msg)}</div>` : ''}
     ${v.empty ? '<div class="alert warn">題目暫時派完了，請回集合地點找大師。</div>' : ''}
     <div class="card" style="padding:10px">${mapHTML(v, v.pins || [], tried)}</div>
-    ${cards.map(([cid, c], i) => cardHTML(cid, c, i, nums, s, v, c.tried || [])).join('')}
-    ${chalHTML(v)}`;
+    ${cards.map(([cid, c], i) => cardHTML(cid, c, i, nums, s, v, c.tried || [])).join('')}`;
   }
   // 🎯 積分賽：上面是任務牆（點一張切換），下面是那一張的地圖與作答
   function scoreHTML(v) {
@@ -412,7 +448,6 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
     <div class="wall ${open.length === 3 || open.length >= 5 ? 'w3' : ''}">${open.map(([cid, c], i) => `<button class="tile ${cid === st.focus ? 'on' : ''}" data-focus="${cid}"><img src="${esc(G.photoURL(c.photo))}" data-ref="${esc(c.photo)}" alt="照片 ${String.fromCharCode(65 + i)}"><span class="ix">${String.fromCharCode(65 + i)}</span><span class="val ${c.heat || ''}">${c.heat === 'cold' ? '🔥' : c.heat === 'hot' ? '🧊' : ''}${c.val}<small> 分</small></span>${c.coolUntil > t ? '<span class="cd">答錯冷卻中</span>' : ''}</button>`).join('')}</div>
     <div class="vlegend">👆 點照片切換題目　🔥 冷門區 ×1.5　🧊 熱門區 ×0.5（分數會隨大家的位置變動）</div>
     ${fc ? `<div class="card" style="padding:10px">${mapHTML(v, pins, fc[1].tried || [])}</div>${cardHTML(fc[0], fc[1], fi, (fc[1].cn || []).slice(), s, v, fc[1].tried || [])}` : ''}
-    ${chalHTML(v)}
     ${found.length ? `<div class="card"><h2>✅ 最近找到</h2><div class="found">${found.map((c) => `<div class="f1"><img src="${esc(G.photoURL(c.reveal || c.photo))}" data-ref="${esc(c.reveal || c.photo)}" data-zoom alt=""><div><b>${c.no} 號</b> +${c.got || 0} 分<br><span class="muted">${esc(c.name)}</span></div></div>`).join('')}</div></div>` : ''}`;
   }
   function cardHTML(cid, c, i, nums, s, v, tried) {
@@ -443,40 +478,74 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
       ${c.pass === 'pending' ? '<div class="hint">🙋 已申請 PASS，等待大師裁決…</div>' : ''}
       ${help}</div></div>`;
   }
-  // ---------- 🎁 加分挑戰 ----------
-  function chalHTML(v) {
-    const s = v.set || {}, all = Object.entries(v.chal || {}); if (!all.length) return '';
-    const rk = { open: 0, judge: 1 };
-    all.sort((a, b) => (rk[a[1].state] == null ? 2 : rk[a[1].state]) - (rk[b[1].state] == null ? 2 : rk[b[1].state]) || (b[1].at || 0) - (a[1].at || 0));
-    const rw = (c) => (v.mode === 'score' ? `+${c.kind === 'cam' ? s.stancePts : c.bonus} 分` : `減 ${s.bonusSec} 秒`);
-    return `<div class="card chal"><h2>🎁 加分挑戰 <span class="small muted" style="font-weight:400">做不做都可以</span></h2>${all.map(([bid, c]) => chalItem(v, bid, c, rw(c))).join('')}</div>`;
+  // ---------- 🎁 加分挑戰（2026-10-12 改版） ----------
+  // 答對 → 跳出「要挑戰嗎？」→ 💪 挑戰：一次一題的全螢幕挑戰；➡️ 略過：挑戰消失（不能回頭）
+  const chalOpen = (v) => Object.entries(v.chal || {}).filter(([bid, c]) => c.state === 'open' && !st.chalHide[bid]);
+  const rwText = (v, c) => { const s = v.set || {}; return v.mode === 'score' ? `+${c.kind === 'cam' ? s.stancePts : c.bonus} 分` : `減 ${s.bonusSec} 秒`; };
+  const kindName = (c) => (c.kind === 'cam' ? '🦶 站位挑戰' : '🔍 現場觀察');
+  function offerHTML(v) {
+    if (st.chalNo) return '';
+    const open = chalOpen(v).sort((a, b) => (a[1].at || 0) - (b[1].at || 0)); if (!open.length) return '';
+    const no = open[0][1].no, mine = open.filter(([, c]) => c.no === no), c0 = mine[0][1];
+    return `<div class="offer"><div class="box pop">
+      <div class="gift">🎁</div><h2 style="margin:4px 0 2px">找到第 ${no} 號！</h2><div class="small muted">${esc(c0.name)}</div>
+      <img src="${esc(G.photoURL(c0.photo))}" data-ref="${esc(c0.photo)}" alt="" style="margin-top:10px">
+      <div class="bold" style="margin-top:12px">這個地點有加分挑戰，要挑戰嗎？</div>
+      <div class="list">${mine.sort((a, b) => (a[1].kind === 'task' ? 0 : 1) - (b[1].kind === 'task' ? 0 : 1)).map(([, c]) => `<div>${kindName(c)}<b>${rwText(v, c)}</b></div>`).join('')}</div>
+      <button class="btn purple" data-chgo="${no}">💪 挑戰！</button>
+      <button class="btn ghost" data-chskip="${no}">➡️ 略過，繼續下一題</button>
+      <div class="small muted" style="margin-top:8px">略過就沒有機會再挑戰囉</div></div></div>`;
   }
-  function chalItem(v, bid, c, rw) {
-    const got = reward(v, c), pend = st.chalPend[bid];
-    const head = `<div class="row" style="flex-wrap:nowrap;align-items:flex-start"><img class="cthumb" src="${esc(G.photoURL(c.photo))}" data-ref="${esc(c.photo)}" data-zoom alt="">
-      <div><b>${c.kind === 'cam' ? '🦶 站位挑戰' : '🔍 現場觀察'}・第 ${c.no} 號</b> <span class="small muted">${esc(c.name)}</span>
-      <div class="small">${c.kind === 'cam' ? '拍這張照片的人<b>站在哪裡</b>？鏡頭<b>朝哪個方向</b>？' : '❓ ' + esc(c.q)}</div>
-      ${c.state === 'open' ? `<div class="small muted">獎勵：${rw}${c.kind === 'cam' ? '（只有站位對：一半）' : '・只有一次機會'}</div>` : ''}</div></div>`;
-    if (c.kind === 'cam') {
-      if (c.state === 'open') {
-        const sel = st.camSel[bid] || {}, ready = sel.x != null && sel.dir != null;
-        return `<div class="cb">${head}${miniMap(bid, c, sel, null)}
-          <div class="small muted" style="text-align:center;margin-top:4px">📍＝照片拍的地點　${sel.x != null ? '🟠＝你標的站位（可以再點一次改）' : '👆 在地圖上點「拍照的人站的位置」'}　地圖上方＝北</div>
-          <div class="dirs">${[7, 0, 1, 6, -1, 2, 5, 4, 3].map((d) => d < 0 ? `<span>${sel.dir != null ? '朝' + G.DIRS[sel.dir] : '選方向'}</span>` : `<button data-cdir="${bid}|${d}" class="${sel.dir === d ? 'on' : ''}" title="${G.DIRS[d]}">${ARROWS[d]}</button>`).join('')}</div>
-          ${pend ? '<div class="wait">⏳ 判定中…</div>' : `<button class="btn" data-csend="${bid}" ${ready ? '' : 'disabled'}>${ready ? '送出站位與方向' : '先點站位、再選方向'}</button>`}</div>`;
-      }
-      const r = c.state === 'ok' ? `<div class="res ok">✅ 全對！${got}</div>` : c.state === 'half' ? `<div class="res half">🟡 站位對了，方向差了一點（${got}）</div>` : '<div class="res no">❌ 差太遠了，看看正確的站位 👇</div>';
-      return `<div class="cb">${head}${r}${miniMap(bid, c, c.ans || {}, c.cam)}<div class="small muted" style="text-align:center">🟠 你標的　🟢 正確的站位與方向</div></div>`;
-    }
-    if (c.state === 'open') return `<div class="cb">${head}<input type="text" data-keep="tk_${bid}" maxlength="60" placeholder="輸入你在現場看到的答案" value="${esc(st.taskText[bid] || '')}" style="margin-top:8px">${pend ? '<div class="wait">⏳ 判定中…</div>' : `<button class="btn" data-tsend="${bid}">送出答案</button>`}</div>`;
-    const r = c.state === 'judge' ? `<div class="res judge">⏳ 已送出「${esc(c.text)}」，等大師判定</div>` : c.state === 'ok' ? `<div class="res ok">✅ 答對！「${esc(c.text)}」${got}</div>` : `<div class="res no">❌「${esc(c.text)}」不對${c.a ? `，答案是：${esc(c.a)}` : ''}</div>`;
-    return `<div class="cb">${head}${r}</div>`;
+  // 現在正在做哪一題：觀察任務先（人就在現場），站位挑戰後
+  function chalSeq(v, no) { return Object.entries(v.chal || {}).filter(([, c]) => c.no === no).sort((a, b) => (a[1].kind === 'task' ? 0 : 1) - (b[1].kind === 'task' ? 0 : 1)); }
+  function challengeHTML(v) {
+    if (st.chalShow) { const c = (v.chal || {})[st.chalShow]; if (c && c.state !== 'open') return chalResultHTML(v, st.chalShow, c); st.chalShow = null; }
+    if (!st.chalNo) return '';
+    const seq = chalSeq(v, st.chalNo), cur = seq.find(([bid, c]) => c.state === 'open' && !st.chalHide[bid]);
+    if (!cur) { st.chalNo = 0; return ''; }
+    const [bid, c] = cur, idx = seq.indexOf(cur) + 1, pend = st.chalPend[bid];
+    const head = `<div class="chv"><div class="hd">🎁 加分挑戰・第 ${c.no} 號<span>${idx} / ${seq.length}</span></div><div class="bd">
+      <div class="ttl">${kindName(c)} <span class="small muted" style="font-weight:500">${esc(c.name)}・${rwText(v, c)}</span></div>
+      <img class="ph1" src="${esc(G.photoURL(c.photo))}" data-ref="${esc(c.photo)}" data-zoom alt="">`;
+    const foot = `<button class="skipl" data-chskip1="${bid}">略過這個挑戰</button></div></div>`;
+    if (c.kind === 'task') return `${head}<div class="q">❓ ${esc(c.q)}</div><div class="small muted">只有一次機會，錯字也算錯喔</div>
+      <input type="text" data-keep="tk_${bid}" maxlength="60" placeholder="輸入你在現場看到的答案" value="${esc(st.taskText[bid] || '')}" style="margin-top:8px">
+      ${pend ? '<div class="wait">⏳ 判定中…</div>' : `<button class="btn" data-tsend="${bid}">送出答案</button>`}${foot}`;
+    const sel = st.camSel[bid] || {}, ready = sel.x != null && sel.dir != null;
+    return `${head}<div class="q">拍這張照片的人站在哪裡？鏡頭朝哪裡？</div>
+      <div class="stp ${sel.x != null ? 'done' : ''}"><i>1</i>在地圖上點出拍照的人站的位置 <span class="small muted" style="font-weight:500">📍＝照片拍的地點</span></div>
+      ${miniMap(bid, c, sel, null)}
+      <div class="stp ${sel.dir != null ? 'done' : ''}"><i>2</i>選鏡頭朝的方向 <span class="small muted" style="font-weight:500">地圖上方＝北</span></div>
+      ${compassHTML(bid, sel.dir)}
+      ${pend ? '<div class="wait">⏳ 判定中…</div>' : `<button class="btn" data-csend="${bid}" ${ready ? '' : 'disabled'}>${ready ? '送出站位與方向' : sel.x == null ? '先在地圖上點站位' : '再選一個方向'}</button>`}${foot}`;
+  }
+  function compassHTML(bid, dir) {
+    return `<div class="compass">${[0, 1, 2, 3, 4, 5, 6, 7].map((d) => { const a = d * Math.PI / 4; return `<button data-cdir="${bid}|${d}" class="${dir === d ? 'on' : ''}" title="${G.DIRS[d]}" style="left:${(50 + 39 * Math.sin(a)).toFixed(1)}%;top:${(50 - 39 * Math.cos(a)).toFixed(1)}%">${ARROWS[d]}</button>`; }).join('')}
+      <div class="c">📷<b>${dir != null ? '朝' + G.DIRS[dir] : '選方向'}</b></div></div>`;
+  }
+  function chalResultHTML(v, bid, c) {
+    const more = chalSeq(v, c.no).some(([b2, x]) => x.state === 'open' && b2 !== bid && !st.chalHide[b2]);
+    const got = reward(v, c);
+    const r = c.kind === 'cam'
+      ? (c.state === 'ok' ? ['🎯', `全對！${got}`] : c.state === 'half' ? ['👍', `站位對了，方向差一點（${got}）`] : ['😅', '差太遠了，看看正確的站位'])
+      : (c.state === 'ok' ? ['🎉', `答對！${got}`] : c.state === 'judge' ? ['📨', '已送出，等大師判定'] : ['😅', `不對喔${c.a ? `，答案是「${esc(c.a)}」` : ''}`]);
+    return `<div class="chv"><div class="hd">🎁 加分挑戰・第 ${c.no} 號<span>結果</span></div><div class="bd">
+      <div class="ttl">${kindName(c)}</div><div class="big">${r[0]}</div><div style="text-align:center;font-weight:900;font-size:1.15em">${r[1]}</div>
+      ${c.kind === 'task' ? `<div style="text-align:center;margin-top:6px" class="muted">你的答案：「${esc(c.text)}」</div>` : `${miniMap(bid, c, c.ans || {}, c.cam)}<div class="small muted" style="text-align:center;margin-top:4px">🟠 你標的　🟢 正確的站位與方向</div>`}
+      <button class="btn" data-chnext>${more ? '下一個挑戰 →' : v.finished ? '完成 ✓' : '繼續找下一題 →'}</button></div></div>`;
+  }
+  function chalRecHTML(v) {
+    const done = Object.values(v.chal || {}).filter((c) => c.state !== 'open').sort((a, b) => (b.at || 0) - (a.at || 0));
+    if (!done.length) return '';
+    const res = (c) => (c.state === 'ok' ? `✅ ${reward(v, c)}` : c.state === 'half' ? `🟡 ${reward(v, c)}` : c.state === 'judge' ? '⏳ 等大師判' : '❌');
+    return `<details class="card chrec"><summary>🎁 挑戰紀錄（${done.length}）</summary>${done.map((c) => `<div class="r">${kindName(c)}・第 ${c.no} 號<b>${res(c)}</b></div>`).join('')}</details>`;
   }
   // 小地圖（放大 2.2 倍、以照片地點為中心）：作答時點一下標站位；答完顯示正確站位
   function miniMap(bid, c, mine, truth) {
     const pub = st.pub || {}, map = pub.map || { src: 'r:map', w: 1117, h: 1579 }, crop = pub.crop || { top: 0, bot: 100 }, span = (crop.bot - crop.top) / 100;
     const dot = (p, col) => `<div class="mk" style="left:${p.x}%;top:${p.y}%"><div style="width:30px;height:30px;border-radius:50%;background:${col};border:2px solid #fff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;box-shadow:0 1px 4px rgba(0,0,0,.5);transform:rotate(${(p.dir || 0) * 45}deg)">${p.dir != null ? '↑' : '•'}</div></div>`;
-    return `<div class="mapbox mini" data-mini="${bid}" data-px="${c.x}" data-py="${c.y}"><div class="mapin" style="width:220%"><div class="crop" style="aspect-ratio:${map.w}/${(map.h * span).toFixed(1)}"><div class="inner" ${truth ? '' : `data-mpick="${bid}"`} style="top:${(-crop.top / span).toFixed(3)}%;height:${(100 / span).toFixed(3)}%">
+    const cx = truth && mine && mine.x != null ? (truth.x + mine.x) / 2 : c.x, cy = truth && mine && mine.y != null ? (truth.y + mine.y) / 2 : c.y;
+    return `<div class="mapbox mini" data-mini="${bid}${truth ? 'r' : ''}" data-px="${cx}" data-py="${cy}"><div class="mapin" style="width:220%"><div class="crop" style="aspect-ratio:${map.w}/${(map.h * span).toFixed(1)}"><div class="inner" ${truth ? '' : `data-mpick="${bid}"`} style="top:${(-crop.top / span).toFixed(3)}%;height:${(100 / span).toFixed(3)}%">
       <img class="base" src="${esc(G.photoURL(map.src))}" alt="校園地圖">
       <div class="mk tg" style="left:${c.x}%;top:${c.y}%">📍</div>
       ${truth ? dot(truth, '#1f9e8f') : ''}${mine && mine.x != null ? dot(mine, '#f07c1f') : ''}
@@ -517,6 +586,18 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
       else st.fitTry = 0;
     };
     if (img && !img.complete) img.addEventListener('load', go, { once: true }); else go();
+  }
+  function openRename() {
+      {
+        const sh = sheet(`<h2>✏️ 幫你們這一組取個名字</h2><p class="small muted" style="margin:4px 0 8px">最多 10 個字。<b>只能改一次</b>，改完大師的畫面會同步。</p><input type="text" id="rnName" maxlength="10" value="${esc(st.view.name)}"><button class="btn" data-ok>確定改名</button><button class="btn ghost" data-no>先不要</button>`);
+        $('[data-no]', sh.el).onclick = sh.close;
+        $('[data-ok]', sh.el).onclick = async () => {
+          const name = G.cleanName($('#rnName', sh.el).value); if (!name) return toast('隊名不能空白', true);
+          if (name === st.view.name) return sh.close();
+          try { await api(`${RUN}/teams/${st.me.tid}/rename`, 'PUT', { k: st.me.k, name, ts: { '.sv': 'timestamp' } }); sh.close(); toast('✅ 已送出，等大師同步'); }
+          catch (e) { sh.close(); toast(e.status === 401 || e.status === 403 ? '這一組已經改過隊名了' : '連線失敗，請再試一次', true); }
+        };
+      }
   }
   function bind() {
     $$('[data-zoom]').forEach((im) => { im.onclick = () => { const z = document.createElement('div'); z.className = 'zoom'; z.innerHTML = `<button class="x">✕ 關閉</button><img src="${im.src}">`; z.querySelector('.x').onclick = () => z.remove(); document.body.appendChild(z); }; });
@@ -576,6 +657,14 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
         st.chalPend[bid] = Date.now(); enqueue('reqs', { cid: bid, type: 'cam', x: sel.x, y: sel.y, dir: sel.dir }); render();
       };
     });
+    // 🎁 挑戰：開始、略過（整個地點／單一題）、看完結果繼續
+    $$('[data-chgo]').forEach((b) => { b.onclick = () => { st.chalNo = +b.dataset.chgo; st.chalShow = null; render(); window.scrollTo(0, 0); }; });
+    const skipChal = (bids) => { bids.forEach((bid) => { st.chalHide[bid] = 1; enqueue('reqs', { cid: bid, type: 'cskip' }); }); };
+    $$('[data-chskip]').forEach((b) => { b.onclick = () => { const no = +b.dataset.chskip; skipChal(chalOpen(st.view).filter(([, c]) => c.no === no).map(([bid]) => bid)); render(); }; });
+    $$('[data-chskip1]').forEach((b) => { b.onclick = () => { skipChal([b.dataset.chskip1]); render(); window.scrollTo(0, 0); }; });
+    $$('[data-chnext]').forEach((b) => { b.onclick = () => { st.chalShow = null; render(); window.scrollTo(0, 0); }; });
+    // ✏️ 改隊名（只能一次，規則擋第二次）
+    $$('#app [data-rename]').forEach((b) => { b.onclick = openRename; });
     $$('[data-keep^="tk_"]').forEach((i) => { i.oninput = () => { st.taskText[i.dataset.keep.slice(3)] = i.value; }; });
     $$('[data-tsend]').forEach((b) => {
       b.onclick = () => {

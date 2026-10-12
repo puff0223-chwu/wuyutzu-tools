@@ -31,7 +31,7 @@
       hint1: String(p.hint1 || ''), hint2: String(p.hint2 || ''),
       view: { dist: (p.view && p.view.dist) || '', angle: (p.view && p.view.angle) || '', odd: !!(p.view && p.view.odd) },
       cam: p.cam && p.cam.x != null ? { x: +p.cam.x, y: +p.cam.y, dir: (+p.cam.dir || 0) % 8 } : null,
-      reveal: p.reveal || '', task: p.task && p.task.q ? { q: String(p.task.q), a: String(p.task.a || ''), open: !!p.task.open, bonus: +p.task.bonus || 5 } : null,
+      reveal: p.reveal || '', task: p.task && p.task.q ? { q: String(p.task.q), a: String(p.task.a || '').trim(), open: !String(p.task.a || '').trim(), bonus: p.task.bonus != null && p.task.bonus !== '' ? +p.task.bonus || 0 : 5 } : null, // 有標準答案＝系統判，空白＝老師判
       author: String(p.author || ''), note: String(p.note || ''), key
     };
   }
@@ -310,6 +310,24 @@
     return arr;
   }
 
+  // 隨機探險風隊名（2026-10-12 老師要求：不用自己輸入組名）；同一場盡量不重複開頭與結尾
+  const NAME_A = ['迷途', '午夜', '月光', '風暴', '隱形', '流浪', '霧中', '星夜', '黃昏', '秘密', '閃電', '沉睡', '時光', '失落', '極光', '暗巷', '晨霧', '雷霆', '幽靈', '羅盤', '荒野', '深海', '火山', '冰原'];
+  const NAME_B = ['貓頭鷹', '偵探團', '探險隊', '狐狸', '旅人', '獵人', '守望者', '地圖師', '游擊隊', '渡鴉', '航海家', '尋寶團', '追蹤者', '巡守隊', '解謎社', '野狼', '飛鷹', '觀星者', '密探', '遊俠', '考古隊', '信鴿', '燈塔', '鬥士'];
+  function teamNames(n, rnd) {
+    rnd = rnd || Math.random;
+    const out = [], used = new Set();
+    let A = [], B = [];
+    for (let i = 0; i < n; i++) {
+      if (!A.length) A = shuffle(NAME_A, rnd); if (!B.length) B = shuffle(NAME_B, rnd);
+      let name = A.pop() + B.pop(), g = 0;
+      while (used.has(name) && g++ < 50) name = NAME_A[Math.floor(rnd() * NAME_A.length)] + NAME_B[Math.floor(rnd() * NAME_B.length)];
+      used.add(name); out.push(name);
+    }
+    return out;
+  }
+  // 學生改隊名：最多 10 個字，去掉奇怪符號
+  const cleanName = (s) => String(s || '').replace(/[<>&"'`\\/{}\[\]]/g, '').replace(/\s+/g, ' ').trim().slice(0, 10);
+
   // =====================================================================
   // 第三階段：🎯 積分賽、🎁 加分挑戰
   // =====================================================================
@@ -454,6 +472,6 @@
     // 第二階段
     CODE_CH, makeCode, sha, DEFAULT_RUN, viewLevel, chooseBatch, chooseNext, gameSeconds, fmtTime, rankTeams, boardHTML, boardPaint, BOARD_CSS,
     // 第三階段
-    LOC_MIN, crowdByLoc, crowdAvg, heatLevel, zoneMult, viewMult, cardValue, lateMin, teamTotal, rankScore, judgeCam, judgeTask, normAns
+    teamNames, cleanName, LOC_MIN, crowdByLoc, crowdAvg, heatLevel, zoneMult, viewMult, cardValue, lateMin, teamTotal, rankScore, judgeCam, judgeTask, normAns
   };
 })();
