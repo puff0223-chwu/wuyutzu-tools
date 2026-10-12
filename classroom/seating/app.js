@@ -131,6 +131,14 @@ function studentOptions(selected, opts = {}) {
 /* ---------------- 啟動 ---------------- */
 async function enterCloud(user) {
   if (Store.mode === 'cloud' && Store.uid === user.uid) return;
+  // 2026-10-13 會員制：雲端模式要在會員中心核准、開通「座位大作戰」（巫魚子的 +seat 帳號不用申請；本機模式不受影響）
+  const res = window.WuStaff ? await WuStaff.check(FB.get, user, 'seat') : { ok: true };
+  if (!res.ok) {
+    $('#app').innerHTML = WuStaff.blockedHTML(res, 'seat', '../../', user.email) + '<p style="text-align:center"><button class="btn sm" data-act="useLocal">💾 先用本機模式</button></p>';
+    $('[data-staff-logout]').onclick = async () => { await FB.logout(); renderLogin(); };
+    const lb = $('[data-act="useLocal"]'); if (lb) lb.onclick = async () => { await FB.logout(); enterLocal(); };
+    return;
+  }
   Store.mode = 'cloud'; Store.uid = user.uid; Store.email = user.email || '';
   await loadClasses();
 }
@@ -210,7 +218,7 @@ function renderLogin(msg) {
   <div class="login">
     <div class="en">SEAT AUCTION · TEACHER</div>
     <h1>🪑 座位大作戰</h1>
-    <p class="muted" style="margin-bottom:14px">老師後台登入（座位系統專用帳號）</p>
+    <p class="muted" style="margin-bottom:14px">老師後台登入（巫魚子教課事務所老師帳號）</p>
     ${msg ? `<div class="alert red">${esc(msg)}</div>` : ''}
     ${window.FB ? `
     <label class="f">Email</label><input type="email" id="lgEmail" autocomplete="username">
@@ -218,7 +226,7 @@ function renderLogin(msg) {
     <div class="row" style="margin-top:16px"><button class="btn primary" data-act="login">登入</button>
       <button class="btn ghost sm" data-act="forgot">忘記密碼</button></div>
     <hr style="border:none;border-top:1.5px dashed var(--line);margin:20px 0">` : ''}
-    <p class="small muted">還沒有帳號，或只想先試用？</p>
+    <p class="small muted">還沒有帳號？<a href="../../account/?app=seat"><b>👥 到會員中心申請使用</b></a>（各系統共用同一個老師帳號）。只想先試用？</p>
     <button class="btn sm" data-act="useLocal" style="margin-top:6px">💾 用本機模式（資料只存在這台裝置）</button>
     <p class="small" style="margin-top:18px"><a href="../../index.html">🏠 回事務所首頁</a></p>
   </div>`;

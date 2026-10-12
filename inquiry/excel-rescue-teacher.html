@@ -12,8 +12,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="excel-rescue-core.js?v=20261013a"></script>
-<script src="excel-rescue-checker.js?v=20261013a"></script>
+<script src="../account/staff.js?v=20261013b"></script>
+<script src="excel-rescue-core.js?v=20261013b"></script>
+<script src="excel-rescue-checker.js?v=20261013b"></script>
 <style>
 :root{--ink:#1c2230;--paper:#f3ead6;--paper2:#e9dcc0;--line:#cbb88f;--brass:#c39a3d;--stamp:#b3312c;--ok:#2f7d4f;--muted:#6b6250;--text:#2a2418}
 *{box-sizing:border-box}
@@ -174,10 +175,12 @@ td.cl{color:var(--ok);font-weight:700}
 </style>
 </head>
 <body>
-<div class="wrap">
+<div id="erGate"><p style="text-align:center;margin-top:30vh;color:#f3ead6">載入中…</p></div>
+<div class="wrap" id="erMain" style="display:none">
   <div class="paper head">
     <div><h1>🗂️ 消失的實驗數據｜老師答案卷宗</h1><div class="note">🔒 本頁含全班答案，請勿提供給學生；學生請用下方的學生連結</div></div>
-    <div style="text-align:right"><a class="home" href="../index.html">🏠 回事務所首頁</a><div class="sem" style="margin-top:6px">目前學期：<b class="mono" id="sem"></b></div></div>
+    <div style="text-align:right"><a class="home" href="../index.html">🏠 回事務所首頁</a><div class="sem" style="margin-top:6px">目前學期：<b class="mono" id="sem"></b></div>
+      <div class="note" style="margin:4px 0 0">👤 <span id="erWho"></span>　<span id="erAdmin"></span><button class="linkbtn" id="erOut">登出</button></div></div>
   </div>
 
   <nav class="tabs" id="tabs">
@@ -324,13 +327,23 @@ td.cl{color:var(--ok);font-weight:700}
   // ---------- 學期管理（2026-10-13 改版：新增、切換、刪除、備註） ----------
   // 清單存在這台電腦的瀏覽器：[{ code, note, at }]；舊版「最近用過」會自動搬進來
   var SEMS_KEY = 'excelRescue-teacher:sems';
-  function loadSems(){
+  // 2026-10-13 帳號版：學期清單、全班名單存在雲端 excel-rescue-owners/<uid>（換電腦登入就回來）
+  // 學期 { code, note, at, legacy }：legacy＝巫魚子帳號版之前的舊連結（沒有老師代碼）
+  var CLOUD = { uid: '', tcode: '', admin: false, sems: [], rosters: {} };
+  function localSems(){
     var a; try { a = JSON.parse(localStorage.getItem(SEMS_KEY)); } catch(e){}
     if (!Array.isArray(a)) { var old = []; try { old = JSON.parse(localStorage.getItem(REC_KEY)) || []; } catch(e){} a = old.map(function(c){ return { code: c, note: '', at: Date.now() }; }); }
     return a.filter(function(x){ return x && X.validSemester(x.code); });
   }
-  function saveSems(a){ try { localStorage.setItem(SEMS_KEY, JSON.stringify(a)); } catch(e){} }
+  function loadSems(){ return CLOUD.sems.map(function(x){ return Object.assign({}, x); }); }
+  function saveSems(a){
+    CLOUD.sems = a.map(function(x){ return Object.assign({}, x); });
+    var o = {}; a.forEach(function(x){ o[x.code] = { note: x.note || '', at: x.at || Date.now(), legacy: !!x.legacy }; });
+    window.ERFB && ERFB.set('excel-rescue-owners/' + CLOUD.uid + '/sems', o).catch(function(e){ alert('學期清單存到雲端失敗：' + (e.code || e.message)); });
+  }
+  function semItem(code){ return CLOUD.sems.filter(function(x){ return x.code === code; })[0]; }
   function ensureSem(code){ var a = loadSems(); if (!a.some(function(x){ return x.code === code; })) { a.push({ code: code, note: '', at: Date.now() }); saveSems(a); } }
+  function rosterKey(){ return X.seedKey().replace(/\//g, '_'); }
   // 依今天的日期建議學期：8 月～1 月＝上學期（-1），2～7 月＝下學期（-2）；民國年以學年度算
   function suggestSems(){
     var d = new Date(), y = d.getFullYear() - 1911, m = d.getMonth() + 1;
@@ -344,7 +357,11 @@ td.cl{color:var(--ok);font-weight:700}
     sem = X.CONFIG.SEMESTER;
     try { localStorage.setItem(SEM_KEY, sem); } catch(e){}
     ensureSem(sem);
-    $('sem').textContent = sem;
+    var it = semItem(sem); X.setTeacher(it && it.legacy ? '' : CLOUD.tcode);
+    window.ERFB && ERFB.set('excel-rescue-owners/' + CLOUD.uid + '/cur', sem).catch(function(){});
+    $('sem').textContent = sem + (X.CONFIG.TEACHER ? '' : '（舊版連結）');
+    $('ids').value = CLOUD.rosters[rosterKey()] || ''; list = []; $('tbl').innerHTML = ''; $('genMsg').innerHTML = '';
+    if ($('ids').value.trim()) list = parse();
     renderChips(); updateLink();
     live = null; liveAt = 0; if (curTab === 'live' || curTab === 'wall') refreshLive();
     if (list.length) $('btnGen').click();
@@ -361,7 +378,7 @@ td.cl{color:var(--ok);font-weight:700}
     $('semList').innerHTML = a.map(function(x){
       var on = x.code === cur;
       return '<div class="semitem'+(on?' cur':'')+'"><span class="code">'+esc(x.code)+'</span>'+
-        '<span class="meta">'+(x.note ? '<b>'+esc(x.note)+'</b>　' : '')+'建立於 '+new Date(x.at || Date.now()).toLocaleDateString('zh-TW')+'</span>'+
+        '<span class="meta">'+(x.legacy ? '<span title="帳號版之前發出的連結（沒有老師代碼），舊資料都在這裡">🕰️ 舊版連結</span>　' : '')+(x.note ? '<b>'+esc(x.note)+'</b>　' : '')+'建立於 '+new Date(x.at || Date.now()).toLocaleDateString('zh-TW')+'</span>'+
         (on ? '<span class="badge">✔ 使用中</span>' : '')+
         '<span class="act">'+(on ? '' : '<button class="btn sm" data-sw="'+esc(x.code)+'">切換</button>')+
         '<button class="btn sm ghost" data-note="'+esc(x.code)+'" title="改備註">✏️ 備註</button>'+
@@ -379,7 +396,7 @@ td.cl{color:var(--ok);font-weight:700}
     Array.prototype.forEach.call(document.querySelectorAll('[data-del]'), function(b){ b.onclick = function(){
       var code = b.getAttribute('data-del'), a2 = loadSems();
       if (code === X.CONFIG.SEMESTER && a2.length === 1) { alert('這是唯一的學期，不能刪除。先新增另一個學期再刪。'); return; }
-      if (!confirm('從清單刪除學期「' + code + '」？\n\n・只會從這台電腦的清單移除\n・學生的闖關紀錄還留在雲端，之後重新新增「' + code + '」就會再看到\n・學生手上的舊連結還是能用')) return;
+      if (!confirm('從清單刪除學期「' + code + '」？\n\n・只會從你的學期清單移除\n・學生的闖關紀錄還留在雲端，之後重新新增「' + code + '」就會再看到\n・學生手上的連結還是能用')) return;
       a2 = a2.filter(function(x){ return x.code !== code; }); saveSems(a2);
       if (code === X.CONFIG.SEMESTER) { applySemester(a2.sort(function(x, y){ return (y.at || 0) - (x.at || 0); })[0].code); $('semMsg').className='note'; $('semMsg').textContent='🗑 已刪除 ' + code + '，自動切換到 ' + X.CONFIG.SEMESTER; }
       else { renderChips(); $('semMsg').className='note'; $('semMsg').textContent='🗑 已從清單刪除 ' + code; }
@@ -414,6 +431,7 @@ td.cl{color:var(--ok);font-weight:700}
   // ---------- 學生連結與 QR Code ----------
   function updateLink(){
     var u = new URL('excel-rescue.html', location.href);
+    if (X.CONFIG.TEACHER) u.searchParams.set('t', X.CONFIG.TEACHER);
     u.searchParams.set('s', X.CONFIG.SEMESTER);
     link = u.href;
     $('link').textContent = link; $('linkBig').textContent = link;
@@ -466,6 +484,8 @@ td.cl{color:var(--ok);font-weight:700}
 
   $('btnGen').onclick = function(){
     list = parse();
+    var txt = $('ids').value.slice(0, 30000);
+    if ((CLOUD.rosters[rosterKey()] || '') !== txt) { CLOUD.rosters[rosterKey()] = txt; window.ERFB && ERFB.set('excel-rescue-owners/' + CLOUD.uid + '/rosters/' + rosterKey(), txt || null).catch(function(){}); }
     if (!list.length) { $('tbl').innerHTML = '<p class="note bad">沒有讀到有效的學號。</p>'; return; }
     var h = '<table><thead><tr class="grp"><th colspan="4">調查員</th><th colspan="2">1 長條圖</th><th colspan="3">2 折線圖</th><th colspan="2">3 圓餅圖</th><th colspan="3">4 散佈圖</th><th colspan="6">5 函數</th><th colspan="2">6 格式化條件</th><th colspan="4">🕵️ 隱藏關卡</th><th></th></tr><tr>'+
       HEAD.map(function(x){ return '<th>'+x+'</th>'; }).join('')+'<th>數據檔</th></tr></thead><tbody>';
@@ -666,7 +686,8 @@ td.cl{color:var(--ok);font-weight:700}
     stopPoll();
     if (document.visibilityState === 'hidden') { schedule(); return; }
     var sem = X.CONFIG.SEMESTER;
-    X.cloudAll().then(function(all){ if (sem !== X.CONFIG.SEMESTER) return; live = all; liveAt = Date.now(); liveErr = ''; },
+    var path = X.cloudPath();
+    ERFB.get(path).then(function(all){ if (path !== X.cloudPath()) return; live = all || {}; liveAt = Date.now(); liveErr = ''; },
                       function(e){ liveErr = '連不上 Firebase（' + e.message + '）'; })
       .then(function(){ renderLive(); schedule(); });
   }
@@ -811,12 +832,100 @@ td.cl{color:var(--ok);font-weight:700}
   $('btnWallExit').onclick = function(){ $('wall').classList.remove('fake'); };
   document.addEventListener('keydown', function(e){ if (e.key === 'Escape') $('wall').classList.remove('fake'); });
 
-  // ---------- 開啟頁面：用上次的學期 ----------
-  var lastSem = null; try { lastSem = localStorage.getItem(SEM_KEY); } catch(e){}
-  applySemester(lastSem && X.validSemester(lastSem) ? lastSem : X.CONFIG.SEMESTER, true);
-  var lastTab = null; try { lastTab = localStorage.getItem('excelRescue-teacher:tab'); } catch(e){}
-  showTab(lastTab && document.querySelector('section[data-tab="' + lastTab + '"]') ? lastTab : 'setup');
+  // ---------- 開啟頁面（登入、核准檢查通過後才呼叫）：讀雲端的學期清單與名單 ----------
+  window.__erBoot = function(ctx){
+    CLOUD.uid = ctx.uid; CLOUD.tcode = ctx.tcode; CLOUD.admin = ctx.admin;
+    var own = ctx.owner || {};
+    CLOUD.rosters = own.rosters || {};
+    CLOUD.sems = Object.keys(own.sems || {}).map(function(k){ var x = own.sems[k]; return { code: k, note: x.note || '', at: x.at || Date.now(), legacy: !!x.legacy }; });
+    if (!CLOUD.sems.length) {
+      // 第一次用帳號版：巫魚子（管理員）把這台電腦以前的學期搬上來，標成舊版連結（舊資料、舊連結照常）
+      var seed = ctx.admin ? localSems().map(function(x){ return { code: x.code, note: x.note || '', at: x.at || Date.now(), legacy: true }; }) : [];
+      if (ctx.admin && !seed.some(function(x){ return x.code === '115-1'; })) seed.push({ code: '115-1', note: '', at: Date.now(), legacy: true });
+      if (!seed.length) { var sug = suggestSems()[0] || '115-1'; seed.push({ code: sug, note: '', at: Date.now(), legacy: false }); }
+      saveSems(seed);
+    }
+    $('erWho').textContent = ctx.email + (ctx.name ? '（' + ctx.name + '）' : '') + '・老師代碼 ' + ctx.tcode;
+    if (ctx.admin) $('erAdmin').innerHTML = '<a class="linkbtn" href="../account/">👥 會員管理</a>　';
+    var cur = own.cur && semItem(own.cur) ? own.cur : CLOUD.sems[0].code;
+    applySemester(cur, true);
+    var lastTab = null; try { lastTab = localStorage.getItem('excelRescue-teacher:tab'); } catch(e){}
+    showTab(lastTab && document.querySelector('section[data-tab="' + lastTab + '"]') ? lastTab : 'setup');
+  };
 })();
+</script>
+<script type="module">
+/* 2026-10-13 帳號版：老師先登入 → 檢查會員中心的核准（消失的實驗數據）→ 拿到自己的老師代碼 → 開啟卷宗 */
+const firebaseConfig = {
+  apiKey: "AIzaSyCRrmtcQ8INfbK0XgwkAZCx8V5wXCwU1lg",
+  authDomain: "point-collection-stash.firebaseapp.com",
+  databaseURL: "https://point-collection-stash-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "point-collection-stash",
+  storageBucket: "point-collection-stash.firebasestorage.app",
+  messagingSenderId: "391627703615",
+  appId: "1:391627703615:web:f9b8c358f147949a1d7f8a"
+};
+const W = window.WuStaff, gate = document.getElementById('erGate');
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let FB = null;
+try {
+  const V = '10.14.1', B = `https://www.gstatic.com/firebasejs/${V}/`;
+  const [{ initializeApp }, A, D] = await Promise.all([import(B + 'firebase-app.js'), import(B + 'firebase-auth.js'), import(B + 'firebase-database.js')]);
+  const app = initializeApp(firebaseConfig, 'excel');
+  const auth = A.getAuth(app), db = D.getDatabase(app);
+  FB = {
+    onUser: (cb) => A.onAuthStateChanged(auth, cb),
+    login: (e, p) => A.signInWithEmailAndPassword(auth, e, p),
+    logout: () => A.signOut(auth),
+    reset: (e) => A.sendPasswordResetEmail(auth, e),
+    get: async (p) => (await D.get(D.ref(db, p))).val(),
+    set: (p, v) => D.set(D.ref(db, p), v),
+    update: (p, v) => D.update(D.ref(db, p), v)
+  };
+  window.ERFB = FB;
+} catch (e) { console.warn(e); }
+const box = (inner) => `<div style="max-width:460px;margin:10vh auto;background:var(--paper);border-radius:12px;padding:28px;color:var(--text)">${inner}</div>`;
+function renderLogin(msg) {
+  document.getElementById('erMain').style.display = 'none';
+  gate.innerHTML = box(`<h1 style="font-size:1.5rem">🗂️ 消失的實驗數據｜老師登入</h1>
+    <p class="note">老師卷宗含全班答案，需要登入。各系統共用同一個老師帳號。</p>
+    ${msg ? `<p class="note bad">${esc(msg)}</p>` : ''}${!FB ? '<p class="note bad">雲端服務載入失敗，請確認網路後重新整理。</p>' : ''}
+    <label class="note" style="display:block;margin-top:12px;font-weight:700;color:var(--text)">Email</label><input type="email" id="gE" autocomplete="username" value="${esc(localStorage.getItem('excelRescue-teacher:email') || '')}">
+    <label class="note" style="display:block;margin-top:10px;font-weight:700;color:var(--text)">密碼</label><input type="password" id="gP" autocomplete="current-password">
+    <div class="row" style="margin-top:16px"><button class="btn" id="gGo">🔓 登入</button><button class="linkbtn" id="gReset" style="margin-left:auto">忘記密碼</button></div>
+    <p class="note" style="margin-top:16px">還沒有帳號？<a href="${W.centerURL('../', 'excel')}" style="font-weight:700;color:var(--ink)">👥 到會員中心申請使用</a>（巫魚子老師核准後就能用）</p>
+    <p class="note"><a class="home" href="../index.html" style="font-size:.9rem">🏠 回事務所首頁</a></p>`);
+  const go = async () => { const e = document.getElementById('gE').value.trim(), p = document.getElementById('gP').value; if (!e || !p) return; document.getElementById('gGo').disabled = true; try { await FB.login(e, p); localStorage.setItem('excelRescue-teacher:email', e); } catch (err) { renderLogin(/invalid-credential|wrong-password|user-not-found/.test(err.code) ? 'Email 或密碼不對' : '登入失敗：' + (err.code || err.message)); } };
+  document.getElementById('gGo').onclick = go; document.getElementById('gP').onkeydown = (ev) => { if (ev.key === 'Enter') go(); };
+  document.getElementById('gReset').onclick = async () => { const e = document.getElementById('gE').value.trim(); if (!e) return alert('先輸入 Email'); try { await FB.reset(e); alert('重設密碼的信已寄出'); } catch (err) { alert('寄送失敗：' + (err.code || err.message)); } };
+}
+// 老師代碼：6 碼，第一次登入自動產生（學生連結會帶 ?t=老師代碼，每位老師的數據與紀錄分開）
+const ALPH = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const newCode = () => Array.from(crypto.getRandomValues(new Uint8Array(6)), (b) => ALPH[b % ALPH.length]).join('');
+async function ensureTeacher(user, name) {
+  const own = (await FB.get('excel-rescue-owners/' + user.uid)) || {};
+  if (own.tcode) return own;
+  let code = newCode();
+  for (let i = 0; i < 6 && await FB.get('excel-rescue-t/' + code + '/meta'); i++) code = newCode();
+  const meta = { owner: user.uid, name: name || user.email, at: Date.now() };
+  if (W.isAdmin(user)) meta.admin = true;
+  await FB.set('excel-rescue-t/' + code + '/meta', meta);
+  await FB.update('excel-rescue-owners/' + user.uid, { tcode: code });
+  own.tcode = code; return own;
+}
+if (!FB) renderLogin();
+else FB.onUser(async (u) => {
+  if (!u) return renderLogin();
+  gate.innerHTML = box('<p class="note">檢查帳號中…</p>');
+  const res = await W.check(FB.get, u, 'excel');
+  if (!res.ok) { gate.innerHTML = W.blockedHTML(res, 'excel', '../', u.email); gate.querySelector('[data-staff-logout]').onclick = () => FB.logout(); return; }
+  try {
+    const own = await ensureTeacher(u, res.rec && res.rec.name);
+    gate.innerHTML = ''; document.getElementById('erMain').style.display = '';
+    document.getElementById('erOut').onclick = async () => { await FB.logout(); location.reload(); };
+    window.__erBoot({ uid: u.uid, email: u.email, name: res.rec ? res.rec.name : '', admin: W.isAdmin(u), tcode: own.tcode, owner: own });
+  } catch (e) { console.error(e); gate.innerHTML = box(`<p class="note bad">讀取老師資料失敗：${esc(e.code || e.message)}<br>（Firebase 規則可能還沒更新）</p><button class="btn" onclick="location.reload()">重新整理</button>`); }
+});
 </script>
 </body>
 </html>

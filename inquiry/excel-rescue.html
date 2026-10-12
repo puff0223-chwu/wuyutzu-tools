@@ -10,8 +10,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="excel-rescue-core.js?v=20261013a"></script>
-<script src="excel-rescue-checker.js?v=20261013a"></script>
+<script src="excel-rescue-core.js?v=20261013b"></script>
+<script src="excel-rescue-checker.js?v=20261013b"></script>
 <style>
 :root{
   --ink:#1c2230; --ink2:#2b3346; --paper:#f3ead6; --paper2:#e9dcc0; --line:#cbb88f;
@@ -229,15 +229,16 @@ button{font:inherit;cursor:pointer}
 
   // ---------- 學期：老師給的連結會帶 ?s=學期代碼，沒帶就用預設 ----------
   (function(){
-    var s = null;
-    try { s = new URLSearchParams(location.search).get('s'); } catch(e){}
-    if (s && !X.setSemester(s)) {
+    var s = null, t = null;
+    try { var q = new URLSearchParams(location.search); s = q.get('s'); t = q.get('t'); } catch(e){}
+    // ?t=老師代碼（帳號版）：每位老師的數據與紀錄分開；沒有 t＝舊版連結
+    if ((t && !X.setTeacher(t)) || (s && !X.setSemester(s))) {
       document.body.insertAdjacentHTML('afterbegin','<div style="background:#b3312c;color:#fff;text-align:center;padding:10px;font-weight:700">連結裡的學期代碼怪怪的，請重新掃老師給的 QR Code</div>');
     }
     $('semLogin').textContent = X.CONFIG.SEMESTER;
   })();
 
-  function key(id){ return 'excelRescue:' + X.CONFIG.SEMESTER + ':' + id; }
+  function key(id){ return 'excelRescue:' + X.seedKey() + ':' + id; }
   function load(id){
     try { var s = localStorage.getItem(key(id)); if (s) return JSON.parse(s); } catch(e){}
     return { passed:{}, attempts:{}, inputs:{}, name:'' };

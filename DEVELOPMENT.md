@@ -576,6 +576,16 @@ wuyutzu-tools/
   - **Firebase 用量**：一張投稿照片約 60～150 KB；一個班 30 人各投 2 張約 5～9 MB，通過後原檔就刪掉（搬進題庫）
   - 📷 翻拍挑戰、積分賽「出題任務卡」：**保留、暫不開放**（會在比賽中大量上傳照片，佔 Firebase 免費額度；老師決定優先把額度留給更多系統）
 
+### 👥 會員中心（account/，2026-10-13 新增）
+- **用途**：其他老師自己申請帳號 → 管理員（`puff0223+excel@gmail.com`）核准並勾選可用的系統（excel／gps／seat），不用到 Firebase 控制台一個一個建帳號
+- **流程**：會員中心註冊（Email、密碼、姓名、學校、想用的系統、用途）→ 寄驗證信 → `staff/<uid>` 狀態 pending → 管理員在「待核准」分頁勾系統按核准 → 老師重新整理各系統頁面就能用
+- **資料**：`staff/<uid>` = {email, name, school, purpose, want{app}, at, status: pending|approved|rejected|disabled, apps{app:true}, note, decidedAt}；`staffv/<uid>` 信箱已驗證旗標；`staffreq/<uid>` 加開系統申請
+- **共用檢查**：`account/staff.js` 的 `WuStaff.check(get, user, app)`，各系統頁登入後呼叫；沒權限就顯示 `blockedHTML`（連回會員中心）。各系統原本的擁有者帳號（+gps、+seat、+excel）不用申請
+- **真正擋資料的是規則**：老師寫入的規則都加上「擁有者 或 管理員 或 (staff 核准 且 apps/<app> 為 true)」，畫面檢查只是方便
+- 沒有 Email 通知：有新申請時，管理員到會員中心看「待核准」分頁的紅色數字
+- **消失的實驗數據改成老師代碼制**：每位老師登入後自動產生 6 碼老師代碼，學生連結變成 `?t=代碼&s=學期`；資料在 `excel-rescue-t/<代碼>/<學期>/<學生id>`，學期清單與名單存在 `excel-rescue-owners/<uid>`。數據亂數種子＝`代碼/學期`，所以不同老師同學期的數據也不一樣；Excel A2 會寫上老師代碼，批改時用檔案裡的代碼重算
+- **舊連結照常能用**：沒有 `t` 的舊連結數據、雲端位置都跟以前一模一樣；管理員舊學期在清單上標「🕰️ 舊版連結」。舊路徑整個學期的讀取改成只有管理員能看，單一學生紀錄仍公開讀
+
 ### 💰 集點小金庫（family-points/index.html，2026-10-06 新增）
 
 - 用途：家庭用的集點系統（爸爸＝管理員、小孩＝使用者）。孩子回報表現得點、兌換獎品；爸爸審核。
@@ -693,6 +703,14 @@ fp/
 - **沒有登入的頁面不能刪雲端資料**：學期「刪除」只能從清單移除，要誠實寫在確認視窗裡（學生紀錄還在、重新新增就回來）
 - **script 要加版本號**：核心檔沒有 `?v=`，改了以後學生瀏覽器可能還在用舊的，新功能找不到就壞掉
 
+### 7-9 會員中心・老師自己申請帳號（2026-10-13）
+- **「自己註冊」不等於「可以用」**：Firebase 讓任何人都能建帳號，所以權限一定要另外記（`staff/<uid>/status` 與 `apps`），規則裡檢查這兩個值，不能只看「有登入」
+- **申請者不能幫自己核准**：規則只允許本人寫入 status＝pending 的申請，status、apps 只有管理員能改
+- **改資料位置一定要留舊路**：舊連結（沒有老師代碼）照舊算數據、照舊存位置，用 600 個學號驗證新舊數據完全相同才上線
+- **多一層代碼就多一份身分**：學生的 Excel 寫上老師代碼，批改時先用檔案裡的代碼換種子，批完再換回來（用 finally，出錯也會還原）
+- **畫面擋＋規則擋兩層**：前端檢查讓老師看到清楚說明（等待核准／尚未開通／已停用），規則才是真正的鎖；停用帳號後學生寫入也會被擋，測試時兩層都要測
+- **規則改一份就好**：三個系統共用同一個 Firebase 專案，規則以 repo 根目錄 `firebase-rules.json` 為主，另外兩份 merged 檔只是複本
+
 ## 8. 已知注意事項
 
 - **Firebase 免費額度（Spark，2026-10-06 查）**：儲存 1 GB、每月下載 10 GB、同時連線 100 條。估計每月下載不到 1 GB；要留意的是同時連線。pH、單位換算、器材排行榜都是「問完就走」的一次性請求，不長期佔連線；**長期佔連線的只有公告欄（SSE 即時同步）和集點小金庫**。公告欄學生頁切到背景超過 60 秒或關閉分頁就自動斷線、回到畫面自動重連（2026-10-06）。用量看 Firebase 控制台 → Realtime Database →「用量」
@@ -703,7 +721,9 @@ fp/
 
 ---
 
-## 附錄：Firebase 安全規則全文（2026-10-12，遺落的地點第四階段：新增 contrib、mycontrib）
+## 附錄：Firebase 安全規則全文（2026-10-13，會員中心：新增 staff、staffv、staffreq、excel-rescue-t、excel-rescue-owners）
+
+> 主檔：repo 根目錄 `firebase-rules.json`（`inquiry/orienteering/`、`classroom/seating/` 的 merged 檔是相同複本）
 
 ```json
 {
@@ -760,7 +780,7 @@ fp/
   },
   "excel-rescue": {
    "$sem": {
-    ".read": "$sem.matches(/^[A-Z0-9-]{1,16}$/)",
+    ".read": "(auth != null && auth.token.email === 'puff0223+excel@gmail.com') && $sem.matches(/^[A-Z0-9-]{1,16}$/)",
     "$id": {
      ".write": "newData.exists() && $sem.matches(/^[A-Z0-9-]{1,16}$/) && $id.matches(/^[A-Z0-9]{3,12}$/)",
      ".validate": "newData.hasChildren(['name','ts']) && newData.child('name').isString() && newData.child('name').val().length <= 12 && newData.child('ts').isNumber()",
@@ -788,7 +808,8 @@ fp/
      },
      "$other": {
       ".validate": false
-     }
+     },
+     ".read": "$sem.matches(/^[A-Z0-9-]{1,16}$/) && $id.matches(/^[A-Z0-9]{3,12}$/)"
     }
    }
   },
@@ -859,30 +880,30 @@ fp/
    "owners": {
     "$uid": {
      ".read": "auth != null && auth.uid === $uid",
-     ".write": "auth != null && auth.uid === $uid"
+     ".write": "(auth != null && (auth.token.email === 'puff0223+seat@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/seat').val() === true))) && (auth != null && auth.uid === $uid)"
     }
    },
    "classes": {
     "$cid": {
      ".read": "auth != null && data.child('owner').val() === auth.uid",
-     ".write": "auth != null && $cid.matches(/^cls[a-z0-9]{6,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)",
+     ".write": "(auth != null && (auth.token.email === 'puff0223+seat@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/seat').val() === true))) && (auth != null && $cid.matches(/^cls[a-z0-9]{6,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid))",
      ".validate": "newData.child('owner').val() === auth.uid"
     }
    },
    "rounds": {
     "$code": {
-     ".write": "auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid))",
+     ".write": "(auth != null && (auth.token.email === 'puff0223+seat@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/seat').val() === true))) && (auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid)))",
      "meta": {
       ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)",
-      ".write": "auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)",
+      ".write": "(auth != null && (auth.token.email === 'puff0223+seat@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/seat').val() === true))) && (auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid))",
       ".validate": "newData.hasChildren(['owner','open','deadline']) && newData.child('owner').val() === auth.uid && newData.child('deadline').isNumber()"
      },
      "board": {
       ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)",
-      ".write": "auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid"
+      ".write": "(auth != null && (auth.token.email === 'puff0223+seat@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/seat').val() === true))) && (auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid)"
      },
      "keys": {
-      ".write": "auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid"
+      ".write": "(auth != null && (auth.token.email === 'puff0223+seat@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/seat').val() === true))) && (auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid)"
      },
      "checkin": {
       "$h": {
@@ -892,7 +913,7 @@ fp/
      },
      "bids": {
       ".read": "auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid",
-      ".write": "auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid",
+      ".write": "(auth != null && (auth.token.email === 'puff0223+seat@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/seat').val() === true))) && (auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid)",
       "$h": {
        ".write": "newData.exists() && root.child('seating/rounds/'+$code+'/keys/'+$h).val() === true && root.child('seating/rounds/'+$code+'/meta/open').val() === true && now <= root.child('seating/rounds/'+$code+'/meta/deadline').val()",
        ".validate": "newData.hasChildren(['seat','res','ts']) && newData.child('ts').val() == now && newData.child('seat').isString() && root.child('seating/rounds/'+$code+'/board/biddable/'+newData.child('seat').val()).val() === true"
@@ -905,33 +926,33 @@ fp/
    "owners": {
     "$uid": {
      ".read": "auth != null && auth.uid === $uid",
-     ".write": "auth != null && auth.uid === $uid"
+     ".write": "(auth != null && (auth.token.email === 'puff0223+gps@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/gps').val() === true))) && (auth != null && auth.uid === $uid)"
     }
    },
    "banks": {
     "$bid": {
      ".read": "auth != null && data.child('owner').val() === auth.uid",
-     ".write": "auth != null && $bid.matches(/^bk[a-z0-9]{6,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)",
+     ".write": "(auth != null && (auth.token.email === 'puff0223+gps@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/gps').val() === true))) && (auth != null && $bid.matches(/^bk[a-z0-9]{6,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid))",
      ".validate": "newData.child('owner').val() === auth.uid"
     }
    },
    "photos": {
     "$pid": {
      ".read": "$pid.matches(/^[a-z0-9]{8,24}$/)",
-     ".write": "auth != null && $pid.matches(/^[a-z0-9]{8,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)",
+     ".write": "(auth != null && (auth.token.email === 'puff0223+gps@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/gps').val() === true))) && (auth != null && $pid.matches(/^[a-z0-9]{8,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid))",
      ".validate": "newData.hasChildren(['owner','data']) && newData.child('owner').val() === auth.uid && newData.child('data').isString() && newData.child('data').val().length < 600000"
     }
    },
    "myruns": {
     "$uid": {
      ".read": "auth != null && auth.uid === $uid",
-     ".write": "auth != null && auth.uid === $uid"
+     ".write": "(auth != null && (auth.token.email === 'puff0223+gps@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/gps').val() === true))) && (auth != null && auth.uid === $uid)"
     }
    },
    "runs": {
     "$code": {
      ".read": "auth != null && root.child('orienteering/runs/'+$code+'/meta/owner').val() === auth.uid",
-     ".write": "auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid))",
+     ".write": "(auth != null && (auth.token.email === 'puff0223+gps@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/gps').val() === true))) && (auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid)))",
      "meta": {
       ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)"
      },
@@ -983,13 +1004,13 @@ fp/
    "mycontrib": {
     "$uid": {
      ".read": "auth != null && auth.uid === $uid",
-     ".write": "auth != null && auth.uid === $uid"
+     ".write": "(auth != null && (auth.token.email === 'puff0223+gps@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/gps').val() === true))) && (auth != null && auth.uid === $uid)"
     }
    },
    "contrib": {
     "$code": {
      ".read": "auth != null && root.child('orienteering/contrib/'+$code+'/meta/owner').val() === auth.uid",
-     ".write": "auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid))",
+     ".write": "(auth != null && (auth.token.email === 'puff0223+gps@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/gps').val() === true))) && (auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid)))",
      "meta": {
       ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)"
      },
@@ -1022,6 +1043,76 @@ fp/
       }
      }
     }
+   }
+  },
+  "staff": {
+   ".read": "(auth != null && auth.token.email === 'puff0223+excel@gmail.com')",
+   "$uid": {
+    ".read": "auth != null && auth.uid === $uid",
+    ".write": "auth != null && ((auth != null && auth.token.email === 'puff0223+excel@gmail.com') || (auth.uid === $uid && (!data.exists() || data.child('status').val() === 'pending')))",
+    ".validate": "(auth != null && auth.token.email === 'puff0223+excel@gmail.com') || (newData.hasChildren(['email','name','school','purpose','want','at','status']) && newData.child('status').val() === 'pending' && !newData.child('apps').exists() && newData.child('email').val() === auth.token.email && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && newData.child('purpose').isString() && newData.child('purpose').val().length >= 1 && newData.child('purpose').val().length <= 200 && newData.child('at').isNumber())"
+   }
+  },
+  "staffv": {
+   ".read": "(auth != null && auth.token.email === 'puff0223+excel@gmail.com')",
+   "$uid": {
+    ".write": "auth != null && auth.uid === $uid && newData.val() === true && auth.token.email_verified === true"
+   }
+  },
+  "staffreq": {
+   ".read": "(auth != null && auth.token.email === 'puff0223+excel@gmail.com')",
+   "$uid": {
+    ".read": "auth != null && auth.uid === $uid",
+    ".write": "auth != null && ((auth != null && auth.token.email === 'puff0223+excel@gmail.com') || auth.uid === $uid)",
+    ".validate": "(auth != null && auth.token.email === 'puff0223+excel@gmail.com') || (newData.hasChildren(['want','at']) && newData.child('at').isNumber())"
+   }
+  },
+  "excel-rescue-t": {
+   "$t": {
+    ".read": "auth != null && data.child('meta/owner').val() === auth.uid",
+    "meta": {
+     ".read": "$t.matches(/^[A-HJ-NP-Z2-9]{6}$/)",
+     ".write": "auth != null && $t.matches(/^[A-HJ-NP-Z2-9]{6}$/) && (auth != null && (auth.token.email === 'puff0223+excel@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/excel').val() === true))) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)",
+     ".validate": "newData.hasChildren(['owner','at']) && (!newData.child('admin').exists() || (auth != null && auth.token.email === 'puff0223+excel@gmail.com'))"
+    },
+    "$sem": {
+     "$id": {
+      ".write": "newData.exists() && $t.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $sem.matches(/^[A-Z0-9-]{1,16}$/) && $id.matches(/^[A-Z0-9]{3,12}$/) && (root.child('excel-rescue-t/'+$t+'/meta/admin').val() === true || (root.child('staff/'+root.child('excel-rescue-t/'+$t+'/meta/owner').val()+'/status').val() === 'approved' && root.child('staff/'+root.child('excel-rescue-t/'+$t+'/meta/owner').val()+'/apps/excel').val() === true))",
+      ".validate": "newData.hasChildren(['name','ts']) && newData.child('name').isString() && newData.child('name').val().length <= 12 && newData.child('ts').isNumber()",
+      "name": {
+       ".validate": "newData.isString()"
+      },
+      "ts": {
+       ".validate": "newData.isNumber()"
+      },
+      "passed": {
+       "$lv": {
+        ".validate": "$lv.matches(/^(L[1-6]|H)$/) && newData.isNumber()"
+       }
+      },
+      "att": {
+       "$lv": {
+        ".validate": "$lv.matches(/^(L[1-6]|H)$/) && newData.isNumber() && newData.val() >= 0 && newData.val() <= 9999"
+       }
+      },
+      "closedAt": {
+       ".validate": "newData.isNumber()"
+      },
+      "check": {
+       ".validate": "newData.hasChildren(['score','max','at']) && newData.child('score').isNumber() && newData.child('max').isNumber() && newData.child('at').isNumber()"
+      },
+      "$other": {
+       ".validate": false
+      },
+      ".read": "$t.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $sem.matches(/^[A-Z0-9-]{1,16}$/) && $id.matches(/^[A-Z0-9]{3,12}$/)"
+     }
+    }
+   }
+  },
+  "excel-rescue-owners": {
+   "$uid": {
+    ".read": "auth != null && auth.uid === $uid",
+    ".write": "auth != null && auth.uid === $uid && (auth != null && (auth.token.email === 'puff0223+excel@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/excel').val() === true)))"
    }
   }
  }

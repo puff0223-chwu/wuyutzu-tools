@@ -90,7 +90,7 @@ function renderLogin(msg) {
     <label class="f">Email</label><input type="email" id="lgEmail" value="${esc(LS.get('gps_email', 'puff0223+gps@gmail.com'))}" autocomplete="username">
     <label class="f">密碼</label><input type="password" id="lgPw" autocomplete="current-password">
     <div class="row" style="margin-top:16px"><button class="btn primary" id="lgGo">🔓 登入</button><span class="spacer"></span><button class="btn ghost sm" id="lgReset">忘記密碼</button></div>
-    <p class="small muted" style="margin-top:14px">帳號由 Firebase 後台建立（Authentication → 新增使用者）。重設密碼的信會寄到原本的信箱。</p>
+    <p class="small muted" style="margin-top:14px">還沒有帳號？<a href="../../account/?app=gps"><b>👥 到會員中心申請使用</b></a>（巫魚子老師核准後就能用，各系統共用同一個帳號）</p>
   </div>`;
   const go = async () => {
     const email = $('#lgEmail').value.trim(), pw = $('#lgPw').value;
@@ -105,6 +105,10 @@ function renderLogin(msg) {
 
 async function enter(user) {
   S.user = user;
+  $('#app').innerHTML = '<p style="text-align:center;margin-top:20vh" class="muted">檢查帳號中…</p>';
+  // 2026-10-13 會員制：要在會員中心核准、開通「遺落的地點」才能用（巫魚子的 +gps 帳號不用申請）
+  const res = window.WuStaff ? await WuStaff.check(FB.get, user, 'gps') : { ok: true };
+  if (!res.ok) { $('#app').innerHTML = WuStaff.blockedHTML(res, 'gps', '../../', user.email); $('[data-staff-logout]').onclick = () => FB.logout(); return; }
   $('#app').innerHTML = '<p style="text-align:center;margin-top:20vh" class="muted">讀取題庫中…</p>';
   try { S.banks = await Store.index(); } catch (e) { return renderLogin('讀取失敗：' + (e.code || e.message) + '（Firebase 規則可能還沒貼上 orienteering 區塊）'); }
   const ids = Object.keys(S.banks).sort((a, b) => (S.banks[b].updatedAt || 0) - (S.banks[a].updatedAt || 0));
@@ -641,8 +645,8 @@ function renderBackupTab() {
 // ---------- 啟動 ----------
 async function openBankSilently(id) { const b = await Store.load(id); if (b) { S.bankId = id; S.bank = b; LS.set('gps_bank', id); } }
 window.TT = { S, Store, LS, $, $$, esc, toast, modal, confirmBox, zoomImg, imgTag, download, render, pts, openBankSilently, nearestZone };
-const L = await import('./live.js?v=20261012h');
-const K = await import('./contrib.js?v=20261012h');
+const L = await import('./live.js?v=20261013a');
+const K = await import('./contrib.js?v=20261013a');
 window.addEventListener('beforeunload', (e) => {
   if (Store._t && $('#saveState') && $('#saveState').textContent.includes('尚未')) { Store.flush(); e.preventDefault(); e.returnValue = ''; }
   if (L.isRefereeing()) { e.preventDefault(); e.returnValue = ''; }

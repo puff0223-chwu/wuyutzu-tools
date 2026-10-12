@@ -795,7 +795,7 @@ function drawDash() {
   $$('[data-zoomsrc]').forEach((im) => { im.style.cursor = 'zoom-in'; im.onclick = () => zoomImg(im.src); });
 }
 // 統計與路線回放放在另一個檔案，用到才載入
-const STATS = () => import('./stats.js?v=20261012h');
+const STATS = () => import('./stats.js?v=20261013a');
 function statsCtx() {
   const b = bank(), centers = G.zoneCenters(b), ys = Object.values(b.points).map((p) => p.y);
   return {

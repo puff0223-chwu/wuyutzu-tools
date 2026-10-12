@@ -79,7 +79,7 @@
   }
 
   function readIdentity(book) {
-    var id = '', sem = '';
+    var id = '', sem = '', teacher = '';
     var ws = book.wb.Sheets['任務說明'];
     var lines = [];
     if (ws) lines.push(cellText(ws, 'A2'), cellText(ws, 'A3'));
@@ -87,8 +87,9 @@
     lines.forEach(function (t) {
       var m = t.match(/調查員學號：\s*([A-Za-z0-9]+)/); if (m && !id) id = m[1];
       var s = t.match(/學期：\s*([A-Za-z0-9-]+)/); if (s && !sem) sem = s[1];
+      var tc = t.match(/老師代碼：\s*([A-Za-z0-9]+)/); if (tc && !teacher) teacher = tc[1];
     });
-    return { id: X.normId(id), semester: sem.toUpperCase() };
+    return { id: X.normId(id), semester: sem.toUpperCase(), teacher: teacher.toUpperCase() };
   }
 
   // 用參照位址（例如 'L1_長條圖'!$B$5:$B$10）回頭到工作表取值：檔案沒存圖表快取時用
@@ -458,7 +459,10 @@
     if (opts.expectedId && who.id && who.id !== X.normId(opts.expectedId)) warnings.push('⚠️ 這個檔案的學號是 ' + who.id + '，不是 ' + X.normId(opts.expectedId) + '！');
     var curSem = X.CONFIG.SEMESTER, sem = who.semester && X.validSemester(who.semester) ? who.semester : curSem;
     if (sem !== curSem) warnings.push('檔案的學期是 ' + sem + '（目前選的是 ' + curSem + '），已用檔案的學期來核對');
-    X.setSemester(sem);
+    // 用「檔案上的」老師代碼與學期重算數據（舊版檔案沒有老師代碼＝巫魚子舊版連結）
+    var curT = X.CONFIG.TEACHER, ft = X.validTeacher(who.teacher) ? who.teacher : '';
+    if (ft !== curT) warnings.push(ft ? '這個檔案的老師代碼是 ' + ft + (curT ? '（不是你的 ' + curT + '）' : '') + '，已用檔案上的代碼核對' : '這個檔案是舊版連結下載的（沒有老師代碼），已用舊版數據核對');
+    X.setSemester(sem); X.setTeacher(ft);
     var d;
     try {
       d = X.generate(id);
@@ -468,7 +472,7 @@
         L4: checkL4(book, charts, d), L5: checkL5(book, d), L6: await checkL6(book, d),
         H: checkHidden(charts, d)
       };
-    } finally { X.setSemester(curSem); }
+    } finally { X.setSemester(curSem); X.setTeacher(curT); }
     var stray = charts.filter(function (ch) { return !ch.usedBy && allY(ch).length >= 3; }).filter(function (ch) {
       // 隱藏關卡的圖不算陌生圖
       var abs = d.L4.rows.map(function (r) { return r.A; });

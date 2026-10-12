@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>👥 巫魚子教課事務所｜會員中心</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f7f3ea;--paper:#fffdf8;--ink:#1f2a44;--ink2:#4a5470;--muted:#7a8196;--line:#d9d2c3;--gold:#f2b134;--gold-soft:#fdf1d6;--red:#e4572e;--red-soft:#fde7e0;--teal:#1f9e8f;--teal-soft:#e3f4f1;--blue-soft:#e4eefb}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif;line-height:1.6;min-height:100vh}
+button,input,textarea,select{font:inherit;color:inherit}
+.top{background:var(--ink);color:#fff;padding:10px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 3px 0 var(--gold)}
+.top .brand{font-weight:900;font-size:1.1em}.top .brand small{display:block;font-family:'Bebas Neue',sans-serif;letter-spacing:.2em;color:var(--gold);font-size:.7em;font-weight:400}
+.top .sp{flex:1}.top a{color:#fff;text-decoration:none;border:1.5px solid rgba(255,255,255,.5);border-radius:10px;padding:4px 12px;font-weight:700;font-size:.9em}
+.top button{background:none;border:1.5px solid rgba(255,255,255,.5);color:#fff;border-radius:10px;padding:4px 12px;cursor:pointer;font-size:.9em}
+.wrap{max-width:980px;margin:0 auto;padding:20px}
+.card{background:var(--paper);border:2px solid var(--ink);border-radius:16px;box-shadow:4px 4px 0 var(--ink);padding:22px;margin:16px 0}
+.narrow{max-width:480px;margin:6vh auto}
+h1{font-family:'Noto Serif TC',serif;font-weight:900;font-size:1.6em}
+h2{font-size:1.2em;margin-bottom:8px}
+label.f{display:block;font-weight:700;margin:12px 0 4px;font-size:.95em}
+input[type=text],input[type=email],input[type=password],textarea{width:100%;border:2px solid var(--line);border-radius:10px;padding:9px 12px;background:#fff}
+textarea{min-height:76px;resize:vertical}
+input:focus,textarea:focus{outline:none;border-color:var(--gold)}
+.btn{display:inline-flex;align-items:center;gap:6px;background:var(--gold);border:2px solid var(--ink);border-radius:10px;padding:9px 18px;font-weight:900;cursor:pointer;box-shadow:2px 2px 0 var(--ink)}
+.btn:active{transform:translate(2px,2px);box-shadow:none}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:#fff}.btn.teal{background:var(--teal);color:#fff}.btn.red{background:#fff;color:var(--red);border-color:var(--red);box-shadow:2px 2px 0 var(--red)}
+.btn.sm{padding:5px 12px;font-size:.9em}
+.btn.wide{width:100%;justify-content:center;margin-top:16px}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.sp{flex:1}
+.small{font-size:.86em}.muted{color:var(--muted)}
+.alert{border-left:5px solid var(--red);background:var(--red-soft);padding:9px 12px;border-radius:8px;margin:10px 0;font-size:.93em}
+.alert.ok{border-color:var(--teal);background:var(--teal-soft)}.alert.warn{border-color:var(--gold);background:var(--gold-soft)}.alert.blue{border-color:#2f6db5;background:var(--blue-soft)}
+.apps{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.app{display:flex;align-items:center;gap:10px;border:2px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff;cursor:pointer}
+.app input{width:20px;height:20px;flex:none}
+.app b{display:block}.app span{font-size:.85em;color:var(--muted)}
+.app.on{border-color:var(--ink);background:var(--gold-soft)}
+.chip{display:inline-block;border-radius:999px;padding:1px 10px;font-size:.82em;font-weight:700;background:#eee}
+.chip.ok{background:var(--teal);color:#fff}.chip.wait{background:var(--gold-soft);color:#8a5a00}.chip.bad{background:var(--red);color:#fff}.chip.ink{background:var(--ink);color:var(--gold)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 4px}
+.tabs button{border:2px solid var(--ink);background:#fff;border-radius:999px;padding:5px 14px;font-weight:700;cursor:pointer}
+.tabs button.on{background:var(--ink);color:#fff}
+.mem{border:2px solid var(--line);border-radius:14px;padding:14px;background:#fff;margin-top:10px}
+.mem .hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mem .nm{font-weight:900;font-size:1.1em}
+.mem .pur{background:#f3eee2;border-radius:10px;padding:8px 12px;margin:8px 0;font-size:.93em;white-space:pre-wrap}
+.ck{display:inline-flex;align-items:center;gap:5px;border:1.5px solid var(--line);border-radius:999px;padding:3px 10px;margin:3px 4px 3px 0;cursor:pointer;font-size:.9em;background:#fff}
+.ck input{width:16px;height:16px}
+.mylinks a{display:flex;align-items:center;gap:10px;border:2px solid var(--ink);border-radius:12px;padding:12px 14px;background:#fff;text-decoration:none;color:var(--ink);margin-top:8px;box-shadow:2px 2px 0 var(--ink)}
+.mylinks a b{font-size:1.05em}.mylinks a span{color:var(--muted);font-size:.86em}
+.toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:12px;z-index:99;box-shadow:3px 3px 0 var(--gold);font-weight:700}
+.toast.err{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="top"><div class="brand">👥 會員中心<small>WU YU-ZI TEACHING STUDIO</small></div><span class="sp"></span><span id="who" class="small" style="opacity:.8"></span><button id="out" style="display:none">登出</button><a href="../index.html">🏠 回事務所首頁</a></div>
+<div class="wrap" id="app"><p class="muted" style="text-align:center;margin-top:20vh">載入中…</p></div>
+<script src="staff.js?v=20261013b"></script>
+<script type="module">
+const firebaseConfig = {
+  apiKey: "AIzaSyCRrmtcQ8INfbK0XgwkAZCx8V5wXCwU1lg",
+  authDomain: "point-collection-stash.firebaseapp.com",
+  databaseURL: "https://point-collection-stash-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "point-collection-stash",
+  storageBucket: "point-collection-stash.firebasestorage.app",
+  messagingSenderId: "391627703615",
+  appId: "1:391627703615:web:f9b8c358f147949a1d7f8a"
+};
+const W = window.WuStaff, $ = (s, el) => (el || document).querySelector(s), $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const toast = (m, err) => { const t = document.createElement('div'); t.className = 'toast' + (err ? ' err' : ''); t.textContent = m; document.body.appendChild(t); setTimeout(() => t.remove(), err ? 4200 : 2600); };
+const wantApp = new URLSearchParams(location.search).get('app') || '';
+const S = { user: null, rec: null, unsubs: [], tab: 'pending', all: {}, ver: {}, req: {} };
+const ERR = { 'auth/email-already-in-use': '這個 Email 已經註冊過了，請直接登入（忘記密碼可以按「忘記密碼」）', 'auth/invalid-email': 'Email 格式不對', 'auth/weak-password': '密碼至少要 6 個字', 'auth/invalid-credential': 'Email 或密碼不對', 'auth/wrong-password': 'Email 或密碼不對', 'auth/user-not-found': '找不到這個帳號，要先申請', 'auth/too-many-requests': '嘗試太多次了，請稍後再試', 'auth/operation-not-allowed': 'Firebase 還沒開放自行註冊（請聯絡巫魚子老師）' };
+const errMsg = (e) => ERR[e && e.code] || ('發生問題：' + ((e && (e.code || e.message)) || e));
+
+let FB;
+try {
+  const V = '10.14.1', B = `https://www.gstatic.com/firebasejs/${V}/`;
+  const [{ initializeApp }, A, D] = await Promise.all([import(B + 'firebase-app.js'), import(B + 'firebase-auth.js'), import(B + 'firebase-database.js')]);
+  const app = initializeApp(firebaseConfig, 'account');
+  const auth = A.getAuth(app), db = D.getDatabase(app);
+  FB = {
+    onUser: (cb) => A.onAuthStateChanged(auth, cb),
+    login: (e, p) => A.signInWithEmailAndPassword(auth, e, p),
+    register: (e, p) => A.createUserWithEmailAndPassword(auth, e, p),
+    verify: (u) => A.sendEmailVerification(u),
+    reload: async () => { await A.reload(auth.currentUser); await auth.currentUser.getIdToken(true); return auth.currentUser; },
+    logout: () => A.signOut(auth),
+    reset: (e) => A.sendPasswordResetEmail(auth, e),
+    get: async (p) => (await D.get(D.ref(db, p))).val(),
+    set: (p, v) => D.set(D.ref(db, p), v),
+    update: (p, v) => D.update(D.ref(db, p), v),
+    remove: (p) => D.remove(D.ref(db, p)),
+    listen: (p, cb) => D.onValue(D.ref(db, p), (s) => cb(s.val()), () => cb(null))
+  };
+} catch (e) { console.warn(e); FB = null; }
+
+function stop() { S.unsubs.forEach((u) => { try { u(); } catch (e) { } }); S.unsubs = []; }
+const appBoxes = (sel, name, only) => `<div class="apps">${Object.entries(W.APPS).filter(([k]) => !only || only.includes(k)).map(([k, a]) => `<label class="app ${sel[k] ? 'on' : ''}"><input type="checkbox" name="${name}" value="${k}" ${sel[k] ? 'checked' : ''}><div><b>${a.name}</b><span>${esc(a.desc)}</span></div></label>`).join('')}</div>`;
+const bindBoxes = (el) => $$('.app input', el).forEach((i) => { i.onchange = () => i.closest('.app').classList.toggle('on', i.checked); });
+const picked = (el, name) => Object.fromEntries($$(`input[name="${name}"]:checked`, el).map((i) => [i.value, true]));
+
+// ---------- 登入 ----------
+function renderLogin(msg) {
+  $('#who').textContent = ''; $('#out').style.display = 'none';
+  $('#app').innerHTML = `<div class="card narrow">
+    <div style="font-family:'Bebas Neue',sans-serif;letter-spacing:.2em;color:#e4572e">MEMBER CENTER</div>
+    <h1>👥 老師會員中心</h1>
+    <p class="muted small">巫魚子教課事務所的教學系統（消失的實驗數據、遺落的地點、座位大作戰…）共用同一個老師帳號。</p>
+    ${msg ? `<div class="alert">${msg}</div>` : ''}
+    ${!FB ? '<div class="alert">雲端服務載入失敗，請確認網路後重新整理。</div>' : ''}
+    <label class="f">Email</label><input type="email" id="lE" autocomplete="username">
+    <label class="f">密碼</label><input type="password" id="lP" autocomplete="current-password">
+    <button class="btn wide" id="lGo">🔓 登入</button>
+    <div class="row" style="margin-top:12px"><button class="btn ghost sm" id="lReg">📝 還沒有帳號？申請使用</button><span class="sp"></span><button class="btn ghost sm" id="lReset">忘記密碼</button></div>
+  </div>`;
+  const go = async () => { const e = $('#lE').value.trim(), p = $('#lP').value; if (!e || !p) return toast('請輸入 Email 和密碼', true); $('#lGo').disabled = true; try { await FB.login(e, p); } catch (err) { $('#lGo').disabled = false; toast(errMsg(err), true); } };
+  $('#lGo').onclick = go; $('#lP').onkeydown = (ev) => { if (ev.key === 'Enter') go(); };
+  $('#lReg').onclick = () => renderRegister();
+  $('#lReset').onclick = async () => { const e = $('#lE').value.trim(); if (!e) return toast('先在上面輸入 Email', true); try { await FB.reset(e); toast('重設密碼的信已寄出，請到信箱收信'); } catch (err) { toast(errMsg(err), true); } };
+}
+
+// ---------- 申請 ----------
+function profileFields(rec) {
+  rec = rec || {};
+  const want = rec.want || (wantApp ? { [wantApp]: true } : {});
+  return `<div class="row" style="gap:12px;align-items:flex-start"><div style="flex:1;min-width:180px"><label class="f">姓名</label><input type="text" id="rName" maxlength="20" value="${esc(rec.name)}" placeholder="例：王小明"></div>
+    <div style="flex:1.4;min-width:200px"><label class="f">學校</label><input type="text" id="rSchool" maxlength="30" value="${esc(rec.school)}" placeholder="例：桃園市立大溪高中"></div></div>
+    <label class="f">想使用的系統（可以多選）</label>${appBoxes(want, 'want')}
+    <label class="f">用途說明</label><textarea id="rPurpose" maxlength="200" placeholder="例：高一探究與實作，想讓學生練習 Excel 作圖">${esc(rec.purpose)}</textarea>`;
+}
+function readProfile(el) {
+  const name = $('#rName', el).value.trim(), school = $('#rSchool', el).value.trim(), purpose = $('#rPurpose', el).value.trim(), want = picked(el, 'want');
+  if (!name || !school || !purpose) { toast('姓名、學校、用途說明都要填', true); return null; }
+  if (!Object.keys(want).length) { toast('至少勾一個想使用的系統', true); return null; }
+  return { name: name.slice(0, 20), school: school.slice(0, 30), purpose: purpose.slice(0, 200), want };
+}
+function renderRegister() {
+  $('#app').innerHTML = `<div class="card narrow" style="max-width:560px">
+    <h1>📝 申請使用帳號</h1>
+    <p class="muted small">送出後巫魚子老師會審核，核准後就能用你勾選的系統。系統會寄一封驗證信到你的信箱，請記得點開驗證。</p>
+    <label class="f">Email（之後用來登入）</label><input type="email" id="rEmail" autocomplete="username">
+    <div class="row" style="gap:12px"><div style="flex:1;min-width:180px"><label class="f">密碼（至少 6 個字）</label><input type="password" id="rPw" autocomplete="new-password"></div>
+      <div style="flex:1;min-width:180px"><label class="f">再輸入一次密碼</label><input type="password" id="rPw2" autocomplete="new-password"></div></div>
+    ${profileFields()}
+    <button class="btn wide" id="rGo">📨 送出申請</button>
+    <button class="btn ghost sm" id="rBack" style="margin-top:10px">← 回登入</button>
+  </div>`;
+  bindBoxes($('#app'));
+  $('#rBack').onclick = () => renderLogin();
+  $('#rGo').onclick = async () => {
+    const email = $('#rEmail').value.trim().toLowerCase(), pw = $('#rPw').value;
+    if (!email) return toast('請輸入 Email', true);
+    if (pw.length < 6) return toast('密碼至少要 6 個字', true);
+    if (pw !== $('#rPw2').value) return toast('兩次密碼不一樣', true);
+    const prof = readProfile($('#app')); if (!prof) return;
+    $('#rGo').disabled = true; S.registering = true;
+    try {
+      const cred = await FB.register(email, pw);
+      await FB.set('staff/' + cred.user.uid, { email, ...prof, at: Date.now(), status: 'pending' });
+      try { await FB.verify(cred.user); } catch (e) { }
+      S.registering = false; S.rec = null; enter(cred.user);
+      toast('✅ 申請已送出！請到信箱點驗證信');
+    } catch (e) { S.registering = false; $('#rGo').disabled = false; toast(errMsg(e), true); }
+  };
+}
+
+// ---------- 登入後 ----------
+async function enter(user) {
+  stop(); S.user = user;
+  $('#who').textContent = user.email; $('#out').style.display = '';
+  if (W.isAdmin(user)) return renderAdmin();
+  S.unsubs.push(FB.listen('staff/' + user.uid, (rec) => { S.rec = rec; renderMe(); }));
+}
+function renderMe() {
+  const u = S.user, rec = S.rec, ownerOf = Object.keys(W.APPS).filter((k) => W.isOwner(u, k));
+  const verified = u.emailVerified;
+  if (!rec && !ownerOf.length) {
+    $('#app').innerHTML = `<div class="card narrow" style="max-width:560px"><h1>📝 補填申請資料</h1><p class="muted small">這個帳號（${esc(u.email)}）還沒有申請資料，填好送出就會進入審核。</p>${profileFields()}<button class="btn wide" id="pGo">📨 送出申請</button></div>`;
+    bindBoxes($('#app'));
+    $('#pGo').onclick = async () => { const prof = readProfile($('#app')); if (!prof) return; try { await FB.set('staff/' + u.uid, { email: String(u.email).toLowerCase(), ...prof, at: Date.now(), status: 'pending' }); toast('✅ 申請已送出'); } catch (e) { toast(errMsg(e), true); } };
+    return;
+  }
+  const st = rec ? rec.status : 'approved', apps = Object.assign({}, rec && rec.apps), mine = Object.keys(W.APPS).filter((k) => apps[k] || ownerOf.includes(k));
+  const chip = { pending: 'wait', approved: 'ok', rejected: 'bad', disabled: 'bad' }[st] || '';
+  $('#app').innerHTML = `
+  <div class="card"><div class="row"><h1>👋 ${esc(rec ? rec.name : '系統擁有者')}</h1><span class="chip ${chip}">${ownerOf.length && !rec ? '🔑 系統擁有者' : W.STATUS[st] || st}</span></div>
+    <div class="muted small">${esc(u.email)}${rec ? `・${esc(rec.school)}・申請於 ${new Date(rec.at).toLocaleDateString('zh-TW')}` : ''}</div>
+    ${verified ? '' : `<div class="alert warn">✉️ 信箱還沒驗證：請到 <b>${esc(u.email)}</b> 收信，點開驗證連結（也看看垃圾郵件匣）。<div class="row" style="margin-top:6px"><button class="btn sm ghost" id="vAgain">重寄驗證信</button><button class="btn sm" id="vDone">我已經驗證了</button></div></div>`}
+    ${st === 'pending' ? '<div class="alert blue">⏳ 你的申請已送出，正在等待巫魚子老師核准。核准後回到這裡（或直接打開系統）就能使用。</div>' : ''}
+    ${st === 'rejected' ? `<div class="alert">❌ 申請沒有通過。${rec.note ? '說明：' + esc(rec.note) : ''}</div>` : ''}
+    ${st === 'disabled' ? `<div class="alert">⏸ 帳號已暫停使用。${rec.note ? '說明：' + esc(rec.note) : ''}</div>` : ''}
+  </div>
+  ${mine.length ? `<div class="card"><h2>🧰 我可以用的系統</h2><div class="mylinks">${mine.map((k) => `<a href="../${W.APPS[k].url}"><b>${W.APPS[k].name}</b><span>${esc(W.APPS[k].desc)}</span><span class="sp"></span>開啟 →</a>`).join('')}</div>
+    <p class="small muted" style="margin-top:10px">各系統用<b>同一組 Email 和密碼</b>登入。</p></div>` : ''}
+  ${st === 'approved' && Object.keys(W.APPS).some((k) => !mine.includes(k)) ? `<div class="card"><h2>➕ 申請加開其他系統</h2><div id="moreBox">${appBoxes({}, 'more', Object.keys(W.APPS).filter((k) => !mine.includes(k)))}</div>
+    <button class="btn" id="moreGo" style="margin-top:12px">📨 送出加開申請</button><span class="small muted" id="moreMsg" style="margin-left:8px"></span></div>` : ''}`;
+  bindBoxes($('#app'));
+  if ($('#vAgain')) $('#vAgain').onclick = async () => { try { await FB.verify(S.user); toast('驗證信已重寄'); } catch (e) { toast(errMsg(e), true); } };
+  if ($('#vDone')) $('#vDone').onclick = async () => { try { const u2 = await FB.reload(); S.user = u2; if (u2.emailVerified) { await FB.set('staffv/' + u2.uid, true).catch(() => {}); toast('✅ 信箱已驗證'); } else toast('還沒收到驗證喔，請點信裡的連結', true); renderMe(); } catch (e) { toast(errMsg(e), true); } };
+  if (verified) FB.set('staffv/' + u.uid, true).catch(() => {});
+  if ($('#moreGo')) {
+    FB.get('staffreq/' + u.uid).then((r) => { if (r && $('#moreMsg')) $('#moreMsg').textContent = '已送出：' + Object.keys(r.want || {}).map((k) => (W.APPS[k] || {}).name).join('、') + '，等待核准'; }).catch(() => {});
+    $('#moreGo').onclick = async () => { const want = picked($('#moreBox'), 'more'); if (!Object.keys(want).length) return toast('先勾選要加開的系統', true); try { await FB.set('staffreq/' + u.uid, { want, at: Date.now() }); $('#moreMsg').textContent = '✅ 已送出，等待核准'; } catch (e) { toast(errMsg(e), true); } };
+  }
+}
+
+// ---------- 管理員：審核 ----------
+function renderAdmin() {
+  S.unsubs.push(FB.listen('staff', (v) => { S.all = v || {}; drawAdmin(); }));
+  S.unsubs.push(FB.listen('staffv', (v) => { S.ver = v || {}; drawAdmin(); }));
+  S.unsubs.push(FB.listen('staffreq', (v) => { S.req = v || {}; drawAdmin(); }));
+}
+function drawAdmin() {
+  const all = Object.entries(S.all).map(([uid, r]) => ({ uid, ...r })).sort((a, b) => (b.at || 0) - (a.at || 0));
+  const groups = { pending: all.filter((x) => x.status === 'pending'), approved: all.filter((x) => x.status === 'approved'), off: all.filter((x) => x.status === 'rejected' || x.status === 'disabled'), more: Object.keys(S.req).filter((uid) => S.all[uid]) };
+  const tab = S.tab;
+  const appChips = (o) => Object.keys(o || {}).filter((k) => W.APPS[k]).map((k) => `<span class="chip">${W.APPS[k].name}</span>`).join(' ') || '<span class="muted small">（無）</span>';
+  const checks = (uid, sel) => Object.entries(W.APPS).map(([k, a]) => `<label class="ck"><input type="checkbox" data-app="${uid}" value="${k}" ${sel[k] ? 'checked' : ''}>${a.name}</label>`).join('');
+  const card = (x) => `<div class="mem"><div class="hd"><span class="nm">${esc(x.name)}</span><span class="small muted">${esc(x.school)}</span><span class="sp"></span><span class="chip ${{ pending: 'wait', approved: 'ok' }[x.status] || 'bad'}">${W.STATUS[x.status] || x.status}</span></div>
+    <div class="small muted">${esc(x.email)} ${S.ver[x.uid] ? '<span class="chip ok" style="font-size:.75em">✉️ 已驗證</span>' : '<span class="chip" style="font-size:.75em">✉️ 未驗證</span>'}・申請於 ${new Date(x.at || 0).toLocaleString('zh-TW', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}${x.decidedAt ? `・處理於 ${new Date(x.decidedAt).toLocaleDateString('zh-TW')}` : ''}</div>
+    <div class="pur">📝 ${esc(x.purpose)}</div>
+    <div class="small">想用：${appChips(x.want)}${x.status === 'approved' ? `　｜　已開通：${appChips(x.apps)}` : ''}</div>
+    ${x.note ? `<div class="small muted">備註：${esc(x.note)}</div>` : ''}
+    <div style="margin-top:8px">${x.status === 'rejected' || x.status === 'disabled' ? '' : `<div class="small bold" style="margin-bottom:2px">可以使用的系統：</div>${checks(x.uid, x.status === 'approved' ? x.apps || {} : x.want || {})}`}</div>
+    <div class="row" style="margin-top:8px">
+      ${x.status === 'pending' ? `<button class="btn teal sm" data-ok="${x.uid}">✅ 核准</button><button class="btn red sm" data-no="${x.uid}">❌ 不通過</button>` : ''}
+      ${x.status === 'approved' ? `<button class="btn sm" data-save="${x.uid}">💾 更新權限</button><button class="btn red sm" data-off="${x.uid}">⏸ 停用</button>` : ''}
+      ${x.status === 'rejected' || x.status === 'disabled' ? `<button class="btn sm" data-back="${x.uid}">↩️ 改回等待核准</button>` : ''}
+    </div></div>`;
+  const moreCard = (uid) => { const x = S.all[uid], r = S.req[uid]; return `<div class="mem"><div class="hd"><span class="nm">${esc(x.name)}</span><span class="small muted">${esc(x.school)}・${esc(x.email)}</span></div>
+    <div class="small" style="margin-top:6px">已開通：${appChips(x.apps)}　→　想加開：${appChips(r.want)}</div>
+    <div class="row" style="margin-top:8px"><button class="btn teal sm" data-addok="${uid}">✅ 加開</button><button class="btn ghost sm" data-addno="${uid}">不加開</button></div></div>`; };
+  const list = tab === 'more' ? groups.more.map(moreCard) : groups[tab].map(card);
+  $('#app').innerHTML = `
+  <div class="card"><div class="row"><h1>👥 會員管理</h1><span class="chip ink">🔑 管理員</span><span class="sp"></span><a class="btn ghost sm" href="../${W.APPS.excel.url}">📊 消失的實驗數據</a></div>
+    <p class="small muted">老師在這個頁面自己申請帳號，你核准時勾選他能用哪些系統。各系統的安全規則會檢查這份名單：沒核准、被停用，或沒開通的系統，都讀不到資料。</p>
+    <div class="tabs">${[['pending', `⏳ 待核准（${groups.pending.length}）`], ['more', `➕ 加開申請（${groups.more.length}）`], ['approved', `✅ 已核准（${groups.approved.length}）`], ['off', `⏸ 未通過・停用（${groups.off.length}）`]].map(([k, t]) => `<button data-tab="${k}" class="${tab === k ? 'on' : ''}">${t}</button>`).join('')}</div>
+    ${list.join('') || '<p class="muted" style="margin-top:14px">目前沒有資料</p>'}
+  </div>`;
+  document.title = (groups.pending.length + groups.more.length ? `(${groups.pending.length + groups.more.length}) ` : '') + '👥 會員中心';
+  $$('[data-tab]').forEach((b) => { b.onclick = () => { S.tab = b.dataset.tab; drawAdmin(); }; });
+  const appsOf = (uid) => Object.fromEntries($$(`input[data-app="${uid}"]:checked`).map((i) => [i.value, true]));
+  const upd = async (uid, v, msg) => { try { await FB.update('staff/' + uid, { ...v, decidedAt: Date.now() }); toast(msg); } catch (e) { toast(errMsg(e), true); } };
+  $$('[data-ok]').forEach((b) => { b.onclick = () => { const a = appsOf(b.dataset.ok); if (!Object.keys(a).length) return toast('至少勾一個系統', true); upd(b.dataset.ok, { status: 'approved', apps: a, note: null }, '✅ 已核准'); }; });
+  $$('[data-save]').forEach((b) => { b.onclick = () => upd(b.dataset.save, { apps: appsOf(b.dataset.save) }, '💾 權限已更新'); });
+  $$('[data-no]').forEach((b) => { b.onclick = () => { const n = prompt('不通過的原因（對方看得到，可以空白）', ''); if (n === null) return; upd(b.dataset.no, { status: 'rejected', apps: null, note: n.slice(0, 100) || null }, '已設為不通過'); }; });
+  $$('[data-off]').forEach((b) => { b.onclick = () => { const n = prompt('停用的原因（對方看得到，可以空白）', ''); if (n === null) return; upd(b.dataset.off, { status: 'disabled', apps: null, note: n.slice(0, 100) || null }, '⏸ 已停用'); }; });
+  $$('[data-back]').forEach((b) => { b.onclick = () => upd(b.dataset.back, { status: 'pending', note: null }, '已改回等待核准'); });
+  $$('[data-addok]').forEach((b) => { b.onclick = async () => { const uid = b.dataset.addok, x = S.all[uid]; try { await FB.update('staff/' + uid, { apps: { ...(x.apps || {}), ...(S.req[uid].want || {}) } }); await FB.remove('staffreq/' + uid); toast('✅ 已加開'); } catch (e) { toast(errMsg(e), true); } }; });
+  $$('[data-addno]').forEach((b) => { b.onclick = async () => { try { await FB.remove('staffreq/' + b.dataset.addno); toast('已移除這筆加開申請'); } catch (e) { toast(errMsg(e), true); } }; });
+}
+
+$('#out').onclick = async () => { stop(); await FB.logout(); };
+if (!FB) renderLogin();
+else FB.onUser((u) => { if (S.registering) return; if (u) enter(u); else { stop(); S.user = null; renderLogin(); } });
+</script>
+</body>
+</html>

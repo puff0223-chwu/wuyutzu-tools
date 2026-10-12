@@ -52,7 +52,7 @@
   },
   "excel-rescue": {
    "$sem": {
-    ".read": "$sem.matches(/^[A-Z0-9-]{1,16}$/)",
+    ".read": "(auth != null && auth.token.email === 'puff0223+excel@gmail.com') && $sem.matches(/^[A-Z0-9-]{1,16}$/)",
     "$id": {
      ".write": "newData.exists() && $sem.matches(/^[A-Z0-9-]{1,16}$/) && $id.matches(/^[A-Z0-9]{3,12}$/)",
      ".validate": "newData.hasChildren(['name','ts']) && newData.child('name').isString() && newData.child('name').val().length <= 12 && newData.child('ts').isNumber()",
@@ -80,7 +80,8 @@
      },
      "$other": {
       ".validate": false
-     }
+     },
+     ".read": "$sem.matches(/^[A-Z0-9-]{1,16}$/) && $id.matches(/^[A-Z0-9]{3,12}$/)"
     }
    }
   },
@@ -151,30 +152,30 @@
    "owners": {
     "$uid": {
      ".read": "auth != null && auth.uid === $uid",
-     ".write": "auth != null && auth.uid === $uid"
+     ".write": "(auth != null && (auth.token.email === 'puff0223+seat@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/seat').val() === true))) && (auth != null && auth.uid === $uid)"
     }
    },
    "classes": {
     "$cid": {
      ".read": "auth != null && data.child('owner').val() === auth.uid",
-     ".write": "auth != null && $cid.matches(/^cls[a-z0-9]{6,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)",
+     ".write": "(auth != null && (auth.token.email === 'puff0223+seat@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/seat').val() === true))) && (auth != null && $cid.matches(/^cls[a-z0-9]{6,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid))",
      ".validate": "newData.child('owner').val() === auth.uid"
     }
    },
    "rounds": {
     "$code": {
-     ".write": "auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid))",
+     ".write": "(auth != null && (auth.token.email === 'puff0223+seat@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/seat').val() === true))) && (auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid)))",
      "meta": {
       ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)",
-      ".write": "auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)",
+      ".write": "(auth != null && (auth.token.email === 'puff0223+seat@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/seat').val() === true))) && (auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid))",
       ".validate": "newData.hasChildren(['owner','open','deadline']) && newData.child('owner').val() === auth.uid && newData.child('deadline').isNumber()"
      },
      "board": {
       ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)",
-      ".write": "auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid"
+      ".write": "(auth != null && (auth.token.email === 'puff0223+seat@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/seat').val() === true))) && (auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid)"
      },
      "keys": {
-      ".write": "auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid"
+      ".write": "(auth != null && (auth.token.email === 'puff0223+seat@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/seat').val() === true))) && (auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid)"
      },
      "checkin": {
       "$h": {
@@ -184,7 +185,7 @@
      },
      "bids": {
       ".read": "auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid",
-      ".write": "auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid",
+      ".write": "(auth != null && (auth.token.email === 'puff0223+seat@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/seat').val() === true))) && (auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid)",
       "$h": {
        ".write": "newData.exists() && root.child('seating/rounds/'+$code+'/keys/'+$h).val() === true && root.child('seating/rounds/'+$code+'/meta/open').val() === true && now <= root.child('seating/rounds/'+$code+'/meta/deadline').val()",
        ".validate": "newData.hasChildren(['seat','res','ts']) && newData.child('ts').val() == now && newData.child('seat').isString() && root.child('seating/rounds/'+$code+'/board/biddable/'+newData.child('seat').val()).val() === true"
@@ -197,33 +198,33 @@
    "owners": {
     "$uid": {
      ".read": "auth != null && auth.uid === $uid",
-     ".write": "auth != null && auth.uid === $uid"
+     ".write": "(auth != null && (auth.token.email === 'puff0223+gps@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/gps').val() === true))) && (auth != null && auth.uid === $uid)"
     }
    },
    "banks": {
     "$bid": {
      ".read": "auth != null && data.child('owner').val() === auth.uid",
-     ".write": "auth != null && $bid.matches(/^bk[a-z0-9]{6,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)",
+     ".write": "(auth != null && (auth.token.email === 'puff0223+gps@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/gps').val() === true))) && (auth != null && $bid.matches(/^bk[a-z0-9]{6,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid))",
      ".validate": "newData.child('owner').val() === auth.uid"
     }
    },
    "photos": {
     "$pid": {
      ".read": "$pid.matches(/^[a-z0-9]{8,24}$/)",
-     ".write": "auth != null && $pid.matches(/^[a-z0-9]{8,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)",
+     ".write": "(auth != null && (auth.token.email === 'puff0223+gps@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/gps').val() === true))) && (auth != null && $pid.matches(/^[a-z0-9]{8,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid))",
      ".validate": "newData.hasChildren(['owner','data']) && newData.child('owner').val() === auth.uid && newData.child('data').isString() && newData.child('data').val().length < 600000"
     }
    },
    "myruns": {
     "$uid": {
      ".read": "auth != null && auth.uid === $uid",
-     ".write": "auth != null && auth.uid === $uid"
+     ".write": "(auth != null && (auth.token.email === 'puff0223+gps@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/gps').val() === true))) && (auth != null && auth.uid === $uid)"
     }
    },
    "runs": {
     "$code": {
      ".read": "auth != null && root.child('orienteering/runs/'+$code+'/meta/owner').val() === auth.uid",
-     ".write": "auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid))",
+     ".write": "(auth != null && (auth.token.email === 'puff0223+gps@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/gps').val() === true))) && (auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid)))",
      "meta": {
       ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)"
      },
@@ -275,13 +276,13 @@
    "mycontrib": {
     "$uid": {
      ".read": "auth != null && auth.uid === $uid",
-     ".write": "auth != null && auth.uid === $uid"
+     ".write": "(auth != null && (auth.token.email === 'puff0223+gps@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/gps').val() === true))) && (auth != null && auth.uid === $uid)"
     }
    },
    "contrib": {
     "$code": {
      ".read": "auth != null && root.child('orienteering/contrib/'+$code+'/meta/owner').val() === auth.uid",
-     ".write": "auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid))",
+     ".write": "(auth != null && (auth.token.email === 'puff0223+gps@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/gps').val() === true))) && (auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid)))",
      "meta": {
       ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)"
      },
@@ -314,6 +315,76 @@
       }
      }
     }
+   }
+  },
+  "staff": {
+   ".read": "(auth != null && auth.token.email === 'puff0223+excel@gmail.com')",
+   "$uid": {
+    ".read": "auth != null && auth.uid === $uid",
+    ".write": "auth != null && ((auth != null && auth.token.email === 'puff0223+excel@gmail.com') || (auth.uid === $uid && (!data.exists() || data.child('status').val() === 'pending')))",
+    ".validate": "(auth != null && auth.token.email === 'puff0223+excel@gmail.com') || (newData.hasChildren(['email','name','school','purpose','want','at','status']) && newData.child('status').val() === 'pending' && !newData.child('apps').exists() && newData.child('email').val() === auth.token.email && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && newData.child('purpose').isString() && newData.child('purpose').val().length >= 1 && newData.child('purpose').val().length <= 200 && newData.child('at').isNumber())"
+   }
+  },
+  "staffv": {
+   ".read": "(auth != null && auth.token.email === 'puff0223+excel@gmail.com')",
+   "$uid": {
+    ".write": "auth != null && auth.uid === $uid && newData.val() === true && auth.token.email_verified === true"
+   }
+  },
+  "staffreq": {
+   ".read": "(auth != null && auth.token.email === 'puff0223+excel@gmail.com')",
+   "$uid": {
+    ".read": "auth != null && auth.uid === $uid",
+    ".write": "auth != null && ((auth != null && auth.token.email === 'puff0223+excel@gmail.com') || auth.uid === $uid)",
+    ".validate": "(auth != null && auth.token.email === 'puff0223+excel@gmail.com') || (newData.hasChildren(['want','at']) && newData.child('at').isNumber())"
+   }
+  },
+  "excel-rescue-t": {
+   "$t": {
+    ".read": "auth != null && data.child('meta/owner').val() === auth.uid",
+    "meta": {
+     ".read": "$t.matches(/^[A-HJ-NP-Z2-9]{6}$/)",
+     ".write": "auth != null && $t.matches(/^[A-HJ-NP-Z2-9]{6}$/) && (auth != null && (auth.token.email === 'puff0223+excel@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/excel').val() === true))) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)",
+     ".validate": "newData.hasChildren(['owner','at']) && (!newData.child('admin').exists() || (auth != null && auth.token.email === 'puff0223+excel@gmail.com'))"
+    },
+    "$sem": {
+     "$id": {
+      ".write": "newData.exists() && $t.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $sem.matches(/^[A-Z0-9-]{1,16}$/) && $id.matches(/^[A-Z0-9]{3,12}$/) && (root.child('excel-rescue-t/'+$t+'/meta/admin').val() === true || (root.child('staff/'+root.child('excel-rescue-t/'+$t+'/meta/owner').val()+'/status').val() === 'approved' && root.child('staff/'+root.child('excel-rescue-t/'+$t+'/meta/owner').val()+'/apps/excel').val() === true))",
+      ".validate": "newData.hasChildren(['name','ts']) && newData.child('name').isString() && newData.child('name').val().length <= 12 && newData.child('ts').isNumber()",
+      "name": {
+       ".validate": "newData.isString()"
+      },
+      "ts": {
+       ".validate": "newData.isNumber()"
+      },
+      "passed": {
+       "$lv": {
+        ".validate": "$lv.matches(/^(L[1-6]|H)$/) && newData.isNumber()"
+       }
+      },
+      "att": {
+       "$lv": {
+        ".validate": "$lv.matches(/^(L[1-6]|H)$/) && newData.isNumber() && newData.val() >= 0 && newData.val() <= 9999"
+       }
+      },
+      "closedAt": {
+       ".validate": "newData.isNumber()"
+      },
+      "check": {
+       ".validate": "newData.hasChildren(['score','max','at']) && newData.child('score').isNumber() && newData.child('max').isNumber() && newData.child('at').isNumber()"
+      },
+      "$other": {
+       ".validate": false
+      },
+      ".read": "$t.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $sem.matches(/^[A-Z0-9-]{1,16}$/) && $id.matches(/^[A-Z0-9]{3,12}$/)"
+     }
+    }
+   }
+  },
+  "excel-rescue-owners": {
+   "$uid": {
+    ".read": "auth != null && auth.uid === $uid",
+    ".write": "auth != null && auth.uid === $uid && (auth != null && (auth.token.email === 'puff0223+excel@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com' || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/excel').val() === true)))"
    }
   }
  }

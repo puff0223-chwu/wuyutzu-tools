@@ -9,8 +9,10 @@
   /* ---------- 設定區：SEMESTER 是「預設」學期，老師頁可以隨時換，換了會放進學生連結 ?s=… ---------- */
   var CONFIG = {
     SEMESTER: '115-1',          // 預設學期代碼（學生連結沒帶 ?s= 時用這個）
+    TEACHER: '',                // 老師代碼（2026-10-13 帳號版）：學生連結 ?t=…；空白＝巫魚子舊版連結（數據、代碼與以前完全一樣）
     FIREBASE_URL: 'https://point-collection-stash-default-rtdb.asia-southeast1.firebasedatabase.app',
-    DB_PATH: 'excel-rescue',      // 雲端紀錄：excel-rescue/<學期>/<學號>
+    DB_PATH: 'excel-rescue',      // 雲端紀錄（舊版，沒有老師代碼）：excel-rescue/<學期>/<學號>
+    DB_PATH_T: 'excel-rescue-t',  // 雲端紀錄（帳號版）：excel-rescue-t/<老師代碼>/<學期>/<學號>
     STDEV_ACCEPT: ['S', 'P']    // 標準差接受 STDEV（＝STDEV.S，樣本）與 STDEV.P（母體）兩種結果
   };
 
@@ -36,7 +38,9 @@
     };
   }
   function normId(id) { return String(id || '').trim().toUpperCase(); }
-  function rngFor(id, part) { return makeRng(hashStr(CONFIG.SEMESTER + '|' + normId(id) + '|' + part)); }
+  // 種子：老師代碼／學期（沒有老師代碼時只有學期 → 跟舊版一模一樣）。不同老師即使學期代碼相同，數據也不同
+  function seedKey() { return (CONFIG.TEACHER ? CONFIG.TEACHER + '/' : '') + CONFIG.SEMESTER; }
+  function rngFor(id, part) { return makeRng(hashStr(seedKey() + '|' + normId(id) + '|' + part)); }
 
   function uni(r, a, b) { return a + (b - a) * r(); }
   function int(r, a, b) { return Math.floor(uni(r, a, b + 1)); }
@@ -211,7 +215,7 @@
 
   function generate(id) {
     id = normId(id);
-    return { id: id, semester: CONFIG.SEMESTER, L1: genL1(id), L2: genL2(id), L3: genL3(id), L4: genL4(id), L5: genL5(id), L6: genL6(id) };
+    return { id: id, semester: CONFIG.SEMESTER, teacher: CONFIG.TEACHER, L1: genL1(id), L2: genL2(id), L3: genL3(id), L4: genL4(id), L5: genL5(id), L6: genL6(id) };
   }
 
   /* ======================= 關卡題目與對答案 ======================= */
@@ -349,13 +353,13 @@
     for (var i = 0; i < 6; i++) { out += ALPH[h % 32]; h = Math.floor(h / 32); }
     return out;
   }
-  function closeCode(id) { return code6(CONFIG.SEMESTER + '|' + normId(id) + '|CASE-CLOSED'); }
-  function hiddenCode(id) { return code6(CONFIG.SEMESTER + '|' + normId(id) + '|HIDDEN-BADGE'); }
-  function fragment(id, key) { return code6(CONFIG.SEMESTER + '|' + normId(id) + '|' + key).slice(0, 2); }
+  function closeCode(id) { return code6(seedKey() + '|' + normId(id) + '|CASE-CLOSED'); }
+  function hiddenCode(id) { return code6(seedKey() + '|' + normId(id) + '|HIDDEN-BADGE'); }
+  function fragment(id, key) { return code6(seedKey() + '|' + normId(id) + '|' + key).slice(0, 2); }
 
   /* ---------- 匯出專屬 Excel 的工作表內容（陣列形式，交給 SheetJS） ---------- */
   function sheets(d) {
-    var head = function (t) { return [[t], ['調查員學號：' + d.id + '　｜　學期：' + d.semester], []]; };
+    var head = function (t) { return [[t], ['調查員學號：' + d.id + '　｜　學期：' + d.semester + (d.teacher ? '　｜　老師代碼：' + d.teacher : '')], []]; };
     var L1 = head('關卡 1｜長條圖　證物與鹽酸反應 3 分鐘收集的氫氣體積')
       .concat([['證物編號', '氫氣體積 (mL)']]).concat(d.L1.rows.map(function (x) { return [x.code, x.vol]; }));
     var L2 = head('關卡 2｜折線圖　未知物質 X 的加熱曲線')
@@ -372,7 +376,7 @@
     var L6 = head('關卡 6｜格式化條件　自來水鉛濃度（飲用水標準：10 ppb 以下）')
       .concat([['採樣點', '鉛濃度 (ppb)']]).concat(d.L6.rows.map(function (x) { return [x.code, x.pb]; }));
     var info = [
-      ['消失的實驗數據 — Excel 數據救援任務'], ['調查員學號：' + d.id], ['學期：' + d.semester], [],
+      ['消失的實驗數據 — Excel 數據救援任務'], ['調查員學號：' + d.id], ['學期：' + d.semester + (d.teacher ? '　｜　老師代碼：' + d.teacher : '')], [],
       ['這份數據只屬於你，跟別人的都不一樣，抄答案會被系統識破喔！'], [],
       ['怎麼玩：'],
       ['1. 每一關都有自己的工作表（下方分頁），照網頁上的任務清單做出圖表。'],
@@ -424,7 +428,7 @@
       var P = o.panel || 4, PE = P + 6;   // 面板從 D 欄（L5 從 G 欄）開始，佔 7 欄
       ws.columns = o.widths.map(function (w) { return { width: w }; });
       band(ws, 1, 1, PE, '關卡 ' + lv.no + '｜' + lv.chart + '　' + o.title, { font: { bold: true, size: 16, color: { argb: XC.white } }, fill: XC.navy, h: 34 });
-      band(ws, 2, 1, PE, '調查員學號：' + d.id + '　｜　學期：' + d.semester + '　｜　這份數據只屬於你，跟別人的都不一樣', { font: { size: 10, color: { argb: XC.muted } }, h: 20 });
+      band(ws, 2, 1, PE, '調查員學號：' + d.id + '　｜　學期：' + d.semester + (d.teacher ? '　｜　老師代碼：' + d.teacher : '') + '　｜　這份數據只屬於你，跟別人的都不一樣', { font: { size: 10, color: { argb: XC.muted } }, h: 20 });
       band(ws, 3, 1, PE, '📖 ' + lv.story, { font: { size: 10.5, color: { argb: XC.ink } }, fill: XC.grey, h: 44 });
       // 表頭與數據
       head.forEach(function (h, i) {
@@ -469,7 +473,7 @@
     info.columns = [{ width: 8 }, { width: 18 }, { width: 46 }, { width: 46 }];
     band(info, 1, 1, 4, '🗂️ 消失的實驗數據 — Excel 數據救援任務', { font: { bold: true, size: 18, color: { argb: XC.white } }, fill: XC.navy, h: 40 });
     band(info, 2, 1, 4, '調查員學號：' + d.id, { font: { bold: true, size: 12 }, h: 22 });
-    band(info, 3, 1, 4, '學期：' + d.semester, { font: { size: 11, color: { argb: XC.muted } }, h: 20 });
+    band(info, 3, 1, 4, '學期：' + d.semester + (d.teacher ? '　｜　老師代碼：' + d.teacher : ''), { font: { size: 11, color: { argb: XC.muted } }, h: 20 });
     band(info, 4, 1, 4, '🔒 這份數據只屬於你，跟別人的都不一樣，抄答案會被系統識破喔！', { font: { size: 11, color: { argb: XC.red }, bold: true }, h: 24 });
     var r0 = 6;
     band(info, r0++, 1, 4, '🎨 顏色代表什麼', { font: { bold: true, size: 13 }, h: 24 });
@@ -531,6 +535,9 @@
     if (!validSemester(s)) return false;
     CONFIG.SEMESTER = s; return true;
   }
+  // 老師代碼：6 碼（不含容易看錯的 0 O 1 I），空白＝舊版
+  function validTeacher(t) { return t === '' || /^[A-HJ-NP-Z2-9]{6}$/.test(String(t || '')); }
+  function setTeacher(t) { t = String(t || '').trim().toUpperCase(); if (!validTeacher(t)) return false; CONFIG.TEACHER = t; return true; }
   function isCodeLike(s) { return /^[A-HJ-NP-Z2-9]{6}$/.test(String(s || '').toUpperCase()); }
 
   /* ---------- 雲端紀錄（第三階段）：Firebase REST，問完就走，不長期佔連線 ----------
@@ -539,7 +546,8 @@
        closedAt（六關全破時間）, check: { score, max, at, lv: { L1: 得分, … } }（最近一次 Excel 自我檢查）
      } */
   var LV_KEYS = ['L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'H'];
-  function cloudBase() { return CONFIG.FIREBASE_URL + '/' + CONFIG.DB_PATH + '/' + encodeURIComponent(CONFIG.SEMESTER); }
+  function cloudPath() { return CONFIG.TEACHER ? CONFIG.DB_PATH_T + '/' + CONFIG.TEACHER + '/' + CONFIG.SEMESTER : CONFIG.DB_PATH + '/' + CONFIG.SEMESTER; }
+  function cloudBase() { return CONFIG.FIREBASE_URL + '/' + cloudPath(); }
   function cloudFetch(url, opt) {
     opt = opt || {};
     var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
@@ -578,7 +586,7 @@
   }
 
   var API = {
-    CONFIG: CONFIG, LV_KEYS: LV_KEYS, cloudGet: cloudGet, cloudPut: cloudPut, cloudAll: cloudAll, mergeProgress: mergeProgress, toRecord: toRecord, validSemester: validSemester, setSemester: setSemester, isCodeLike: isCodeLike, normId: normId, generate: generate, LEVELS: LEVELS, HIDDEN: HIDDEN,
+    CONFIG: CONFIG, LV_KEYS: LV_KEYS, cloudGet: cloudGet, cloudPut: cloudPut, cloudAll: cloudAll, mergeProgress: mergeProgress, toRecord: toRecord, validSemester: validSemester, setSemester: setSemester, validTeacher: validTeacher, setTeacher: setTeacher, cloudPath: cloudPath, seedKey: seedKey, isCodeLike: isCodeLike, normId: normId, generate: generate, LEVELS: LEVELS, HIDDEN: HIDDEN,
     closeCode: closeCode, hiddenCode: hiddenCode, fragment: fragment, sheets: sheets, buildWorkbook: buildWorkbook, linreg: linreg
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.ExcelRescue = API;
