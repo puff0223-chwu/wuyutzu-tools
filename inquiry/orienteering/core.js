@@ -310,17 +310,28 @@
     return arr;
   }
 
-  // 隨機探險風隊名（2026-10-12 老師要求：不用自己輸入組名）；同一場盡量不重複開頭與結尾
-  const NAME_A = ['迷途', '午夜', '月光', '風暴', '隱形', '流浪', '霧中', '星夜', '黃昏', '秘密', '閃電', '沉睡', '時光', '失落', '極光', '暗巷', '晨霧', '雷霆', '幽靈', '羅盤', '荒野', '深海', '火山', '冰原'];
-  const NAME_B = ['貓頭鷹', '偵探團', '探險隊', '狐狸', '旅人', '獵人', '守望者', '地圖師', '游擊隊', '渡鴉', '航海家', '尋寶團', '追蹤者', '巡守隊', '解謎社', '野狼', '飛鷹', '觀星者', '密探', '遊俠', '考古隊', '信鴿', '燈塔', '鬥士'];
-  function teamNames(n, rnd) {
+  /* 隨機隊名（2026-10-12 老師要求：不用自己輸入組名，選風格就好）
+     detective 偵探風：開頭＋結尾組合；chem 化學元素風：先用諧音梗，不夠再用「元素＋小隊」；animal 形容詞＋動物
+     同一場盡量不重複開頭與結尾 */
+  const NAME_STYLES = {
+    detective: { label: '🕵️ 偵探風', a: ['午夜', '迷霧', '暗巷', '月光', '隱形', '秘密', '黃昏', '雨夜', '失落', '星夜', '晨霧', '幽靈', '羅盤', '密室', '鐘樓', '影子', '銀狐', '暗號', '時光', '閃電'], b: ['偵探團', '密探', '追蹤者', '解謎社', '搜查隊', '調查組', '鑑識隊', '線人', '守望者', '探險隊', '地圖師', '觀星者', '巡守隊', '尋寶團', '情報站', '神探', '特派員', '暗探', '旅人', '遊俠'] },
+    chem: { label: '🧪 化學元素風', puns: ['氦氦笑隊', '鈉些年', '碳險隊', '氧氣滿滿', '鋁行團', '銅心協力', '鐵三角', '鈣世英雄', '硫星雨', '氫鬆過關', '鉀油隊', '氖得住隊', '鎂少女戰士', '矽望之光', '氮定自若', '碘到為止'], a: ['氫', '鋰', '碳', '氮', '氧', '氟', '氖', '鈉', '鎂', '鋁', '矽', '磷', '硫', '氯', '鉀', '鈣', '鐵', '銅', '鋅', '銀', '金', '汞'], b: ['原子隊', '分子幫', '離子團', '電子組', '催化劑', '燒杯隊', '試管隊', '結晶派', '火焰隊', '滴定社', '反應爐', '元素幫'] },
+    animal: { label: '🐾 形容詞＋動物', a: ['害羞的', '暴走的', '愛睡的', '閃亮的', '勇敢的', '迷路的', '超快的', '優雅的', '吵鬧的', '神秘的', '餓扁的', '微笑的', '倔強的', '跳舞的', '冷靜的', '好奇的'], b: ['水豚', '柴犬', '企鵝', '樹懶', '狐獴', '貓熊', '刺蝟', '海獺', '章魚', '浣熊', '長頸鹿', '河馬', '石虎', '黑熊', '藍鵲', '穿山甲'] }
+  };
+  function teamNames(n, rnd, style) {
+    if (typeof rnd === 'string') { style = rnd; rnd = null; }
     rnd = rnd || Math.random;
+    const S = NAME_STYLES[style] || NAME_STYLES.detective;
     const out = [], used = new Set();
+    const puns = S.puns ? shuffle(S.puns, rnd) : [];
     let A = [], B = [];
     for (let i = 0; i < n; i++) {
-      if (!A.length) A = shuffle(NAME_A, rnd); if (!B.length) B = shuffle(NAME_B, rnd);
-      let name = A.pop() + B.pop(), g = 0;
-      while (used.has(name) && g++ < 50) name = NAME_A[Math.floor(rnd() * NAME_A.length)] + NAME_B[Math.floor(rnd() * NAME_B.length)];
+      let name = puns.length ? puns.pop() : '';
+      if (!name) {
+        if (!A.length) A = shuffle(S.a, rnd); if (!B.length) B = shuffle(S.b, rnd);
+        name = A.pop() + B.pop();
+        let g = 0; while (used.has(name) && g++ < 80) name = S.a[Math.floor(rnd() * S.a.length)] + S.b[Math.floor(rnd() * S.b.length)];
+      }
       used.add(name); out.push(name);
     }
     return out;
@@ -472,6 +483,6 @@
     // 第二階段
     CODE_CH, makeCode, sha, DEFAULT_RUN, viewLevel, chooseBatch, chooseNext, gameSeconds, fmtTime, rankTeams, boardHTML, boardPaint, BOARD_CSS,
     // 第三階段
-    teamNames, cleanName, LOC_MIN, crowdByLoc, crowdAvg, heatLevel, zoneMult, viewMult, cardValue, lateMin, teamTotal, rankScore, judgeCam, judgeTask, normAns
+    NAME_STYLES, teamNames, cleanName, LOC_MIN, crowdByLoc, crowdAvg, heatLevel, zoneMult, viewMult, cardValue, lateMin, teamTotal, rankScore, judgeCam, judgeTask, normAns
   };
 })();

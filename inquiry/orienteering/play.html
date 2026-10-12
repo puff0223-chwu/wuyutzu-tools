@@ -120,6 +120,21 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
 .found .f1{flex:none;width:118px;background:#fff;border:2px solid var(--teal);border-radius:10px;overflow:hidden;font-size:.78em}
 .found .f1 img{width:100%;height:70px;object-fit:cover;display:block}
 .found .f1 div{padding:3px 6px}
+/* 等待開始畫面（2026-10-12 改版：步驟＋規則小卡，不再是一長串條列） */
+.modepill{display:inline-block;background:var(--ink);color:var(--gold);border-radius:999px;padding:3px 14px;font-weight:900;font-size:.95em}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.steps div{background:#f3eee2;border-radius:12px;padding:10px 6px;text-align:center;font-size:.82em;line-height:1.35;position:relative}
+.steps div .n{position:absolute;left:6px;top:4px;font-family:'Bebas Neue',sans-serif;color:var(--orange);font-size:1.4em}
+.steps div .i{display:block;font-size:1.9em;margin-bottom:2px}
+.steps div b{display:block;font-size:1.15em;margin-bottom:1px}
+.rgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:12px}
+.rgrid div{display:flex;align-items:center;gap:8px;border:2px solid var(--line);border-radius:12px;padding:7px 9px;background:#fff}
+.rgrid div .i{font-size:1.5em;flex:none}
+.rgrid div span{font-size:.78em;color:var(--muted);line-height:1.3}
+.rgrid div span b{display:block;color:var(--ink);font-size:1.22em}
+.rgrid div.wide{grid-column:1/3}
+.nogo{margin-top:10px;background:var(--red-soft);color:#a33316;border-radius:10px;padding:8px 12px;font-weight:700;font-size:.9em;text-align:center}
+.sect{font-weight:900;margin-top:14px;font-size:.95em;color:var(--ink2)}
 /* 🎁 加分挑戰（2026-10-12 改版：答對就跳出來問、一次一題的全螢幕挑戰） */
 .offer{position:fixed;inset:0;background:rgba(20,26,44,.72);z-index:45;display:flex;align-items:center;justify-content:center;padding:18px}
 .offer .box{background:var(--paper);border:3px solid var(--ink);border-radius:20px;box-shadow:5px 5px 0 #7a4fd0;max-width:420px;width:100%;padding:18px;text-align:center}
@@ -176,7 +191,7 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
 <body>
 <div id="top"></div>
 <div class="wrap" id="app"><p style="text-align:center;margin-top:30vh" class="muted">載入中…</p></div>
-<script src="core.js?v=20261012f"></script>
+<script src="core.js?v=20261012g"></script>
 <script>
 (function () {
   'use strict';
@@ -361,27 +376,32 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
     bind();
   }
   function readyHTML(v) {
-    const s = v.set || {};
-    const chal = s.stanceOn || s.taskOn ? `<li>🎁 答對後可能出現加分挑戰：${s.stanceOn ? '🦶 站位挑戰（拍照的人站哪裡、朝哪個方向）' : ''}${s.stanceOn && s.taskOn ? '、' : ''}${s.taskOn ? '🔍 現場觀察任務' : ''}${v.mode === 'score' ? '，答對加分' : `，答對減 ${s.bonusSec} 秒`}</li>` : '';
-    const rules = v.mode === 'score' ? `
-      <li>🎯 <b>積分賽</b>：限時 ${s.limitMin} 分鐘，盡量多拿分</li>
-      <li>手機上是一面<b>任務牆</b>，同時有 ${s.wall} 張照片，每張標著目前的分數，自己決定先找哪一張</li>
-      <li>點一張照片，地圖會標出它的候選地點，跑去現場比對、選號碼送出</li>
-      <li>🔥 冷門區（附近的組很少）×1.5、🧊 熱門區（附近擠了很多組）×0.5，以答對當下的分數計算${s.viewBonus ? '；視角越難的照片分數越高' : ''}</li>
-      <li>答錯扣 ${s.ptsWrong} 分，要等 ${s.cool} 秒才能再答</li>
-      ${s.hintOn ? `<li>💡 求助：給提示，但這張的分數打折（每層 −${s.hintPct}%，最多兩層）</li>` : ''}
-      <li>⏭ 太難可以放棄換一張，放棄後 ${s.skipCool} 秒內不能再放棄</li>
-      ${s.checkin ? `<li>🚩 時間到要<b>回集合點找大師報到</b>，超過 ${s.grace} 分鐘每分鐘扣 ${s.latePts} 分（也可以提早回來報到收工）</li>` : ''}` : `
-      <li>每一關給 ${s.photos || 1} 張照片，地圖上標出 ${s.cands || 5} 個候選地點（分在不同區域）${(s.photos || 1) > 1 ? '，兩張照片各是其中一個，先規劃路線再出發' : '，答案是其中一個'}</li>
-      <li>想一想、跑去現場比對，選出照片拍的是幾號，送出</li>
-      <li>答錯要等 ${s.cool} 秒才能再答，並加罰 ${s.wrongPenalty} 秒</li>
-      ${s.hintOn ? `<li>💡 求助：系統給提示，每次加罰 ${s.hintCost} 秒（最多兩層）</li>` : ''}
-      ${s.passLimit ? `<li>🙋 卡關 ${s.passUnlock} 分鐘後可以申請 PASS，大師同意就換一題（不算完成，每組最多 ${s.passLimit} 次）</li>` : ''}
-      <li>找到 ${v.target} 個地點就完成！用時＋罰秒越少越厲害</li>`;
-    return `<div class="card" style="text-align:center;padding:24px"><div style="font-size:3em">⏳</div><h2>${esc(v.name)}，準備好了嗎？</h2><p class="muted">等待大師按下「開始」…</p>
+    const s = v.set || {}, sc = v.mode === 'score';
+    const tile = (i, t, d, wide) => `<div class="${wide ? 'wide' : ''}"><span class="i">${i}</span><span><b>${t}</b>${d}</span></div>`;
+    const chal = s.stanceOn || s.taskOn ? tile('🎁', '加分挑戰', `答對後可以挑戰${s.stanceOn ? '站位' : ''}${s.stanceOn && s.taskOn ? '、' : ''}${s.taskOn ? '觀察' : ''}，${sc ? '答對加分' : `每題減 ${s.bonusSec} 秒`}`, true) : '';
+    const steps = sc
+      ? [['🖼️', '挑照片', `牆上有 ${s.wall} 張，先找哪張自己決定`], ['🏃', '跑現場', '地圖標出候選地點，去比對'], ['🔢', '選號碼', '送出答案，答對就得分']]
+      : [['🖼️', '看照片', `每關 ${s.photos || 1} 張照片`], ['🏃', '跑現場', `地圖上 ${s.cands || 5} 個候選，規劃路線`], ['🔢', '選號碼', `找齊 ${v.target} 個就完成`]];
+    const tiles = sc ? [
+      tile('🔥', '冷門區 ×1.5', '附近的組很少，分數變高'), tile('🧊', '熱門區 ×0.5', '附近擠了很多組，分數變低'),
+      tile('❌', `答錯 −${s.ptsWrong} 分`, `等 ${s.cool} 秒才能再答`), s.hintOn ? tile('💡', '求助', `每層提示這張 −${s.hintPct}%`) : '',
+      tile('⏭', '放棄換一張', `之後 ${s.skipCool} 秒不能再放棄`), s.checkin ? tile('🚩', '回集合點報到', s.grace ? `時間到 ${s.grace} 分鐘內回來不扣分，之後每分 −${s.latePts}` : `時間到沒回來，每分鐘 −${s.latePts}`) : tile('⏱', `限時 ${s.limitMin} 分鐘`, '時間到就結算'),
+      chal
+    ] : [
+      tile('❌', `答錯罰 ${s.wrongPenalty} 秒`, `等 ${s.cool} 秒才能再答`), s.hintOn ? tile('💡', '求助', `每層提示罰 ${s.hintCost} 秒`) : '',
+      s.passLimit ? tile('🙋', `PASS 最多 ${s.passLimit} 次`, `卡 ${s.passUnlock} 分鐘後可申請，不算完成`) : '', tile('🏁', '比快', '用時＋罰秒越少越厲害'),
+      chal
+    ];
+    return `<div class="card" style="text-align:center;padding:22px"><div style="font-size:3em">⏳</div><h2>${esc(v.name)}，準備好了嗎？</h2><p class="muted">等待大師按下「開始」…</p>
       ${v.renamed ? '' : '<button class="btn sm ghost" data-rename style="margin-top:10px">✏️ 想換隊名？（只能改一次）</button>'}</div>
-    <div class="card small"><b>📜 規則</b><ul style="padding-left:18px;margin-top:4px">${rules}${chal}
-      <li>🚫 斜線區是正在上課的教學區，請繞道、保持安靜</li></ul></div>`;
+    <div class="card">
+      <div style="text-align:center"><span class="modepill">${sc ? `🎯 積分賽・限時 ${s.limitMin} 分鐘` : `🏁 闖關競速・找齊 ${v.target} 個地點`}</span></div>
+      <div class="sect">怎麼玩</div>
+      <div class="steps">${steps.map(([i, t, d], k) => `<div><span class="n">${k + 1}</span><span class="i">${i}</span><b>${t}</b>${d}</div>`).join('')}</div>
+      <div class="sect">規則</div>
+      <div class="rgrid">${tiles.filter(Boolean).join('')}</div>
+      <div class="nogo">🚫 地圖上斜線區＝正在上課，請繞道、保持安靜</div>
+    </div>`;
   }
   function finishHTML(v) {
     if (v.mode === 'score') return `<div class="card finish pop"><div class="big">🚩</div><h2>${esc(v.name)} 已報到收工</h2><p class="muted">總分</p><div style="font-family:'Bebas Neue',sans-serif;font-size:3.4em;line-height:1;color:var(--orange)">${v.total || 0}</div>

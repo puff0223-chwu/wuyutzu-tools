@@ -79,7 +79,7 @@ function runModal(edit) {
     </div>
     ${chk('rTeach', d.teaching, '🤫 其他班正在上課', '勾了就不派「教學區鄰近」的點，學生不會經過正在上課的教室走廊。')}
     <div class="sumbox" id="rSum"></div>
-    ${edit ? '<p class="small muted" style="margin-top:6px">組數與通行碼建立後就固定了（小紙條可能已經發出去）。</p>' : `<div style="margin-top:10px"><div class="row"><b>隊名</b>${tip('系統隨機取探險風隊名。學生進入後可以自己改一次隊名，老師也能在戰況頁按 ✏️ 改。')}<span class="spacer"></span><button type="button" class="btn sm ghost" id="rReroll">🎲 重抽</button></div><div class="namechips" id="rNames"></div></div>`}
+    ${edit ? '<p class="small muted" style="margin-top:6px">組數、通行碼與隊名建立後就固定了（小紙條可能已經發出去）。</p>' : `<label class="f">隊名風格${tip('系統依風格隨機取隊名。學生進入後可以自己改一次隊名，老師也能在戰況頁按 ✏️ 改。')}</label><div class="seg" id="rStyle">${Object.entries(G.NAME_STYLES).map(([k, x]) => `<button type="button" data-style="${k}" class="${k === LS.get('gps_namestyle', 'detective') ? 'on' : ''}">${x.label}</button>`).join('')}</div>`}
     <details class="adv" id="rAdv"><summary>⚙️ 自訂進階設定 <span class="small muted" style="font-weight:400">（不打開就用上面的建議值）</span></summary><div class="advb">
       <h4>📸 題目</h4>
       <div class="grid2">
@@ -137,8 +137,8 @@ function runModal(edit) {
   };
   $$('[data-mode]', m.el).forEach((bt) => { bt.onclick = () => { v('rMode').value = bt.dataset.mode; const on = $('#rSeg .on', m.el); if (on) applyPreset(on.dataset.preset); else if (bt.dataset.mode === 'score' && !+v('rLimit').value) applyPreset('half'); check(); }; });
   $$('[data-preset]', m.el).forEach((bt) => { bt.onclick = () => { applyPreset(bt.dataset.preset); check(); }; });
-  const drawNames = () => { const el = $('#rNames', m.el); if (!el) return; const n = Math.max(1, Math.min(60, +v('rN').value || 1)); if (names.length !== n) names = G.teamNames(n); el.innerHTML = names.map((x) => `<span>${esc(x)}</span>`).join(''); };
-  if (v('rReroll')) v('rReroll').onclick = () => { names = []; drawNames(); };
+  $$('[data-style]', m.el).forEach((bt) => { bt.onclick = () => { $$('[data-style]', m.el).forEach((x) => x.classList.toggle('on', x === bt)); }; });
+  const styleNow = () => { const on = $('#rStyle .on', m.el); return on ? on.dataset.style : 'detective'; };
   $('[data-x]', m.el).onclick = m.close;
   const read = () => {
     const zones = $$('#rZones input', m.el).filter((i) => i.checked).map((i) => i.value);
@@ -153,7 +153,7 @@ function runModal(edit) {
     };
   };
   const check = () => {
-    showMode(); drawNames();
+    showMode();
     const set = read(), n = edit ? Object.keys(R.st.teams).length : +v('rN').value || 0;
     // 時間按鈕：目前設定剛好是哪個建議值就亮哪個
     $$('#rSeg [data-preset]', m.el).forEach((bt) => { const p = PRESETS.find((x) => x.id === bt.dataset.preset), x = set.mode === 'score' ? p.sc : p.v; bt.classList.toggle('on', set.limitMin === x.limitMin && (set.mode === 'score' ? set.wall === x.wall : set.target === x.target)); });
@@ -185,7 +185,7 @@ function runModal(edit) {
       m.close(); toast('✅ 設定已更新'); R.lastDash = null; drawDash(); return;
     }
     const set = read(), n = Math.max(1, Math.min(60, +v('rN').value || 10));
-    drawNames();
+    names = G.teamNames(n, styleNow()); LS.set('gps_namestyle', styleNow());
     LS.set('gps_runset', set); LS.set('gps_teams', n);
     $('#rGo', m.el).disabled = true;
     try { const code = await createRun($('#rTitle', m.el).value.trim() || '校園定向', set, n, names.slice()); m.close(); await openRun(code); }
@@ -795,7 +795,7 @@ function drawDash() {
   $$('[data-zoomsrc]').forEach((im) => { im.style.cursor = 'zoom-in'; im.onclick = () => zoomImg(im.src); });
 }
 // 統計與路線回放放在另一個檔案，用到才載入
-const STATS = () => import('./stats.js?v=20261012f');
+const STATS = () => import('./stats.js?v=20261012g');
 function statsCtx() {
   const b = bank(), centers = G.zoneCenters(b), ys = Object.values(b.points).map((p) => p.y);
   return {

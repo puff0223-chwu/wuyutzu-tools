@@ -641,7 +641,7 @@ function renderBackupTab() {
 // ---------- 啟動 ----------
 async function openBankSilently(id) { const b = await Store.load(id); if (b) { S.bankId = id; S.bank = b; LS.set('gps_bank', id); } }
 window.TT = { S, Store, LS, $, $$, esc, toast, modal, confirmBox, zoomImg, imgTag, download, render, pts, openBankSilently };
-const L = await import('./live.js?v=20261012f');
+const L = await import('./live.js?v=20261012g');
 window.addEventListener('beforeunload', (e) => {
   if (Store._t && $('#saveState') && $('#saveState').textContent.includes('尚未')) { Store.flush(); e.preventDefault(); e.returnValue = ''; }
   if (L.isRefereeing()) { e.preventDefault(); e.returnValue = ''; }
