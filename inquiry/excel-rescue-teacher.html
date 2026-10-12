@@ -12,7 +12,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="../account/staff.js?v=20261013b"></script>
+<script src="../account/staff.js?v=20261013c"></script>
 <script src="excel-rescue-core.js?v=20261013b"></script>
 <script src="excel-rescue-checker.js?v=20261013b"></script>
 <style>
@@ -338,7 +338,7 @@ td.cl{color:var(--ok);font-weight:700}
   function loadSems(){ return CLOUD.sems.map(function(x){ return Object.assign({}, x); }); }
   function saveSems(a){
     CLOUD.sems = a.map(function(x){ return Object.assign({}, x); });
-    var o = {}; a.forEach(function(x){ o[x.code] = { note: x.note || '', at: x.at || Date.now(), legacy: !!x.legacy }; });
+    var o = {}; a.forEach(function(x){ o[x.code] = { note: x.note || '', at: x.at || Date.now(), legacy: !!x.legacy }; if (x.t) o[x.code].t = x.t; });
     window.ERFB && ERFB.set('excel-rescue-owners/' + CLOUD.uid + '/sems', o).catch(function(e){ alert('學期清單存到雲端失敗：' + (e.code || e.message)); });
   }
   function semItem(code){ return CLOUD.sems.filter(function(x){ return x.code === code; })[0]; }
@@ -357,7 +357,7 @@ td.cl{color:var(--ok);font-weight:700}
     sem = X.CONFIG.SEMESTER;
     try { localStorage.setItem(SEM_KEY, sem); } catch(e){}
     ensureSem(sem);
-    var it = semItem(sem); X.setTeacher(it && it.legacy ? '' : CLOUD.tcode);
+    var it = semItem(sem); X.setTeacher(it && it.legacy ? '' : (it && it.t) || CLOUD.tcode); // t：從舊帳號搬來的學期，沿用當時的老師代碼
     window.ERFB && ERFB.set('excel-rescue-owners/' + CLOUD.uid + '/cur', sem).catch(function(){});
     $('sem').textContent = sem + (X.CONFIG.TEACHER ? '' : '（舊版連結）');
     $('ids').value = CLOUD.rosters[rosterKey()] || ''; list = []; $('tbl').innerHTML = ''; $('genMsg').innerHTML = '';
@@ -378,7 +378,7 @@ td.cl{color:var(--ok);font-weight:700}
     $('semList').innerHTML = a.map(function(x){
       var on = x.code === cur;
       return '<div class="semitem'+(on?' cur':'')+'"><span class="code">'+esc(x.code)+'</span>'+
-        '<span class="meta">'+(x.legacy ? '<span title="帳號版之前發出的連結（沒有老師代碼），舊資料都在這裡">🕰️ 舊版連結</span>　' : '')+(x.note ? '<b>'+esc(x.note)+'</b>　' : '')+'建立於 '+new Date(x.at || Date.now()).toLocaleDateString('zh-TW')+'</span>'+
+        '<span class="meta">'+(x.legacy ? '<span title="帳號版之前發出的連結（沒有老師代碼），舊資料都在這裡">🕰️ 舊版連結</span>　' : '')+(x.t ? '<span title="從舊帳號搬來的學期，學生連結沿用當時的老師代碼">🔁 代碼 '+esc(x.t)+'</span>　' : '')+(x.note ? '<b>'+esc(x.note)+'</b>　' : '')+'建立於 '+new Date(x.at || Date.now()).toLocaleDateString('zh-TW')+'</span>'+
         (on ? '<span class="badge">✔ 使用中</span>' : '')+
         '<span class="act">'+(on ? '' : '<button class="btn sm" data-sw="'+esc(x.code)+'">切換</button>')+
         '<button class="btn sm ghost" data-note="'+esc(x.code)+'" title="改備註">✏️ 備註</button>'+
@@ -837,7 +837,7 @@ td.cl{color:var(--ok);font-weight:700}
     CLOUD.uid = ctx.uid; CLOUD.tcode = ctx.tcode; CLOUD.admin = ctx.admin;
     var own = ctx.owner || {};
     CLOUD.rosters = own.rosters || {};
-    CLOUD.sems = Object.keys(own.sems || {}).map(function(k){ var x = own.sems[k]; return { code: k, note: x.note || '', at: x.at || Date.now(), legacy: !!x.legacy }; });
+    CLOUD.sems = Object.keys(own.sems || {}).map(function(k){ var x = own.sems[k]; return { code: k, note: x.note || '', at: x.at || Date.now(), legacy: !!x.legacy, t: x.t || '' }; });
     if (!CLOUD.sems.length) {
       // 第一次用帳號版：巫魚子（管理員）把這台電腦以前的學期搬上來，標成舊版連結（舊資料、舊連結照常）
       var seed = ctx.admin ? localSems().map(function(x){ return { code: x.code, note: x.note || '', at: x.at || Date.now(), legacy: true }; }) : [];
@@ -856,32 +856,12 @@ td.cl{color:var(--ok);font-weight:700}
 </script>
 <script type="module">
 /* 2026-10-13 帳號版：老師先登入 → 檢查會員中心的核准（消失的實驗數據）→ 拿到自己的老師代碼 → 開啟卷宗 */
-const firebaseConfig = {
-  apiKey: "AIzaSyCRrmtcQ8INfbK0XgwkAZCx8V5wXCwU1lg",
-  authDomain: "point-collection-stash.firebaseapp.com",
-  databaseURL: "https://point-collection-stash-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "point-collection-stash",
-  storageBucket: "point-collection-stash.firebasestorage.app",
-  messagingSenderId: "391627703615",
-  appId: "1:391627703615:web:f9b8c358f147949a1d7f8a"
-};
 const W = window.WuStaff, gate = document.getElementById('erGate');
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-let FB = null;
+let FB = null, authErr = (e) => String(e && (e.code || e.message) || e), gBtn = () => '';
 try {
-  const V = '10.14.1', B = `https://www.gstatic.com/firebasejs/${V}/`;
-  const [{ initializeApp }, A, D] = await Promise.all([import(B + 'firebase-app.js'), import(B + 'firebase-auth.js'), import(B + 'firebase-database.js')]);
-  const app = initializeApp(firebaseConfig, 'excel');
-  const auth = A.getAuth(app), db = D.getDatabase(app);
-  FB = {
-    onUser: (cb) => A.onAuthStateChanged(auth, cb),
-    login: (e, p) => A.signInWithEmailAndPassword(auth, e, p),
-    logout: () => A.signOut(auth),
-    reset: (e) => A.sendPasswordResetEmail(auth, e),
-    get: async (p) => (await D.get(D.ref(db, p))).val(),
-    set: (p, v) => D.set(D.ref(db, p), v),
-    update: (p, v) => D.update(D.ref(db, p), v)
-  };
+  const M = await import('../account/fb.js?v=20261013c');
+  FB = await M.openFirebase('excel'); authErr = M.authErr; gBtn = M.googleButtonHTML;
   window.ERFB = FB;
 } catch (e) { console.warn(e); }
 const box = (inner) => `<div style="max-width:460px;margin:10vh auto;background:var(--paper);border-radius:12px;padding:28px;color:var(--text)">${inner}</div>`;
@@ -890,12 +870,14 @@ function renderLogin(msg) {
   gate.innerHTML = box(`<h1 style="font-size:1.5rem">🗂️ 消失的實驗數據｜老師登入</h1>
     <p class="note">老師卷宗含全班答案，需要登入。各系統共用同一個老師帳號。</p>
     ${msg ? `<p class="note bad">${esc(msg)}</p>` : ''}${!FB ? '<p class="note bad">雲端服務載入失敗，請確認網路後重新整理。</p>' : ''}
+    <div style="margin-top:14px">${gBtn('gG')}</div>
     <label class="note" style="display:block;margin-top:12px;font-weight:700;color:var(--text)">Email</label><input type="email" id="gE" autocomplete="username" value="${esc(localStorage.getItem('excelRescue-teacher:email') || '')}">
     <label class="note" style="display:block;margin-top:10px;font-weight:700;color:var(--text)">密碼</label><input type="password" id="gP" autocomplete="current-password">
     <div class="row" style="margin-top:16px"><button class="btn" id="gGo">🔓 登入</button><button class="linkbtn" id="gReset" style="margin-left:auto">忘記密碼</button></div>
     <p class="note" style="margin-top:16px">還沒有帳號？<a href="${W.centerURL('../', 'excel')}" style="font-weight:700;color:var(--ink)">👥 到會員中心申請使用</a>（巫魚子老師核准後就能用）</p>
     <p class="note"><a class="home" href="../index.html" style="font-size:.9rem">🏠 回事務所首頁</a></p>`);
-  const go = async () => { const e = document.getElementById('gE').value.trim(), p = document.getElementById('gP').value; if (!e || !p) return; document.getElementById('gGo').disabled = true; try { await FB.login(e, p); localStorage.setItem('excelRescue-teacher:email', e); } catch (err) { renderLogin(/invalid-credential|wrong-password|user-not-found/.test(err.code) ? 'Email 或密碼不對' : '登入失敗：' + (err.code || err.message)); } };
+  const go = async () => { const e = document.getElementById('gE').value.trim(), p = document.getElementById('gP').value; if (!e || !p) return; document.getElementById('gGo').disabled = true; try { await FB.login(e, p); localStorage.setItem('excelRescue-teacher:email', e); } catch (err) { renderLogin(authErr(err)); } };
+  const gg = document.getElementById('gG'); if (gg) gg.onclick = async () => { gg.disabled = true; try { await FB.google(); } catch (err) { renderLogin(authErr(err)); } };
   document.getElementById('gGo').onclick = go; document.getElementById('gP').onkeydown = (ev) => { if (ev.key === 'Enter') go(); };
   document.getElementById('gReset').onclick = async () => { const e = document.getElementById('gE').value.trim(); if (!e) return alert('先輸入 Email'); try { await FB.reset(e); alert('重設密碼的信已寄出'); } catch (err) { alert('寄送失敗：' + (err.code || err.message)); } };
 }

@@ -97,7 +97,7 @@ input.code{font-family:monospace;font-size:1.8em;letter-spacing:.3em;text-align:
 <body>
 <div id="top"></div>
 <div class="wrap" id="app"><p style="text-align:center;margin-top:30vh" class="muted">載入中…</p></div>
-<script src="core.js?v=20261013a"></script>
+<script src="core.js?v=20261013c"></script>
 <script>
 (function () {
   'use strict';
@@ -160,6 +160,13 @@ input.code{font-family:monospace;font-size:1.8em;letter-spacing:.3em;text-align:
       st.es.onerror = () => { if (st.es.readyState === 2 && !st.poll) { poll(); st.poll = setInterval(poll, 5000); } };
     } catch (e) { poll(); st.poll = setInterval(poll, 5000); }
   }
+  // 2026-10-13：切到背景超過 60 秒就斷線（Firebase 免費版同時連線上限 100，全站共用），回到畫面自動重連並補抓最新結果
+  function disconnect() { if (st.es) { st.es.close(); st.es = null; } clearInterval(st.poll); st.poll = null; }
+  document.addEventListener('visibilitychange', () => {
+    if (!st.me) return;
+    if (document.visibilityState === 'hidden') { st.hiddenAt = Date.now(); setTimeout(() => { if (document.visibilityState === 'hidden' && Date.now() - st.hiddenAt >= 59000) disconnect(); }, 60000); }
+    else if (!st.es && !st.poll) connect();
+  });
   // 剛通過的投稿 → 自動跳出領獎畫面（每張只自動跳一次）
   function onItems() {
     const fresh = Object.entries(st.items || {}).find(([id, it]) => it.status === 'ok' && !st.seen[CODE + id]);

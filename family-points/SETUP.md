@@ -33,23 +33,12 @@ Realtime Database → 資料 (Data) 分頁 → 在資料庫根目錄新增：
 - **不要使用「匯入 JSON」放在最上面那一列**：匯入會把那個位置的資料整個蓋掉，
   包含你其他工具（例如排行榜）已經存的資料。
 
-### 4. 更新資料庫規則（重要：合併，不是整份取代）
+### 4. 更新資料庫規則
 Realtime Database → 規則 (Rules) 分頁。
 
-你的資料庫裡已經有別的工具在用（例如排行榜的規則區塊），**請保留原有區塊**，
-只把 `firebase-rules-fp.json` 裡 `"fp": { ... }` 那一整段，
-貼到現有 `"rules": { ... }` 裡面，和其他區塊並列（記得逗號）。
-
-合併後長這樣（示意）：
-
-    {
-      "rules": {
-        ...你原本的規則（例如 missing-equipment 等）...,
-        "fp": {
-          ...firebase-rules-fp.json 裡 fp 的內容...
-        }
-      }
-    }
+巫魚子教課事務所所有工具共用同一份規則，已經包含 `fp` 區塊：
+把 repo 根目錄的 **`firebase-rules.json` 整份貼上**（取代原本的內容）就好。
+（2026-10-13 起規則統一由 `firebase/build_rules.py` 產生，不再分好幾份複本。）
 
 按「發布」。以前那種 `".read": true, ".write": true` 的全開規則請不要再用，
 否則孩子可以直接改資料庫。
@@ -83,7 +72,7 @@ https://puff0223-chwu.github.io/wuyutzu-tools/family-points/
 
 ## 五、給 Claude Code 的部署指令（複製貼上即可）
 
-    請把 family-points/ 資料夾（index.html、firebase-rules-fp.json、SETUP.md）
+    請把 family-points/ 資料夾（index.html、SETUP.md）
     加到 wuyutzu-tools 專案的 family-points/ 目錄，commit 並 push 到 GitHub（main）。
     依照既有流程：clone 到 Temp、使用 PAT、push 後刪除 clone。
     不要在首頁 index.html 或任何學生頁面加入連結。

@@ -230,36 +230,16 @@ table.list th{background:#f3eee2;font-weight:700}
 <div id="printRoot"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="../../account/staff.js?v=20261013b"></script>
+<script src="../../account/staff.js?v=20261013c"></script>
 <script src="core.js?v=20261010d"></script>
 <script type="module">
 /* Firebase 只用來「老師登入＋存班級資料」。載入失敗（沒網路）時仍可用本機模式 */
-const firebaseConfig = {
-  apiKey: "AIzaSyCRrmtcQ8INfbK0XgwkAZCx8V5wXCwU1lg",
-  authDomain: "point-collection-stash.firebaseapp.com",
-  databaseURL: "https://point-collection-stash-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "point-collection-stash",
-  storageBucket: "point-collection-stash.firebasestorage.app",
-  messagingSenderId: "391627703615",
-  appId: "1:391627703615:web:f9b8c358f147949a1d7f8a"
-};
 try {
-  const V = '10.14.1', B = `https://www.gstatic.com/firebasejs/${V}/`;
-  const [{ initializeApp }, A, D] = await Promise.all([import(B + 'firebase-app.js'), import(B + 'firebase-auth.js'), import(B + 'firebase-database.js')]);
-  const app = initializeApp(firebaseConfig, 'seating');
-  const auth = A.getAuth(app), db = D.getDatabase(app);
-  window.FB = {
-    onUser: (cb) => A.onAuthStateChanged(auth, cb),
-    login: (email, pw) => A.signInWithEmailAndPassword(auth, email, pw),
-    logout: () => A.signOut(auth),
-    reset: (email) => A.sendPasswordResetEmail(auth, email),
-    get: async (path) => (await D.get(D.ref(db, path))).val(),
-    set: (path, val) => D.set(D.ref(db, path), val),
-    update: (path, val) => D.update(D.ref(db, path), val),
-    remove: (path) => D.remove(D.ref(db, path))
-  };
+  const M = await import('../../account/fb.js?v=20261013c');
+  window.FB = await M.openFirebase('seating');
+  window.FBX = { authErr: M.authErr, googleButtonHTML: M.googleButtonHTML };
 } catch (e) { console.warn('Firebase 載入失敗，只能用本機模式', e); window.FB = null; }
-await import('./app.js?v=20261013a');
+await import('./app.js?v=20261013c');
 </script>
 </body>
 </html>

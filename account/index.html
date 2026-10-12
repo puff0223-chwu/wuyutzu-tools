@@ -30,6 +30,7 @@ input:focus,textarea:focus{outline:none;border-color:var(--gold)}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .btn.ghost{background:#fff}.btn.teal{background:var(--teal);color:#fff}.btn.red{background:#fff;color:var(--red);border-color:var(--red);box-shadow:2px 2px 0 var(--red)}
 .btn.sm{padding:5px 12px;font-size:.9em}
+a.btn{text-decoration:none;color:var(--ink)}
 .btn.wide{width:100%;justify-content:center;margin-top:16px}
 .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.sp{flex:1}
 .small{font-size:.86em}.muted{color:var(--muted)}
@@ -60,45 +61,18 @@ input:focus,textarea:focus{outline:none;border-color:var(--gold)}
 <body>
 <div class="top"><div class="brand">👥 會員中心<small>WU YU-ZI TEACHING STUDIO</small></div><span class="sp"></span><span id="who" class="small" style="opacity:.8"></span><button id="out" style="display:none">登出</button><a href="../index.html">🏠 回事務所首頁</a></div>
 <div class="wrap" id="app"><p class="muted" style="text-align:center;margin-top:20vh">載入中…</p></div>
-<script src="staff.js?v=20261013b"></script>
+<script src="staff.js?v=20261013c"></script>
 <script type="module">
-const firebaseConfig = {
-  apiKey: "AIzaSyCRrmtcQ8INfbK0XgwkAZCx8V5wXCwU1lg",
-  authDomain: "point-collection-stash.firebaseapp.com",
-  databaseURL: "https://point-collection-stash-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "point-collection-stash",
-  storageBucket: "point-collection-stash.firebasestorage.app",
-  messagingSenderId: "391627703615",
-  appId: "1:391627703615:web:f9b8c358f147949a1d7f8a"
-};
 const W = window.WuStaff, $ = (s, el) => (el || document).querySelector(s), $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const toast = (m, err) => { const t = document.createElement('div'); t.className = 'toast' + (err ? ' err' : ''); t.textContent = m; document.body.appendChild(t); setTimeout(() => t.remove(), err ? 4200 : 2600); };
 const wantApp = new URLSearchParams(location.search).get('app') || '';
 const S = { user: null, rec: null, unsubs: [], tab: 'pending', all: {}, ver: {}, req: {} };
-const ERR = { 'auth/email-already-in-use': '這個 Email 已經註冊過了，請直接登入（忘記密碼可以按「忘記密碼」）', 'auth/invalid-email': 'Email 格式不對', 'auth/weak-password': '密碼至少要 6 個字', 'auth/invalid-credential': 'Email 或密碼不對', 'auth/wrong-password': 'Email 或密碼不對', 'auth/user-not-found': '找不到這個帳號，要先申請', 'auth/too-many-requests': '嘗試太多次了，請稍後再試', 'auth/operation-not-allowed': 'Firebase 還沒開放自行註冊（請聯絡巫魚子老師）' };
-const errMsg = (e) => ERR[e && e.code] || ('發生問題：' + ((e && (e.code || e.message)) || e));
+let FB, authErr = (e) => String(e && (e.code || e.message) || e), gBtn = () => '';
 
-let FB;
 try {
-  const V = '10.14.1', B = `https://www.gstatic.com/firebasejs/${V}/`;
-  const [{ initializeApp }, A, D] = await Promise.all([import(B + 'firebase-app.js'), import(B + 'firebase-auth.js'), import(B + 'firebase-database.js')]);
-  const app = initializeApp(firebaseConfig, 'account');
-  const auth = A.getAuth(app), db = D.getDatabase(app);
-  FB = {
-    onUser: (cb) => A.onAuthStateChanged(auth, cb),
-    login: (e, p) => A.signInWithEmailAndPassword(auth, e, p),
-    register: (e, p) => A.createUserWithEmailAndPassword(auth, e, p),
-    verify: (u) => A.sendEmailVerification(u),
-    reload: async () => { await A.reload(auth.currentUser); await auth.currentUser.getIdToken(true); return auth.currentUser; },
-    logout: () => A.signOut(auth),
-    reset: (e) => A.sendPasswordResetEmail(auth, e),
-    get: async (p) => (await D.get(D.ref(db, p))).val(),
-    set: (p, v) => D.set(D.ref(db, p), v),
-    update: (p, v) => D.update(D.ref(db, p), v),
-    remove: (p) => D.remove(D.ref(db, p)),
-    listen: (p, cb) => D.onValue(D.ref(db, p), (s) => cb(s.val()), () => cb(null))
-  };
+  const M = await import('./fb.js?v=20261013c');
+  FB = await M.openFirebase('account'); authErr = M.authErr; gBtn = M.googleButtonHTML;
 } catch (e) { console.warn(e); FB = null; }
 
 function stop() { S.unsubs.forEach((u) => { try { u(); } catch (e) { } }); S.unsubs = []; }
@@ -112,18 +86,20 @@ function renderLogin(msg) {
   $('#app').innerHTML = `<div class="card narrow">
     <div style="font-family:'Bebas Neue',sans-serif;letter-spacing:.2em;color:#e4572e">MEMBER CENTER</div>
     <h1>👥 老師會員中心</h1>
-    <p class="muted small">巫魚子教課事務所的教學系統（消失的實驗數據、遺落的地點、座位大作戰…）共用同一個老師帳號。</p>
+    <p class="muted small">巫魚子教課事務所的教學系統（消失的實驗數據、遺落的地點、座位大作戰…）共用同一個老師帳號。有 Google 帳號（Gmail、學校 Google 帳號）最方便，不用另外記密碼。</p>
     ${msg ? `<div class="alert">${msg}</div>` : ''}
     ${!FB ? '<div class="alert">雲端服務載入失敗，請確認網路後重新整理。</div>' : ''}
+    <div style="margin-top:14px">${gBtn('lG')}</div>
     <label class="f">Email</label><input type="email" id="lE" autocomplete="username">
     <label class="f">密碼</label><input type="password" id="lP" autocomplete="current-password">
     <button class="btn wide" id="lGo">🔓 登入</button>
     <div class="row" style="margin-top:12px"><button class="btn ghost sm" id="lReg">📝 還沒有帳號？申請使用</button><span class="sp"></span><button class="btn ghost sm" id="lReset">忘記密碼</button></div>
   </div>`;
-  const go = async () => { const e = $('#lE').value.trim(), p = $('#lP').value; if (!e || !p) return toast('請輸入 Email 和密碼', true); $('#lGo').disabled = true; try { await FB.login(e, p); } catch (err) { $('#lGo').disabled = false; toast(errMsg(err), true); } };
+  const go = async () => { const e = $('#lE').value.trim(), p = $('#lP').value; if (!e || !p) return toast('請輸入 Email 和密碼', true); $('#lGo').disabled = true; try { await FB.login(e, p); } catch (err) { $('#lGo').disabled = false; toast(authErr(err), true); } };
+  const gl = $('#lG'); if (gl) gl.onclick = async () => { gl.disabled = true; try { await FB.google(); } catch (err) { gl.disabled = false; toast(authErr(err), true); } };
   $('#lGo').onclick = go; $('#lP').onkeydown = (ev) => { if (ev.key === 'Enter') go(); };
   $('#lReg').onclick = () => renderRegister();
-  $('#lReset').onclick = async () => { const e = $('#lE').value.trim(); if (!e) return toast('先在上面輸入 Email', true); try { await FB.reset(e); toast('重設密碼的信已寄出，請到信箱收信'); } catch (err) { toast(errMsg(err), true); } };
+  $('#lReset').onclick = async () => { const e = $('#lE').value.trim(); if (!e) return toast('先在上面輸入 Email', true); try { await FB.reset(e); toast('重設密碼的信已寄出，請到信箱收信'); } catch (err) { toast(authErr(err), true); } };
 }
 
 // ---------- 申請 ----------
@@ -144,7 +120,9 @@ function readProfile(el) {
 function renderRegister() {
   $('#app').innerHTML = `<div class="card narrow" style="max-width:560px">
     <h1>📝 申請使用帳號</h1>
-    <p class="muted small">送出後巫魚子老師會審核，核准後就能用你勾選的系統。系統會寄一封驗證信到你的信箱，請記得點開驗證。</p>
+    <p class="muted small">送出後巫魚子老師會審核，核准後就能用你勾選的系統。</p>
+    <div style="margin-top:14px">${gBtn('rG', '用 Google 帳號申請（推薦）')}</div>
+    <p class="muted small">用 Email 申請的話，系統會寄一封驗證信到你的信箱，請記得點開驗證。</p>
     <label class="f">Email（之後用來登入）</label><input type="email" id="rEmail" autocomplete="username">
     <div class="row" style="gap:12px"><div style="flex:1;min-width:180px"><label class="f">密碼（至少 6 個字）</label><input type="password" id="rPw" autocomplete="new-password"></div>
       <div style="flex:1;min-width:180px"><label class="f">再輸入一次密碼</label><input type="password" id="rPw2" autocomplete="new-password"></div></div>
@@ -154,6 +132,7 @@ function renderRegister() {
   </div>`;
   bindBoxes($('#app'));
   $('#rBack').onclick = () => renderLogin();
+  $('#rG').onclick = async () => { $('#rG').disabled = true; try { await FB.google(); } catch (err) { $('#rG').disabled = false; toast(authErr(err), true); } }; // 登入後沒有申請資料 → 自動顯示「補填申請資料」
   $('#rGo').onclick = async () => {
     const email = $('#rEmail').value.trim().toLowerCase(), pw = $('#rPw').value;
     if (!email) return toast('請輸入 Email', true);
@@ -167,7 +146,7 @@ function renderRegister() {
       try { await FB.verify(cred.user); } catch (e) { }
       S.registering = false; S.rec = null; enter(cred.user);
       toast('✅ 申請已送出！請到信箱點驗證信');
-    } catch (e) { S.registering = false; $('#rGo').disabled = false; toast(errMsg(e), true); }
+    } catch (e) { S.registering = false; $('#rGo').disabled = false; toast(authErr(e), true); }
   };
 }
 
@@ -181,10 +160,16 @@ async function enter(user) {
 function renderMe() {
   const u = S.user, rec = S.rec, ownerOf = Object.keys(W.APPS).filter((k) => W.isOwner(u, k));
   const verified = u.emailVerified;
+  if (ownerOf.length && !rec) {
+    $('#app').innerHTML = `<div class="card narrow" style="max-width:560px"><h1>🔑 舊的系統專用帳號</h1><p class="muted small">${esc(u.email)} 是${W.APPS[ownerOf[0]].name}以前的專用帳號。</p>
+      <div class="alert blue">現在所有系統都改用主帳號 <b>${esc(W.ADMIN)}</b>（Google 登入）管理。要把這個帳號的資料搬到主帳號：請登出，用主帳號登入會員中心 →「🚚 舊帳號搬家」。</div>
+      <div class="mylinks"><a href="../${W.APPS[ownerOf[0]].url}"><b>${W.APPS[ownerOf[0]].name}</b><span class="sp"></span>開啟 →</a></div></div>`;
+    return;
+  }
   if (!rec && !ownerOf.length) {
     $('#app').innerHTML = `<div class="card narrow" style="max-width:560px"><h1>📝 補填申請資料</h1><p class="muted small">這個帳號（${esc(u.email)}）還沒有申請資料，填好送出就會進入審核。</p>${profileFields()}<button class="btn wide" id="pGo">📨 送出申請</button></div>`;
     bindBoxes($('#app'));
-    $('#pGo').onclick = async () => { const prof = readProfile($('#app')); if (!prof) return; try { await FB.set('staff/' + u.uid, { email: String(u.email).toLowerCase(), ...prof, at: Date.now(), status: 'pending' }); toast('✅ 申請已送出'); } catch (e) { toast(errMsg(e), true); } };
+    $('#pGo').onclick = async () => { const prof = readProfile($('#app')); if (!prof) return; try { await FB.set('staff/' + u.uid, { email: String(u.email).toLowerCase(), ...prof, at: Date.now(), status: 'pending' }); toast('✅ 申請已送出'); } catch (e) { toast(authErr(e), true); } };
     return;
   }
   const st = rec ? rec.status : 'approved', apps = Object.assign({}, rec && rec.apps), mine = Object.keys(W.APPS).filter((k) => apps[k] || ownerOf.includes(k));
@@ -198,16 +183,16 @@ function renderMe() {
     ${st === 'disabled' ? `<div class="alert">⏸ 帳號已暫停使用。${rec.note ? '說明：' + esc(rec.note) : ''}</div>` : ''}
   </div>
   ${mine.length ? `<div class="card"><h2>🧰 我可以用的系統</h2><div class="mylinks">${mine.map((k) => `<a href="../${W.APPS[k].url}"><b>${W.APPS[k].name}</b><span>${esc(W.APPS[k].desc)}</span><span class="sp"></span>開啟 →</a>`).join('')}</div>
-    <p class="small muted" style="margin-top:10px">各系統用<b>同一組 Email 和密碼</b>登入。</p></div>` : ''}
+    <p class="small muted" style="margin-top:10px">各系統用<b>同一個帳號</b>登入（Google 登入就按 Google 按鈕）。</p></div>` : ''}
   ${st === 'approved' && Object.keys(W.APPS).some((k) => !mine.includes(k)) ? `<div class="card"><h2>➕ 申請加開其他系統</h2><div id="moreBox">${appBoxes({}, 'more', Object.keys(W.APPS).filter((k) => !mine.includes(k)))}</div>
     <button class="btn" id="moreGo" style="margin-top:12px">📨 送出加開申請</button><span class="small muted" id="moreMsg" style="margin-left:8px"></span></div>` : ''}`;
   bindBoxes($('#app'));
-  if ($('#vAgain')) $('#vAgain').onclick = async () => { try { await FB.verify(S.user); toast('驗證信已重寄'); } catch (e) { toast(errMsg(e), true); } };
-  if ($('#vDone')) $('#vDone').onclick = async () => { try { const u2 = await FB.reload(); S.user = u2; if (u2.emailVerified) { await FB.set('staffv/' + u2.uid, true).catch(() => {}); toast('✅ 信箱已驗證'); } else toast('還沒收到驗證喔，請點信裡的連結', true); renderMe(); } catch (e) { toast(errMsg(e), true); } };
+  if ($('#vAgain')) $('#vAgain').onclick = async () => { try { await FB.verify(S.user); toast('驗證信已重寄'); } catch (e) { toast(authErr(e), true); } };
+  if ($('#vDone')) $('#vDone').onclick = async () => { try { const u2 = await FB.reload(); S.user = u2; if (u2.emailVerified) { await FB.set('staffv/' + u2.uid, true).catch(() => {}); toast('✅ 信箱已驗證'); } else toast('還沒收到驗證喔，請點信裡的連結', true); renderMe(); } catch (e) { toast(authErr(e), true); } };
   if (verified) FB.set('staffv/' + u.uid, true).catch(() => {});
   if ($('#moreGo')) {
     FB.get('staffreq/' + u.uid).then((r) => { if (r && $('#moreMsg')) $('#moreMsg').textContent = '已送出：' + Object.keys(r.want || {}).map((k) => (W.APPS[k] || {}).name).join('、') + '，等待核准'; }).catch(() => {});
-    $('#moreGo').onclick = async () => { const want = picked($('#moreBox'), 'more'); if (!Object.keys(want).length) return toast('先勾選要加開的系統', true); try { await FB.set('staffreq/' + u.uid, { want, at: Date.now() }); $('#moreMsg').textContent = '✅ 已送出，等待核准'; } catch (e) { toast(errMsg(e), true); } };
+    $('#moreGo').onclick = async () => { const want = picked($('#moreBox'), 'more'); if (!Object.keys(want).length) return toast('先勾選要加開的系統', true); try { await FB.set('staffreq/' + u.uid, { want, at: Date.now() }); $('#moreMsg').textContent = '✅ 已送出，等待核准'; } catch (e) { toast(authErr(e), true); } };
   }
 }
 
@@ -216,6 +201,7 @@ function renderAdmin() {
   S.unsubs.push(FB.listen('staff', (v) => { S.all = v || {}; drawAdmin(); }));
   S.unsubs.push(FB.listen('staffv', (v) => { S.ver = v || {}; drawAdmin(); }));
   S.unsubs.push(FB.listen('staffreq', (v) => { S.req = v || {}; drawAdmin(); }));
+  S.unsubs.push(FB.listen('sys/retired', (v) => { S.retired = v || {}; if (S.tab === 'move' && !S.moving) drawAdmin(); }));
 }
 function drawAdmin() {
   const all = Object.entries(S.all).map(([uid, r]) => ({ uid, ...r })).sort((a, b) => (b.at || 0) - (a.at || 0));
@@ -237,24 +223,120 @@ function drawAdmin() {
   const moreCard = (uid) => { const x = S.all[uid], r = S.req[uid]; return `<div class="mem"><div class="hd"><span class="nm">${esc(x.name)}</span><span class="small muted">${esc(x.school)}・${esc(x.email)}</span></div>
     <div class="small" style="margin-top:6px">已開通：${appChips(x.apps)}　→　想加開：${appChips(r.want)}</div>
     <div class="row" style="margin-top:8px"><button class="btn teal sm" data-addok="${uid}">✅ 加開</button><button class="btn ghost sm" data-addno="${uid}">不加開</button></div></div>`; };
-  const list = tab === 'more' ? groups.more.map(moreCard) : groups[tab].map(card);
+  const list = tab === 'move' ? [moveHTML()] : tab === 'more' ? groups.more.map(moreCard) : groups[tab].map(card);
   $('#app').innerHTML = `
-  <div class="card"><div class="row"><h1>👥 會員管理</h1><span class="chip ink">🔑 管理員</span><span class="sp"></span><a class="btn ghost sm" href="../${W.APPS.excel.url}">📊 消失的實驗數據</a></div>
+  <div class="card"><div class="row"><h1>👥 會員管理</h1><span class="chip ink">🔑 管理員</span><span class="sp"></span>${Object.values(W.APPS).map((a) => `<a class="btn ghost sm" href="../${a.url}">${a.name}</a>`).join('')}</div>
     <p class="small muted">老師在這個頁面自己申請帳號，你核准時勾選他能用哪些系統。各系統的安全規則會檢查這份名單：沒核准、被停用，或沒開通的系統，都讀不到資料。</p>
-    <div class="tabs">${[['pending', `⏳ 待核准（${groups.pending.length}）`], ['more', `➕ 加開申請（${groups.more.length}）`], ['approved', `✅ 已核准（${groups.approved.length}）`], ['off', `⏸ 未通過・停用（${groups.off.length}）`]].map(([k, t]) => `<button data-tab="${k}" class="${tab === k ? 'on' : ''}">${t}</button>`).join('')}</div>
+    <div class="tabs">${[['pending', `⏳ 待核准（${groups.pending.length}）`], ['more', `➕ 加開申請（${groups.more.length}）`], ['approved', `✅ 已核准（${groups.approved.length}）`], ['off', `⏸ 未通過・停用（${groups.off.length}）`], ['move', '🚚 舊帳號搬家']].map(([k, t]) => `<button data-tab="${k}" class="${tab === k ? 'on' : ''}">${t}</button>`).join('')}</div>
     ${list.join('') || '<p class="muted" style="margin-top:14px">目前沒有資料</p>'}
   </div>`;
   document.title = (groups.pending.length + groups.more.length ? `(${groups.pending.length + groups.more.length}) ` : '') + '👥 會員中心';
-  $$('[data-tab]').forEach((b) => { b.onclick = () => { S.tab = b.dataset.tab; drawAdmin(); }; });
+  $$('[data-tab]').forEach((b) => { b.onclick = () => { if (S.moving) return toast('搬家進行中，請稍等', true); S.tab = b.dataset.tab; drawAdmin(); }; });
+  if (tab === 'move') bindMove();
   const appsOf = (uid) => Object.fromEntries($$(`input[data-app="${uid}"]:checked`).map((i) => [i.value, true]));
-  const upd = async (uid, v, msg) => { try { await FB.update('staff/' + uid, { ...v, decidedAt: Date.now() }); toast(msg); } catch (e) { toast(errMsg(e), true); } };
+  const upd = async (uid, v, msg) => { try { await FB.update('staff/' + uid, { ...v, decidedAt: Date.now() }); toast(msg); } catch (e) { toast(authErr(e), true); } };
   $$('[data-ok]').forEach((b) => { b.onclick = () => { const a = appsOf(b.dataset.ok); if (!Object.keys(a).length) return toast('至少勾一個系統', true); upd(b.dataset.ok, { status: 'approved', apps: a, note: null }, '✅ 已核准'); }; });
   $$('[data-save]').forEach((b) => { b.onclick = () => upd(b.dataset.save, { apps: appsOf(b.dataset.save) }, '💾 權限已更新'); });
   $$('[data-no]').forEach((b) => { b.onclick = () => { const n = prompt('不通過的原因（對方看得到，可以空白）', ''); if (n === null) return; upd(b.dataset.no, { status: 'rejected', apps: null, note: n.slice(0, 100) || null }, '已設為不通過'); }; });
   $$('[data-off]').forEach((b) => { b.onclick = () => { const n = prompt('停用的原因（對方看得到，可以空白）', ''); if (n === null) return; upd(b.dataset.off, { status: 'disabled', apps: null, note: n.slice(0, 100) || null }, '⏸ 已停用'); }; });
   $$('[data-back]').forEach((b) => { b.onclick = () => upd(b.dataset.back, { status: 'pending', note: null }, '已改回等待核准'); });
-  $$('[data-addok]').forEach((b) => { b.onclick = async () => { const uid = b.dataset.addok, x = S.all[uid]; try { await FB.update('staff/' + uid, { apps: { ...(x.apps || {}), ...(S.req[uid].want || {}) } }); await FB.remove('staffreq/' + uid); toast('✅ 已加開'); } catch (e) { toast(errMsg(e), true); } }; });
-  $$('[data-addno]').forEach((b) => { b.onclick = async () => { try { await FB.remove('staffreq/' + b.dataset.addno); toast('已移除這筆加開申請'); } catch (e) { toast(errMsg(e), true); } }; });
+  $$('[data-addok]').forEach((b) => { b.onclick = async () => { const uid = b.dataset.addok, x = S.all[uid]; try { await FB.update('staff/' + uid, { apps: { ...(x.apps || {}), ...(S.req[uid].want || {}) } }); await FB.remove('staffreq/' + uid); toast('✅ 已加開'); } catch (e) { toast(authErr(e), true); } }; });
+  $$('[data-addno]').forEach((b) => { b.onclick = async () => { try { await FB.remove('staffreq/' + b.dataset.addno); toast('已移除這筆加開申請'); } catch (e) { toast(authErr(e), true); } }; });
+}
+
+// ---------- 管理員：舊帳號搬家（+seat、+gps、+excel 的資料改到主帳號名下） ----------
+// 做法：用第二個登入（舊帳號）讀出自己的資料清單、登記「我要搬家」(xfer)；主帳號再把每筆資料的 owner 改成自己。
+// 只改 owner 欄位，照片、題庫內容都不用重新上傳；活動代碼、學生連結都不變。
+function moveHTML() {
+  const ret = S.retired || {};
+  return `<div class="mem"><p class="small">以前每個系統有自己的專用帳號。搬家會把它的<b>班級、題庫、照片、活動紀錄、學期清單</b>都改到主帳號（${esc(S.user.email)}）名下：學生連結、活動代碼都不會變。搬完舊帳號就退休（不能再用來開系統）。</p>
+    <div class="small muted" style="margin:6px 0 10px">需要舊帳號的密碼（只用來登入讀資料，不會存起來）。搬到一半斷線也沒關係，再按一次會從頭檢查、補完。</div>
+    ${Object.entries(W.APPS).map(([k, a]) => `<div class="row" style="border-top:1px dashed var(--line);padding:10px 0"><b style="min-width:150px">${a.name}</b><code class="small">${esc(a.legacy)}</code><span class="sp"></span>${ret[k] ? '<span class="chip ok">✅ 已搬家</span>' : `<input type="password" placeholder="舊帳號密碼" data-mpw="${k}" style="width:150px;padding:6px 10px"><button class="btn sm" data-mgo="${k}">🚚 搬家</button>`}</div>`).join('')}
+    <div id="mLog" class="small" style="margin-top:10px;white-space:pre-wrap;background:#f3eee2;border-radius:10px;padding:10px;display:none;max-height:320px;overflow:auto"></div></div>`;
+}
+function bindMove() {
+  $$('[data-mgo]').forEach((b) => { b.onclick = async () => {
+    const k = b.dataset.mgo, pw = $(`[data-mpw="${k}"]`).value; if (!pw) return toast('請輸入舊帳號的密碼', true);
+    const box = $('#mLog'); box.style.display = ''; box.textContent = '';
+    const log = (t) => { box.textContent += t + '\n'; box.scrollTop = box.scrollHeight; };
+    S.moving = true; $$('[data-mgo]').forEach((x) => { x.disabled = true; });
+    try { await runMove(W.APPS[k].legacy, pw, k, log); toast('🎉 搬家完成'); }
+    catch (e) { log('❌ ' + (e.code ? authErr(e) : (e.message || e))); toast('搬家沒有完成，請看紀錄', true); }
+    S.moving = false; $$('[data-mgo]').forEach((x) => { x.disabled = false; });
+  }; });
+}
+// 在一包資料裡找出座位大作戰的暗標代碼、遺落的地點的照片編號
+function findBidCodes(o, out) { out = out || new Set(); if (o && typeof o === 'object') { if (o.bid && typeof o.bid.code === 'string' && /^[2-9A-HJ-NP-Z]{6}$/.test(o.bid.code)) out.add(o.bid.code); Object.values(o).forEach((v) => findBidCodes(v, out)); } return out; }
+const findPhotoIds = (o) => new Set(Array.from(JSON.stringify(o || {}).matchAll(/"f:([a-z0-9]{8,24})"/g), (m) => m[1]));
+async function runMove(email, pw, appKey, log) {
+  const M = await import('./fb.js?v=20261013c');
+  const OLD = await M.openFirebase('move'), mu = S.user.uid;
+  try {
+    log('🔑 登入舊帳號 ' + email + '…');
+    const ou = (await OLD.login(email, pw)).user.uid;
+    if (ou === mu) throw new Error('這就是主帳號，不用搬');
+    await OLD.set('xfer/' + ou, true);
+    const oget = async (p) => { try { return await OLD.get(p); } catch (e) { return undefined; } }; // 已經搬過的會讀不到
+    const take = (p) => FB.set(p, mu);
+    const had = []; // 舊帳號有資料的清單，搬完清掉
+    // 🪑 座位大作戰：班級＋暗標
+    const sIdx = (await oget('seating/owners/' + ou)) || {};
+    if (Object.keys(sIdx).length) had.push('seating/owners/');
+    for (const [cid, info] of Object.entries(sIdx)) {
+      const cls = await oget('seating/classes/' + cid);
+      if (cls && cls.owner === ou) {
+        for (const code of findBidCodes(cls)) { const meta = await oget('seating/rounds/' + code + '/meta'); if (meta && meta.owner === ou) await take(`seating/rounds/${code}/meta/owner`); }
+        await take(`seating/classes/${cid}/owner`);
+      }
+      await FB.set(`seating/owners/${mu}/${cid}`, info);
+    }
+    if (Object.keys(sIdx).length) log(`🪑 座位大作戰：${Object.keys(sIdx).length} 個班級`);
+    // 🧭 遺落的地點：題庫＋照片、活動、投稿活動
+    const bIdx = (await oget('orienteering/owners/' + ou)) || {};
+    if (Object.keys(bIdx).length) had.push('orienteering/owners/');
+    let pics = 0;
+    for (const [bid, info] of Object.entries(bIdx)) {
+      const bank = await oget('orienteering/banks/' + bid);
+      if (bank && bank.owner === ou) {
+        for (const pid of findPhotoIds(bank)) { const po = await oget(`orienteering/photos/${pid}/owner`); if (po === ou) { await take(`orienteering/photos/${pid}/owner`); pics++; } }
+        await take(`orienteering/banks/${bid}/owner`);
+      }
+      await FB.set(`orienteering/owners/${mu}/${bid}`, info);
+    }
+    if (Object.keys(bIdx).length) log(`🧭 遺落的地點：${Object.keys(bIdx).length} 個題庫、${pics} 張照片`);
+    for (const [list, node, label] of [['myruns', 'runs', '場活動'], ['mycontrib', 'contrib', '個投稿活動']]) {
+      const idx = (await oget(`orienteering/${list}/${ou}`)) || {};
+      if (Object.keys(idx).length) had.push(`orienteering/${list}/`);
+      for (const [code, info] of Object.entries(idx)) {
+        const meta = await oget(`orienteering/${node}/${code}/meta`);
+        if (meta && meta.owner === ou) await take(`orienteering/${node}/${code}/meta/owner`);
+        await FB.set(`orienteering/${list}/${mu}/${code}`, info);
+      }
+      if (Object.keys(idx).length) log(`🧭 遺落的地點：${Object.keys(idx).length} ${label}`);
+    }
+    // 📊 消失的實驗數據：老師代碼＋學期清單＋名單
+    const eo = await oget('excel-rescue-owners/' + ou);
+    if (eo) {
+      had.push('excel-rescue-owners/');
+      const mine = (await FB.get('excel-rescue-owners/' + mu)) || {};
+      if (eo.tcode) {
+        const meta = await oget(`excel-rescue-t/${eo.tcode}/meta`);
+        if (meta && meta.owner === ou) await take(`excel-rescue-t/${eo.tcode}/meta/owner`);
+        if (meta && (meta.owner === ou || meta.owner === mu)) await FB.set(`excel-rescue-t/${eo.tcode}/meta/admin`, true); // 主帳號是管理員：學生寫入不看核准名單
+      }
+      const tcode = mine.tcode || eo.tcode || null, sems = Object.assign({}, mine.sems);
+      Object.entries(eo.sems || {}).forEach(([k, v]) => {
+        if (sems[k]) return log(`📊 學期 ${k} 兩個帳號都有，保留主帳號的`);
+        sems[k] = Object.assign({}, v); if (!v.legacy && eo.tcode && eo.tcode !== tcode) sems[k].t = v.t || eo.tcode; // 這學期的學生連結用舊老師代碼
+      });
+      await FB.update('excel-rescue-owners/' + mu, { tcode, sems, rosters: Object.assign({}, eo.rosters, mine.rosters), cur: mine.cur || eo.cur || null });
+      log(`📊 消失的實驗數據：${Object.keys(eo.sems || {}).length} 個學期${eo.tcode ? '、老師代碼 ' + eo.tcode : ''}`);
+    }
+    // 舊帳號的清單清掉、退休
+    for (const p of had) { try { await OLD.remove(p + ou); } catch (e) { } }
+    await FB.set('sys/retired/' + appKey, true);
+    log('✅ 搬家完成！舊帳號已退休，之後請用主帳號登入各系統。');
+  } finally { await OLD.close(); }
 }
 
 $('#out').onclick = async () => { stop(); await FB.logout(); };

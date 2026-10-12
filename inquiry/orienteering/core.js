@@ -82,14 +82,27 @@
     return ref;
   }
   // f: 照片要先從 Firebase 讀（REST，知道代碼才讀得到）
+  // 2026-10-13：讀過的照片存在這台裝置（Cache Storage），重新整理、下一場活動都不用再下載
+  //   → 省 Firebase 免費版每月 10 GB 下載量；照片編號每次上傳都是新的，同一個編號內容不會變，所以可以放心一直存
+  const PHOTO_STORE = 'gps-photos-v1', photoKey = (id) => new URL('__gps_photo/' + id, location.href).href;
+  async function storeGet(id) { try { if (!window.caches) return null; const r = await (await caches.open(PHOTO_STORE)).match(photoKey(id)); return r ? await r.text() : null; } catch (e) { return null; } }
+  function storePut(id, v) { try { if (window.caches && v) caches.open(PHOTO_STORE).then((c) => c.put(photoKey(id), new Response(v))).catch(() => {}); } catch (e) { } }
+  const photoWait = {};
   async function loadPhoto(ref) {
     if (!ref || !ref.startsWith('f:')) return photoURL(ref);
     const id = ref.slice(2);
     if (photoCache[id]) return photoCache[id];
-    const r = await fetch(DB_URL + 'orienteering/photos/' + id + '/data.json');
-    const v = r.ok ? await r.json() : null;
-    if (v) photoCache[id] = v;
-    return v || '';
+    return photoWait[id] || (photoWait[id] = (async () => {
+      let v = await storeGet(id);
+      if (!v) {
+        const r = await fetch(DB_URL + 'orienteering/photos/' + id + '/data.json');
+        v = r.ok ? await r.json() : null;
+        if (v) storePut(id, v);
+      }
+      if (v) photoCache[id] = v;
+      delete photoWait[id];
+      return v || '';
+    })());
   }
   function compressImage(file, max, quality) {
     max = max || 800; quality = quality || 0.72;
@@ -479,7 +492,7 @@
     esc, rid, mulberry, shuffle,
     normPoint, normalizeBank, packBank, sortedPoints, zoneById, zoneCenters, dist, inNoGo, viewLabel,
     photoURL, loadPhoto, compressImage, makeVersions,
-    cachePhoto: (id, data) => { photoCache[id] = data; },
+    cachePhoto: (id, data) => { photoCache[id] = data; storePut(id, data); },
     // 第二階段
     CODE_CH, makeCode, sha, DEFAULT_RUN, viewLevel, chooseBatch, chooseNext, gameSeconds, fmtTime, rankTeams, boardHTML, boardPaint, BOARD_CSS,
     // 第三階段

@@ -221,6 +221,7 @@ function renderLogin(msg) {
     <p class="muted" style="margin-bottom:14px">老師後台登入（巫魚子教課事務所老師帳號）</p>
     ${msg ? `<div class="alert red">${esc(msg)}</div>` : ''}
     ${window.FB ? `
+    ${window.FBX ? FBX.googleButtonHTML('lgG') : ''}
     <label class="f">Email</label><input type="email" id="lgEmail" autocomplete="username">
     <label class="f">密碼</label><input type="password" id="lgPw" autocomplete="current-password">
     <div class="row" style="margin-top:16px"><button class="btn primary" data-act="login">登入</button>
@@ -231,6 +232,11 @@ function renderLogin(msg) {
     <p class="small" style="margin-top:18px"><a href="../../index.html">🏠 回事務所首頁</a></p>
   </div>`;
   const pw = $('#lgPw'); if (pw) pw.addEventListener('keydown', (e) => { if (e.key === 'Enter') act.login(); });
+  const gb = $('#lgG'); if (gb) gb.onclick = async () => {
+    gb.disabled = true; LS.set('seating3_mode', 'cloud');
+    try { const cred = await FB.google(); if (cred && cred.user) await enterCloud(cred.user); }
+    catch (e) { gb.disabled = false; toast(FBX.authErr(e), true); }
+  };
 }
 
 /* ---------------- 主畫面 ---------------- */
@@ -1329,7 +1335,7 @@ act.login = async () => {
   const email = $('#lgEmail').value.trim(), pw = $('#lgPw').value;
   if (!email || !pw) return toast('請輸入 Email 與密碼', true);
   try { const cred = await FB.login(email, pw); LS.set('seating3_mode', 'cloud'); await enterCloud(cred.user); }
-  catch (e) { toast('登入失敗：' + (/invalid|wrong|not-found/.test(e.code || '') ? 'Email 或密碼不正確' : (e.code || e.message)), true); }
+  catch (e) { toast(window.FBX ? FBX.authErr(e) : '登入失敗：' + (e.code || e.message), true); }
 };
 act.forgot = async () => {
   const email = $('#lgEmail').value.trim(); if (!email) return toast('請先輸入 Email', true);

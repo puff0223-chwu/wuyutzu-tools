@@ -7,11 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="excel-rescue-core.js?v=20261013b"></script>
-<script src="excel-rescue-checker.js?v=20261013b"></script>
+<script src="excel-rescue-core.js?v=20261013c"></script>
+<script src="excel-rescue-checker.js?v=20261013c"></script>
 <style>
 :root{
   --ink:#1c2230; --ink2:#2b3346; --paper:#f3ead6; --paper2:#e9dcc0; --line:#cbb88f;
@@ -295,8 +292,27 @@ button{font:inherit;cursor:pointer}
   [$('inId'),$('inName')].forEach(function(el){ el.addEventListener('keydown',function(e){ if(e.key==='Enter') $('btnStart').click(); }); });
   $('btnOut').onclick = function(){ $('vMain').classList.add('hidden'); $('vLogin').classList.remove('hidden'); $('certBox').innerHTML=''; };
 
+  // ---------- Excel 工具（約 2 MB）：不擋住畫面，頁面打開後在背景載入，按按鈕時一定等它載好 ----------
+  var LIB = {
+    xlsx: ['XLSX', 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'],
+    exceljs: ['ExcelJS', 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js'],
+    jszip: ['JSZip', 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js']
+  }, libP = {};
+  function needLib(k){
+    if (window[LIB[k][0]]) return Promise.resolve();
+    return libP[k] || (libP[k] = new Promise(function(ok, bad){
+      var sc = document.createElement('script'); sc.src = LIB[k][1]; sc.async = true;
+      sc.onload = ok; sc.onerror = function(){ delete libP[k]; sc.remove(); bad(new Error('lib ' + k)); };
+      document.head.appendChild(sc);
+    }));
+  }
+  window.addEventListener('load', function(){ setTimeout(function(){ needLib('exceljs').catch(function(){}); needLib('jszip').catch(function(){}); needLib('xlsx').catch(function(){}); }, 1500); });
+
   // ---------- 下載專屬 Excel ----------
   var downloadData = function(d){
+    return needLib('exceljs').catch(function(){ return needLib('xlsx'); }).then(function(){ return makeFile(d); }, function(){ alert('Excel 工具載入失敗，請確認網路後重新整理頁面'); });
+  };
+  var makeFile = function(d){
     // 2026-10-13 起用 ExcelJS 產生有顏色、有排版的檔案；載不到時退回舊版（純文字）
     if (window.ExcelJS) {
       return X.buildWorkbook(ExcelJS, d).xlsx.writeBuffer().then(function(buf){
@@ -331,9 +347,8 @@ button{font:inherit;cursor:pointer}
   function runCheck(file){
     var out = $('report');
     if (!/\.xlsx$/i.test(file.name)) { out.innerHTML = '<div class="er-err">只能檢查 .xlsx 檔，請用 Excel「另存新檔」選 Excel 活頁簿</div>'; return; }
-    if (!window.JSZip || !window.XLSX) { out.innerHTML = '<div class="er-err">檢查工具還沒載入完成，請確認網路後重新整理頁面</div>'; return; }
     out.innerHTML = '<div class="busy">🔍 鑑識中……</div>';
-    file.arrayBuffer().then(function(buf){ return ExcelRescueChecker.check(buf, { expectedId: data.id }); })
+    Promise.all([needLib('jszip'), needLib('xlsx')]).catch(function(){ throw new Error('nolib'); }).then(function(){ return file.arrayBuffer(); }).then(function(buf){ return ExcelRescueChecker.check(buf, { expectedId: data.id }); })
       .then(function(r){
         if (r.ok && r.id === data.id) {   // 最近一次自我檢查的分數也同步給老師
           var lv = {}; Object.keys(r.summary).forEach(function(k){ lv[k] = r.summary[k].got; });
@@ -342,7 +357,7 @@ button{font:inherit;cursor:pointer}
         var tip = r.ok && r.score === r.max ? '<div class="result show good" style="margin-top:12px">🎉 全部項目都做到了！可以放心繳交。</div>' : '';
         out.innerHTML = '<p class="sect" style="margin-top:18px">▍' + esc(file.name) + '</p>' + ExcelRescueChecker.reportHtml(r, { hideHidden: !state.passed.L4 }) + tip;
       })
-      .catch(function(e){ console.error(e); out.innerHTML = '<div class="er-err">檢查時發生問題，請確認是用 Excel 存的 .xlsx 檔</div>'; });
+      .catch(function(e){ console.error(e); out.innerHTML = e && e.message === 'nolib' ? '<div class="er-err">檢查工具載入失敗，請確認網路後重新整理頁面</div>' : '<div class="er-err">檢查時發生問題，請確認是用 Excel 存的 .xlsx 檔</div>'; });
   }
 
   // ---------- 主畫面 ----------
