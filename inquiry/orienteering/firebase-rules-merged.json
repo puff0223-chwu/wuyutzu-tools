@@ -261,7 +261,7 @@
        "reqs": {
         "$rid": {
          ".write": "!data.exists() && newData.exists() && root.child('orienteering/runs/'+$code+'/keys/'+newData.child('k').val()).val() === $tid && root.child('orienteering/runs/'+$code+'/meta/status').val() === 'running'",
-         ".validate": "newData.hasChildren(['k','cid','type','ts']) && newData.child('cid').isString() && newData.child('cid').val().length <= 16 && newData.child('type').val().matches(/^(hint|pass)$/) && newData.child('ts').val() == now && (!newData.child('note').exists() || (newData.child('note').isString() && newData.child('note').val().length <= 60))"
+         ".validate": "newData.hasChildren(['k','cid','type','ts']) && newData.child('cid').isString() && newData.child('cid').val().length <= 16 && newData.child('type').val().matches(/^(hint|pass|skip|cam|task)$/) && newData.child('ts').val() == now && (!newData.child('note').exists() || (newData.child('note').isString() && newData.child('note').val().length <= 60)) && (!newData.child('text').exists() || (newData.child('text').isString() && newData.child('text').val().length <= 60)) && (!newData.child('x').exists() || (newData.child('x').isNumber() && newData.child('x').val() >= 0 && newData.child('x').val() <= 100)) && (!newData.child('y').exists() || (newData.child('y').isNumber() && newData.child('y').val() >= 0 && newData.child('y').val() <= 100)) && (!newData.child('dir').exists() || (newData.child('dir').isNumber() && newData.child('dir').val() >= 0 && newData.child('dir').val() <= 7))"
         }
        }
       }

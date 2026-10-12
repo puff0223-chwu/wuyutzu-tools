@@ -153,7 +153,11 @@
 
   const DEFAULT_RUN = {
     mode: 'race', target: 13, photos: 2, cands: 7, route: 'spread', limitMin: 40, teaching: false, zones: [],
-    cool: 30, wrongPenalty: 30, hintOn: true, hintCost: 60, passLimit: 2, passUnlock: 3, viewProg: false
+    cool: 30, wrongPenalty: 30, hintOn: true, hintCost: 60, passLimit: 2, passUnlock: 3, viewProg: false,
+    // 第三階段：🎯 積分賽
+    wall: 4, wallCands: 4, skipCool: 120, ptsWrong: 2, hintPct: 30, viewBonus: true, checkin: false, grace: 2, latePts: 5,
+    // 第三階段：🎁 加分挑戰（答對後才出現）
+    stanceOn: true, taskOn: true, bonusSec: 30, stancePts: 5, camTol: 6
   };
 
   // 視角難度：0＝遠景／中景／平視（或未標）、1＝特寫／仰俯斜角、2＝超特寫／奇特視角
@@ -164,25 +168,30 @@
      - 每關 1 張：3～5 個候選地點，分在 3 個不同區域，剩下的從這 3 區隨機
      答案的區域：避開這組最近去過的區域、避開人多的區域、加大隨機；同一關的兩個答案在不同區域
      st = { settings, teams:{ tid:{ done[], passed[], cards{cid:{key,state}}, recent[] } } }
-     opt = { size(這關幾張), avoid(開場要避開的區域), rnd }
+     opt = { size(這關幾張), avoid(開場要避開的區域), rnd,
+             積分賽補卡用：exclude(不能當答案的點 key)、wallZones(牆上已有的區域)、busy(各區人數，覆蓋預設算法)、K(候選數) }
      回傳 { keys:[答案…], cands:[候選…] }，題庫用完回傳 null */
   function chooseNext(bank, st, tid, opt) {
     opt = opt || {};
     const S = st.settings, team = st.teams[tid], rnd = opt.rnd || Math.random;
     const size = Math.max(1, Math.min(2, opt.size || S.photos || 1));
-    const K = Math.max(size + 2, Math.min(9, S.cands || (size === 2 ? 7 : 5)));
+    const K = Math.max(size + 2, Math.min(9, opt.K || S.cands || (size === 2 ? 7 : 5)));
     const zm = zoneById(bank);
     const busy = {}, takenByOthers = new Set();
     Object.entries(st.teams).forEach(([id, t]) => {
       if (id === tid || t.finished) return;
       Object.values(t.cards || {}).filter((c) => c.state === 'open').forEach((c) => {
         takenByOthers.add(c.key);
-        const z = (bank.points[c.key] || {}).zone; if (z) busy[z] = (busy[z] || 0) + 1;
+        const z = (bank.points[c.key] || {}).zone; if (z && !opt.busy) busy[z] = (busy[z] || 0) + 1;
       });
     });
+    if (opt.busy) Object.assign(busy, opt.busy);
     const usable = (p) => p.enabled && p.photos.length && (!S.zones || !S.zones.length || S.zones.includes(p.zone)) && !(S.teaching && p.teach);
-    const done = new Set([...(team.done || []), ...(team.passed || [])]);
-    let pool = sortedPoints(bank).filter((p) => usable(p) && !done.has(p.key));
+    const done = new Set([...(team.done || []), ...(team.passed || []), ...(team.skipped || [])]);
+    const excl = opt.exclude || new Set();
+    let pool = sortedPoints(bank).filter((p) => usable(p) && !done.has(p.key) && !excl.has(p.key));
+    // 放棄過的點：題庫快用完時才再派
+    if (!pool.length && (team.skipped || []).length) pool = sortedPoints(bank).filter((p) => usable(p) && !excl.has(p.key) && !(team.done || []).includes(p.key) && !(team.passed || []).includes(p.key));
     if (S.viewProg && pool.length) {
       const allow = Math.min(2, Math.floor(3 * (team.done || []).length / Math.max(1, S.target)));
       const easier = pool.filter((p) => viewLevel(p) <= allow);
@@ -205,6 +214,7 @@
         const r = recent.indexOf(z), ph = S.photos || 1; if (r >= 0 && r < ph) sc += 150; else if (r >= 0 && r < ph * 2) sc += 40;
         if (answers.some((a) => a.zone === z)) sc += 200; // 同一關的兩張照片放在不同區域
         if (opt.avoid && opt.avoid.includes(z)) sc += 30;
+        if (opt.wallZones && opt.wallZones.includes(z)) sc += 200; // 積分賽：任務牆上的照片分散在不同區
         if (here && centers[z]) sc += dist(bank, here, centers[z]) * 0.9;
         if (near && answers.length && centers[z] && centers[answers[0].zone]) sc += dist(bank, centers[answers[0].zone], centers[z]) * 0.9;
         if (sc < bs) { bs = sc; best = z; }
@@ -213,7 +223,7 @@
       answers.push(inZone[0]); busy[best] = (busy[best] || 0) + 1;
     }
     // 候選地點（干擾選項）：可以是任何可用的點，但不放這組已經找過的
-    const decoyPool = sortedPoints(bank).filter((p) => usable(p) && !answers.includes(p) && !done.has(p.key));
+    const decoyPool = sortedPoints(bank).filter((p) => usable(p) && !answers.includes(p) && !(team.done || []).includes(p.key));
     const dz = {};
     decoyPool.forEach((p) => { (dz[p.zone] = dz[p.zone] || []).push(p); });
     const ansZones = Array.from(new Set(answers.map((a) => a.zone)));
@@ -292,12 +302,60 @@
   function rankTeams(teams, nowSec) {
     const arr = Object.entries(teams || {}).map(([id, t]) => {
       const time = t.finished ? (t.finishSec || 0) : nowSec;
-      return { id, ...t, score: time + (t.penalty || 0) };
+      return { id, ...t, score: time + (t.penalty || 0) - (t.bon || 0) };
     });
     arr.sort((a, b) => (b.finished ? 1 : 0) - (a.finished ? 1 : 0) || (a.finished ? a.score - b.score : (b.done || 0) - (a.done || 0) || a.score - b.score) || String(a.name).localeCompare(String(b.name), 'zh-Hant', { numeric: true }));
     let r = 0;
     arr.forEach((t, i) => { if (i === 0 || t.finished !== arr[i - 1].finished || t.score !== arr[i - 1].score || (!t.finished && t.done !== arr[i - 1].done)) r = i + 1; t.rank = r; });
     return arr;
+  }
+
+  // =====================================================================
+  // 第三階段：🎯 積分賽、🎁 加分挑戰
+  // =====================================================================
+  /* 動態分值（像桌遊的浮動市場）
+     老師看不到學生在哪裡，所以用「這組最近一次答對的區域」當作他們的位置（6 分鐘內有效）
+     冷門區 ×1.5、一般 ×1、熱門區 ×0.5（門檻見下面 heatLevel） */
+  const LOC_MIN = 6;
+  function crowdByLoc(teams, now, exceptTid) {
+    const c = {};
+    Object.entries(teams || {}).forEach(([id, t]) => { if (id === exceptTid || t.finished || !t.loc || now - t.loc.at > LOC_MIN * 60000) return; c[t.loc.z] = (c[t.loc.z] || 0) + 1; });
+    return c;
+  }
+  /* 冷熱門要跟「平均每區幾組」比（2026-10-13 模擬發現：50 組時每區都超過容量 2，結果 95% 的卡都是熱門 ×0.5，浮動就沒意義了）
+     熱門：人數 ≥ 區域容量，而且 ≥ 平均的 1.6 倍；冷門：人數 ≤ 平均的 0.4 倍（組少時＝沒有人） */
+  const crowdAvg = (crowd, nZones) => Object.values(crowd || {}).reduce((s, v) => s + v, 0) / Math.max(1, nZones || 1);
+  function heatLevel(crowd, cap, avg) { if (!avg) return ''; /* 還沒有任何組答對過：分不出冷熱，全部一般 */ const hot = Math.max(cap || 2, Math.ceil((avg || 0) * 1.6)), cold = Math.floor((avg || 0) * 0.4); return crowd >= hot ? 'hot' : crowd <= cold ? 'cold' : ''; }
+  const zoneMult = (crowd, cap, avg) => ({ hot: 0.5, cold: 1.5, '': 1 })[heatLevel(crowd, cap, avg)];
+  const viewMult = (p) => [1, 1.5, 2][viewLevel(p)];
+  // 一張卡現在值幾分：基本分 ×（視角難度）×（冷熱門）×（用了幾層提示就打折）
+  function cardValue(p, set, crowd, cap, hint, avg) {
+    let v = (p.base || 10) * (set.viewBonus !== false ? viewMult(p) : 1) * zoneMult(crowd, cap, avg);
+    v *= Math.max(0, 1 - (set.hintPct || 0) / 100 * (hint || 0));
+    return Math.max(1, Math.round(v));
+  }
+  // 積分賽總分＝答題得分＋加分挑戰－遲到扣分
+  const lateMin = (t, set, clock) => (!set.checkin || !clock || !clock.endAt || !t.checkAt ? 0 : Math.max(0, Math.ceil((t.checkAt - clock.endAt) / 60000 - (set.grace || 0))));
+  function teamTotal(t, set, clock) { return (t.pts || 0) + (t.bon || 0) - lateMin(t, set, clock) * (set.latePts || 0); }
+  // 積分賽排名：總分高的在前；同分比較早拿到最後一分的
+  function rankScore(teams) {
+    const arr = Object.entries(teams || {}).map(([id, t]) => ({ id, ...t }));
+    arr.sort((a, b) => (b.total || 0) - (a.total || 0) || (a.lastOk || 9e15) - (b.lastOk || 9e15) || String(a.name).localeCompare(String(b.name), 'zh-Hant', { numeric: true }));
+    let r = 0;
+    arr.forEach((t, i) => { if (i === 0 || t.total !== arr[i - 1].total) r = i + 1; t.rank = r; });
+    return arr;
+  }
+  /* 🦶 站位挑戰判定：站的位置在誤差內＋方向對（容許相鄰一格）＝1；只有位置對＝0.5；位置不對＝0 */
+  function judgeCam(bank, cam, ans, tol) {
+    if (!cam || !ans) return { got: 0, d: 999, dd: 8 };
+    const d = dist(bank, cam, ans), dd = Math.min((ans.dir - cam.dir + 8) % 8, (cam.dir - ans.dir + 8) % 8);
+    return { got: d <= (tol || 6) ? (dd <= 1 ? 1 : 0.5) : 0, d: Math.round(d * 10) / 10, dd };
+  }
+  /* 🔍 觀察任務自動判定：全形半形、大小寫、空白都不計較；標準答案可用 / 分隔多個 */
+  const normAns = (s) => String(s || '').replace(/[\uff01-\uff5e]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0)).replace(/\s+/g, '').replace(/[。．.,，、!！?？]+$/, '').toLowerCase();
+  function judgeTask(task, text) {
+    const a = normAns(text); if (!a) return false;
+    return String(task.a || '').split(/[\/|｜]/).map(normAns).filter(Boolean).some((x) => x === a || (!isNaN(+x) && !isNaN(+a) && +x === +a));
   }
 
   // ---------- 戰況看板（老師頁投影與 board.html 共用） ----------
@@ -342,7 +400,9 @@
   function boardParts(board, pub, now, opt) {
     board = board || {}; pub = pub || {};
     const sec = gameSeconds(board.clock, now), lim = (board.limitMin || 0) * 60;
-    const ranked = rankTeams(board.teams, sec), n = ranked.length;
+    const score = board.mode === 'score';
+    const ranked = score ? rankScore(board.teams) : rankTeams(board.teams, sec), n = ranked.length;
+    const maxPts = score ? Math.max(1, ...ranked.map((t) => t.total || 0)) : 1;
     const heat = board.heat || {};
     const zones = (pub.zones || []).filter((z) => z.x != null);
     const stateTxt = { ready: '準備中', running: '', paused: '⏸ 暫停中', ended: '🏁 已結束' }[board.status] || '';
@@ -353,7 +413,9 @@
         <div class="gb-clock">${lim ? fmtTime(Math.max(0, lim - sec)) : fmtTime(sec)}<small>${lim ? '剩餘時間' : '經過時間'}${n > 12 ? `・${n} 組` : ''}</small></div>`,
       heat: zones.map((z) => { const k = heat[z.id] || 0; const sz = 30 + Math.min(k, 6) * 7; return `<div class="gb-heat" style="left:${z.x}%;top:${z.y}%;width:${sz}px;height:${sz}px;background:${k ? z.color : 'rgba(120,120,120,.35)'};opacity:${k ? 1 : .7}">${k || ''}<small>${esc(z.name)}</small></div>`; }).join(''),
       rankCls: 'gb-rank c' + cols,
-      rank: ranked.map((t) => `<div class="gb-row ${t.finished ? 'fin' : ''}"><div class="rk">${t.rank}</div><div class="nm">${t.finished ? '🏁 ' : ''}${esc(t.name)}</div>
+      rank: score ? ranked.map((t) => `<div class="gb-row ${t.finished ? 'fin' : ''}"><div class="rk">${t.rank}</div><div class="nm">${t.finished ? '✅ ' : ''}${esc(t.name)}</div>
+        <div><div class="bar"><i style="width:${Math.max(0, Math.min(100, Math.round((t.total || 0) / maxPts * 100)))}%"></i></div><div class="dn">找到 ${t.done || 0} 個</div></div>
+        <div class="tm">${t.total || 0}<span style="font-size:.55em"> 分</span></div></div>`).join('') || '<p style="opacity:.6">等待開始…</p>' : ranked.map((t) => `<div class="gb-row ${t.finished ? 'fin' : ''}"><div class="rk">${t.rank}</div><div class="nm">${t.finished ? '🏁 ' : ''}${esc(t.name)}</div>
         <div><div class="bar"><i style="width:${Math.min(100, Math.round((t.done || 0) / Math.max(1, board.target || 1) * 100))}%"></i></div><div class="dn">${t.done || 0} / ${board.target || 0}</div></div>
         <div class="tm">${t.finished ? fmtTime(t.finishSec) : ''}</div></div>`).join('') || '<p style="opacity:.6">等待開始…</p>',
       foot: (board.badges || []).map((b) => `<span class="gb-badge">${esc(b)}</span>`).join('') + (board.events || []).slice(-6).reverse().map((e) => `<span class="gb-ev">${esc(e)}</span>`).join('')
@@ -390,6 +452,8 @@
     photoURL, loadPhoto, compressImage, makeVersions,
     cachePhoto: (id, data) => { photoCache[id] = data; },
     // 第二階段
-    CODE_CH, makeCode, sha, DEFAULT_RUN, viewLevel, chooseBatch, chooseNext, gameSeconds, fmtTime, rankTeams, boardHTML, boardPaint, BOARD_CSS
+    CODE_CH, makeCode, sha, DEFAULT_RUN, viewLevel, chooseBatch, chooseNext, gameSeconds, fmtTime, rankTeams, boardHTML, boardPaint, BOARD_CSS,
+    // 第三階段
+    LOC_MIN, crowdByLoc, crowdAvg, heatLevel, zoneMult, viewMult, cardValue, lateMin, teamTotal, rankScore, judgeCam, judgeTask, normAns
   };
 })();

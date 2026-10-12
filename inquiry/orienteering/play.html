@@ -101,6 +101,41 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
 .finish .stat b{display:block;font-size:1.4em}
 .foot{text-align:center;margin-top:20px}
 .foot button{background:none;border:none;color:var(--muted);text-decoration:underline;font-size:.85em;cursor:pointer}
+/* 🎯 積分賽：任務牆 */
+.wall{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px}
+.wall.w3{grid-template-columns:repeat(3,1fr)}
+.tile{position:relative;border:2.5px solid var(--ink);border-radius:12px;overflow:hidden;background:#222;padding:0;cursor:pointer;aspect-ratio:4/3;box-shadow:2px 2px 0 var(--ink)}
+.tile img{width:100%;height:100%;object-fit:cover;display:block;opacity:.88}
+.tile.on{border-color:var(--orange);box-shadow:0 0 0 3px var(--orange)}
+.tile.on img{opacity:1}
+.tile .val{position:absolute;right:5px;top:5px;background:var(--gold);color:var(--ink);border:2px solid var(--ink);border-radius:9px;font-weight:900;font-size:1.1em;padding:0 7px;line-height:1.35}
+.tile .val small{font-size:.6em}
+.tile .val.cold{background:var(--red);color:#fff}
+.tile .val.hot{background:#9db4cf;color:#1f2a44}
+.tile .ix{position:absolute;left:5px;top:5px;background:var(--ink);color:#fff;border-radius:7px;font-weight:900;padding:0 7px;font-size:.85em}
+.tile .cd{position:absolute;left:0;right:0;bottom:0;background:rgba(228,87,46,.9);color:#fff;font-size:.78em;font-weight:700;text-align:center}
+.vlegend{font-size:.75em;color:var(--muted);margin-top:5px;text-align:center}
+.banner{background:var(--red);color:#fff;border-radius:12px;padding:10px 12px;margin-top:12px;font-weight:900;text-align:center;box-shadow:3px 3px 0 var(--ink)}
+.found{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.found .f1{flex:none;width:118px;background:#fff;border:2px solid var(--teal);border-radius:10px;overflow:hidden;font-size:.78em}
+.found .f1 img{width:100%;height:70px;object-fit:cover;display:block}
+.found .f1 div{padding:3px 6px}
+/* 🎁 加分挑戰 */
+.chal{border-color:#7a4fd0;box-shadow:3px 3px 0 #7a4fd0}
+.cb{border-top:1.5px dashed var(--line);padding-top:10px;margin-top:10px}
+.cb:first-of-type{border-top:none;margin-top:4px;padding-top:0}
+.cthumb{width:64px;height:64px;object-fit:cover;border-radius:8px;border:2px solid var(--ink);flex:none;cursor:zoom-in}
+.mapbox.mini{max-height:42vh;margin-top:8px}
+.mapbox.mini .inner{cursor:crosshair}
+.mk{position:absolute;transform:translate(-50%,-50%);pointer-events:none;font-size:20px;line-height:1;text-shadow:0 0 3px #fff}
+.mk.tg{transform:translate(-50%,-100%)}
+.mk .ar{display:block;font-size:22px}
+.dirs{display:grid;grid-template-columns:repeat(3,46px);gap:5px;justify-content:center;margin-top:8px}
+.dirs button{height:42px;border:2px solid var(--ink);border-radius:9px;background:#fff;font-size:1.3em;font-weight:900;cursor:pointer}
+.dirs button.on{background:var(--orange);color:#fff;border-color:var(--orange)}
+.dirs span{display:flex;align-items:center;justify-content:center;font-size:.7em;color:var(--muted)}
+.res{border-radius:10px;padding:8px 12px;margin-top:8px;font-weight:700}
+.res.ok{background:var(--teal-soft);color:#14695f}.res.half{background:var(--gold-soft);color:#8a5a00}.res.no{background:var(--red-soft);color:#a33316}.res.judge{background:var(--blue-soft)}
 @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
 .shake{animation:shake .4s}
 @keyframes pop{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
@@ -110,7 +145,7 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
 <body>
 <div id="top"></div>
 <div class="wrap" id="app"><p style="text-align:center;margin-top:30vh" class="muted">載入中…</p></div>
-<script src="core.js?v=20261012d"></script>
+<script src="core.js?v=20261012e"></script>
 <script>
 (function () {
   'use strict';
@@ -122,7 +157,8 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
   const did = LS.get('gps_did', '') || (() => { const d = 'd' + G.rid(4); LS.set('gps_did', d); return d; })();
   const st = {
     me: LS.get('gps_join_' + CODE, null), pub: null, view: null, net: 'live', offset: 0, beatLocal: Date.now(), lastBeat: 0,
-    sel: {}, pending: {}, reqPending: {}, zoom: 1, lastHTML: '', center: true, autoZoom: true, es: null, poll: null, hiddenAt: 0, lastBatch: 0, shown: {}
+    sel: {}, pending: {}, reqPending: {}, zoom: 1, lastHTML: '', center: true, autoZoom: true, es: null, poll: null, hiddenAt: 0, lastBatch: 0, shown: {},
+    focus: null, camSel: {}, chalPend: {}, taskText: {}, lastChal: -1, mapPins: [], bannerOn: false
   };
   const q = { list: LS.get('gps_q_' + CODE, []), busy: false };
 
@@ -220,16 +256,35 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
       }
     } finally { q.busy = false; drawTop(); }
   }
-  function clearPending(it) { if (it.kind === 'subs') delete st.pending[it.body.cid]; else delete st.reqPending[it.body.cid]; render(); }
+  function clearPending(it) { if (it.kind === 'subs') delete st.pending[it.body.cid]; else { delete st.reqPending[it.body.cid]; delete st.chalPend[it.body.cid]; } render(); }
 
   // ---------- 畫面 ----------
+  const ARROWS = ['↑', '↗', '→', '↘', '↓', '↙', '←', '↖'];
+  const isScore = () => st.view && st.view.mode === 'score';
+  const reward = (v, c) => (v.mode === 'score' ? `+${c.pts} 分` : `減 ${c.pts} 秒`);
   function onView() {
     const v = st.view; if (!v) return;
     if (v.beat && v.beat !== st.lastBeat) { st.lastBeat = v.beat; st.beatLocal = Date.now(); st.offset = v.beat - Date.now(); }
     // 判定結果出來了 → 清掉「判定中」
     Object.entries(st.pending).forEach(([cid, p]) => { const c = (v.cards || {})[cid]; if (!c || c.state !== 'open' || (c.wrong || 0) > p.wrong) { if (c && c.state === 'open' && (c.wrong || 0) > p.wrong) shakeCard(cid); delete st.pending[cid]; } });
     Object.entries(st.reqPending).forEach(([cid, p]) => { const c = (v.cards || {})[cid]; if (!c || c.state !== 'open' || (p.type === 'hint' && (c.hint1 ? 1 : 0) + (c.hint2 ? 1 : 0) > p.lv) || (p.type === 'pass' && c.pass === 'pending')) delete st.reqPending[cid]; });
-    if (v.batchNo && v.batchNo !== st.lastBatch) { if (st.lastBatch && !v.finished) toast(((v.done || 0) > (st.lastDone || 0) ? '🎉 答對了！進入' : '🔄 換了一題：') + (v.msg || '下一關')); st.autoZoom = true; st.lastBatch = v.batchNo; st.sel = {}; st.center = true; }
+    Object.keys(st.chalPend).forEach((bid) => {
+      const c = (v.chal || {})[bid]; if (c && c.state === 'open') return;
+      delete st.chalPend[bid];
+      if (c) setTimeout(() => toast(c.state === 'ok' ? `🎁 加分挑戰成功！${reward(v, c)}` : c.state === 'half' ? `🟡 站位對了！${reward(v, c)}` : c.state === 'judge' ? '📨 已送出，等大師判定' : '這次沒拿到加分，看看正確答案', c.state === 'no'), 200);
+    });
+    if (v.batchNo && v.batchNo !== st.lastBatch) {
+      if (st.lastBatch && !v.finished) {
+        if (v.mode === 'score') {
+          if ((v.done || 0) > (st.lastDone || 0)) { const last = Object.values(v.cards || {}).filter((c) => c.state === 'ok').sort((a, b) => (b.okAt || 0) - (a.okAt || 0))[0]; toast(`🎉 答對了！+${last ? last.got : 0} 分，牆上補了一張新的`); }
+          else toast('🔄 牆上換了一張新的照片');
+        } else toast(((v.done || 0) > (st.lastDone || 0) ? '🎉 答對了！進入' : '🔄 換了一題：') + (v.msg || '下一關'));
+      }
+      st.autoZoom = true; st.lastBatch = v.batchNo; st.sel = {}; st.center = true;
+    }
+    const nChal = Object.values(v.chal || {}).filter((c) => c.state === 'open').length;
+    if (st.lastChal >= 0 && nChal > st.lastChal) setTimeout(() => toast('🎁 加分挑戰出現了！往下滑看看'), 1800);
+    st.lastChal = nChal;
     st.lastDone = v.done || 0;
     render();
   }
@@ -239,71 +294,130 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
     const sec = G.gameSeconds(v.clock, now()), lim = ((v.set || {}).limitMin || 0) * 60;
     const stale = v.status === 'running' && Date.now() - st.beatLocal > 30000;
     const net = q.list.length ? `📶 補送中 ${q.list.length}` : stale ? '⏳ 等待大師連線' : st.net === 'live' ? '🟢 連線中' : st.net === 'poll' ? '🟡 連線中' : st.net === 'off' ? '🔴 離線' : '🟡 重新連線';
-    $('#top').innerHTML = `<div class="top"><div class="tn">${esc(v.name)}</div><div class="prog">${v.done || 0}/${v.target}</div>
+    $('#top').innerHTML = `<div class="top"><div class="tn">${esc(v.name)}</div><div class="prog">${v.mode === 'score' ? `${v.total || 0}<span style="font-size:.5em"> 分</span>` : `${v.done || 0}/${v.target}`}</div>
       <span class="net ${q.list.length || stale || st.net === 'off' ? 'bad' : ''}">${net}</span>
-      <div class="clk">${v.clock && v.clock.startAt ? (lim ? G.fmtTime(Math.max(0, lim - sec)) : G.fmtTime(sec)) : '--:--'}<small>${lim ? '剩餘時間' : '經過時間'}</small></div></div>`;
+      <div class="clk">${v.status === 'ended' ? '⏹<small>已結束</small>' : `${v.clock && v.clock.startAt ? (lim ? G.fmtTime(Math.max(0, lim - sec)) : G.fmtTime(sec)) : '--:--'}<small>${lim ? '剩餘時間' : '經過時間'}</small>`}</div></div>`;
   }
+  // 積分賽：時間快到了，提醒回集合點
+  function bannerCond(v) { const s = v.set || {}, lim = (s.limitMin || 0) * 60, left = lim - G.gameSeconds(v.clock, now()); return v.mode === 'score' && v.status === 'running' && !!s.checkin && !!lim && left <= 180 && left > 0; }
   function render() {
     const v = st.view; if (!v) return;
     drawTop();
-    const app = $('#app'), y = window.scrollY, mapScroll = $('.mapbox') ? [$('.mapbox').scrollLeft, $('.mapbox').scrollTop] : null;
+    const app = $('#app'), y = window.scrollY, mb = $('.mapbox.main'), mapScroll = mb ? [mb.scrollLeft, mb.scrollTop] : null;
     let html;
     if (v.finished) html = finishHTML(v);
     else if (v.status === 'ready') html = readyHTML(v);
-    else if (v.status === 'ended') html = `<div class="card finish"><div class="big">🏁</div><h2>活動結束</h2><p>你們找到了 <b>${v.done}</b> 個地點，辛苦了！<br>大師會公布排名。</p></div>`;
+    else if (v.status === 'ended') html = endedHTML(v);
     else html = gameHTML(v);
     html += `<div class="foot"><button id="logout">登出（換別組）</button></div>`;
     if (html === st.lastHTML) return; // 只有心跳變了：不重畫，照片才不會閃
+    // 重畫前記住：打到一半的字、小地圖捲到哪
+    const keep = {}; $$('[data-keep]').forEach((i) => { keep[i.dataset.keep] = i.value; });
+    const foc = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.keep : null;
+    const minis = {}; $$('.mapbox.mini[data-mini]').forEach((m) => { minis[m.dataset.mini] = [m.scrollLeft, m.scrollTop]; });
     st.lastHTML = html; app.innerHTML = html;
     window.scrollTo(0, y);
-    if (mapScroll && $('.mapbox')) { $('.mapbox').scrollLeft = mapScroll[0]; $('.mapbox').scrollTop = mapScroll[1]; }
+    $$('[data-keep]').forEach((i) => { if (keep[i.dataset.keep] != null) i.value = keep[i.dataset.keep]; if (foc === i.dataset.keep) i.focus(); });
+    $$('.mapbox.mini[data-mini]').forEach((m) => { const k = minis[m.dataset.mini]; if (k) { m.scrollLeft = k[0]; m.scrollTop = k[1]; } else centerMini(m); });
+    const mb2 = $('.mapbox.main');
+    if (mapScroll && mb2) { mb2.scrollLeft = mapScroll[0]; mb2.scrollTop = mapScroll[1]; }
     if (st.center) centerMap();
     bind();
   }
   function readyHTML(v) {
     const s = v.set || {};
-    return `<div class="card" style="text-align:center;padding:24px"><div style="font-size:3em">⏳</div><h2>${esc(v.name)}，準備好了嗎？</h2><p class="muted">等待大師按下「開始」…</p></div>
-    <div class="card small"><b>📜 規則</b><ul style="padding-left:18px;margin-top:4px">
+    const chal = s.stanceOn || s.taskOn ? `<li>🎁 答對後可能出現加分挑戰：${s.stanceOn ? '🦶 站位挑戰（拍照的人站哪裡、朝哪個方向）' : ''}${s.stanceOn && s.taskOn ? '、' : ''}${s.taskOn ? '🔍 現場觀察任務' : ''}${v.mode === 'score' ? '，答對加分' : `，答對減 ${s.bonusSec} 秒`}</li>` : '';
+    const rules = v.mode === 'score' ? `
+      <li>🎯 <b>積分賽</b>：限時 ${s.limitMin} 分鐘，盡量多拿分</li>
+      <li>手機上是一面<b>任務牆</b>，同時有 ${s.wall} 張照片，每張標著目前的分數，自己決定先找哪一張</li>
+      <li>點一張照片，地圖會標出它的候選地點，跑去現場比對、選號碼送出</li>
+      <li>🔥 冷門區（附近的組很少）×1.5、🧊 熱門區（附近擠了很多組）×0.5，以答對當下的分數計算${s.viewBonus ? '；視角越難的照片分數越高' : ''}</li>
+      <li>答錯扣 ${s.ptsWrong} 分，要等 ${s.cool} 秒才能再答</li>
+      ${s.hintOn ? `<li>💡 求助：給提示，但這張的分數打折（每層 −${s.hintPct}%，最多兩層）</li>` : ''}
+      <li>⏭ 太難可以放棄換一張，放棄後 ${s.skipCool} 秒內不能再放棄</li>
+      ${s.checkin ? `<li>🚩 時間到要<b>回集合點找大師報到</b>，超過 ${s.grace} 分鐘每分鐘扣 ${s.latePts} 分（也可以提早回來報到收工）</li>` : ''}` : `
       <li>每一關給 ${s.photos || 1} 張照片，地圖上標出 ${s.cands || 5} 個候選地點（分在不同區域）${(s.photos || 1) > 1 ? '，兩張照片各是其中一個，先規劃路線再出發' : '，答案是其中一個'}</li>
       <li>想一想、跑去現場比對，選出照片拍的是幾號，送出</li>
       <li>答錯要等 ${s.cool} 秒才能再答，並加罰 ${s.wrongPenalty} 秒</li>
       ${s.hintOn ? `<li>💡 求助：系統給提示，每次加罰 ${s.hintCost} 秒（最多兩層）</li>` : ''}
       ${s.passLimit ? `<li>🙋 卡關 ${s.passUnlock} 分鐘後可以申請 PASS，大師同意就換一題（不算完成，每組最多 ${s.passLimit} 次）</li>` : ''}
-      <li>找到 ${v.target} 個地點就完成！用時＋罰秒越少越厲害</li>
+      <li>找到 ${v.target} 個地點就完成！用時＋罰秒越少越厲害</li>`;
+    return `<div class="card" style="text-align:center;padding:24px"><div style="font-size:3em">⏳</div><h2>${esc(v.name)}，準備好了嗎？</h2><p class="muted">等待大師按下「開始」…</p></div>
+    <div class="card small"><b>📜 規則</b><ul style="padding-left:18px;margin-top:4px">${rules}${chal}
       <li>🚫 斜線區是正在上課的教學區，請繞道、保持安靜</li></ul></div>`;
   }
   function finishHTML(v) {
+    if (v.mode === 'score') return `<div class="card finish pop"><div class="big">🚩</div><h2>${esc(v.name)} 已報到收工</h2><p class="muted">總分</p><div style="font-family:'Bebas Neue',sans-serif;font-size:3.4em;line-height:1;color:var(--orange)">${v.total || 0}</div>
+      <div class="stat"><div>答題得分<b>${v.pts || 0}</b></div><div>加分挑戰<b>${v.bon || 0}</b></div><div>找到地點<b>${v.done || 0}</b></div><div>答錯／放棄<b>${v.wrong || 0}／${v.skips || 0}</b></div></div>
+      <p style="margin-top:14px">等大師公布排名 🏆</p></div>${chalHTML(v)}`;
     return `<div class="card finish pop"><div class="big">🏁</div><h2>${esc(v.name)} 完成任務！</h2><p class="muted">找齊 ${v.target} 個遺落的地點</p>
-      <div class="stat"><div>用時<b>${G.fmtTime(v.finishSec)}</b></div><div>罰秒<b>${v.penalty || 0}</b></div><div>答錯<b>${v.wrong || 0}</b></div><div>提示／PASS<b>${v.hints || 0}／${v.passes || 0}</b></div></div>
-      <p style="margin-top:14px">請回到集合地點，等大師公布排名 🏆</p></div>`;
+      <div class="stat"><div>用時<b>${G.fmtTime(v.finishSec)}</b></div><div>罰秒<b>${v.penalty || 0}</b></div><div>答錯<b>${v.wrong || 0}</b></div><div>提示／PASS<b>${v.hints || 0}／${v.passes || 0}</b></div>${v.bon ? `<div style="grid-column:1/3">🎁 加分挑戰<b>減 ${v.bon} 秒</b></div>` : ''}</div>
+      <p style="margin-top:14px">請回到集合地點，等大師公布排名 🏆</p></div>${chalHTML(v)}`;
   }
-  function mapHTML(v) {
+  function endedHTML(v) {
+    const s = v.set || {};
+    if (v.mode !== 'score') return `<div class="card finish"><div class="big">🏁</div><h2>活動結束</h2><p>你們找到了 <b>${v.done}</b> 個地點，辛苦了！<br>大師會公布排名。</p></div>`;
+    if (s.checkin && !v.checkAt) {
+      const lateAt = ((v.clock || {}).endAt || Date.now()) + (s.grace || 0) * 60000;
+      return `<div class="banner" style="font-size:1.2em;padding:16px">🚩 時間到！請馬上回集合點找大師報到</div>
+        <div class="card finish"><p class="muted">目前總分</p><div style="font-family:'Bebas Neue',sans-serif;font-size:3em;line-height:1;color:var(--orange)">${v.total || 0}</div>
+        <p style="margin-top:10px;font-weight:700" data-lateat="${lateAt}" data-latepts="${s.latePts}">${lateTxt(lateAt, s.latePts)}</p></div>`;
+    }
+    return `<div class="card finish"><div class="big">🏁</div><h2>活動結束</h2><p class="muted">總分</p><div style="font-family:'Bebas Neue',sans-serif;font-size:3.4em;line-height:1;color:var(--orange)">${v.total || 0}</div>
+      <div class="stat"><div>答題得分<b>${v.pts || 0}</b></div><div>加分挑戰<b>${v.bon || 0}</b></div><div>找到地點<b>${v.done || 0}</b></div><div>答錯／放棄<b>${v.wrong || 0}／${v.skips || 0}</b></div></div>
+      <p style="margin-top:14px">大師會公布排名 🏆</p></div>`;
+  }
+  function lateTxt(lateAt, pts) { const d = now() - lateAt; if (d < 0) return `⏱ 還有 ${G.fmtTime(Math.ceil(-d / 1000))} 不扣分，快回來！`; return `⚠️ 已經遲到 ${Math.ceil(d / 60000)} 分鐘（每分鐘扣 ${pts} 分）`; }
+  function mapHTML(v, pins, tried) {
     const pub = st.pub || {}, map = pub.map || { src: 'r:map', w: 1117, h: 1579 }, crop = pub.crop || { top: 0, bot: 100 }, span = (crop.bot - crop.top) / 100;
     const hot = Object.values(st.sel)[0];
-    // 每張照片都猜錯過的號碼才在地圖上變灰（兩張照片時，另一張的答案可能就是它）
-    const opens = Object.values(v.cards || {}).filter((c) => c.state === 'open');
-    const tried = opens.length ? (opens[0].tried || []).filter((n) => opens.every((c) => (c.tried || []).includes(n))) : [];
+    st.mapPins = pins.filter((p) => !p.ok);
     const ng = (pub.noGo || []).map((r) => `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="url(#h)" stroke="#e4572e" stroke-width="1.2" vector-effect="non-scaling-stroke"/>`).join('');
-    return `<div class="mapbox"><div class="mapin" style="width:${Math.round(st.zoom * 100)}%"><div class="crop" style="aspect-ratio:${map.w}/${(map.h * span).toFixed(1)}"><div class="inner" style="top:${(-crop.top / span).toFixed(3)}%;height:${(100 / span).toFixed(3)}%">
+    return `<div class="mapbox main"><div class="mapin" style="width:${Math.round(st.zoom * 100)}%"><div class="crop" style="aspect-ratio:${map.w}/${(map.h * span).toFixed(1)}"><div class="inner" style="top:${(-crop.top / span).toFixed(3)}%;height:${(100 / span).toFixed(3)}%">
       <img class="base" src="${esc(G.photoURL(map.src))}" alt="校園地圖">
       <svg viewBox="0 0 100 100" preserveAspectRatio="none"><defs><pattern id="h" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" fill="rgba(228,87,46,.12)"/><line x1="0" y1="0" x2="0" y2="5" stroke="rgba(228,87,46,.5)" stroke-width="1.6"/></pattern></defs>${ng}</svg>
-      ${(v.pins || []).map((p) => `<div class="pin ${p.ok ? 'ok' : ''} ${tried.includes(p.no) ? 'tried' : ''} ${hot === p.no ? 'hot' : ''}" style="left:${p.x}%;top:${p.y}%"><b>${p.ok ? '✓' : p.no}</b><i></i></div>`).join('')}
+      ${pins.map((p) => `<div class="pin ${p.ok ? 'ok' : ''} ${tried.includes(p.no) ? 'tried' : ''} ${hot === p.no ? 'hot' : ''}" style="left:${p.x}%;top:${p.y}%"><b>${p.ok ? '✓' : p.no}</b><i></i></div>`).join('')}
     </div></div></div></div>
-    <div class="row"><span class="legend">🟧 這一關的候選地點　🟩 已找到　⬜ 已經猜錯　🚫 斜線＝教學區</span><span class="spacer"></span><div class="mapctl"><button data-center title="看全部候選地點">🎯</button><button data-mz="-1">－</button><button data-mz="1">＋</button></div></div>`;
+    <div class="row"><span class="legend">${v.mode === 'score' ? '🟧 這張照片的候選地點　⬜ 已經猜錯' : '🟧 這一關的候選地點　🟩 已找到　⬜ 已經猜錯'}　🚫 斜線＝教學區</span><span class="spacer"></span><div class="mapctl"><button data-center title="看全部候選地點">🎯</button><button data-mz="-1">－</button><button data-mz="1">＋</button></div></div>`;
   }
   function gameHTML(v) {
+    if (v.mode === 'score') return scoreHTML(v);
     const rank = (c) => (c.state === 'open' ? 0 : c.prev ? 2 : 1);
     const s = v.set || {}, cards = Object.entries(v.cards || {}).sort((a, b) => rank(a[1]) - rank(b[1]) || a[1].at - b[1].at || a[0].localeCompare(b[0]));
     const nums = (v.pins || []).filter((p) => !p.ok).map((p) => p.no);
+    // 每張照片都猜錯過的號碼才在地圖上變灰（兩張照片時，另一張的答案可能就是它）
+    const opens = Object.values(v.cards || {}).filter((c) => c.state === 'open');
+    const tried = opens.length ? (opens[0].tried || []).filter((n) => opens.every((c) => (c.tried || []).includes(n))) : [];
     return `
     ${v.status === 'paused' ? '<div class="cover"><div class="big">⏸</div><h2>暫停中</h2><p>請等大師宣布繼續</p></div>' : ''}
     ${v.msg ? `<div class="msg">🚩 ${esc(v.msg)}</div>` : ''}
     ${v.empty ? '<div class="alert warn">題目暫時派完了，請回集合地點找大師。</div>' : ''}
-    <div class="card" style="padding:10px">${mapHTML(v)}</div>
-    ${cards.map(([cid, c], i) => cardHTML(cid, c, i, nums, s, v, c.tried || [])).join('')}`;
+    <div class="card" style="padding:10px">${mapHTML(v, v.pins || [], tried)}</div>
+    ${cards.map(([cid, c], i) => cardHTML(cid, c, i, nums, s, v, c.tried || [])).join('')}
+    ${chalHTML(v)}`;
+  }
+  // 🎯 積分賽：上面是任務牆（點一張切換），下面是那一張的地圖與作答
+  function scoreHTML(v) {
+    const s = v.set || {}, t = now();
+    const open = Object.entries(v.cards || {}).filter(([, c]) => c.state === 'open').sort((a, b) => a[1].at - b[1].at || a[0].localeCompare(b[0]));
+    if (!open.some(([cid]) => cid === st.focus)) { st.focus = open.length ? open[0][0] : null; st.center = true; st.autoZoom = true; }
+    const fi = open.findIndex(([cid]) => cid === st.focus), fc = open[fi];
+    const pins = fc ? (v.pins || []).filter((p) => (fc[1].cn || []).includes(p.no)) : [];
+    const found = Object.values(v.cards || {}).filter((c) => c.state === 'ok').sort((a, b) => (b.okAt || 0) - (a.okAt || 0));
+    st.bannerOn = bannerCond(v);
+    return `
+    ${v.status === 'paused' ? '<div class="cover"><div class="big">⏸</div><h2>暫停中</h2><p>請等大師宣布繼續</p></div>' : ''}
+    ${st.bannerOn ? `<div class="banner">⏰ 剩不到 3 分鐘！時間到之前回集合點找大師報到${s.grace ? `（時間到後 ${s.grace} 分鐘內不扣分）` : ''}</div>` : ''}
+    ${v.empty ? '<div class="alert warn">題目暫時派完了，請回集合地點找大師。</div>' : ''}
+    <div class="wall ${open.length === 3 || open.length >= 5 ? 'w3' : ''}">${open.map(([cid, c], i) => `<button class="tile ${cid === st.focus ? 'on' : ''}" data-focus="${cid}"><img src="${esc(G.photoURL(c.photo))}" data-ref="${esc(c.photo)}" alt="照片 ${String.fromCharCode(65 + i)}"><span class="ix">${String.fromCharCode(65 + i)}</span><span class="val ${c.heat || ''}">${c.heat === 'cold' ? '🔥' : c.heat === 'hot' ? '🧊' : ''}${c.val}<small> 分</small></span>${c.coolUntil > t ? '<span class="cd">答錯冷卻中</span>' : ''}</button>`).join('')}</div>
+    <div class="vlegend">👆 點照片切換題目　🔥 冷門區 ×1.5　🧊 熱門區 ×0.5（分數會隨大家的位置變動）</div>
+    ${fc ? `<div class="card" style="padding:10px">${mapHTML(v, pins, fc[1].tried || [])}</div>${cardHTML(fc[0], fc[1], fi, (fc[1].cn || []).slice(), s, v, fc[1].tried || [])}` : ''}
+    ${chalHTML(v)}
+    ${found.length ? `<div class="card"><h2>✅ 最近找到</h2><div class="found">${found.map((c) => `<div class="f1"><img src="${esc(G.photoURL(c.reveal || c.photo))}" data-ref="${esc(c.reveal || c.photo)}" data-zoom alt=""><div><b>${c.no} 號</b> +${c.got || 0} 分<br><span class="muted">${esc(c.name)}</span></div></div>`).join('')}</div></div>` : ''}`;
   }
   function cardHTML(cid, c, i, nums, s, v, tried) {
-    const ph = `<div class="ph"><img src="${esc(G.photoURL(c.photo))}" data-ref="${esc(c.photo)}" data-zoom alt="題目照片"><span class="tag">${c.state === 'ok' ? (c.prev ? '✅ 上一關' : '✅ 找到了') : `第 ${v.batchNo || 1} 關・照片 ${i + 1}`}</span></div>`;
+    const score = v.mode === 'score';
+    const ph = `<div class="ph"><img src="${esc(G.photoURL(c.photo))}" data-ref="${esc(c.photo)}" data-zoom alt="題目照片"><span class="tag">${c.state === 'ok' ? (c.prev ? '✅ 上一關' : '✅ 找到了') : score ? `照片 ${String.fromCharCode(65 + i)}・現在 ${c.val} 分` : `第 ${v.batchNo || 1} 關・照片 ${i + 1}`}</span></div>`;
     if (c.state === 'ok') return `<div class="pc ok ${c.prev ? 'prev' : ''}" data-card="${cid}">${ph}<div class="bd"><div class="okbox"><span class="big">✅</span><div><b style="font-size:1.15em">${c.prev ? '上一關答案：' : ''}第 ${c.no} 號</b><div class="small muted">${esc(c.name)}</div></div></div>
       ${c.reveal ? `<div class="reveal"><div class="small bold">🖼️ 原來是這裡！</div><img src="${esc(G.photoURL(c.reveal))}" data-ref="${esc(c.reveal)}" data-zoom></div>` : ''}</div></div>`;
     const t = now(), cool = c.coolUntil && c.coolUntil > t ? Math.ceil((c.coolUntil - t) / 1000) : 0;
@@ -311,15 +425,17 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
     const hintLv = (c.hint1 ? 1 : 0) + (c.hint2 ? 1 : 0);
     const passWait = Math.max(0, Math.ceil(((c.at || 0) + s.passUnlock * 60000 - t) / 1000));
     const passLeft = (s.passLimit || 0) - (v.passes || 0);
+    const skipWait = Math.max(0, Math.ceil(((v.skipUntil || 0) - t) / 1000));
     let help = '';
-    if (s.hintOn || s.passLimit) {
+    if (s.hintOn || s.passLimit || score) {
       help = `<div class="helps">
-        ${s.hintOn ? `<button class="btn" data-hint="${cid}" ${hintLv >= 2 || (rp && rp.type === 'hint') ? 'disabled' : ''}>💡 求助${hintLv >= 2 ? '（已用完）' : `（+${s.hintCost} 秒）`}</button>` : ''}
-        ${s.passLimit ? `<button class="btn" data-pass="${cid}" ${passWait > 0 && passLeft > 0 && c.pass !== 'pending' ? `data-passat="${(c.at || 0) + s.passUnlock * 60000}"` : ''} ${c.pass === 'pending' || passWait > 0 || passLeft <= 0 || (rp && rp.type === 'pass') ? 'disabled' : ''}>🙋 ${c.pass === 'pending' ? '等待大師裁決' : passLeft <= 0 ? 'PASS 已用完' : passWait > 0 ? `PASS（${G.fmtTime(passWait)}）` : `申請 PASS（剩 ${passLeft}）`}</button>` : ''}
+        ${s.hintOn ? `<button class="btn" data-hint="${cid}" ${hintLv >= 2 || (rp && rp.type === 'hint') ? 'disabled' : ''}>💡 求助${hintLv >= 2 ? '（已用完）' : score ? `（這張 −${s.hintPct}%）` : `（+${s.hintCost} 秒）`}</button>` : ''}
+        ${score ? `<button class="btn" data-skip="${cid}" ${skipWait > 0 ? `data-skipat="${v.skipUntil}"` : ''} ${skipWait > 0 || rp ? 'disabled' : ''}>⏭ ${skipWait > 0 ? `放棄（${G.fmtTime(skipWait)}）` : '放棄，換一張'}</button>` : ''}
+        ${!score && s.passLimit ? `<button class="btn" data-pass="${cid}" ${passWait > 0 && passLeft > 0 && c.pass !== 'pending' ? `data-passat="${(c.at || 0) + s.passUnlock * 60000}"` : ''} ${c.pass === 'pending' || passWait > 0 || passLeft <= 0 || (rp && rp.type === 'pass') ? 'disabled' : ''}>🙋 ${c.pass === 'pending' ? '等待大師裁決' : passLeft <= 0 ? 'PASS 已用完' : passWait > 0 ? `PASS（${G.fmtTime(passWait)}）` : `申請 PASS（剩 ${passLeft}）`}</button>` : ''}
       </div>`;
     }
     return `<div class="pc" data-card="${cid}">${ph}<div class="bd">
-      <div class="bold">這張照片是地圖上的第幾號？</div><div class="small muted">${(s.photos || 1) > 1 ? '兩張照片各是候選地點中的一個，先規劃路線再出發！' : '答案是下面其中一個，跑去現場比對看看！'}</div>
+      <div class="bold">這張照片是地圖上的第幾號？</div><div class="small muted">${score ? `答案是下面 ${nums.length} 個候選地點其中一個（分在不同區域）` : (s.photos || 1) > 1 ? '兩張照片各是候選地點中的一個，先規劃路線再出發！' : '答案是下面其中一個，跑去現場比對看看！'}</div>
       <div class="nums">${nums.map((n) => tried.includes(n) ? `<button class="tried" disabled title="猜過了">❌${n}</button>` : `<button data-num="${cid}|${n}" class="${sel === n ? 'sel' : ''}" ${cool || pend ? 'disabled' : ''}>${n}</button>`).join('')}</div>
       ${pend ? `<div class="wait">⏳ 判定中…（第 ${pend.ans} 號）</div>` : cool ? `<div class="cool" data-cool="${c.coolUntil}">❌ 不對喔！${cool} 秒後可以再試</div>` : `<button class="btn" data-send="${cid}" ${sel ? '' : 'disabled'}>${sel ? `送出：第 ${sel} 號` : '先選一個號碼'}</button>`}
       ${c.hint1 ? `<div class="hint">💡 提示一：${esc(c.hint1)}</div>` : ''}${c.hint2 ? `<div class="hint">💡 提示二：${esc(c.hint2)}</div>` : ''}
@@ -327,11 +443,55 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
       ${c.pass === 'pending' ? '<div class="hint">🙋 已申請 PASS，等待大師裁決…</div>' : ''}
       ${help}</div></div>`;
   }
+  // ---------- 🎁 加分挑戰 ----------
+  function chalHTML(v) {
+    const s = v.set || {}, all = Object.entries(v.chal || {}); if (!all.length) return '';
+    const rk = { open: 0, judge: 1 };
+    all.sort((a, b) => (rk[a[1].state] == null ? 2 : rk[a[1].state]) - (rk[b[1].state] == null ? 2 : rk[b[1].state]) || (b[1].at || 0) - (a[1].at || 0));
+    const rw = (c) => (v.mode === 'score' ? `+${c.kind === 'cam' ? s.stancePts : c.bonus} 分` : `減 ${s.bonusSec} 秒`);
+    return `<div class="card chal"><h2>🎁 加分挑戰 <span class="small muted" style="font-weight:400">做不做都可以</span></h2>${all.map(([bid, c]) => chalItem(v, bid, c, rw(c))).join('')}</div>`;
+  }
+  function chalItem(v, bid, c, rw) {
+    const got = reward(v, c), pend = st.chalPend[bid];
+    const head = `<div class="row" style="flex-wrap:nowrap;align-items:flex-start"><img class="cthumb" src="${esc(G.photoURL(c.photo))}" data-ref="${esc(c.photo)}" data-zoom alt="">
+      <div><b>${c.kind === 'cam' ? '🦶 站位挑戰' : '🔍 現場觀察'}・第 ${c.no} 號</b> <span class="small muted">${esc(c.name)}</span>
+      <div class="small">${c.kind === 'cam' ? '拍這張照片的人<b>站在哪裡</b>？鏡頭<b>朝哪個方向</b>？' : '❓ ' + esc(c.q)}</div>
+      ${c.state === 'open' ? `<div class="small muted">獎勵：${rw}${c.kind === 'cam' ? '（只有站位對：一半）' : '・只有一次機會'}</div>` : ''}</div></div>`;
+    if (c.kind === 'cam') {
+      if (c.state === 'open') {
+        const sel = st.camSel[bid] || {}, ready = sel.x != null && sel.dir != null;
+        return `<div class="cb">${head}${miniMap(bid, c, sel, null)}
+          <div class="small muted" style="text-align:center;margin-top:4px">📍＝照片拍的地點　${sel.x != null ? '🟠＝你標的站位（可以再點一次改）' : '👆 在地圖上點「拍照的人站的位置」'}　地圖上方＝北</div>
+          <div class="dirs">${[7, 0, 1, 6, -1, 2, 5, 4, 3].map((d) => d < 0 ? `<span>${sel.dir != null ? '朝' + G.DIRS[sel.dir] : '選方向'}</span>` : `<button data-cdir="${bid}|${d}" class="${sel.dir === d ? 'on' : ''}" title="${G.DIRS[d]}">${ARROWS[d]}</button>`).join('')}</div>
+          ${pend ? '<div class="wait">⏳ 判定中…</div>' : `<button class="btn" data-csend="${bid}" ${ready ? '' : 'disabled'}>${ready ? '送出站位與方向' : '先點站位、再選方向'}</button>`}</div>`;
+      }
+      const r = c.state === 'ok' ? `<div class="res ok">✅ 全對！${got}</div>` : c.state === 'half' ? `<div class="res half">🟡 站位對了，方向差了一點（${got}）</div>` : '<div class="res no">❌ 差太遠了，看看正確的站位 👇</div>';
+      return `<div class="cb">${head}${r}${miniMap(bid, c, c.ans || {}, c.cam)}<div class="small muted" style="text-align:center">🟠 你標的　🟢 正確的站位與方向</div></div>`;
+    }
+    if (c.state === 'open') return `<div class="cb">${head}<input type="text" data-keep="tk_${bid}" maxlength="60" placeholder="輸入你在現場看到的答案" value="${esc(st.taskText[bid] || '')}" style="margin-top:8px">${pend ? '<div class="wait">⏳ 判定中…</div>' : `<button class="btn" data-tsend="${bid}">送出答案</button>`}</div>`;
+    const r = c.state === 'judge' ? `<div class="res judge">⏳ 已送出「${esc(c.text)}」，等大師判定</div>` : c.state === 'ok' ? `<div class="res ok">✅ 答對！「${esc(c.text)}」${got}</div>` : `<div class="res no">❌「${esc(c.text)}」不對${c.a ? `，答案是：${esc(c.a)}` : ''}</div>`;
+    return `<div class="cb">${head}${r}</div>`;
+  }
+  // 小地圖（放大 2.2 倍、以照片地點為中心）：作答時點一下標站位；答完顯示正確站位
+  function miniMap(bid, c, mine, truth) {
+    const pub = st.pub || {}, map = pub.map || { src: 'r:map', w: 1117, h: 1579 }, crop = pub.crop || { top: 0, bot: 100 }, span = (crop.bot - crop.top) / 100;
+    const dot = (p, col) => `<div class="mk" style="left:${p.x}%;top:${p.y}%"><div style="width:30px;height:30px;border-radius:50%;background:${col};border:2px solid #fff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;box-shadow:0 1px 4px rgba(0,0,0,.5);transform:rotate(${(p.dir || 0) * 45}deg)">${p.dir != null ? '↑' : '•'}</div></div>`;
+    return `<div class="mapbox mini" data-mini="${bid}" data-px="${c.x}" data-py="${c.y}"><div class="mapin" style="width:220%"><div class="crop" style="aspect-ratio:${map.w}/${(map.h * span).toFixed(1)}"><div class="inner" ${truth ? '' : `data-mpick="${bid}"`} style="top:${(-crop.top / span).toFixed(3)}%;height:${(100 / span).toFixed(3)}%">
+      <img class="base" src="${esc(G.photoURL(map.src))}" alt="校園地圖">
+      <div class="mk tg" style="left:${c.x}%;top:${c.y}%">📍</div>
+      ${truth ? dot(truth, '#1f9e8f') : ''}${mine && mine.x != null ? dot(mine, '#f07c1f') : ''}
+    </div></div></div></div>`;
+  }
+  function centerMini(m) {
+    const inner = $('.inner', m), cropEl = $('.crop', m); if (!inner) return;
+    const go = () => { m.scrollLeft = Math.max(0, (+m.dataset.px) / 100 * inner.offsetWidth - m.clientWidth / 2); m.scrollTop = Math.max(0, inner.offsetTop + (+m.dataset.py) / 100 * inner.offsetHeight - m.clientHeight / 2); };
+    if (cropEl && cropEl.offsetHeight) go(); else setTimeout(go, 60);
+  }
   // 新的一關：自動縮放到剛好看得到全部候選地點，再捲到中間
   function centerMap() {
-    const box = $('.mapbox'), v = st.view; if (!box || !v) return;
-    const pins = (v.pins || []).filter((p) => !p.ok); if (!pins.length) return;
-    const img = $('.mapin img.base');
+    const box = $('.mapbox.main'), v = st.view; if (!box || !v) return;
+    const pins = st.mapPins || []; if (!pins.length) return;
+    const img = $('.mapbox.main img.base');
     const crop = (st.pub && st.pub.crop) || { top: 0, bot: 100 }, span = (crop.bot - crop.top) / 100;
     if (st.autoZoom) {
       st.autoZoom = false;
@@ -343,7 +503,7 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
       if (Math.abs(z - st.zoom) > 0.05) { st.zoom = z; st.lastHTML = ''; st.center = true; render(); return; }
     }
     const go = () => {
-      const inner = $('.mapin');
+      const inner = $('.mapbox.main .mapin');
       // 以全部候選地點的「外框中心」對齊（不是平均位置），邊緣的點才不會被切掉；標籤在點的上方，所以往上偏一點
       const xs = pins.map((p) => p.x), ys = pins.map((p) => p.y);
       const cx = (Math.min(...xs) + Math.max(...xs)) / 200, cy = ((Math.min(...ys) + Math.max(...ys)) / 2 - 1.5 - crop.top) / 100 / span;
@@ -352,7 +512,7 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
       st.center = false;
       // 自我檢查：還有候選地點在畫面外，就再縮小一點重來（最多 4 次）
       const r = box.getBoundingClientRect();
-      const out = $$('.mapin .pin b').some((el) => { const q = el.getBoundingClientRect(); return q.left < r.left - 1 || q.right > r.right + 1 || q.top < r.top - 1 || q.bottom > r.bottom + 1; });
+      const out = $$('.mapbox.main .pin b').some((el) => { const q = el.getBoundingClientRect(); return q.left < r.left - 1 || q.right > r.right + 1 || q.top < r.top - 1 || q.bottom > r.bottom + 1; });
       if (out && st.zoom > 1 && (st.fitTry || 0) < 4) { st.fitTry = (st.fitTry || 0) + 1; st.zoom = Math.max(1, +(st.zoom - 0.25).toFixed(2)); st.lastHTML = ''; st.center = true; render(); }
       else st.fitTry = 0;
     };
@@ -363,6 +523,7 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
     $$('img[data-ref^="f:"]').forEach((im) => { if (!im.getAttribute('src')) G.loadPhoto(im.dataset.ref).then((d) => { im.src = d; }); });
     $$('[data-mz]').forEach((b) => { b.onclick = () => { st.zoom = Math.max(1, Math.min(3.5, +(st.zoom + (+b.dataset.mz) * 0.5).toFixed(1))); st.center = true; st.lastHTML = ''; render(); }; });
     const ctr = $('[data-center]'); if (ctr) ctr.onclick = () => { st.center = true; st.autoZoom = true; centerMap(); };
+    $$('[data-focus]').forEach((b) => { b.onclick = () => { if (st.focus === b.dataset.focus) return; st.focus = b.dataset.focus; st.sel = {}; st.center = true; st.autoZoom = true; render(); }; });
     $$('[data-num]').forEach((b) => { b.onclick = () => { const [cid, n] = b.dataset.num.split('|'); st.sel = { [cid]: +n }; render(); }; });
     $$('[data-send]').forEach((b) => {
       b.onclick = () => {
@@ -377,9 +538,18 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
     $$('[data-hint]').forEach((b) => {
       b.onclick = () => {
         const cid = b.dataset.hint, c = st.view.cards[cid], s = st.view.set, lv = (c.hint1 ? 1 : 0) + (c.hint2 ? 1 : 0);
-        const sh = sheet(`<h2>💡 要求助嗎？</h2><p style="margin:8px 0">系統會給你${lv ? '第二層（更精確的）' : '第一層（大範圍的）'}提示，<b>罰 ${s.hintCost} 秒</b>。</p><button class="btn" data-ok>💡 給我提示</button><button class="btn ghost" data-no>再想想</button>`);
+        const cost = isScore() ? `這張照片的分數<b>打折 −${s.hintPct}%</b>` : `<b>罰 ${s.hintCost} 秒</b>`;
+        const sh = sheet(`<h2>💡 要求助嗎？</h2><p style="margin:8px 0">系統會給你${lv ? '第二層（更精確的）' : '第一層（大範圍的）'}提示，${cost}。</p><button class="btn" data-ok>💡 給我提示</button><button class="btn ghost" data-no>再想想</button>`);
         $('[data-no]', sh.el).onclick = sh.close;
         $('[data-ok]', sh.el).onclick = () => { sh.close(); st.reqPending[cid] = { type: 'hint', lv }; enqueue('reqs', { cid, type: 'hint' }); render(); };
+      };
+    });
+    $$('[data-skip]').forEach((b) => {
+      b.onclick = () => {
+        const cid = b.dataset.skip, s = st.view.set;
+        const sh = sheet(`<h2>⏭ 放棄這一張？</h2><p style="margin:8px 0">牆上會補一張新的照片。放棄之後 <b>${s.skipCool} 秒內</b>不能再放棄。</p><button class="btn" data-ok>⏭ 放棄，換一張</button><button class="btn ghost" data-no>再找找</button>`);
+        $('[data-no]', sh.el).onclick = sh.close;
+        $('[data-ok]', sh.el).onclick = () => { sh.close(); st.reqPending[cid] = { type: 'skip' }; enqueue('reqs', { cid, type: 'skip' }); render(); };
       };
     });
     $$('[data-pass]').forEach((b) => {
@@ -391,9 +561,32 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
         $('[data-ok]', sh.el).onclick = () => { const note = $('#pNote', sh.el).value.trim().slice(0, 60); sh.close(); st.reqPending[cid] = { type: 'pass' }; enqueue('reqs', note ? { cid, type: 'pass', note } : { cid, type: 'pass' }); toast('已送出，等待大師裁決'); render(); };
       };
     });
+    // 🦶 站位挑戰：點地圖標站位、按箭頭選方向
+    $$('[data-mpick]').forEach((el) => {
+      el.onclick = (e) => {
+        const r = el.getBoundingClientRect(), bid = el.dataset.mpick;
+        const x = (e.clientX - r.left) / r.width * 100, y = (e.clientY - r.top) / r.height * 100;
+        st.camSel[bid] = { ...(st.camSel[bid] || {}), x: +x.toFixed(2), y: +y.toFixed(2) }; render();
+      };
+    });
+    $$('[data-cdir]').forEach((b) => { b.onclick = () => { const [bid, d] = b.dataset.cdir.split('|'); st.camSel[bid] = { ...(st.camSel[bid] || {}), dir: +d }; render(); }; });
+    $$('[data-csend]').forEach((b) => {
+      b.onclick = () => {
+        const bid = b.dataset.csend, sel = st.camSel[bid]; if (!sel || sel.x == null || sel.dir == null) return;
+        st.chalPend[bid] = Date.now(); enqueue('reqs', { cid: bid, type: 'cam', x: sel.x, y: sel.y, dir: sel.dir }); render();
+      };
+    });
+    $$('[data-keep^="tk_"]').forEach((i) => { i.oninput = () => { st.taskText[i.dataset.keep.slice(3)] = i.value; }; });
+    $$('[data-tsend]').forEach((b) => {
+      b.onclick = () => {
+        const bid = b.dataset.tsend, inp = $(`[data-keep="tk_${bid}"]`), text = (inp ? inp.value : '').trim().slice(0, 60);
+        if (!text) return toast('先輸入答案', true);
+        st.taskText[bid] = text; st.chalPend[bid] = Date.now(); enqueue('reqs', { cid: bid, type: 'task', text }); render();
+      };
+    });
     const lo = $('#logout'); if (lo) lo.onclick = () => { if (!confirm('確定登出？（這支手機會忘記你們的組別）')) return; LS.set('gps_join_' + CODE, null); st.me = null; disconnect(); renderJoin(); };
   }
-  // 每秒更新倒數（冷卻、PASS、時鐘），不重畫整頁
+  // 每秒更新倒數（冷卻、PASS、放棄、遲到、時鐘），不重畫整頁
   setInterval(() => {
     if (!st.view || !st.me) return;
     drawTop();
@@ -401,7 +594,11 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
     let need = false;
     $$('[data-cool]').forEach((el) => { const left = Math.ceil((+el.dataset.cool - t) / 1000); if (left <= 0) need = true; else el.textContent = `❌ 不對喔！${left} 秒後可以再試`; });
     $$('[data-passat]').forEach((b) => { const left = Math.ceil((+b.dataset.passat - t) / 1000); if (left <= 0) need = true; else b.textContent = `🙋 PASS（${G.fmtTime(left)}）`; });
+    $$('[data-skipat]').forEach((b) => { const left = Math.ceil((+b.dataset.skipat - t) / 1000); if (left <= 0) need = true; else b.textContent = `⏭ 放棄（${G.fmtTime(left)}）`; });
+    $$('[data-lateat]').forEach((el) => { el.textContent = lateTxt(+el.dataset.lateat, el.dataset.latepts); });
+    if (bannerCond(st.view) !== st.bannerOn) need = true;
     Object.entries(st.pending).forEach(([cid, p]) => { if (Date.now() - p.at > 25000 && !q.list.length) { delete st.pending[cid]; need = true; toast('大師還沒回應，可以再送一次', true); } });
+    Object.entries(st.chalPend).forEach(([bid, at]) => { if (Date.now() - at > 25000 && !q.list.length) { delete st.chalPend[bid]; need = true; toast('大師還沒回應，可以再送一次', true); } });
     if (need) render();
   }, 1000);
 
