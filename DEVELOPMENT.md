@@ -555,6 +555,18 @@ wuyutzu-tools/
   - **題庫編輯**：視角／拍攝站位／觀察任務／揭曉照片改成四個可收合區塊，標題列直接顯示狀態（✅ 已標…／⚪ 未設定），改欄位時只更新狀態文字（不整個重畫，游標不會跳掉）；站位方向改圓形羅盤
   - **規則變動**：`reqs.type` 加 `cskip`；新增 `teams/$tid/rename`（只能寫一次、活動結束前、`name` 1～10 字）
 
+- **第四階段（2026-10-12）：📸 學生投稿出題、審核、🏆 找大師領獎**
+  - **老師端**（`contrib.js`，分頁「📸 投稿」，紅色數字＝待審核數）：開投稿活動（名稱、截止日、🏆 發獎碼、選填名單「座號 姓名」）→ 學生連結／QR、停止／開放收件、📺 新入庫展示（投影最近 12 張通過的照片與出題者）
+    - 審核卡片：照片、以投稿位置為中心的小地圖（📍 地點＋🦶 站位箭頭）、視角、提示、觀察任務；**自動提醒**：位置或站位在禁行區、附近（地圖距離 < 2.2）已有點位（可點「看照片」比對）
+    - ✅ 通過：可順手改編號（預設下一號）、區域（自動找最近的）、名稱、視角、提示、觀察任務、出題者 → 照片搬到 `orienteering/photos/<id>`、新增點位（`contrib: 投稿代碼`、站位與觀察任務一起帶入）、投稿區原檔刪除
+    - ✏️ 退回：常用原因一鍵帶入（模糊、禁行區、人臉、會移動、重複、標錯、太難辨認），學生看得到；退回超過 30 天的照片自動刪除
+  - **學生端** `contribute.html?c=代碼`：座號＋姓名（`SHA-256(代碼|座號|姓名)`，有名單時要在名單內）→ 我的投稿（⏳ 審核中／✅ 通過／✏️ 退回＋原因，即時同步）→ 投稿五步驟：① 拍照（自動壓縮 800px）② 地圖點照片地點（禁行區會警告）③ 地圖點站位＋圓形羅盤選方向 ④ 地點描述、視角、提示、觀察小題 ⑤ 三項自我檢查（不在教室教學區、沒有人臉、不會移動）全勾才能送出
+  - **🏆 領獎**：通過時學生頁自動跳出「🎉 投稿通過！請主動拿著這個畫面找到大師領取獎賞」（照片、出題者、題號、通過時間）。老師在學生手機輸入 **發獎碼** → 寫 `claims/<雜湊>/<id>`（規則：值要等於老師的發獎碼、只能寫一次、投稿要是通過狀態）→ 蓋上「✅ 已領取」；舊畫面再拿來領會失敗。老師端也能手動「標記已發獎」。系統不設點數、不匯出獎勵清單
+  - **本題由 ○○ 出題**：學生投稿的點位（`contrib` 有值）答對時，照片卡顯示「📸 本題由 ○○ 出題」
+  - **資料**：`orienteering/contrib/<代碼>/{meta（公開）, keys/<雜湊>（單筆可讀）, secret/pin（只有老師）, items/<雜湊>/<id>（那位學生可讀，不含照片）, pics/<id>（照片，知道 id 才讀得到）, claims}`、`orienteering/mycontrib/<uid>`。照片和投稿資料分開：老師即時監聽的 items 很小，照片要看時才讀一次
+  - **Firebase 用量**：一張投稿照片約 60～150 KB；一個班 30 人各投 2 張約 5～9 MB，通過後原檔就刪掉（搬進題庫）
+  - 📷 翻拍挑戰、積分賽「出題任務卡」：**保留、暫不開放**（會在比賽中大量上傳照片，佔 Firebase 免費額度；老師決定優先把額度留給更多系統）
+
 ### 💰 集點小金庫（family-points/index.html，2026-10-06 新增）
 
 - 用途：家庭用的集點系統（爸爸＝管理員、小孩＝使用者）。孩子回報表現得點、兌換獎品；爸爸審核。
@@ -658,6 +670,12 @@ fp/
 - **編輯器不要每改一格就整個重畫**：會把游標從下一個欄位搶走；只更新需要變的那段文字
 - **規則說明用小卡，不用條列**：學生等待畫面改成「怎麼玩 3 步驟＋規則小卡（圖示＋一句話）」，一長串條列學生不會看
 
+### 7-7 遺落的地點・第四階段（學生投稿）
+- **照片和資料分開放**：投稿資料（文字、座標）很小，照片很大。老師頁即時監聽投稿清單，照片只有要看時才讀一次；如果照片放在同一筆裡，每多一筆投稿老師頁就要重新下載全部照片
+- **「只能領一次」交給規則**：發獎碼存在只有老師讀得到的地方；學生手機寫 `claims` 時規則比對發獎碼、而且只能寫一次。學生不會看到發獎碼，舊畫面再拿來也領不到
+- **不能測到真的 Firebase 規則時**：雲端環境下載不到 Firebase 模擬器，所以規則只用工具箱已經驗證過的寫法（`!data.exists()`、`root.child(...)` 比對、`now`），並在假資料庫裡照同樣的邏輯檢查；更複雜的寫法（多路徑同時寫入互相檢查）沒有把握就不用
+- **防呆放在流程裡**：送出前三項自我檢查全勾才能送；禁行區在選位置時就提醒，不要等老師退回
+
 ## 8. 已知注意事項
 
 - **Firebase 免費額度（Spark，2026-10-06 查）**：儲存 1 GB、每月下載 10 GB、同時連線 100 條。估計每月下載不到 1 GB；要留意的是同時連線。pH、單位換算、器材排行榜都是「問完就走」的一次性請求，不長期佔連線；**長期佔連線的只有公告欄（SSE 即時同步）和集點小金庫**。公告欄學生頁切到背景超過 60 秒或關閉分頁就自動斷線、回到畫面自動重連（2026-10-06）。用量看 Firebase 控制台 → Realtime Database →「用量」
@@ -668,7 +686,7 @@ fp/
 
 ---
 
-## 附錄：Firebase 安全規則全文（2026-10-12，遺落的地點第三階段改版：reqs 加 cskip、新增 rename）
+## 附錄：Firebase 安全規則全文（2026-10-12，遺落的地點第四階段：新增 contrib、mycontrib）
 
 ```json
 {
@@ -940,6 +958,49 @@ fp/
        "rename": {
         ".write": "!data.exists() && newData.exists() && root.child('orienteering/runs/'+$code+'/keys/'+newData.child('k').val()).val() === $tid && root.child('orienteering/runs/'+$code+'/meta/status').val() !== 'ended'",
         ".validate": "newData.hasChildren(['k','name','ts']) && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 10 && newData.child('ts').val() == now"
+       }
+      }
+     }
+    }
+   },
+   "mycontrib": {
+    "$uid": {
+     ".read": "auth != null && auth.uid === $uid",
+     ".write": "auth != null && auth.uid === $uid"
+    }
+   },
+   "contrib": {
+    "$code": {
+     ".read": "auth != null && root.child('orienteering/contrib/'+$code+'/meta/owner').val() === auth.uid",
+     ".write": "auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid))",
+     "meta": {
+      ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)"
+     },
+     "keys": {
+      "$h": {
+       ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && $h.matches(/^[0-9a-f]{32}$/)"
+      }
+     },
+     "items": {
+      "$h": {
+       ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && $h.matches(/^[0-9a-f]{32}$/)",
+       "$id": {
+        ".write": "!data.exists() && newData.exists() && $h.matches(/^[0-9a-f]{32}$/) && $id.matches(/^[0-9a-f]{10}$/) && root.child('orienteering/contrib/'+$code+'/meta/open').val() === true && (!root.child('orienteering/contrib/'+$code+'/meta/deadline').exists() || now < root.child('orienteering/contrib/'+$code+'/meta/deadline').val()) && (root.child('orienteering/contrib/'+$code+'/meta/roster').val() !== true || root.child('orienteering/contrib/'+$code+'/keys/'+$h).val() === true)",
+        ".validate": "(auth != null && root.child('orienteering/contrib/'+$code+'/meta/owner').val() === auth.uid) || (newData.hasChildren(['pic','x','y','name','seat','who','ts']) && newData.child('pic').isString() && newData.child('pic').val().matches(/^[0-9a-f]{12}$/) && root.child('orienteering/contrib/'+$code+'/pics/'+newData.child('pic').val()+'/k').val() === $h && newData.child('x').isNumber() && newData.child('x').val() >= 0 && newData.child('x').val() <= 100 && newData.child('y').isNumber() && newData.child('y').val() >= 0 && newData.child('y').val() <= 100 && newData.child('name').isString() && newData.child('name').val().length <= 30 && newData.child('seat').isString() && newData.child('seat').val().length <= 10 && newData.child('who').isString() && newData.child('who').val().length <= 12 && newData.child('ts').val() == now && !newData.child('status').exists() && !newData.child('okPhoto').exists() && !newData.child('claimed').exists() && !newData.child('pointKey').exists())"
+       }
+      }
+     },
+     "pics": {
+      "$pid": {
+       ".read": "$pid.matches(/^[0-9a-f]{12}$/)",
+       ".write": "!data.exists() && newData.exists() && $pid.matches(/^[0-9a-f]{12}$/) && root.child('orienteering/contrib/'+$code+'/meta/open').val() === true && (!root.child('orienteering/contrib/'+$code+'/meta/deadline').exists() || now < root.child('orienteering/contrib/'+$code+'/meta/deadline').val()) && (root.child('orienteering/contrib/'+$code+'/meta/roster').val() !== true || root.child('orienteering/contrib/'+$code+'/keys/'+newData.child('k').val()).val() === true)",
+       ".validate": "(auth != null && root.child('orienteering/contrib/'+$code+'/meta/owner').val() === auth.uid) || (newData.hasChildren(['k','data','ts']) && newData.child('k').isString() && newData.child('k').val().matches(/^[0-9a-f]{32}$/) && newData.child('data').isString() && newData.child('data').val().beginsWith('data:image/') && newData.child('data').val().length < 400000 && newData.child('ts').val() == now)"
+      }
+     },
+     "claims": {
+      "$h": {
+       "$id": {
+        ".write": "!data.exists() && newData.exists() && newData.val() === root.child('orienteering/contrib/'+$code+'/secret/pin').val() && root.child('orienteering/contrib/'+$code+'/items/'+$h+'/'+$id+'/status').val() === 'ok'"
        }
       }
      }

@@ -127,7 +127,7 @@ async function openBank(id) {
 }
 
 // ---------- 主畫面 ----------
-const TABS = [['live', '🏁 活動'], ['map', '🗺️ 地圖與點位'], ['list', '📋 點位清單'], ['zones', '🧩 區域與禁行區'], ['paper', '🖨️ 紙本版'], ['backup', '💾 備份與說明']];
+const TABS = [['live', '🏁 活動'], ['contrib', '📸 投稿'], ['map', '🗺️ 地圖與點位'], ['list', '📋 點位清單'], ['zones', '🧩 區域與禁行區'], ['paper', '🖨️ 紙本版'], ['backup', '💾 備份與說明']];
 function render() {
   const ids = Object.keys(S.banks);
   $('#app').innerHTML = `
@@ -147,7 +147,7 @@ function render() {
   $$('.tab').forEach((t) => { t.onclick = () => { S.tab = t.dataset.tab; LS.set('gps_tab', S.tab); S.mode = 'view'; render(); }; });
   L.renderBadge();
   if (!S.bank) return renderWelcome();
-  ({ live: () => L.renderLiveTab(), map: renderMapTab, list: renderListTab, zones: renderZonesTab, paper: renderPaperTab, backup: renderBackupTab }[S.tab] || renderMapTab)();
+  ({ live: () => L.renderLiveTab(), contrib: () => K.renderContribTab(), map: renderMapTab, list: renderListTab, zones: renderZonesTab, paper: renderPaperTab, backup: renderBackupTab }[S.tab] || renderMapTab)();
 }
 
 function renderWelcome() {
@@ -640,8 +640,9 @@ function renderBackupTab() {
 
 // ---------- 啟動 ----------
 async function openBankSilently(id) { const b = await Store.load(id); if (b) { S.bankId = id; S.bank = b; LS.set('gps_bank', id); } }
-window.TT = { S, Store, LS, $, $$, esc, toast, modal, confirmBox, zoomImg, imgTag, download, render, pts, openBankSilently };
-const L = await import('./live.js?v=20261012g');
+window.TT = { S, Store, LS, $, $$, esc, toast, modal, confirmBox, zoomImg, imgTag, download, render, pts, openBankSilently, nearestZone };
+const L = await import('./live.js?v=20261012h');
+const K = await import('./contrib.js?v=20261012h');
 window.addEventListener('beforeunload', (e) => {
   if (Store._t && $('#saveState') && $('#saveState').textContent.includes('尚未')) { Store.flush(); e.preventDefault(); e.returnValue = ''; }
   if (L.isRefereeing()) { e.preventDefault(); e.returnValue = ''; }

@@ -191,7 +191,7 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
 <body>
 <div id="top"></div>
 <div class="wrap" id="app"><p style="text-align:center;margin-top:30vh" class="muted">載入中…</p></div>
-<script src="core.js?v=20261012g"></script>
+<script src="core.js?v=20261012h"></script>
 <script>
 (function () {
   'use strict';
@@ -468,12 +468,12 @@ input.code{font-family:monospace;font-size:2em;letter-spacing:.35em;text-align:c
     <div class="wall ${open.length === 3 || open.length >= 5 ? 'w3' : ''}">${open.map(([cid, c], i) => `<button class="tile ${cid === st.focus ? 'on' : ''}" data-focus="${cid}"><img src="${esc(G.photoURL(c.photo))}" data-ref="${esc(c.photo)}" alt="照片 ${String.fromCharCode(65 + i)}"><span class="ix">${String.fromCharCode(65 + i)}</span><span class="val ${c.heat || ''}">${c.heat === 'cold' ? '🔥' : c.heat === 'hot' ? '🧊' : ''}${c.val}<small> 分</small></span>${c.coolUntil > t ? '<span class="cd">答錯冷卻中</span>' : ''}</button>`).join('')}</div>
     <div class="vlegend">👆 點照片切換題目　🔥 冷門區 ×1.5　🧊 熱門區 ×0.5（分數會隨大家的位置變動）</div>
     ${fc ? `<div class="card" style="padding:10px">${mapHTML(v, pins, fc[1].tried || [])}</div>${cardHTML(fc[0], fc[1], fi, (fc[1].cn || []).slice(), s, v, fc[1].tried || [])}` : ''}
-    ${found.length ? `<div class="card"><h2>✅ 最近找到</h2><div class="found">${found.map((c) => `<div class="f1"><img src="${esc(G.photoURL(c.reveal || c.photo))}" data-ref="${esc(c.reveal || c.photo)}" data-zoom alt=""><div><b>${c.no} 號</b> +${c.got || 0} 分<br><span class="muted">${esc(c.name)}</span></div></div>`).join('')}</div></div>` : ''}`;
+    ${found.length ? `<div class="card"><h2>✅ 最近找到</h2><div class="found">${found.map((c) => `<div class="f1"><img src="${esc(G.photoURL(c.reveal || c.photo))}" data-ref="${esc(c.reveal || c.photo)}" data-zoom alt=""><div><b>${c.no} 號</b> +${c.got || 0} 分<br><span class="muted">${esc(c.name)}</span>${c.by ? `<br><span style="color:#7a4fd0">📸 ${esc(c.by)} 出題</span>` : ''}</div></div>`).join('')}</div></div>` : ''}`;
   }
   function cardHTML(cid, c, i, nums, s, v, tried) {
     const score = v.mode === 'score';
     const ph = `<div class="ph"><img src="${esc(G.photoURL(c.photo))}" data-ref="${esc(c.photo)}" data-zoom alt="題目照片"><span class="tag">${c.state === 'ok' ? (c.prev ? '✅ 上一關' : '✅ 找到了') : score ? `照片 ${String.fromCharCode(65 + i)}・現在 ${c.val} 分` : `第 ${v.batchNo || 1} 關・照片 ${i + 1}`}</span></div>`;
-    if (c.state === 'ok') return `<div class="pc ok ${c.prev ? 'prev' : ''}" data-card="${cid}">${ph}<div class="bd"><div class="okbox"><span class="big">✅</span><div><b style="font-size:1.15em">${c.prev ? '上一關答案：' : ''}第 ${c.no} 號</b><div class="small muted">${esc(c.name)}</div></div></div>
+    if (c.state === 'ok') return `<div class="pc ok ${c.prev ? 'prev' : ''}" data-card="${cid}">${ph}<div class="bd"><div class="okbox"><span class="big">✅</span><div><b style="font-size:1.15em">${c.prev ? '上一關答案：' : ''}第 ${c.no} 號</b><div class="small muted">${esc(c.name)}</div>${c.by ? `<div class="small" style="color:#7a4fd0;font-weight:700">📸 本題由 ${esc(c.by)} 出題</div>` : ''}</div></div>
       ${c.reveal ? `<div class="reveal"><div class="small bold">🖼️ 原來是這裡！</div><img src="${esc(G.photoURL(c.reveal))}" data-ref="${esc(c.reveal)}" data-zoom></div>` : ''}</div></div>`;
     const t = now(), cool = c.coolUntil && c.coolUntil > t ? Math.ceil((c.coolUntil - t) / 1000) : 0;
     const pend = st.pending[cid], rp = st.reqPending[cid], sel = st.sel[cid];

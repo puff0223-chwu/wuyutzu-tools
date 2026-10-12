@@ -271,6 +271,49 @@
       }
      }
     }
+   },
+   "mycontrib": {
+    "$uid": {
+     ".read": "auth != null && auth.uid === $uid",
+     ".write": "auth != null && auth.uid === $uid"
+    }
+   },
+   "contrib": {
+    "$code": {
+     ".read": "auth != null && root.child('orienteering/contrib/'+$code+'/meta/owner').val() === auth.uid",
+     ".write": "auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid))",
+     "meta": {
+      ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)"
+     },
+     "keys": {
+      "$h": {
+       ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && $h.matches(/^[0-9a-f]{32}$/)"
+      }
+     },
+     "items": {
+      "$h": {
+       ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && $h.matches(/^[0-9a-f]{32}$/)",
+       "$id": {
+        ".write": "!data.exists() && newData.exists() && $h.matches(/^[0-9a-f]{32}$/) && $id.matches(/^[0-9a-f]{10}$/) && root.child('orienteering/contrib/'+$code+'/meta/open').val() === true && (!root.child('orienteering/contrib/'+$code+'/meta/deadline').exists() || now < root.child('orienteering/contrib/'+$code+'/meta/deadline').val()) && (root.child('orienteering/contrib/'+$code+'/meta/roster').val() !== true || root.child('orienteering/contrib/'+$code+'/keys/'+$h).val() === true)",
+        ".validate": "(auth != null && root.child('orienteering/contrib/'+$code+'/meta/owner').val() === auth.uid) || (newData.hasChildren(['pic','x','y','name','seat','who','ts']) && newData.child('pic').isString() && newData.child('pic').val().matches(/^[0-9a-f]{12}$/) && root.child('orienteering/contrib/'+$code+'/pics/'+newData.child('pic').val()+'/k').val() === $h && newData.child('x').isNumber() && newData.child('x').val() >= 0 && newData.child('x').val() <= 100 && newData.child('y').isNumber() && newData.child('y').val() >= 0 && newData.child('y').val() <= 100 && newData.child('name').isString() && newData.child('name').val().length <= 30 && newData.child('seat').isString() && newData.child('seat').val().length <= 10 && newData.child('who').isString() && newData.child('who').val().length <= 12 && newData.child('ts').val() == now && !newData.child('status').exists() && !newData.child('okPhoto').exists() && !newData.child('claimed').exists() && !newData.child('pointKey').exists())"
+       }
+      }
+     },
+     "pics": {
+      "$pid": {
+       ".read": "$pid.matches(/^[0-9a-f]{12}$/)",
+       ".write": "!data.exists() && newData.exists() && $pid.matches(/^[0-9a-f]{12}$/) && root.child('orienteering/contrib/'+$code+'/meta/open').val() === true && (!root.child('orienteering/contrib/'+$code+'/meta/deadline').exists() || now < root.child('orienteering/contrib/'+$code+'/meta/deadline').val()) && (root.child('orienteering/contrib/'+$code+'/meta/roster').val() !== true || root.child('orienteering/contrib/'+$code+'/keys/'+newData.child('k').val()).val() === true)",
+       ".validate": "(auth != null && root.child('orienteering/contrib/'+$code+'/meta/owner').val() === auth.uid) || (newData.hasChildren(['k','data','ts']) && newData.child('k').isString() && newData.child('k').val().matches(/^[0-9a-f]{32}$/) && newData.child('data').isString() && newData.child('data').val().beginsWith('data:image/') && newData.child('data').val().length < 400000 && newData.child('ts').val() == now)"
+      }
+     },
+     "claims": {
+      "$h": {
+       "$id": {
+        ".write": "!data.exists() && newData.exists() && newData.val() === root.child('orienteering/contrib/'+$code+'/secret/pin').val() && root.child('orienteering/contrib/'+$code+'/items/'+$h+'/'+$id+'/status').val() === 'ok'"
+       }
+      }
+     }
+    }
    }
   }
  }

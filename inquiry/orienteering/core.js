@@ -32,7 +32,7 @@
       view: { dist: (p.view && p.view.dist) || '', angle: (p.view && p.view.angle) || '', odd: !!(p.view && p.view.odd) },
       cam: p.cam && p.cam.x != null ? { x: +p.cam.x, y: +p.cam.y, dir: (+p.cam.dir || 0) % 8 } : null,
       reveal: p.reveal || '', task: p.task && p.task.q ? { q: String(p.task.q), a: String(p.task.a || '').trim(), open: !String(p.task.a || '').trim(), bonus: p.task.bonus != null && p.task.bonus !== '' ? +p.task.bonus || 0 : 5 } : null, // 有標準答案＝系統判，空白＝老師判
-      author: String(p.author || ''), note: String(p.note || ''), key
+      author: String(p.author || ''), note: String(p.note || ''), contrib: String(p.contrib || ''), key
     };
   }
   function normalizeBank(b) {

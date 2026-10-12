@@ -546,7 +546,7 @@ function viewFor(tid) {
     const v = {
       photo: p.photos[0], state: c.state, at: c.at, coolUntil: c.coolUntil || 0, wrong: c.wrong || 0, tried: c.tried || [], prev: !score && (c.round || 0) !== round,
       hint1: c.hint >= 1 ? p.hint1 || '（沒有提示）' : '', hint2: c.hint >= 2 ? p.hint2 || '（沒有提示）' : '',
-      pass: c.pass || '', no: c.state === 'ok' ? p.no : 0, name: c.state === 'ok' ? p.name : '', reveal: c.state === 'ok' ? p.reveal || '' : ''
+      pass: c.pass || '', no: c.state === 'ok' ? p.no : 0, name: c.state === 'ok' ? p.name : '', reveal: c.state === 'ok' ? p.reveal || '' : '', by: c.state === 'ok' && p.contrib ? p.author : ''
     };
     if (score) {
       if (c.state === 'open') {
@@ -795,7 +795,7 @@ function drawDash() {
   $$('[data-zoomsrc]').forEach((im) => { im.style.cursor = 'zoom-in'; im.onclick = () => zoomImg(im.src); });
 }
 // 統計與路線回放放在另一個檔案，用到才載入
-const STATS = () => import('./stats.js?v=20261012g');
+const STATS = () => import('./stats.js?v=20261012h');
 function statsCtx() {
   const b = bank(), centers = G.zoneCenters(b), ys = Object.values(b.points).map((p) => p.y);
   return {
