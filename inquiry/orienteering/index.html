@@ -201,7 +201,7 @@ try {
   FB.onChild = (path, cb) => FB.D.onChildAdded(FB.D.ref(FB.db, path), (snap) => cb(snap.key, snap.val()));
   FB.pushKey = (path) => FB.D.push(FB.D.ref(FB.db, path)).key;
 } catch (e) { console.warn('Firebase 載入失敗', e); window.FB = null; }
-await import('./teacher.js?v=20261013c');
+await import('./teacher.js?v=20261013d');
 </script>
 </body>
 </html>

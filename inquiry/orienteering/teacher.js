@@ -92,7 +92,6 @@ function renderLogin(msg) {
     <label class="f">密碼</label><input type="password" id="lgPw" autocomplete="current-password">
     <div class="row" style="margin-top:16px"><button class="btn primary" id="lgGo">🔓 登入</button><span class="spacer"></span><button class="btn ghost sm" id="lgReset">忘記密碼</button></div>
     <p class="small muted" style="margin-top:14px">還沒有帳號？<a href="../../account/?app=gps"><b>👥 到會員中心申請使用</b></a>（巫魚子老師核准後就能用，各系統共用同一個帳號）</p>
-    <p class="small" style="margin-top:12px"><a href="../../index.html">🏠 回事務所首頁</a></p>
   </div>`;
   const go = async () => {
     const email = $('#lgEmail').value.trim(), pw = $('#lgPw').value;
@@ -145,7 +144,7 @@ function render() {
     <span class="spacer"></span>
     <span class="tb-email small" style="opacity:.75">${esc(S.user.email || '')}</span>
     <button class="tb-btn" id="tbLogout">登出</button>
-    <a class="home" href="../../index.html">🏠 回事務所首頁</a>
+    <a class="home" href="../../account/?app=gps" title="申請加開其他系統、看帳號狀態">👥 會員中心</a>
   </div>
   ${S.bank ? `<div class="tabs">${TABS.map(([k, t]) => `<div class="tab ${S.tab === k ? 'on' : ''}" data-tab="${k}">${t}</div>`).join('')}</div>
   <div class="panel" id="panel"></div>` : `<div class="panel" style="margin-top:20px" id="panel"></div>`}`;

@@ -179,8 +179,8 @@ td.cl{color:var(--ok);font-weight:700}
 <div class="wrap" id="erMain" style="display:none">
   <div class="paper head">
     <div><h1>🗂️ 消失的實驗數據｜老師答案卷宗</h1><div class="note">🔒 本頁含全班答案，請勿提供給學生；學生請用下方的學生連結</div></div>
-    <div style="text-align:right"><a class="home" href="../index.html">🏠 回事務所首頁</a><div class="sem" style="margin-top:6px">目前學期：<b class="mono" id="sem"></b></div>
-      <div class="note" style="margin:4px 0 0">👤 <span id="erWho"></span>　<span id="erAdmin"></span><button class="linkbtn" id="erOut">登出</button></div></div>
+    <div style="text-align:right"><a class="home" href="../account/?app=excel">👥 會員中心</a><div class="sem" style="margin-top:6px">目前學期：<b class="mono" id="sem"></b></div>
+      <div class="note" style="margin:4px 0 0">👤 <span id="erWho"></span>　<button class="linkbtn" id="erOut">登出</button></div></div>
   </div>
 
   <nav class="tabs" id="tabs">
@@ -846,7 +846,6 @@ td.cl{color:var(--ok);font-weight:700}
       saveSems(seed);
     }
     $('erWho').textContent = ctx.email + (ctx.name ? '（' + ctx.name + '）' : '') + '・老師代碼 ' + ctx.tcode;
-    if (ctx.admin) $('erAdmin').innerHTML = '<a class="linkbtn" href="../account/">👥 會員管理</a>　';
     var cur = own.cur && semItem(own.cur) ? own.cur : CLOUD.sems[0].code;
     applySemester(cur, true);
     var lastTab = null; try { lastTab = localStorage.getItem('excelRescue-teacher:tab'); } catch(e){}
@@ -875,7 +874,7 @@ function renderLogin(msg) {
     <label class="note" style="display:block;margin-top:10px;font-weight:700;color:var(--text)">密碼</label><input type="password" id="gP" autocomplete="current-password">
     <div class="row" style="margin-top:16px"><button class="btn" id="gGo">🔓 登入</button><button class="linkbtn" id="gReset" style="margin-left:auto">忘記密碼</button></div>
     <p class="note" style="margin-top:16px">還沒有帳號？<a href="${W.centerURL('../', 'excel')}" style="font-weight:700;color:var(--ink)">👥 到會員中心申請使用</a>（巫魚子老師核准後就能用）</p>
-    <p class="note"><a class="home" href="../index.html" style="font-size:.9rem">🏠 回事務所首頁</a></p>`);
+`);
   const go = async () => { const e = document.getElementById('gE').value.trim(), p = document.getElementById('gP').value; if (!e || !p) return; document.getElementById('gGo').disabled = true; try { await FB.login(e, p); localStorage.setItem('excelRescue-teacher:email', e); } catch (err) { renderLogin(authErr(err)); } };
   const gg = document.getElementById('gG'); if (gg) gg.onclick = async () => { gg.disabled = true; try { await FB.google(); } catch (err) { renderLogin(authErr(err)); } };
   document.getElementById('gGo').onclick = go; document.getElementById('gP').onkeydown = (ev) => { if (ev.key === 'Enter') go(); };

@@ -239,7 +239,7 @@ try {
   window.FB = await M.openFirebase('seating');
   window.FBX = { authErr: M.authErr, googleButtonHTML: M.googleButtonHTML };
 } catch (e) { console.warn('Firebase 載入失敗，只能用本機模式', e); window.FB = null; }
-await import('./app.js?v=20261013c');
+await import('./app.js?v=20261013d');
 </script>
 </body>
 </html>

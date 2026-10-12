@@ -229,7 +229,6 @@ function renderLogin(msg) {
     <hr style="border:none;border-top:1.5px dashed var(--line);margin:20px 0">` : ''}
     <p class="small muted">還沒有帳號？<a href="../../account/?app=seat"><b>👥 到會員中心申請使用</b></a>（各系統共用同一個老師帳號）。只想先試用？</p>
     <button class="btn sm" data-act="useLocal" style="margin-top:6px">💾 用本機模式（資料只存在這台裝置）</button>
-    <p class="small" style="margin-top:18px"><a href="../../index.html">🏠 回事務所首頁</a></p>
   </div>`;
   const pw = $('#lgPw'); if (pw) pw.addEventListener('keydown', (e) => { if (e.key === 'Enter') act.login(); });
   const gb = $('#lgG'); if (gb) gb.onclick = async () => {
@@ -260,7 +259,7 @@ function render() {
     <span class="save-state tb-email" title="${esc(Store.email)}">${Store.mode === 'cloud' ? '👤 ' + esc(Store.email) : '💾 本機模式'}</span>
     <button class="tb-btn" data-act="guide" title="使用說明">❓ 說明</button>
     <button class="tb-btn" data-act="logout">${Store.mode === 'cloud' ? '登出' : '切換到登入'}</button>
-    <a class="home" href="../../index.html">🏠 回事務所首頁</a>
+    <a class="home" href="../../account/?app=seat" title="申請加開其他系統、看帳號狀態">👥 會員中心</a>
   </header>`;
   if (!cls) {
     $('#app').innerHTML = top + `<div class="panel" style="margin-top:24px">
