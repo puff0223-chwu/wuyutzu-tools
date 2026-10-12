@@ -392,6 +392,138 @@
     ];
   }
 
+  /* ---------- 專屬 Excel（2026-10-13 改版：用 ExcelJS 加上顏色與排版，讓學生一眼看懂） ----------
+     顏色代表意思（每張工作表右邊都有說明）：
+       深藍標題列＝關卡名稱　淺灰＝情境說明　藍色表頭＋淺藍格子＝數據（拿來作圖／計算）
+       黃色格子＝要填函數的地方　金色區塊＝在 Excel 裡要完成的事　紫色區塊＝偵查提問（回網頁回答，不用在 Excel 做）
+     ⚠ 位置不能動（Excel 鑑識靠它們）：A1＝「關卡 N…」、A2＝學號學期、第 4 列＝表頭、第 5 列起＝數據；
+       L5 數據 B5:B34、答案 E5:E10；L6 數據 B5:B24；任務說明 A2／A3＝學號、學期 */
+  var XC = { navy: 'FF1F2A44', gold: 'FFF2B134', goldSoft: 'FFFDF1D6', blue: 'FF2F6DB5', blueSoft: 'FFE4EEFB', yellow: 'FFFFF2A8',
+    purple: 'FF7A4FD0', purpleSoft: 'FFEFE7FB', grey: 'FFF3EEE2', line: 'FFB8C4D6', white: 'FFFFFFFF', ink: 'FF1F2A44', muted: 'FF6B7280', red: 'FFE4572E' };
+  function buildWorkbook(ExcelJS, d) {
+    var wb = new ExcelJS.Workbook();
+    wb.creator = '巫魚子教課事務所'; wb.created = new Date();
+    var fill = function (c) { return { type: 'pattern', pattern: 'solid', fgColor: { argb: c } }; };
+    var thin = { style: 'thin', color: { argb: XC.line } };
+    var box = { top: thin, left: thin, bottom: thin, right: thin };
+    var font = function (o) { var f = { name: 'Microsoft JhengHei', size: 11, color: { argb: XC.ink } }; for (var k in o) f[k] = o[k]; return f; };
+    function band(ws, row, c1, c2, text, opt) {   // 一整列合併的文字帶
+      opt = opt || {};
+      ws.mergeCells(row, c1, row, c2);
+      var cell = ws.getCell(row, c1); cell.value = text;
+      cell.font = font(opt.font || {}); cell.alignment = { vertical: 'middle', horizontal: opt.align || 'left', wrapText: true, indent: opt.indent == null ? 1 : opt.indent };
+      if (opt.fill) cell.fill = fill(opt.fill);
+      if (opt.h) ws.getRow(row).height = opt.h;
+      return cell;
+    }
+    var legend = '顏色說明：🟦 淺藍＝數據（拿來作圖、計算）　🟨 黃色＝要填函數的格子　🟪 紫色＝回網頁回答的問題';
+    // 一張關卡工作表：標題、學號、情境、表頭、數據，右邊是任務面板，面板下面留「圖表放這裡」
+    function levelSheet(name, lv, head, rows, o) {
+      o = o || {};
+      var ws = wb.addWorksheet(name, { views: [{ state: 'frozen', ySplit: 4, showGridLines: false }], properties: { tabColor: { argb: o.tab || XC.blue } }, pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
+      var P = o.panel || 4, PE = P + 6;   // 面板從 D 欄（L5 從 G 欄）開始，佔 7 欄
+      ws.columns = o.widths.map(function (w) { return { width: w }; });
+      band(ws, 1, 1, PE, '關卡 ' + lv.no + '｜' + lv.chart + '　' + o.title, { font: { bold: true, size: 16, color: { argb: XC.white } }, fill: XC.navy, h: 34 });
+      band(ws, 2, 1, PE, '調查員學號：' + d.id + '　｜　學期：' + d.semester + '　｜　這份數據只屬於你，跟別人的都不一樣', { font: { size: 10, color: { argb: XC.muted } }, h: 20 });
+      band(ws, 3, 1, PE, '📖 ' + lv.story, { font: { size: 10.5, color: { argb: XC.ink } }, fill: XC.grey, h: 44 });
+      // 表頭與數據
+      head.forEach(function (h, i) {
+        if (h == null) return;
+        var c = ws.getCell(4, i + 1); c.value = h; c.font = font({ bold: true, color: { argb: XC.white } }); c.fill = fill(XC.blue);
+        c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }; c.border = box;
+      });
+      ws.getRow(4).height = 30;
+      rows.forEach(function (r, ri) {
+        r.forEach(function (v, ci) {
+          if (v === undefined || v === null) return;
+          var c = ws.getCell(5 + ri, ci + 1); c.value = v; c.border = box; c.font = font({});
+          c.fill = fill(XC.blueSoft); c.alignment = { horizontal: 'center' };
+          if (o.fmt && o.fmt[ci]) c.numFmt = o.fmt[ci];
+        });
+      });
+      // 右邊任務面板
+      var r = 4;
+      band(ws, r++, P, PE, '🛠 在 Excel 裡完成', { font: { bold: true, size: 12 }, fill: XC.gold, h: 24 });
+      lv.tasks.forEach(function (t, i) { band(ws, r++, P, PE, '☐ ' + (i + 1) + '. ' + t, { fill: XC.goldSoft, h: 21, font: { size: t.length > 34 ? 10 : 11 } }); });
+      r++;
+      band(ws, r++, P, PE, '🔍 偵查提問 → 回網頁作答（不用在 Excel 裡做）', { font: { bold: true, size: 12, color: { argb: XC.white } }, fill: XC.purple, h: 24 });
+      lv.questions(d).forEach(function (q) { band(ws, r++, P, PE, '❓ ' + q.label + (q.unit ? '（' + q.unit + '）' : ''), { fill: XC.purpleSoft, h: 21, font: { size: q.label.length > 34 ? 10 : 11 } }); });
+      if (o.extra) { r++; o.extra.forEach(function (t) { band(ws, r++, P, PE, t, { font: { size: 10, color: { argb: XC.muted }, italic: true }, h: 21 }); }); }
+      r++;
+      band(ws, r++, P, PE, legend, { font: { size: 9.5, color: { argb: XC.muted } }, h: 21 });
+      r++;
+      // 圖表放這裡（虛線框）
+      var c0 = r, c1 = r + 14;
+      ws.mergeCells(c0, P, c1, PE);
+      var ch = ws.getCell(c0, P);
+      ch.value = o.chartNote || '📈 把做好的圖表拖到這個框裡';
+      ch.font = font({ size: 12, color: { argb: 'FFB0B7C3' }, bold: true }); ch.alignment = { horizontal: 'center', vertical: 'middle' };
+      var dash = { style: 'dashed', color: { argb: 'FFB0B7C3' } };
+      ch.border = { top: dash, left: dash, bottom: dash, right: dash };
+      // 每一列一樣高（數據表才不會忽高忽低）
+      for (var rr = 5; rr <= Math.max(c1, 5 + rows.length + 3); rr++) { var row = ws.getRow(rr); if (!row.height || row.height < 21) row.height = 21; }
+      return ws;
+    }
+    // ---- 任務說明 ----
+    var info = wb.addWorksheet('任務說明', { views: [{ showGridLines: false }], properties: { tabColor: { argb: XC.navy } }, pageSetup: { orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
+    info.columns = [{ width: 8 }, { width: 18 }, { width: 46 }, { width: 46 }];
+    band(info, 1, 1, 4, '🗂️ 消失的實驗數據 — Excel 數據救援任務', { font: { bold: true, size: 18, color: { argb: XC.white } }, fill: XC.navy, h: 40 });
+    band(info, 2, 1, 4, '調查員學號：' + d.id, { font: { bold: true, size: 12 }, h: 22 });
+    band(info, 3, 1, 4, '學期：' + d.semester, { font: { size: 11, color: { argb: XC.muted } }, h: 20 });
+    band(info, 4, 1, 4, '🔒 這份數據只屬於你，跟別人的都不一樣，抄答案會被系統識破喔！', { font: { size: 11, color: { argb: XC.red }, bold: true }, h: 24 });
+    var r0 = 6;
+    band(info, r0++, 1, 4, '🎨 顏色代表什麼', { font: { bold: true, size: 13 }, h: 24 });
+    [[XC.navy, '深藍', '關卡標題', true], [XC.grey, '淺灰', '案件情境說明'], [XC.blueSoft, '淺藍', '數據：選取它們來作圖或計算'], [XC.yellow, '黃色', '要填「函數公式」的格子（只有第 5 關有）'],
+     [XC.goldSoft, '金色', '🛠 在 Excel 裡要完成的事（作圖、設定格式）'], [XC.purpleSoft, '紫色', '🔍 偵查提問：看你做的圖表找答案，回網頁作答（不用在 Excel 裡做）']].forEach(function (x) {
+      var c = info.getCell(r0, 2); c.value = x[1]; c.fill = fill(x[0]); c.border = box; c.alignment = { horizontal: 'center' }; c.font = font({ bold: true, color: { argb: x[3] ? XC.white : XC.ink } });
+      info.mergeCells(r0, 3, r0, 4); var t = info.getCell(r0, 3); t.value = x[2]; t.font = font({}); t.alignment = { indent: 1, vertical: 'middle' };
+      info.getRow(r0).height = 22; r0++;
+    });
+    r0++;
+    band(info, r0++, 1, 4, '🧭 怎麼玩', { font: { bold: true, size: 13 }, h: 24 });
+    ['1. 下方每個分頁是一個關卡，照分頁右邊金色的「在 Excel 裡完成」清單做出圖表或函數。',
+     '2. 看著你做好的圖表或函數，回答紫色的「偵查提問」——答案要回到網頁上輸入。',
+     '3. 每過一關得到 2 碼密碼碎片，六關全破拿到「結案代碼」。',
+     '4. 把這個 Excel 檔（存成 .xlsx）和結案證明截圖一起交到課程平台。'].forEach(function (t) { band(info, r0++, 1, 4, t, { h: 22 }); });
+    r0++;
+    band(info, r0++, 1, 4, '📋 六大關卡一覽', { font: { bold: true, size: 13 }, h: 24 });
+    ['關卡', '分頁', '🛠 在 Excel 裡做什麼', '🔍 回網頁回答什麼'].forEach(function (h, i) { var c = info.getCell(r0, i + 1); c.value = h; c.font = font({ bold: true, color: { argb: XC.white } }); c.fill = fill(XC.blue); c.border = box; c.alignment = { horizontal: 'center', vertical: 'middle' }; });
+    info.getRow(r0).height = 22; r0++;
+    var sheetNames = ['L1_長條圖', 'L2_折線圖', 'L3_圓餅圖', 'L4_散佈圖', 'L5_函數', 'L6_格式化條件'];
+    LEVELS.forEach(function (lv, i) {
+      var vals = [lv.icon + ' ' + lv.no, sheetNames[i], lv.tasks.slice(0, 2).join('；') + (lv.tasks.length > 2 ? '…' : ''), lv.questions(d).map(function (q) { return q.label.replace(/（.*?）/g, ''); }).join('；')];
+      vals.forEach(function (v, ci) { var c = info.getCell(r0, ci + 1); c.value = v; c.border = box; c.font = font({ size: 10 }); c.alignment = { wrapText: true, vertical: 'middle', horizontal: ci < 2 ? 'center' : 'left' }; if (ci === 2) c.fill = fill(XC.goldSoft); if (ci === 3) c.fill = fill(XC.purpleSoft); });
+      info.getRow(r0).height = 48; r0++;
+    });
+    r0++;
+    band(info, r0++, 1, 4, '🕵️ 據說…散佈圖那一關藏著一個秘密。第 4 關過關後，網頁上會出現新的線索。', { font: { italic: true, color: { argb: XC.purple } }, h: 24 });
+    // ---- 六關 ----
+    var L = LEVELS;
+    levelSheet('L1_長條圖', L[0], ['證物編號', '氫氣體積 (mL)'], d.L1.rows.map(function (x) { return [x.code, x.vol]; }), { title: '證物與鹽酸反應 3 分鐘收集的氫氣體積', widths: [14, 16, 3, 13, 13, 13, 13, 13, 13, 13] });
+    levelSheet('L2_折線圖', L[1], ['時間 (分鐘)', '溫度 (°C)'], d.L2.rows.map(function (x) { return [x.t, x.T]; }), { title: '未知物質 X 的加熱曲線', widths: [14, 14, 3, 13, 13, 13, 13, 13, 13, 13], extra: ['💡 小提醒：折線圖只要畫「溫度」一條線；時間是 X 軸，不是另一條線。'] });
+    levelSheet('L3_圓餅圖', L[2], ['成分', '質量 (g)'], d.L3.rows.map(function (x) { return [x.name, x.mass]; }), { title: '神秘合金的成分', widths: [14, 14, 3, 13, 13, 13, 13, 13, 13, 13] });
+    var ws4 = levelSheet('L4_散佈圖', L[3], ['濃度 (ppm)', '吸光度 A'], d.L4.rows.map(function (x) { return [x.c, x.A]; }), { title: '比爾定律標準曲線', widths: [22, 16, 3, 13, 13, 13, 13, 13, 13, 13], fmt: [null, '0.000'],
+      extra: ['🕵️ 隱藏關卡：第 4 關過關後網頁會出現新線索，到時再回來這張工作表調查。'] });
+    var ur = 5 + d.L4.rows.length + 1;   // 空一列後放未知樣品
+    var u1 = ws4.getCell(ur, 1); u1.value = '未知樣品的吸光度 A'; u1.font = font({ bold: true }); u1.fill = fill(XC.blue); u1.font = font({ bold: true, color: { argb: XC.white } }); u1.border = box;
+    var u2 = ws4.getCell(ur, 2); u2.value = d.L4.unknownA; u2.numFmt = '0.000'; u2.fill = fill(XC.blueSoft); u2.border = box; u2.alignment = { horizontal: 'center' }; u2.font = font({});
+    var u3 = ws4.getCell(ur + 1, 1); u3.value = '未知樣品濃度 (ppm)'; u3.fill = fill(XC.purple); u3.font = font({ bold: true, color: { argb: XC.white } }); u3.border = box;
+    var u4 = ws4.getCell(ur + 1, 2); u4.value = '→ 用方程式算，回網頁作答'; u4.fill = fill(XC.purpleSoft); u4.border = box; u4.font = font({ size: 9.5, color: { argb: XC.purple } }); u4.alignment = { horizontal: 'center', wrapText: true };
+    ws4.getRow(ur + 1).height = 30;
+    var ws5 = levelSheet('L5_函數', L[4], ['組別', 'NaOH 體積 (mL)', null, '統計項目', '答案（請用函數）'], d.L5.vals.map(function (v, i) { return [i + 1, v]; }),
+      { title: '全班 30 組醋酸滴定所用 NaOH 體積', widths: [8, 16, 3, 14, 20, 3, 13, 13, 13, 13, 13, 13, 13], panel: 7, tab: XC.gold, chartNote: '🧮 這一關不用作圖，函數填在左邊黃色格子' });
+    ['平均值', '最大值', '最小值', '第三大值', '第二小值', '標準差'].forEach(function (t, i) {
+      var a1 = ws5.getCell(5 + i, 4); a1.value = t; a1.font = font({ bold: true }); a1.fill = fill(XC.grey); a1.border = box; a1.alignment = { horizontal: 'center' };
+      var a2 = ws5.getCell(5 + i, 5); a2.fill = fill(XC.yellow); a2.border = { top: { style: 'medium', color: { argb: XC.gold } }, left: { style: 'medium', color: { argb: XC.gold } }, bottom: { style: 'medium', color: { argb: XC.gold } }, right: { style: 'medium', color: { argb: XC.gold } } };
+      a2.numFmt = '0.00';
+    });
+    var hint = ws5.getCell(12, 4); ws5.mergeCells(12, 4, 14, 5);
+    hint.value = '✍️ 在黃色格子輸入「=函數(範圍)」，例如平均值：=AVERAGE(B5:B34)\n範圍要包含全部 30 筆數據（B5 到 B34）';
+    hint.font = font({ size: 10, color: { argb: XC.muted } }); hint.alignment = { wrapText: true, vertical: 'top' };
+    levelSheet('L6_格式化條件', L[5], ['採樣點', '鉛濃度 (ppb)'], d.L6.rows.map(function (x) { return [x.code, x.pb]; }), { title: '自來水鉛濃度（飲用水標準：10 ppb 以下）', widths: [12, 14, 3, 13, 13, 13, 13, 13, 13, 13], tab: XC.red, chartNote: '🚨 這一關不用作圖，直接在 B 欄設定格式化的條件' });
+    return wb;
+  }
+
   /* ---------- 換學期：只接受英數與連字號，最多 16 字 ---------- */
   function validSemester(s) { return /^[A-Za-z0-9-]{1,16}$/.test(String(s || '').trim()); }
   function setSemester(s) {
@@ -447,7 +579,7 @@
 
   var API = {
     CONFIG: CONFIG, LV_KEYS: LV_KEYS, cloudGet: cloudGet, cloudPut: cloudPut, cloudAll: cloudAll, mergeProgress: mergeProgress, toRecord: toRecord, validSemester: validSemester, setSemester: setSemester, isCodeLike: isCodeLike, normId: normId, generate: generate, LEVELS: LEVELS, HIDDEN: HIDDEN,
-    closeCode: closeCode, hiddenCode: hiddenCode, fragment: fragment, sheets: sheets, linreg: linreg
+    closeCode: closeCode, hiddenCode: hiddenCode, fragment: fragment, sheets: sheets, buildWorkbook: buildWorkbook, linreg: linreg
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.ExcelRescue = API;
 })(this);

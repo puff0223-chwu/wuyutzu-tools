@@ -9,10 +9,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="excel-rescue-core.js"></script>
-<script src="excel-rescue-checker.js"></script>
+<script src="excel-rescue-core.js?v=20261013a"></script>
+<script src="excel-rescue-checker.js?v=20261013a"></script>
 <style>
 :root{--ink:#1c2230;--paper:#f3ead6;--paper2:#e9dcc0;--line:#cbb88f;--brass:#c39a3d;--stamp:#b3312c;--ok:#2f7d4f;--muted:#6b6250;--text:#2a2418}
 *{box-sizing:border-box}
@@ -60,6 +61,20 @@ td .dl{border:0;background:none;cursor:pointer;font-size:1rem}
 .semcard{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .semcard input{width:150px;font-family:"JetBrains Mono",monospace;font-weight:700;text-transform:uppercase}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.semlist{display:flex;flex-direction:column;gap:8px;margin:8px 0 14px}
+.semitem{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fffaf0;border:2px solid var(--line);border-radius:10px;padding:10px 14px}
+.semitem.cur{border-color:var(--ink);background:#fff;box-shadow:4px 4px 0 var(--brass)}
+.semitem .code{font-family:"JetBrains Mono",monospace;font-weight:800;font-size:1.25rem;color:var(--ink);min-width:110px}
+.semitem .meta{flex:1;min-width:160px;color:var(--muted);font-size:.9rem}
+.semitem .meta b{color:var(--text)}
+.semitem .badge{background:var(--ink);color:var(--brass);border-radius:20px;padding:2px 12px;font-weight:800;font-size:.85rem}
+.semitem .act{display:flex;gap:6px}
+.btn.sm{padding:5px 12px;font-size:.9rem}
+.btn.danger{background:transparent;color:var(--stamp);border:2px solid var(--stamp)}
+.btn.danger:hover{background:var(--stamp);color:#fff}
+.semadd{border-top:2px dashed var(--line);padding-top:12px}
+.semrow{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 6px}
+.semrow input{flex:1;min-width:150px}
 .chipb{border:2px solid var(--line);background:#fffaf0;border-radius:20px;padding:2px 12px;font-family:"JetBrains Mono",monospace;font-weight:700;cursor:pointer;color:var(--ink)}
 .chipb.on{background:var(--ink);color:var(--brass);border-color:var(--ink)}
 .flash{animation:fl 1s}
@@ -176,14 +191,20 @@ td.cl{color:var(--ok);font-weight:700}
 
   <section data-tab="setup" class="on">
   <div class="paper" id="semBox">
-    <h2>📅 學期設定</h2>
-    <div class="semcard">
-      <input id="semIn" maxlength="16" placeholder="例：115-2">
-      <button class="btn" id="btnSem">套用這個學期</button>
+    <h2>📅 學期管理</h2>
+    <p class="note" style="margin-top:-4px">每個學期（或班級）有一套自己的數據、答案和結案代碼。點「切換」就換成那個學期，學生連結與 QR Code 會跟著換。</p>
+    <div id="semList" class="semlist"></div>
+    <div class="semadd">
+      <b>➕ 新增學期</b>
+      <div class="semrow">
+        <input id="semIn" maxlength="16" placeholder="學期代碼，例：115-2">
+        <input id="semNote" maxlength="20" placeholder="備註（選填），例：二年級探究">
+        <button class="btn" id="btnSem">新增並切換</button>
+      </div>
+      <div class="chips" id="semSug"></div>
       <span class="note" id="semMsg" style="margin:0"></span>
+      <p class="note" style="margin:4px 0 0">只能用英文、數字和「-」。同一學期不同班想用不同數據，就在後面加班級代號，例如 <span class="mono">115-2A</span>、<span class="mono">115-2B</span>。</p>
     </div>
-    <div class="chips" id="semChips"></div>
-    <p class="note">換學期，全班數據、標準答案、結案代碼就整批換新，學生連結與 QR Code 也會跟著換（學期藏在連結裡）。<br>只能用英文、數字和「-」，例如 <span class="mono">115-2</span>、<span class="mono">115-2A</span>（同學期不同班想用不同數據，就在後面加班級代號）。</p>
   </div>
 
   <div class="paper" id="shareBox">
@@ -300,15 +321,30 @@ td.cl{color:var(--ok);font-weight:700}
   var list = [], verified = null, link = '';
   var SEM_KEY = 'excelRescue-teacher:sem', REC_KEY = 'excelRescue-teacher:recentSem';
 
-  // ---------- 學期 ----------
-  function loadRecent(){ try { return JSON.parse(localStorage.getItem(REC_KEY)) || []; } catch(e){ return []; } }
-  function saveRecent(a){ try { localStorage.setItem(REC_KEY, JSON.stringify(a)); } catch(e){} }
+  // ---------- 學期管理（2026-10-13 改版：新增、切換、刪除、備註） ----------
+  // 清單存在這台電腦的瀏覽器：[{ code, note, at }]；舊版「最近用過」會自動搬進來
+  var SEMS_KEY = 'excelRescue-teacher:sems';
+  function loadSems(){
+    var a; try { a = JSON.parse(localStorage.getItem(SEMS_KEY)); } catch(e){}
+    if (!Array.isArray(a)) { var old = []; try { old = JSON.parse(localStorage.getItem(REC_KEY)) || []; } catch(e){} a = old.map(function(c){ return { code: c, note: '', at: Date.now() }; }); }
+    return a.filter(function(x){ return x && X.validSemester(x.code); });
+  }
+  function saveSems(a){ try { localStorage.setItem(SEMS_KEY, JSON.stringify(a)); } catch(e){} }
+  function ensureSem(code){ var a = loadSems(); if (!a.some(function(x){ return x.code === code; })) { a.push({ code: code, note: '', at: Date.now() }); saveSems(a); } }
+  // 依今天的日期建議學期：8 月～1 月＝上學期（-1），2～7 月＝下學期（-2）；民國年以學年度算
+  function suggestSems(){
+    var d = new Date(), y = d.getFullYear() - 1911, m = d.getMonth() + 1;
+    var sy = m >= 8 ? y : y - 1, term = (m >= 8 || m === 1) ? 1 : 2;
+    var base = sy + '-' + term, next = term === 1 ? sy + '-2' : (sy + 1) + '-1';
+    var have = loadSems().map(function(x){ return x.code; });
+    return [base, base + 'A', base + 'B', next].filter(function(x){ return have.indexOf(x) < 0; }).slice(0, 3);
+  }
   function applySemester(sem, quiet){
-    if (!X.setSemester(sem)) { $('semMsg').className='note bad'; $('semMsg').textContent='格式不對：只能用英文、數字和「-」，最多 16 字'; return; }
+    if (!X.setSemester(sem)) { $('semMsg').className='note bad'; $('semMsg').textContent='格式不對：只能用英文、數字和「-」，最多 16 字'; return false; }
     sem = X.CONFIG.SEMESTER;
     try { localStorage.setItem(SEM_KEY, sem); } catch(e){}
-    saveRecent([sem].concat(loadRecent().filter(function(x){ return x !== sem; })).slice(0, 8));
-    $('sem').textContent = sem; $('semIn').value = sem;
+    ensureSem(sem);
+    $('sem').textContent = sem;
     renderChips(); updateLink();
     live = null; liveAt = 0; if (curTab === 'live' || curTab === 'wall') refreshLive();
     if (list.length) $('btnGen').click();
@@ -317,15 +353,63 @@ td.cl{color:var(--ok);font-weight:700}
       $('semMsg').className='note good'; $('semMsg').textContent='✅ 已切換到 ' + sem + '，記得把新的學生連結給學生';
       ['semBox','shareBox'].forEach(function(id){ var el=$(id); el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); });
     }
+    return true;
   }
   function renderChips(){
-    var cur = X.CONFIG.SEMESTER, rec = loadRecent();
-    $('semChips').innerHTML = rec.length > 1 ? '<span class="note" style="margin:0">最近用過：</span>' + rec.map(function(x){
-      return '<button class="chipb'+(x===cur?' on':'')+'" data-s="'+esc(x)+'">'+esc(x)+'</button>'; }).join('') : '';
-    Array.prototype.forEach.call(document.querySelectorAll('.chipb'), function(b){ b.onclick = function(){ applySemester(b.getAttribute('data-s')); }; });
+    var cur = X.CONFIG.SEMESTER, a = loadSems();
+    a.sort(function(x, y){ return (x.code === cur ? -1 : y.code === cur ? 1 : 0) || (y.at || 0) - (x.at || 0); });
+    $('semList').innerHTML = a.map(function(x){
+      var on = x.code === cur;
+      return '<div class="semitem'+(on?' cur':'')+'"><span class="code">'+esc(x.code)+'</span>'+
+        '<span class="meta">'+(x.note ? '<b>'+esc(x.note)+'</b>　' : '')+'建立於 '+new Date(x.at || Date.now()).toLocaleDateString('zh-TW')+'</span>'+
+        (on ? '<span class="badge">✔ 使用中</span>' : '')+
+        '<span class="act">'+(on ? '' : '<button class="btn sm" data-sw="'+esc(x.code)+'">切換</button>')+
+        '<button class="btn sm ghost" data-note="'+esc(x.code)+'" title="改備註">✏️ 備註</button>'+
+        '<button class="btn sm danger" data-del="'+esc(x.code)+'" title="從清單刪除">🗑</button></span></div>';
+    }).join('');
+    $('semSug').innerHTML = suggestSems().map(function(x){ return '<button class="chipb" data-sug="'+esc(x)+'">'+esc(x)+'</button>'; }).join('');
+    if ($('semSug').innerHTML) $('semSug').insertAdjacentHTML('afterbegin', '<span class="note" style="margin:0">建議：</span>');
+    Array.prototype.forEach.call(document.querySelectorAll('[data-sug]'), function(b){ b.onclick = function(){ $('semIn').value = b.getAttribute('data-sug'); $('semNote').focus(); }; });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-sw]'), function(b){ b.onclick = function(){ applySemester(b.getAttribute('data-sw')); }; });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-note]'), function(b){ b.onclick = function(){
+      var code = b.getAttribute('data-note'), a2 = loadSems(), it = a2.filter(function(x){ return x.code === code; })[0]; if (!it) return;
+      var n = prompt('「' + code + '」的備註（例：二年級探究、302 班）', it.note || ''); if (n === null) return;
+      it.note = String(n).trim().slice(0, 20); saveSems(a2); renderChips();
+    }; });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-del]'), function(b){ b.onclick = function(){
+      var code = b.getAttribute('data-del'), a2 = loadSems();
+      if (code === X.CONFIG.SEMESTER && a2.length === 1) { alert('這是唯一的學期，不能刪除。先新增另一個學期再刪。'); return; }
+      if (!confirm('從清單刪除學期「' + code + '」？\n\n・只會從這台電腦的清單移除\n・學生的闖關紀錄還留在雲端，之後重新新增「' + code + '」就會再看到\n・學生手上的舊連結還是能用')) return;
+      a2 = a2.filter(function(x){ return x.code !== code; }); saveSems(a2);
+      if (code === X.CONFIG.SEMESTER) { applySemester(a2.sort(function(x, y){ return (y.at || 0) - (x.at || 0); })[0].code); $('semMsg').className='note'; $('semMsg').textContent='🗑 已刪除 ' + code + '，自動切換到 ' + X.CONFIG.SEMESTER; }
+      else { renderChips(); $('semMsg').className='note'; $('semMsg').textContent='🗑 已從清單刪除 ' + code; }
+    }; });
   }
-  $('btnSem').onclick = function(){ applySemester($('semIn').value); };
-  $('semIn').addEventListener('keydown', function(e){ if (e.key === 'Enter') applySemester($('semIn').value); });
+  function addSemester(){
+    var code = $('semIn').value.trim().toUpperCase(), note = $('semNote').value.trim().slice(0, 20);
+    if (!X.validSemester(code)) { $('semMsg').className='note bad'; $('semMsg').textContent='格式不對：只能用英文、數字和「-」，最多 16 字'; return; }
+    var a = loadSems(), it = a.filter(function(x){ return x.code === code; })[0];
+    if (it) { if (note) it.note = note; } else a.push({ code: code, note: note, at: Date.now() });
+    saveSems(a);
+    if (applySemester(code)) { $('semIn').value = ''; $('semNote').value = ''; if (it) { $('semMsg').className='note good'; $('semMsg').textContent='「' + code + '」已經在清單裡，已切換過去'; } }
+  }
+  $('btnSem').onclick = addSemester;
+  $('semIn').addEventListener('keydown', function(e){ if (e.key === 'Enter') addSemester(); });
+  $('semNote').addEventListener('keydown', function(e){ if (e.key === 'Enter') addSemester(); });
+
+  var downloadData = function(d){
+    // 2026-10-13 起用 ExcelJS 產生有顏色、有排版的檔案；載不到時退回舊版（純文字）
+    if (window.ExcelJS) {
+      return X.buildWorkbook(ExcelJS, d).xlsx.writeBuffer().then(function(buf){
+        var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+        a.download = '消失的實驗數據_' + d.id + '.xlsx'; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+      });
+    }
+    if (!window.XLSX) { alert('Excel 工具還沒載入完成，請確認網路後重新整理頁面'); return Promise.resolve(); }
+    var wb = XLSX.utils.book_new();
+    X.sheets(d).forEach(function(s){ var ws = XLSX.utils.aoa_to_sheet(s.aoa); ws['!cols'] = s.cols.map(function(w){ return { wch:w }; }); XLSX.utils.book_append_sheet(wb, ws, s.name); });
+    XLSX.writeFile(wb, '消失的實驗數據_' + d.id + '.xlsx'); return Promise.resolve();
+  };
 
   // ---------- 學生連結與 QR Code ----------
   function updateLink(){
@@ -409,9 +493,7 @@ td.cl{color:var(--ok);font-weight:700}
 
   function dlStudent(id){
     if (!window.XLSX) return;
-    var d = X.generate(id), wb = XLSX.utils.book_new();
-    X.sheets(d).forEach(function(s){ var ws = XLSX.utils.aoa_to_sheet(s.aoa); ws['!cols'] = s.cols.map(function(w){ return { wch:w }; }); XLSX.utils.book_append_sheet(wb, ws, s.name); });
-    XLSX.writeFile(wb, '消失的實驗數據_' + d.id + '.xlsx');
+    downloadData(X.generate(id)).catch(function(e){ console.error(e); alert('產生 Excel 時發生問題'); });
   }
 
   // ---------- 批次驗證 ----------

@@ -8,9 +8,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="excel-rescue-core.js"></script>
-<script src="excel-rescue-checker.js"></script>
+<script src="excel-rescue-core.js?v=20261013a"></script>
+<script src="excel-rescue-checker.js?v=20261013a"></script>
 <style>
 :root{
   --ink:#1c2230; --ink2:#2b3346; --paper:#f3ead6; --paper2:#e9dcc0; --line:#cbb88f;
@@ -294,16 +295,20 @@ button{font:inherit;cursor:pointer}
   $('btnOut').onclick = function(){ $('vMain').classList.add('hidden'); $('vLogin').classList.remove('hidden'); $('certBox').innerHTML=''; };
 
   // ---------- 下載專屬 Excel ----------
-  $('btnDl').onclick = function(){
-    if (!window.XLSX) { alert('Excel 工具還沒載入完成，請確認網路後重新整理頁面'); return; }
+  var downloadData = function(d){
+    // 2026-10-13 起用 ExcelJS 產生有顏色、有排版的檔案；載不到時退回舊版（純文字）
+    if (window.ExcelJS) {
+      return X.buildWorkbook(ExcelJS, d).xlsx.writeBuffer().then(function(buf){
+        var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+        a.download = '消失的實驗數據_' + d.id + '.xlsx'; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+      });
+    }
+    if (!window.XLSX) { alert('Excel 工具還沒載入完成，請確認網路後重新整理頁面'); return Promise.resolve(); }
     var wb = XLSX.utils.book_new();
-    X.sheets(data).forEach(function(s){
-      var ws = XLSX.utils.aoa_to_sheet(s.aoa);
-      ws['!cols'] = s.cols.map(function(w){ return { wch:w }; });
-      XLSX.utils.book_append_sheet(wb, ws, s.name);
-    });
-    XLSX.writeFile(wb, '消失的實驗數據_' + data.id + '.xlsx');
+    X.sheets(d).forEach(function(s){ var ws = XLSX.utils.aoa_to_sheet(s.aoa); ws['!cols'] = s.cols.map(function(w){ return { wch:w }; }); XLSX.utils.book_append_sheet(wb, ws, s.name); });
+    XLSX.writeFile(wb, '消失的實驗數據_' + d.id + '.xlsx'); return Promise.resolve();
   };
+  $('btnDl').onclick = function(){ downloadData(data).catch(function(e){ console.error(e); alert('產生 Excel 時發生問題，請重新整理再試一次'); }); };
 
   // ---------- 上傳作業自我檢查（檔案只在你的瀏覽器裡檢查，不會上傳） ----------
   $('btnCheck').onclick = function(){
