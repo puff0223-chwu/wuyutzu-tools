@@ -32,9 +32,11 @@ const ERR = {
 export const authErr = (e) => ERR[e && e.code] || ('登入失敗：' + ((e && (e.code || e.message)) || e));
 
 export async function openFirebase(name) {
-  const [{ initializeApp, getApps }, A, D] = await loadLibs();
-  const app = getApps().find((a) => a.name === name) || initializeApp(firebaseConfig, name);
+  const [{ initializeApp, getApps, deleteApp }, A, D] = await loadLibs();
+  const old = getApps().find((a) => a.name === name);
+  const app = old || initializeApp(firebaseConfig, name);
   const auth = A.getAuth(app), db = D.getDatabase(app);
+  if (old) D.goOnline(db); // 同名的連線之前被關過的話，先接回來（不然讀寫會一直等）
   A.getRedirectResult(auth).catch(() => {}); // Google 整頁跳轉回來時，把登入結果收下
   const google = async () => {
     const p = new A.GoogleAuthProvider(); p.setCustomParameters({ prompt: 'select_account' });
@@ -57,8 +59,9 @@ export async function openFirebase(name) {
     update: (p, v) => D.update(D.ref(db, p), v),
     remove: (p) => D.remove(D.ref(db, p)),
     listen: (p, cb, onErr) => D.onValue(D.ref(db, p), (s) => cb(s.val()), (e) => (onErr ? onErr(e) : cb(null))),
-    // 用完就關（例如搬家用的第二個登入），不佔 Firebase 同時連線數
-    close: async () => { try { await A.signOut(auth); } catch (e) { } try { D.goOffline(db); } catch (e) { } }
+    // 用完就整個拆掉（例如搬家用的第二個登入），不佔 Firebase 同時連線數；下次 openFirebase 同名會重新建立
+    // ⚠ 2026-10-13 修正：原本只 goOffline，第二次搬家拿到同一條「已關掉」的連線，寫入一直等 → 卡住
+    close: async () => { try { await A.signOut(auth); } catch (e) { } try { await deleteApp(app); } catch (e) { try { D.goOffline(db); } catch (x) { } } }
   };
 }
 

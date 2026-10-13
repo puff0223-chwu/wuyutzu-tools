@@ -73,7 +73,7 @@ const S = { user: null, rec: null, unsubs: [], tab: 'pending', all: {}, ver: {},
 let FB, authErr = (e) => String(e && (e.code || e.message) || e), gBtn = () => '';
 
 try {
-  const M = await import('./fb.js?v=20261013c');
+  const M = await import('./fb.js?v=20261013d');
   FB = await M.openFirebase('account'); authErr = M.authErr; gBtn = M.googleButtonHTML;
 } catch (e) { console.warn(e); FB = null; }
 
@@ -206,6 +206,7 @@ function renderAdmin() {
   S.unsubs.push(FB.listen('sys/retired', (v) => { S.retired = v || {}; if (S.tab === 'move' && !S.moving) drawAdmin(); }));
 }
 function drawAdmin() {
+  if (S.moving && S.tab === 'move') return; // 搬家中不重畫（按鈕、紀錄維持原樣），搬完會自己重畫
   const all = Object.entries(S.all).map(([uid, r]) => ({ uid, ...r })).sort((a, b) => (b.at || 0) - (a.at || 0));
   const groups = { pending: all.filter((x) => x.status === 'pending'), approved: all.filter((x) => x.status === 'approved'), off: all.filter((x) => x.status === 'rejected' || x.status === 'disabled'), more: Object.keys(S.req).filter((uid) => S.all[uid]) };
   const tab = S.tab;
@@ -254,24 +255,25 @@ function moveHTML() {
   return `<div class="mem"><p class="small">以前每個系統有自己的專用帳號。搬家會把它的<b>班級、題庫、照片、活動紀錄、學期清單</b>都改到主帳號（${esc(S.user.email)}）名下：學生連結、活動代碼都不會變。搬完舊帳號就退休（不能再用來開系統）。</p>
     <div class="small muted" style="margin:6px 0 10px">需要舊帳號的密碼（只用來登入讀資料，不會存起來）。搬到一半斷線也沒關係，再按一次會從頭檢查、補完。</div>
     ${Object.entries(W.APPS).map(([k, a]) => `<div class="row" style="border-top:1px dashed var(--line);padding:10px 0"><b style="min-width:150px">${a.name}</b><code class="small">${esc(a.legacy)}</code><span class="sp"></span>${ret[k] ? '<span class="chip ok">✅ 已搬家</span>' : `<input type="password" placeholder="舊帳號密碼" data-mpw="${k}" style="width:150px;padding:6px 10px"><button class="btn sm" data-mgo="${k}">🚚 搬家</button>`}</div>`).join('')}
-    <div id="mLog" class="small" style="margin-top:10px;white-space:pre-wrap;background:#f3eee2;border-radius:10px;padding:10px;display:none;max-height:320px;overflow:auto"></div></div>`;
+    <div id="mLog" class="small" style="margin-top:10px;white-space:pre-wrap;background:#f3eee2;border-radius:10px;padding:10px;${S.moveLog ? '' : 'display:none;'}max-height:320px;overflow:auto">${esc(S.moveLog || '')}</div></div>`;
 }
 function bindMove() {
   $$('[data-mgo]').forEach((b) => { b.onclick = async () => {
     const k = b.dataset.mgo, pw = $(`[data-mpw="${k}"]`).value; if (!pw) return toast('請輸入舊帳號的密碼', true);
-    const box = $('#mLog'); box.style.display = ''; box.textContent = '';
-    const log = (t) => { box.textContent += t + '\n'; box.scrollTop = box.scrollHeight; };
+    S.moveLog = ''; const box = $('#mLog'); box.style.display = ''; box.textContent = '';
+    const log = (t) => { S.moveLog += t + '\n'; const b = $('#mLog'); if (b) { b.textContent = S.moveLog; b.scrollTop = b.scrollHeight; } };
     S.moving = true; $$('[data-mgo]').forEach((x) => { x.disabled = true; });
     try { await runMove(W.APPS[k].legacy, pw, k, log); toast('🎉 搬家完成'); }
     catch (e) { log('❌ ' + (e.code ? authErr(e) : (e.message || e))); toast('搬家沒有完成，請看紀錄', true); }
-    S.moving = false; $$('[data-mgo]').forEach((x) => { x.disabled = false; });
+    // ⚠ 2026-10-13 修正：搬家中收到「已退休」的更新會先略過，所以搬完一定要自己重畫一次（紀錄保留在 S.moveLog）
+    S.moving = false; drawAdmin();
   }; });
 }
 // 在一包資料裡找出座位大作戰的暗標代碼、遺落的地點的照片編號
 function findBidCodes(o, out) { out = out || new Set(); if (o && typeof o === 'object') { if (o.bid && typeof o.bid.code === 'string' && /^[2-9A-HJ-NP-Z]{6}$/.test(o.bid.code)) out.add(o.bid.code); Object.values(o).forEach((v) => findBidCodes(v, out)); } return out; }
 const findPhotoIds = (o) => new Set(Array.from(JSON.stringify(o || {}).matchAll(/"f:([a-z0-9]{8,24})"/g), (m) => m[1]));
 async function runMove(email, pw, appKey, log) {
-  const M = await import('./fb.js?v=20261013c');
+  const M = await import('./fb.js?v=20261013d');
   const OLD = await M.openFirebase('move'), mu = S.user.uid;
   try {
     log('🔑 登入舊帳號 ' + email + '…');
