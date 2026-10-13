@@ -62,18 +62,32 @@ td .dl{border:0;background:none;cursor:pointer;font-size:1rem}
 .semcard{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .semcard input{width:150px;font-family:"JetBrains Mono",monospace;font-weight:700;text-transform:uppercase}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-.semlist{display:flex;flex-direction:column;gap:8px;margin:8px 0 14px}
-.semitem{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fffaf0;border:2px solid var(--line);border-radius:10px;padding:10px 14px}
-.semitem.cur{border-color:var(--ink);background:#fff;box-shadow:4px 4px 0 var(--brass)}
-.semitem .code{font-family:"JetBrains Mono",monospace;font-weight:800;font-size:1.25rem;color:var(--ink);min-width:110px}
-.semitem .meta{flex:1;min-width:160px;color:var(--muted);font-size:.9rem}
+.semlist{border:2px solid var(--line);border-radius:10px;overflow:hidden;background:#fffaf0;margin:8px 0 10px}
+.semitem{display:flex;align-items:center;gap:10px;padding:5px 8px 5px 12px;border-top:1px solid var(--line);cursor:pointer;min-height:40px}
+.semitem:first-child{border-top:none}
+.semitem:hover{background:#fff}
+.semitem.cur{background:#fff;box-shadow:inset 5px 0 0 var(--brass);cursor:default}
+.semitem .dot{width:13px;height:13px;border-radius:50%;border:2px solid #b9a77f;flex:none}
+.semitem.cur .dot{border-color:var(--ink);background:var(--brass)}
+.semitem .code{font-family:"JetBrains Mono",monospace;font-weight:800;font-size:1rem;color:var(--ink);min-width:92px}
+.semitem .meta{flex:1;min-width:0;color:var(--muted);font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .semitem .meta b{color:var(--text)}
-.semitem .badge{background:var(--ink);color:var(--brass);border-radius:20px;padding:2px 12px;font-weight:800;font-size:.85rem}
-.semitem .act{display:flex;gap:6px}
+.semitem .tag{display:inline-block;font-size:.74rem;border-radius:999px;padding:1px 8px;background:#efe6d2;color:var(--text);margin-right:4px}
+.semitem .tag.on{background:var(--ink);color:var(--brass);font-weight:800}
+.semitem .date{font-size:.76rem;color:var(--muted);white-space:nowrap}
+.semitem .ib{border:none;background:none;cursor:pointer;opacity:.4;padding:4px 7px;font-size:.95rem;border-radius:6px;line-height:1}
+.semitem .ib:hover{opacity:1;background:#efe6d2}
+.semitem .ib.del:hover{background:#f6d9d5}
+.semmore{display:block;width:100%;border:none;border-top:1px solid var(--line);background:#f7efdc;color:var(--muted);padding:6px;font-size:.85rem;cursor:pointer}
+.semmore:hover{background:#fff;color:var(--ink)}
+@media (max-width:560px){.semitem .date{display:none}.semitem .meta{white-space:normal}}
 .btn.sm{padding:5px 12px;font-size:.9rem}
 .btn.danger{background:transparent;color:var(--stamp);border:2px solid var(--stamp)}
 .btn.danger:hover{background:var(--stamp);color:#fff}
-.semadd{border-top:2px dashed var(--line);padding-top:12px}
+.semadd>summary{cursor:pointer;font-weight:800;display:inline-block;border:2px dashed #b9a77f;border-radius:8px;padding:4px 12px;color:var(--ink);list-style:none}
+.semadd>summary::-webkit-details-marker{display:none}
+.semadd[open]>summary{border-style:solid;background:#fffaf0}
+.semadd .semin{border:2px dashed var(--line);border-radius:10px;padding:10px 12px;margin-top:8px}
 .semrow{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 6px}
 .semrow input{flex:1;min-width:150px}
 .chipb{border:2px solid var(--line);background:#fffaf0;border-radius:20px;padding:2px 12px;font-family:"JetBrains Mono",monospace;font-weight:700;cursor:pointer;color:var(--ink)}
@@ -195,19 +209,21 @@ td.cl{color:var(--ok);font-weight:700}
   <section data-tab="setup" class="on">
   <div class="paper" id="semBox">
     <h2>📅 學期管理</h2>
-    <p class="note" style="margin-top:-4px">每個學期（或班級）有一套自己的數據、答案和結案代碼。點「切換」就換成那個學期，學生連結與 QR Code 會跟著換。</p>
+    <p class="note" style="margin-top:-4px">每個學期（或班級）有自己的數據、答案和結案代碼。<b>點一下</b>就切換過去，學生連結與 QR Code 會跟著換。</p>
     <div id="semList" class="semlist"></div>
-    <div class="semadd">
-      <b>➕ 新增學期</b>
+    <details class="semadd" id="semAdd">
+      <summary>➕ 新增學期</summary>
+      <div class="semin">
       <div class="semrow">
         <input id="semIn" maxlength="16" placeholder="學期代碼，例：115-2">
         <input id="semNote" maxlength="20" placeholder="備註（選填），例：二年級探究">
         <button class="btn" id="btnSem">新增並切換</button>
       </div>
       <div class="chips" id="semSug"></div>
-      <span class="note" id="semMsg" style="margin:0"></span>
-      <p class="note" style="margin:4px 0 0">只能用英文、數字和「-」。同一學期不同班想用不同數據，就在後面加班級代號，例如 <span class="mono">115-2A</span>、<span class="mono">115-2B</span>。</p>
-    </div>
+      <p class="note" style="margin:6px 0 0">只能用英文、數字和「-」。同一學期不同班想用不同數據，就在後面加班級代號，例如 <span class="mono">115-2A</span>、<span class="mono">115-2B</span>。</p>
+      </div>
+    </details>
+    <span class="note" id="semMsg" style="margin:6px 0 0;display:block"></span>
   </div>
 
   <div class="paper" id="shareBox">
@@ -372,28 +388,32 @@ td.cl{color:var(--ok);font-weight:700}
     }
     return true;
   }
+  var semAll = false;
   function renderChips(){
     var cur = X.CONFIG.SEMESTER, a = loadSems();
     a.sort(function(x, y){ return (x.code === cur ? -1 : y.code === cur ? 1 : 0) || (y.at || 0) - (x.at || 0); });
-    $('semList').innerHTML = a.map(function(x){
+    // 2026-10-13 精簡版：一列一個學期，點整列就切換；備註、刪除是小圖示；超過 5 個先收起來
+    var LIMIT = 5, hidden = Math.max(0, a.length - LIMIT), show = semAll || !hidden ? a : a.slice(0, LIMIT);
+    $('semList').innerHTML = show.map(function(x){
       var on = x.code === cur;
-      return '<div class="semitem'+(on?' cur':'')+'"><span class="code">'+esc(x.code)+'</span>'+
-        '<span class="meta">'+(x.legacy ? '<span title="帳號版之前發出的連結（沒有老師代碼），舊資料都在這裡">🕰️ 舊版連結</span>　' : '')+(x.t ? '<span title="從舊帳號搬來的學期，學生連結沿用當時的老師代碼">🔁 代碼 '+esc(x.t)+'</span>　' : '')+(x.note ? '<b>'+esc(x.note)+'</b>　' : '')+'建立於 '+new Date(x.at || Date.now()).toLocaleDateString('zh-TW')+'</span>'+
-        (on ? '<span class="badge">✔ 使用中</span>' : '')+
-        '<span class="act">'+(on ? '' : '<button class="btn sm" data-sw="'+esc(x.code)+'">切換</button>')+
-        '<button class="btn sm ghost" data-note="'+esc(x.code)+'" title="改備註">✏️ 備註</button>'+
-        '<button class="btn sm danger" data-del="'+esc(x.code)+'" title="從清單刪除">🗑</button></span></div>';
-    }).join('');
+      return '<div class="semitem'+(on?' cur':'')+'"'+(on ? ' title="目前使用中的學期"' : ' data-sw="'+esc(x.code)+'" title="點一下切換到 '+esc(x.code)+'"')+'>'+
+        '<span class="dot"></span><span class="code">'+esc(x.code)+'</span>'+
+        '<span class="meta">'+(on ? '<span class="tag on">使用中</span>' : '')+(x.legacy ? '<span class="tag" title="帳號版之前發出的連結（沒有老師代碼），舊資料都在這裡">🕰️ 舊版連結</span>' : '')+(x.t ? '<span class="tag" title="從舊帳號搬來的學期，學生連結沿用當時的老師代碼">🔁 '+esc(x.t)+'</span>' : '')+(x.note ? '<b>'+esc(x.note)+'</b>' : '')+'</span>'+
+        '<span class="date">'+new Date(x.at || Date.now()).toLocaleDateString('zh-TW')+'</span>'+
+        '<button class="ib" data-note="'+esc(x.code)+'" title="改備註" aria-label="改備註">✏️</button>'+
+        '<button class="ib del" data-del="'+esc(x.code)+'" title="從清單刪除" aria-label="刪除">🗑</button></div>';
+    }).join('') + (hidden ? '<button class="semmore" id="semMore">'+(semAll ? '▴ 收起來' : '▾ 顯示其他 '+hidden+' 個學期')+'</button>' : '');
+    if ($('semMore')) $('semMore').onclick = function(){ semAll = !semAll; renderChips(); };
     $('semSug').innerHTML = suggestSems().map(function(x){ return '<button class="chipb" data-sug="'+esc(x)+'">'+esc(x)+'</button>'; }).join('');
     if ($('semSug').innerHTML) $('semSug').insertAdjacentHTML('afterbegin', '<span class="note" style="margin:0">建議：</span>');
     Array.prototype.forEach.call(document.querySelectorAll('[data-sug]'), function(b){ b.onclick = function(){ $('semIn').value = b.getAttribute('data-sug'); $('semNote').focus(); }; });
-    Array.prototype.forEach.call(document.querySelectorAll('[data-sw]'), function(b){ b.onclick = function(){ applySemester(b.getAttribute('data-sw')); }; });
-    Array.prototype.forEach.call(document.querySelectorAll('[data-note]'), function(b){ b.onclick = function(){
+    Array.prototype.forEach.call(document.querySelectorAll('[data-sw]'), function(b){ b.onclick = function(e){ if (e.target.closest('.ib')) return; applySemester(b.getAttribute('data-sw')); }; });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-note]'), function(b){ b.onclick = function(e){ e.stopPropagation();
       var code = b.getAttribute('data-note'), a2 = loadSems(), it = a2.filter(function(x){ return x.code === code; })[0]; if (!it) return;
       var n = prompt('「' + code + '」的備註（例：二年級探究、302 班）', it.note || ''); if (n === null) return;
       it.note = String(n).trim().slice(0, 20); saveSems(a2); renderChips();
     }; });
-    Array.prototype.forEach.call(document.querySelectorAll('[data-del]'), function(b){ b.onclick = function(){
+    Array.prototype.forEach.call(document.querySelectorAll('[data-del]'), function(b){ b.onclick = function(e){ e.stopPropagation();
       var code = b.getAttribute('data-del'), a2 = loadSems();
       if (code === X.CONFIG.SEMESTER && a2.length === 1) { alert('這是唯一的學期，不能刪除。先新增另一個學期再刪。'); return; }
       if (!confirm('從清單刪除學期「' + code + '」？\n\n・只會從你的學期清單移除\n・學生的闖關紀錄還留在雲端，之後重新新增「' + code + '」就會再看到\n・學生手上的連結還是能用')) return;
@@ -408,7 +428,7 @@ td.cl{color:var(--ok);font-weight:700}
     var a = loadSems(), it = a.filter(function(x){ return x.code === code; })[0];
     if (it) { if (note) it.note = note; } else a.push({ code: code, note: note, at: Date.now() });
     saveSems(a);
-    if (applySemester(code)) { $('semIn').value = ''; $('semNote').value = ''; if (it) { $('semMsg').className='note good'; $('semMsg').textContent='「' + code + '」已經在清單裡，已切換過去'; } }
+    if (applySemester(code)) { $('semIn').value = ''; $('semNote').value = ''; $('semAdd').open = false; if (it) { $('semMsg').className='note good'; $('semMsg').textContent='「' + code + '」已經在清單裡，已切換過去'; } }
   }
   $('btnSem').onclick = addSemester;
   $('semIn').addEventListener('keydown', function(e){ if (e.key === 'Enter') addSemester(); });
