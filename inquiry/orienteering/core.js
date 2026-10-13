@@ -221,6 +221,7 @@
     // 「就近派發」：仍然換區域，但優先挑離上一關近的區域（時間短時少跑一點路）
     const near = S.route === 'near', centers = near ? zoneCenters(bank) : null, here = near && recent[0] && centers[recent[0]];
     const answers = [];
+    const gap0 = 0.55 * Math.sqrt(100 * 100 * (bank.map.h / bank.map.w) / K); // 候選點的目標間距（見下方說明）
     for (let n = 0; n < size; n++) {
       const byZone = {};
       pool.filter((p) => !answers.includes(p)).forEach((p) => { (byZone[p.zone] = byZone[p.zone] || []).push(p); });
@@ -239,7 +240,8 @@
         if (sc < bs) { bs = sc; best = z; }
       });
       const inZone = shuffle(byZone[best], rnd).sort((a, b) => (takenByOthers.has(a.key) ? 1 : 0) - (takenByOthers.has(b.key) ? 1 : 0));
-      answers.push(inZone[0]); busy[best] = (busy[best] || 0) + 1;
+      const far = inZone.find((p) => answers.every((a) => dist(bank, p, a) >= gap0)); // 第二張照片的答案也不要貼著第一張
+      const pick = far || inZone[0]; answers.push(pick); busy[best] = (busy[best] || 0) + 1;
     }
     // 候選地點（干擾選項）：可以是任何可用的點，但不放這組已經找過的
     const decoyPool = sortedPoints(bank).filter((p) => usable(p) && !answers.includes(p) && !(team.done || []).includes(p.key));
@@ -252,10 +254,17 @@
     otherZones = otherZones.slice(0, Math.max(0, needZones - ansZones.length));
     const zonesUsed = [...ansZones, ...otherZones];
     const picked = [...answers];
-    otherZones.forEach((z) => { const p = shuffle(dz[z], rnd)[0]; if (p) picked.push(p); });
-    let extra = shuffle(decoyPool.filter((p) => zonesUsed.includes(p.zone) && !picked.includes(p)), rnd);
-    if (picked.length + extra.length < K) extra = extra.concat(shuffle(decoyPool.filter((p) => !picked.includes(p) && !extra.includes(p)), rnd));
-    while (picked.length < K && extra.length) picked.push(extra.shift());
+    // 2026-10-13：候選點彼此要隔開（題庫點越多越容易擠在一起，學生看地圖號碼會疊在一起）
+    //   目標間距＝把地圖平均分給 K 個點時的間距 × 0.55（候選越少、隔越開）；找不到夠遠的點才逐步放寬（×0.8），一定湊得滿 K 個
+    const farEnough = (p, g) => picked.every((q) => dist(bank, p, q) >= g);
+    const pickSpread = (lists) => {
+      for (let g = gap0; g >= 1.5; g *= 0.8) for (const list of lists) { const c = list.find((p) => !picked.includes(p) && farEnough(p, g)); if (c) return c; }
+      for (const list of lists) { const c = list.find((p) => !picked.includes(p)); if (c) return c; }
+      return null;
+    };
+    otherZones.forEach((z) => { const p = pickSpread([shuffle(dz[z], rnd)]); if (p) picked.push(p); });
+    const inUsed = shuffle(decoyPool.filter((p) => zonesUsed.includes(p.zone)), rnd), others = shuffle(decoyPool.filter((p) => !zonesUsed.includes(p.zone)), rnd);
+    while (picked.length < K) { const p = pickSpread([inUsed, others]); if (!p) break; picked.push(p); }
     return { keys: answers.map((a) => a.key), cands: shuffle(picked, rnd).map((p) => p.key) };
   }
 
