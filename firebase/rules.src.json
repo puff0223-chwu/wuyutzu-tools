@@ -321,14 +321,39 @@
    ".read": "{{ADMIN}}",
    "$uid": {
     ".read": "auth != null && auth.uid === $uid",
-    ".write": "auth != null && ({{ADMIN}} || (auth.uid === $uid && (!data.exists() || data.child('status').val() === 'pending')))",
-    ".validate": "{{ADMIN}} || (newData.hasChildren(['email','name','school','purpose','want','at','status']) && newData.child('status').val() === 'pending' && !newData.child('apps').exists() && newData.child('email').val() === auth.token.email && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && newData.child('purpose').isString() && newData.child('purpose').val().length >= 1 && newData.child('purpose').val().length <= 200 && newData.child('at').isNumber())"
+    ".write": "auth != null && ({{ADMIN}} || (auth.uid === $uid && newData.exists()))",
+    ".validate": "{{ADMIN}} || ((!data.exists() || data.child('status').val() === 'pending') && newData.hasChildren(['email','name','school','purpose','want','at','status']) && newData.child('status').val() === 'pending' && !newData.child('apps').exists() && newData.child('email').val() === auth.token.email && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && newData.child('purpose').isString() && newData.child('purpose').val().length >= 1 && newData.child('purpose').val().length <= 200 && newData.child('at').isNumber()) || ((!data.exists() || data.child('status').val() === 'pending') && auth.token.email_verified === true && root.child('staffpre/'+{{EKEY}}).exists() && newData.child('status').val() === 'approved' && newData.child('email').val() === auth.token.email && newData.hasChildren(['email','name','school','at','status','apps']) && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && (!newData.child('apps/excel').exists() || root.child('staffpre/'+{{EKEY}}+'/apps/excel').val() === true) && (!newData.child('apps/gps').exists() || root.child('staffpre/'+{{EKEY}}+'/apps/gps').val() === true) && (!newData.child('apps/seat').exists() || root.child('staffpre/'+{{EKEY}}+'/apps/seat').val() === true)) || (data.exists() && newData.child('status').val() === data.child('status').val() && newData.child('email').val() === data.child('email').val() && newData.child('note').val() === data.child('note').val() && newData.child('apps/excel').val() === data.child('apps/excel').val() && newData.child('apps/gps').val() === data.child('apps/gps').val() && newData.child('apps/seat').val() === data.child('apps/seat').val() && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30)",
+    "apps": {
+     "$app": {
+      ".validate": "$app.matches(/^(excel|gps|seat)$/) && newData.val() === true"
+     }
+    }
+   }
+  },
+  "staffpre": {
+   ".read": "{{ADMIN}}",
+   "$key": {
+    ".read": "auth != null && {{EKEY}} === $key",
+    ".write": "{{ADMIN}} || (auth != null && {{EKEY}} === $key && !newData.exists())",
+    ".validate": "newData.hasChildren(['email','apps','at']) && newData.child('email').isString() && newData.child('email').val().toLowerCase().replace('.', ',') === $key",
+    "apps": {
+     "$app": {
+      ".validate": "$app.matches(/^(excel|gps|seat)$/) && newData.val() === true"
+     }
+    }
+   }
+  },
+  "staffmemo": {
+   ".read": "{{ADMIN}}",
+   "$uid": {
+    ".write": "{{ADMIN}}",
+    ".validate": "newData.isString() && newData.val().length <= 500"
    }
   },
   "staffv": {
    ".read": "{{ADMIN}}",
    "$uid": {
-    ".write": "auth != null && auth.uid === $uid && newData.val() === true && auth.token.email_verified === true"
+    ".write": "{{ADMIN}} || (auth != null && auth.uid === $uid && newData.val() === true && auth.token.email_verified === true)"
    }
   },
   "staffreq": {

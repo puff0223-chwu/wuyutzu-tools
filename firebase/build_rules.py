@@ -9,6 +9,7 @@
   {{STAFF:app}}      可以使用某系統的老師：管理員、該系統的舊專用帳號（還沒搬家退休）、或會員中心核准且開通該系統
   {{XFER:節點}}       舊帳號搬家：管理員可以接手「已登記搬家（xfer/<舊uid>）」的舊帳號資料
   {{LEGACY_ANY}}     三個舊專用帳號（+seat、+gps、+excel）之一
+  {{EKEY}}           登入者 Email 當成資料位置的寫法（小寫、. 換成 ,），預先開通 staffpre/<EKEY> 用
 
 用法：python3 firebase/build_rules.py   → 產生 repo 根目錄的 firebase-rules.json
 """
@@ -31,10 +32,11 @@ def xfer(node):
 
 
 LEGACY_ANY = '(' + ' || '.join(f"auth.token.email === '{e}'" for e in LEGACY.values()) + ')'
+EKEY = "auth.token.email.toLowerCase().replace('.', ',')"
 
 
 def expand(s):
-    s = s.replace('{{ADMIN}}', ADMIN).replace('{{LEGACY_ANY}}', LEGACY_ANY)
+    s = s.replace('{{ADMIN}}', ADMIN).replace('{{LEGACY_ANY}}', LEGACY_ANY).replace('{{EKEY}}', EKEY)
     s = re.sub(r'\{\{STAFF:(\w+)\}\}', lambda m: staff(m.group(1)), s)
     s = re.sub(r"\{\{XFER:(data\.child\('[\w/]+'\))\}\}", lambda m: xfer(m.group(1)), s)
     return s

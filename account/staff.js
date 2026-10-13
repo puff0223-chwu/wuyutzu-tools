@@ -16,6 +16,8 @@
   function isAdmin(user) { return !!user && lower(user.email) === ADMIN && user.emailVerified === true; }
   // 舊的系統專用帳號（不管退休了沒）；要不要放行還要看 sys/retired
   function isOwner(user, app) { return !!user && !!APPS[app] && lower(user.email) === APPS[app].legacy; }
+  // Email 當成資料位置的寫法（小寫、. 換成 ,）：預先開通 staffpre/<ekey>，規則裡用同樣的算法核對
+  function ekey(email) { return lower(email).replace(/\./g, ','); }
   function legacyApp(user) { for (var k in APPS) if (isOwner(user, k)) return k; return ''; }
   // getFn(path) → Promise(value)；回傳 { ok, rec, reason }
   function check(getFn, user, app) {
@@ -27,7 +29,10 @@
       return Promise.resolve(getFn('staff/' + user.uid)).then(function (rec) {
         if (rec && rec.status === 'approved' && rec.apps && rec.apps[app]) return { ok: true, rec: rec };
         if (leg === 'retired') return { ok: false, rec: rec, reason: 'retired' };
-        if (!rec) return { ok: false, reason: 'none' };
+        if (!rec || rec.status === 'pending') {
+          // 管理員預先開通了這個 Email → 請他到會員中心啟用（第一次登入，一下子就好）
+          return Promise.resolve(getFn('staffpre/' + ekey(user.email))).then(function (pre) { return pre ? { ok: false, rec: rec, reason: 'pre' } : (rec ? { ok: false, rec: rec, reason: 'pending' } : { ok: false, reason: 'none' }); }, function () { return rec ? { ok: false, rec: rec, reason: 'pending' } : { ok: false, reason: 'none' }; });
+        }
         return { ok: false, rec: rec, reason: rec.status === 'approved' ? 'noapp' : rec.status || 'none' };
       });
     }).catch(function () { return { ok: false, reason: 'error' }; });
@@ -43,6 +48,7 @@
       noapp: '你的帳號已核准，但還沒有開通' + a.name + '。可以到會員中心申請加開。',
       rejected: '你的帳號申請沒有通過。如有疑問請聯絡巫魚子老師。',
       disabled: '你的帳號已暫停使用。如有疑問請聯絡巫魚子老師。',
+      pre: '🎫 巫魚子老師已經幫你開通了！請到會員中心按一下就能啟用（第一次需要）。',
       retired: '這個舊的系統專用帳號已經搬家到主帳號，資料都在主帳號裡了。請登出，改用主帳號（Google 登入）。',
       error: '讀取帳號資料失敗（可能是網路問題），請重新整理。'
     }[res.reason] || '這個帳號目前不能使用' + a.name + '。';
@@ -50,8 +56,8 @@
       '<div style="font-size:2.4em">🔐</div><h2 style="margin:6px 0">' + a.name + '</h2>' +
       (email ? '<div style="color:#7a8196;font-size:.9em">目前登入：' + String(email).replace(/</g, '&lt;') + '</div>' : '') +
       '<p style="margin:12px 0">' + msg + '</p>' +
-      '<a href="' + url + '" style="display:inline-block;background:#f2b134;border:2px solid #1f2a44;border-radius:10px;padding:8px 16px;font-weight:900;color:#1f2a44;text-decoration:none">👥 前往會員中心</a> ' +
+      '<a href="' + url + '" style="display:inline-block;background:#f2b134;border:2px solid #1f2a44;border-radius:10px;padding:8px 16px;font-weight:900;color:#1f2a44;text-decoration:none">' + (res.reason === 'pre' ? '🎫 到會員中心啟用' : '👥 前往會員中心') + '</a> ' +
       '<button data-staff-logout style="background:#fff;border:2px solid #1f2a44;border-radius:10px;padding:8px 14px;font-weight:700;cursor:pointer;margin-left:6px">登出</button></div>';
   }
-  root.WuStaff = { ADMIN: ADMIN, APPS: APPS, STATUS: STATUS, isAdmin: isAdmin, isOwner: isOwner, legacyApp: legacyApp, check: check, centerURL: centerURL, blockedHTML: blockedHTML };
+  root.WuStaff = { ADMIN: ADMIN, APPS: APPS, STATUS: STATUS, isAdmin: isAdmin, isOwner: isOwner, legacyApp: legacyApp, ekey: ekey, check: check, centerURL: centerURL, blockedHTML: blockedHTML };
 })(this);

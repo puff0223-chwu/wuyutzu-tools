@@ -321,14 +321,39 @@
    ".read": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true)",
    "$uid": {
     ".read": "auth != null && auth.uid === $uid",
-    ".write": "auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (auth.uid === $uid && (!data.exists() || data.child('status').val() === 'pending')))",
-    ".validate": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (newData.hasChildren(['email','name','school','purpose','want','at','status']) && newData.child('status').val() === 'pending' && !newData.child('apps').exists() && newData.child('email').val() === auth.token.email && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && newData.child('purpose').isString() && newData.child('purpose').val().length >= 1 && newData.child('purpose').val().length <= 200 && newData.child('at').isNumber())"
+    ".write": "auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (auth.uid === $uid && newData.exists()))",
+    ".validate": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || ((!data.exists() || data.child('status').val() === 'pending') && newData.hasChildren(['email','name','school','purpose','want','at','status']) && newData.child('status').val() === 'pending' && !newData.child('apps').exists() && newData.child('email').val() === auth.token.email && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && newData.child('purpose').isString() && newData.child('purpose').val().length >= 1 && newData.child('purpose').val().length <= 200 && newData.child('at').isNumber()) || ((!data.exists() || data.child('status').val() === 'pending') && auth.token.email_verified === true && root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')).exists() && newData.child('status').val() === 'approved' && newData.child('email').val() === auth.token.email && newData.hasChildren(['email','name','school','at','status','apps']) && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && (!newData.child('apps/excel').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/excel').val() === true) && (!newData.child('apps/gps').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/gps').val() === true) && (!newData.child('apps/seat').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/seat').val() === true)) || (data.exists() && newData.child('status').val() === data.child('status').val() && newData.child('email').val() === data.child('email').val() && newData.child('note').val() === data.child('note').val() && newData.child('apps/excel').val() === data.child('apps/excel').val() && newData.child('apps/gps').val() === data.child('apps/gps').val() && newData.child('apps/seat').val() === data.child('apps/seat').val() && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30)",
+    "apps": {
+     "$app": {
+      ".validate": "$app.matches(/^(excel|gps|seat)$/) && newData.val() === true"
+     }
+    }
+   }
+  },
+  "staffpre": {
+   ".read": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true)",
+   "$key": {
+    ".read": "auth != null && auth.token.email.toLowerCase().replace('.', ',') === $key",
+    ".write": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (auth != null && auth.token.email.toLowerCase().replace('.', ',') === $key && !newData.exists())",
+    ".validate": "newData.hasChildren(['email','apps','at']) && newData.child('email').isString() && newData.child('email').val().toLowerCase().replace('.', ',') === $key",
+    "apps": {
+     "$app": {
+      ".validate": "$app.matches(/^(excel|gps|seat)$/) && newData.val() === true"
+     }
+    }
+   }
+  },
+  "staffmemo": {
+   ".read": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true)",
+   "$uid": {
+    ".write": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true)",
+    ".validate": "newData.isString() && newData.val().length <= 500"
    }
   },
   "staffv": {
    ".read": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true)",
    "$uid": {
-    ".write": "auth != null && auth.uid === $uid && newData.val() === true && auth.token.email_verified === true"
+    ".write": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (auth != null && auth.uid === $uid && newData.val() === true && auth.token.email_verified === true)"
    }
   },
   "staffreq": {

@@ -15,6 +15,7 @@ button,input,textarea,select{font:inherit;color:inherit}
 .top{background:var(--ink);color:#fff;padding:10px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 3px 0 var(--gold)}
 .top .brand{font-weight:900;font-size:1.1em}.top .brand small{display:block;font-family:'Bebas Neue',sans-serif;letter-spacing:.2em;color:var(--gold);font-size:.7em;font-weight:400}
 .top .sp{flex:1}.top a{color:#fff;text-decoration:none;border:1.5px solid rgba(255,255,255,.5);border-radius:10px;padding:4px 12px;font-weight:700;font-size:.9em}
+.top button,.top a{white-space:nowrap}
 .top button{background:none;border:1.5px solid rgba(255,255,255,.5);color:#fff;border-radius:10px;padding:4px 12px;cursor:pointer;font-size:.9em}
 .wrap{max-width:980px;margin:0 auto;padding:20px}
 .card{background:var(--paper);border:2px solid var(--ink);border-radius:16px;box-shadow:4px 4px 0 var(--ink);padding:22px;margin:16px 0}
@@ -42,7 +43,7 @@ a.btn{text-decoration:none;color:var(--ink)}
 .app b{display:block}.app span{font-size:.85em;color:var(--muted)}
 .app.on{border-color:var(--ink);background:var(--gold-soft)}
 .chip{display:inline-block;border-radius:999px;padding:1px 10px;font-size:.82em;font-weight:700;background:#eee}
-.chip.ok{background:var(--teal);color:#fff}.chip.wait{background:var(--gold-soft);color:#8a5a00}.chip.bad{background:var(--red);color:#fff}.chip.ink{background:var(--ink);color:var(--gold)}
+.chip.ok{background:var(--teal);color:#fff}.chip.pre{background:#efe6ff;color:#5b3d99}.chip.wait{background:var(--gold-soft);color:#8a5a00}.chip.bad{background:var(--red);color:#fff}.chip.ink{background:var(--ink);color:var(--gold)}
 .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 4px}
 .tabs button{border:2px solid var(--ink);background:#fff;border-radius:999px;padding:5px 14px;font-weight:700;cursor:pointer}
 .tabs button.on{background:var(--ink);color:#fff}
@@ -54,6 +55,26 @@ a.btn{text-decoration:none;color:var(--ink)}
 .ck input{width:16px;height:16px}
 .mylinks a{display:flex;align-items:center;gap:10px;border:2px solid var(--ink);border-radius:12px;padding:12px 14px;background:#fff;text-decoration:none;color:var(--ink);margin-top:8px;box-shadow:2px 2px 0 var(--ink)}
 .mylinks a b{font-size:1.05em}.mylinks a span{color:var(--muted);font-size:.86em}
+.lbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0 6px}
+.lbar input{flex:1;min-width:200px;border:2px solid var(--line);border-radius:10px;padding:8px 12px;background:#fff}
+.fchips{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px}
+.fchips button{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:3px 12px;font-size:.88em;cursor:pointer}
+.fchips button.on{border-color:var(--ink);background:var(--ink);color:#fff}
+.tblw{overflow-x:auto;border:2px solid var(--line);border-radius:12px;background:#fff}
+table.tbl{width:100%;border-collapse:collapse;font-size:.92em;min-width:720px}
+.tbl th{background:#f3eee2;text-align:left;padding:8px 10px;font-size:.88em;color:var(--ink2);white-space:nowrap}
+.tbl td{padding:9px 10px;border-top:1px solid var(--line);vertical-align:top}
+.tbl tr.pre td{background:#fbf7ff}
+.tbl .memo{font-size:.82em;color:#6b4fa0;margin-top:3px}
+.tbl .apps-i{font-size:1.15em;letter-spacing:2px;white-space:nowrap}
+.modal{position:fixed;inset:0;background:rgba(31,42,68,.55);display:flex;align-items:flex-start;justify-content:center;z-index:50;overflow:auto;padding:5vh 12px}
+.modal .box{background:var(--paper);border:2px solid var(--ink);border-radius:16px;box-shadow:6px 6px 0 var(--ink);padding:20px 22px;width:min(560px,100%);position:relative}
+.modal .x{position:absolute;right:12px;top:10px;border:none;background:none;font-size:1.3em;cursor:pointer}
+.modal .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.modal select{width:100%;border:2px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff}
+.modal .ro{background:#f3eee2;border-radius:10px;padding:8px 12px;font-size:.9em;white-space:pre-wrap}
+.modal .hint{font-size:.82em;color:var(--muted);margin-top:3px}
+@media (max-width:560px){.modal .grid2{grid-template-columns:1fr}}
 .toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:12px;z-index:99;box-shadow:3px 3px 0 var(--gold);font-weight:700}
 .toast.err{background:var(--red)}
 </style>
@@ -61,7 +82,7 @@ a.btn{text-decoration:none;color:var(--ink)}
 <body>
 <div class="top"><div class="brand">👥 會員中心<small>WU YU-ZI TEACHING STUDIO</small></div><span class="sp"></span><span id="who" class="small" style="opacity:.8"></span><button id="out" style="display:none">登出</button><a id="back" href="#" style="display:none"></a></div>
 <div class="wrap" id="app"><p class="muted" style="text-align:center;margin-top:20vh">載入中…</p></div>
-<script src="staff.js?v=20261013c"></script>
+<script src="staff.js?v=20261013e"></script>
 <script type="module">
 const W = window.WuStaff, $ = (s, el) => (el || document).querySelector(s), $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -154,9 +175,11 @@ function renderRegister() {
 
 // ---------- 登入後 ----------
 async function enter(user) {
+  if (S.user && S.user.uid === user.uid && S.entered) return; S.entered = true;
   stop(); S.user = user;
   $('#who').textContent = user.email; $('#out').style.display = '';
   if (W.isAdmin(user)) return renderAdmin();
+  S.pre = null; try { S.pre = await FB.get('staffpre/' + W.ekey(user.email)); } catch (e) { }
   S.unsubs.push(FB.listen('staff/' + user.uid, (rec) => { S.rec = rec; renderMe(); }));
 }
 function renderMe() {
@@ -168,10 +191,19 @@ function renderMe() {
       <div class="mylinks"><a href="../${W.APPS[ownerOf[0]].url}"><b>${W.APPS[ownerOf[0]].name}</b><span class="sp"></span>開啟 →</a></div></div>`;
     return;
   }
+  // 管理員預先開通了這個 Email：信箱已驗證就自動啟用；還沒驗證就先請他驗證（防止別人冒用同一個 Email）
+  if (S.pre && !ownerOf.length && (!rec || rec.status === 'pending')) {
+    if (verified) { claimPre(); $('#app').innerHTML = '<p class="muted" style="text-align:center;margin-top:20vh">🎫 啟用巫魚子老師幫你開通的系統…</p>'; return; }
+    $('#app').innerHTML = `<div class="card narrow" style="max-width:560px"><h1>🎫 已經幫你開通了！</h1>
+      <p class="muted small">${esc(u.email)}</p>
+      <p style="margin:10px 0">巫魚子老師已經幫這個帳號開通：${Object.keys(S.pre.apps || {}).filter((k) => W.APPS[k]).map((k) => `<span class="chip">${W.APPS[k].name}</span>`).join(' ')}</p>
+      <div class="alert warn">只差一步：請到 <b>${esc(u.email)}</b> 收驗證信、點開連結（也看看垃圾郵件匣），回來按「我已經驗證了」就能啟用。<div class="row" style="margin-top:6px"><button class="btn sm ghost" id="vAgain">寄驗證信</button><button class="btn sm" id="vDone">我已經驗證了</button></div></div></div>`;
+    bindVerify(); return;
+  }
   if (!rec && !ownerOf.length) {
     $('#app').innerHTML = `<div class="card narrow" style="max-width:560px"><h1>📝 補填申請資料</h1><p class="muted small">這個帳號（${esc(u.email)}）還沒有申請資料，填好送出就會進入審核。</p>${profileFields()}<button class="btn wide" id="pGo">📨 送出申請</button></div>`;
     bindBoxes($('#app'));
-    $('#pGo').onclick = async () => { const prof = readProfile($('#app')); if (!prof) return; try { await FB.set('staff/' + u.uid, { email: String(u.email).toLowerCase(), ...prof, at: Date.now(), status: 'pending' }); toast('✅ 申請已送出'); } catch (e) { toast(authErr(e), true); } };
+    $('#pGo').onclick = async () => { const prof = readProfile($('#app')); if (!prof) return; try { await FB.set('staff/' + u.uid, { email: u.email, ...prof, at: Date.now(), status: 'pending' }); toast('✅ 申請已送出'); } catch (e) { toast(authErr(e), true); } };
     return;
   }
   const st = rec ? rec.status : 'approved', apps = Object.assign({}, rec && rec.apps), mine = Object.keys(W.APPS).filter((k) => apps[k] || ownerOf.includes(k));
@@ -187,64 +219,224 @@ function renderMe() {
   ${mine.length ? `<div class="card"><h2>🧰 我可以用的系統</h2><div class="mylinks">${mine.map((k) => `<a href="../${W.APPS[k].url}"><b>${W.APPS[k].name}</b><span>${esc(W.APPS[k].desc)}</span><span class="sp"></span>開啟 →</a>`).join('')}</div>
     <p class="small muted" style="margin-top:10px">各系統用<b>同一個帳號</b>登入（Google 登入就按 Google 按鈕）。</p></div>` : ''}
   ${st === 'approved' && Object.keys(W.APPS).some((k) => !mine.includes(k)) ? `<div class="card"><h2>➕ 申請加開其他系統</h2><div id="moreBox">${appBoxes({}, 'more', Object.keys(W.APPS).filter((k) => !mine.includes(k)))}</div>
-    <button class="btn" id="moreGo" style="margin-top:12px">📨 送出加開申請</button><span class="small muted" id="moreMsg" style="margin-left:8px"></span></div>` : ''}`;
-  bindBoxes($('#app'));
-  if ($('#vAgain')) $('#vAgain').onclick = async () => { try { await FB.verify(S.user); toast('驗證信已重寄'); } catch (e) { toast(authErr(e), true); } };
-  if ($('#vDone')) $('#vDone').onclick = async () => { try { const u2 = await FB.reload(); S.user = u2; if (u2.emailVerified) { await FB.set('staffv/' + u2.uid, true).catch(() => {}); toast('✅ 信箱已驗證'); } else toast('還沒收到驗證喔，請點信裡的連結', true); renderMe(); } catch (e) { toast(authErr(e), true); } };
-  if (verified) FB.set('staffv/' + u.uid, true).catch(() => {});
+    <button class="btn" id="moreGo" style="margin-top:12px">📨 送出加開申請</button><span class="small muted" id="moreMsg" style="margin-left:8px"></span></div>` : ''}
+  ${rec ? `<div class="card"><details${S.editMe ? ' open' : ''} id="meBox"><summary style="cursor:pointer;font-weight:900">✏️ 修改我的資料</summary>
+    <div class="row" style="gap:12px;align-items:flex-start;margin-top:6px"><div style="flex:1;min-width:180px"><label class="f">姓名</label><input type="text" id="meName" maxlength="20" value="${esc(rec.name)}"></div>
+    <div style="flex:1.4;min-width:200px"><label class="f">學校</label><input type="text" id="meSchool" maxlength="30" value="${esc(rec.school)}"></div></div>
+    <button class="btn sm" id="meSave" style="margin-top:12px">💾 儲存</button><span class="small muted" style="margin-left:8px">要加開系統請用上面的「申請加開」，其他資料請聯絡巫魚子老師</span></details></div>` : ''}`;
+  bindBoxes($('#app')); bindVerify();
+  if ($('#meSave')) $('#meSave').onclick = async () => {
+    const name = $('#meName').value.trim(), school = $('#meSchool').value.trim();
+    if (!name || !school) return toast('姓名、學校都要填', true);
+    try { S.editMe = false; await FB.update('staff/' + u.uid, { name: name.slice(0, 20), school: school.slice(0, 30) }); toast('💾 已更新'); } catch (e) { toast(authErr(e), true); }
+  };
   if ($('#moreGo')) {
     FB.get('staffreq/' + u.uid).then((r) => { if (r && $('#moreMsg')) $('#moreMsg').textContent = '已送出：' + Object.keys(r.want || {}).map((k) => (W.APPS[k] || {}).name).join('、') + '，等待核准'; }).catch(() => {});
     $('#moreGo').onclick = async () => { const want = picked($('#moreBox'), 'more'); if (!Object.keys(want).length) return toast('先勾選要加開的系統', true); try { await FB.set('staffreq/' + u.uid, { want, at: Date.now() }); $('#moreMsg').textContent = '✅ 已送出，等待核准'; } catch (e) { toast(authErr(e), true); } };
   }
 }
 
+function bindVerify() {
+  const u = S.user;
+  if ($('#vAgain')) $('#vAgain').onclick = async () => { try { await FB.verify(S.user); toast('驗證信已寄出'); } catch (e) { toast(authErr(e), true); } };
+  if ($('#vDone')) $('#vDone').onclick = async () => { try { const u2 = await FB.reload(); S.user = u2; if (u2.emailVerified) { await FB.set('staffv/' + u2.uid, true).catch(() => {}); toast('✅ 信箱已驗證'); } else toast('還沒收到驗證喔，請點信裡的連結', true); renderMe(); } catch (e) { toast(authErr(e), true); } };
+  if (u.emailVerified) FB.set('staffv/' + u.uid, true).catch(() => {});
+}
+// 領取管理員的預先開通：自己建立「已核准」的紀錄（規則會核對：信箱已驗證、預先開通名單裡有這個 Email、系統不能多）
+async function claimPre() {
+  if (S.claiming) return; S.claiming = true;
+  const u = S.user, p = S.pre, rec = S.rec, now = Date.now();
+  const v = rec ? Object.assign({}, rec, { status: 'approved', apps: p.apps, decidedAt: now })
+    : { email: u.email, name: String(p.name || u.displayName || u.email.split('@')[0]).slice(0, 20), school: String(p.school || '（未填）').slice(0, 30), purpose: '巫魚子老師手動開通', want: p.apps, at: now, status: 'approved', apps: p.apps, decidedAt: now };
+  try {
+    await FB.set('staff/' + u.uid, v);
+    await FB.remove('staffpre/' + W.ekey(u.email)).catch(() => {});
+    S.pre = null; toast('🎉 已啟用！可以開始使用了'); if (!p.name || !p.school) S.editMe = true;
+  } catch (e) { toast('啟用失敗：' + authErr(e), true); S.pre = null; }
+  S.claiming = false; renderMe();
+}
+
 // ---------- 管理員：審核 ----------
 function renderAdmin() {
-  S.unsubs.push(FB.listen('staff', (v) => { S.all = v || {}; drawAdmin(); }));
-  S.unsubs.push(FB.listen('staffv', (v) => { S.ver = v || {}; drawAdmin(); }));
-  S.unsubs.push(FB.listen('staffreq', (v) => { S.req = v || {}; drawAdmin(); }));
-  S.unsubs.push(FB.listen('sys/retired', (v) => { S.retired = v || {}; if (S.tab === 'move' && !S.moving) drawAdmin(); }));
+  const L = (path, key, after) => S.unsubs.push(FB.listen(path, (v) => { S[key] = v || {}; if (after) after(); else drawAdmin(); }));
+  L('staff', 'all'); L('staffv', 'ver'); L('staffreq', 'req'); L('staffpre', 'pres'); L('staffmemo', 'memo');
+  L('sys/retired', 'retired', () => { if (S.tab === 'move' && !S.moving) drawAdmin(); });
+}
+const STATUS_CHIP = { pending: 'wait', approved: 'ok', rejected: 'bad', disabled: 'bad', pre: 'pre' };
+const appIcons = (o) => Object.keys(o || {}).filter((k) => W.APPS[k]).map((k) => `<span title="${esc(W.APPS[k].name)}">${W.APPS[k].name.split(' ')[0]}</span>`).join('') || '<span class="muted small">—</span>';
+const fmtD = (t) => (t ? new Date(t).toLocaleDateString('zh-TW') : '');
+// 名單（已申請＋預先開通）整理成同一種格式
+function memberRows() {
+  const memo = S.memo || {};
+  const rows = Object.entries(S.all || {}).map(([uid, r]) => ({ kind: 'staff', id: uid, uid, ...r, ver: !!(S.ver || {})[uid], memo: memo[uid] || memo[W.ekey(r.email || '')] || '' }));
+  Object.entries(S.pres || {}).forEach(([key, r]) => rows.push({ kind: 'pre', id: key, key, ...r, status: 'pre', name: r.name || '', school: r.school || '', memo: memo[key] || '' }));
+  return rows.sort((a, b) => (b.decidedAt || b.at || 0) - (a.decidedAt || a.at || 0));
+}
+const FILTERS = [['all', '全部'], ['approved', '✅ 已核准'], ['pending', '⏳ 等待核准'], ['pre', '🎫 預先開通'], ['disabled', '⏸ 停用'], ['rejected', '❌ 未通過']];
+function listHTML() {
+  const rows = memberRows(), f = S.filter || 'all', cnt = (k) => (k === 'all' ? rows.length : rows.filter((x) => x.status === k).length);
+  const shown = rows.filter((x) => f === 'all' || x.status === f);
+  return `<div class="lbar"><input id="lq" placeholder="🔍 搜尋姓名、學校、Email、備註" value="${esc(S.q || '')}">
+      <button class="btn sm teal" id="addBtn">➕ 手動新增</button><button class="btn sm ghost" id="csvBtn">⬇️ 匯出名單</button></div>
+    <div class="fchips">${FILTERS.map(([k, t]) => `<button data-f="${k}" class="${f === k ? 'on' : ''}">${t}（${cnt(k)}）</button>`).join('')}</div>
+    <div class="tblw"><table class="tbl"><thead><tr><th>老師</th><th>Email</th><th>狀態</th><th>可用系統</th><th>日期</th><th></th></tr></thead><tbody>
+    ${shown.map((x) => `<tr class="${x.kind}" data-s="${esc([x.name, x.school, x.email, x.memo].join(' ').toLowerCase())}">
+      <td><b>${esc(x.name) || '<span class="muted">（還沒填）</span>'}</b><div class="small muted">${esc(x.school)}</div>${x.memo ? `<div class="memo">🗒 ${esc(x.memo)}</div>` : ''}</td>
+      <td class="small">${esc(x.email)}${x.kind === 'staff' ? `<div>${x.ver ? '<span class="chip ok" style="font-size:.75em">✉️ 已驗證</span>' : '<span class="chip" style="font-size:.75em">✉️ 未驗證</span>'}</div>` : '<div class="muted" style="font-size:.85em">對方第一次登入時自動啟用</div>'}</td>
+      <td><span class="chip ${STATUS_CHIP[x.status] || ''}">${x.kind === 'pre' ? '🎫 預先開通' : W.STATUS[x.status] || x.status}</span></td>
+      <td class="apps-i">${appIcons(x.status === 'approved' || x.kind === 'pre' ? x.apps : x.want)}${x.status === 'pending' ? '<div class="muted" style="font-size:.7em;letter-spacing:0">（想用）</div>' : ''}</td>
+      <td class="small muted">${x.kind === 'pre' ? '建立 ' + fmtD(x.at) : '申請 ' + fmtD(x.at)}${x.decidedAt ? '<br>處理 ' + fmtD(x.decidedAt) : ''}</td>
+      <td><button class="btn sm ghost" data-edit="${x.kind}:${esc(x.id)}">✏️ 管理</button></td></tr>`).join('') || '<tr><td colspan="6" class="muted" style="text-align:center;padding:20px">沒有符合的老師</td></tr>'}
+    </tbody></table></div>
+    <p class="small muted" style="margin-top:8px">🗒 管理員備註只有你看得到。刪除名單只會移除會員資料，Firebase 的登入帳號還在（要刪請到 Firebase 主控台 → Authentication）。</p>`;
 }
 function drawAdmin() {
   if (S.moving && S.tab === 'move') return; // 搬家中不重畫（按鈕、紀錄維持原樣），搬完會自己重畫
-  const all = Object.entries(S.all).map(([uid, r]) => ({ uid, ...r })).sort((a, b) => (b.at || 0) - (a.at || 0));
-  const groups = { pending: all.filter((x) => x.status === 'pending'), approved: all.filter((x) => x.status === 'approved'), off: all.filter((x) => x.status === 'rejected' || x.status === 'disabled'), more: Object.keys(S.req).filter((uid) => S.all[uid]) };
-  const tab = S.tab;
+  const all = Object.entries(S.all || {}).map(([uid, r]) => ({ uid, ...r })).sort((a, b) => (b.at || 0) - (a.at || 0));
+  const groups = { pending: all.filter((x) => x.status === 'pending'), more: Object.keys(S.req || {}).filter((uid) => (S.all || {})[uid]) };
+  const tab = ['pending', 'more', 'list', 'move'].includes(S.tab) ? S.tab : 'pending';
   const appChips = (o) => Object.keys(o || {}).filter((k) => W.APPS[k]).map((k) => `<span class="chip">${W.APPS[k].name}</span>`).join(' ') || '<span class="muted small">（無）</span>';
   const checks = (uid, sel) => Object.entries(W.APPS).map(([k, a]) => `<label class="ck"><input type="checkbox" data-app="${uid}" value="${k}" ${sel[k] ? 'checked' : ''}>${a.name}</label>`).join('');
-  const card = (x) => `<div class="mem"><div class="hd"><span class="nm">${esc(x.name)}</span><span class="small muted">${esc(x.school)}</span><span class="sp"></span><span class="chip ${{ pending: 'wait', approved: 'ok' }[x.status] || 'bad'}">${W.STATUS[x.status] || x.status}</span></div>
-    <div class="small muted">${esc(x.email)} ${S.ver[x.uid] ? '<span class="chip ok" style="font-size:.75em">✉️ 已驗證</span>' : '<span class="chip" style="font-size:.75em">✉️ 未驗證</span>'}・申請於 ${new Date(x.at || 0).toLocaleString('zh-TW', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}${x.decidedAt ? `・處理於 ${new Date(x.decidedAt).toLocaleDateString('zh-TW')}` : ''}</div>
+  const card = (x) => `<div class="mem"><div class="hd"><span class="nm">${esc(x.name)}</span><span class="small muted">${esc(x.school)}</span><span class="sp"></span><span class="chip wait">${W.STATUS[x.status]}</span></div>
+    <div class="small muted">${esc(x.email)} ${(S.ver || {})[x.uid] ? '<span class="chip ok" style="font-size:.75em">✉️ 已驗證</span>' : '<span class="chip" style="font-size:.75em">✉️ 未驗證</span>'}・申請於 ${new Date(x.at || 0).toLocaleString('zh-TW', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
     <div class="pur">📝 ${esc(x.purpose)}</div>
-    <div class="small">想用：${appChips(x.want)}${x.status === 'approved' ? `　｜　已開通：${appChips(x.apps)}` : ''}</div>
-    ${x.note ? `<div class="small muted">備註：${esc(x.note)}</div>` : ''}
-    <div style="margin-top:8px">${x.status === 'rejected' || x.status === 'disabled' ? '' : `<div class="small bold" style="margin-bottom:2px">可以使用的系統：</div>${checks(x.uid, x.status === 'approved' ? x.apps || {} : x.want || {})}`}</div>
-    <div class="row" style="margin-top:8px">
-      ${x.status === 'pending' ? `<button class="btn teal sm" data-ok="${x.uid}">✅ 核准</button><button class="btn red sm" data-no="${x.uid}">❌ 不通過</button>` : ''}
-      ${x.status === 'approved' ? `<button class="btn sm" data-save="${x.uid}">💾 更新權限</button><button class="btn red sm" data-off="${x.uid}">⏸ 停用</button>` : ''}
-      ${x.status === 'rejected' || x.status === 'disabled' ? `<button class="btn sm" data-back="${x.uid}">↩️ 改回等待核准</button>` : ''}
-    </div></div>`;
+    <div class="small">想用：${appChips(x.want)}</div>
+    <div style="margin-top:8px"><div class="small bold" style="margin-bottom:2px">可以使用的系統：</div>${checks(x.uid, x.want || {})}</div>
+    <div class="row" style="margin-top:8px"><button class="btn teal sm" data-ok="${x.uid}">✅ 核准</button><button class="btn red sm" data-no="${x.uid}">❌ 不通過</button></div></div>`;
   const moreCard = (uid) => { const x = S.all[uid], r = S.req[uid]; return `<div class="mem"><div class="hd"><span class="nm">${esc(x.name)}</span><span class="small muted">${esc(x.school)}・${esc(x.email)}</span></div>
     <div class="small" style="margin-top:6px">已開通：${appChips(x.apps)}　→　想加開：${appChips(r.want)}</div>
     <div class="row" style="margin-top:8px"><button class="btn teal sm" data-addok="${uid}">✅ 加開</button><button class="btn ghost sm" data-addno="${uid}">不加開</button></div></div>`; };
-  const list = tab === 'move' ? [moveHTML()] : tab === 'more' ? groups.more.map(moreCard) : groups[tab].map(card);
+  const body = tab === 'move' ? moveHTML() : tab === 'list' ? listHTML() : (tab === 'more' ? groups.more.map(moreCard) : groups.pending.map(card)).join('') || '<p class="muted" style="margin-top:14px">目前沒有資料</p>';
+  const total = Object.keys(S.all || {}).length + Object.keys(S.pres || {}).length;
   $('#app').innerHTML = `
   <div class="card"><div class="row"><h1>👥 會員管理</h1><span class="chip ink">🔑 管理員</span><span class="sp"></span>${Object.values(W.APPS).map((a) => `<a class="btn ghost sm" href="../${a.url}">${a.name}</a>`).join('')}</div>
-    <p class="small muted">老師在這個頁面自己申請帳號，你核准時勾選他能用哪些系統。各系統的安全規則會檢查這份名單：沒核准、被停用，或沒開通的系統，都讀不到資料。</p>
-    <div class="tabs">${[['pending', `⏳ 待核准（${groups.pending.length}）`], ['more', `➕ 加開申請（${groups.more.length}）`], ['approved', `✅ 已核准（${groups.approved.length}）`], ['off', `⏸ 未通過・停用（${groups.off.length}）`], ['move', '🚚 舊帳號搬家']].map(([k, t]) => `<button data-tab="${k}" class="${tab === k ? 'on' : ''}">${t}</button>`).join('')}</div>
-    ${list.join('') || '<p class="muted" style="margin-top:14px">目前沒有資料</p>'}
+    <p class="small muted">老師在這個頁面自己申請帳號，你核准時勾選他能用哪些系統；也可以在「📋 會員名單」手動新增、修改、停用。各系統的安全規則會檢查這份名單。</p>
+    <div class="tabs">${[['pending', `⏳ 待核准（${groups.pending.length}）`], ['more', `➕ 加開申請（${groups.more.length}）`], ['list', `📋 會員名單（${total}）`], ['move', '🚚 舊帳號搬家']].map(([k, t]) => `<button data-tab="${k}" class="${tab === k ? 'on' : ''}">${t}</button>`).join('')}</div>
+    ${body}
   </div>`;
   document.title = (groups.pending.length + groups.more.length ? `(${groups.pending.length + groups.more.length}) ` : '') + '👥 會員中心';
   $$('[data-tab]').forEach((b) => { b.onclick = () => { if (S.moving) return toast('搬家進行中，請稍等', true); S.tab = b.dataset.tab; drawAdmin(); }; });
   if (tab === 'move') bindMove();
+  if (tab === 'list') bindList();
   const appsOf = (uid) => Object.fromEntries($$(`input[data-app="${uid}"]:checked`).map((i) => [i.value, true]));
   const upd = async (uid, v, msg) => { try { await FB.update('staff/' + uid, { ...v, decidedAt: Date.now() }); toast(msg); } catch (e) { toast(authErr(e), true); } };
   $$('[data-ok]').forEach((b) => { b.onclick = () => { const a = appsOf(b.dataset.ok); if (!Object.keys(a).length) return toast('至少勾一個系統', true); upd(b.dataset.ok, { status: 'approved', apps: a, note: null }, '✅ 已核准'); }; });
-  $$('[data-save]').forEach((b) => { b.onclick = () => upd(b.dataset.save, { apps: appsOf(b.dataset.save) }, '💾 權限已更新'); });
   $$('[data-no]').forEach((b) => { b.onclick = () => { const n = prompt('不通過的原因（對方看得到，可以空白）', ''); if (n === null) return; upd(b.dataset.no, { status: 'rejected', apps: null, note: n.slice(0, 100) || null }, '已設為不通過'); }; });
-  $$('[data-off]').forEach((b) => { b.onclick = () => { const n = prompt('停用的原因（對方看得到，可以空白）', ''); if (n === null) return; upd(b.dataset.off, { status: 'disabled', apps: null, note: n.slice(0, 100) || null }, '⏸ 已停用'); }; });
-  $$('[data-back]').forEach((b) => { b.onclick = () => upd(b.dataset.back, { status: 'pending', note: null }, '已改回等待核准'); });
   $$('[data-addok]').forEach((b) => { b.onclick = async () => { const uid = b.dataset.addok, x = S.all[uid]; try { await FB.update('staff/' + uid, { apps: { ...(x.apps || {}), ...(S.req[uid].want || {}) } }); await FB.remove('staffreq/' + uid); toast('✅ 已加開'); } catch (e) { toast(authErr(e), true); } }; });
   $$('[data-addno]').forEach((b) => { b.onclick = async () => { try { await FB.remove('staffreq/' + b.dataset.addno); toast('已移除這筆加開申請'); } catch (e) { toast(authErr(e), true); } }; });
+}
+function bindList() {
+  const q = $('#lq'), filt = () => { const v = (S.q = q.value).trim().toLowerCase(); $$('tr[data-s]').forEach((tr) => { tr.style.display = !v || tr.dataset.s.includes(v) ? '' : 'none'; }); };
+  q.oninput = filt; filt();
+  if (S.qFocus) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); }
+  q.onfocus = () => { S.qFocus = true; }; q.onblur = () => { S.qFocus = false; };
+  $$('[data-f]').forEach((b) => { b.onclick = () => { S.filter = b.dataset.f; drawAdmin(); }; });
+  $('#addBtn').onclick = () => openAdd();
+  $('#csvBtn').onclick = exportCSV;
+  $$('[data-edit]').forEach((b) => { b.onclick = () => { const [kind, id] = b.dataset.edit.split(/:(.*)/s); kind === 'pre' ? openPre(id) : openEdit(id); }; });
+}
+// ---------- 彈出視窗（放在 #app 外面，名單即時更新時不會被洗掉） ----------
+function modal(html) {
+  closeModal();
+  const m = document.createElement('div'); m.className = 'modal'; m.id = 'modal';
+  m.innerHTML = `<div class="box"><button class="x" data-close aria-label="關閉">✕</button>${html}</div>`;
+  m.addEventListener('click', (e) => { if (e.target === m || e.target.closest('[data-close]')) closeModal(); });
+  document.body.appendChild(m); return m;
+}
+function closeModal() { const m = $('#modal'); if (m) m.remove(); }
+const appCks = (sel) => `<div class="apps">${Object.entries(W.APPS).map(([k, a]) => `<label class="app ${sel[k] ? 'on' : ''}"><input type="checkbox" name="mapp" value="${k}" ${sel[k] ? 'checked' : ''}><div><b>${a.name}</b><span>${esc(a.desc)}</span></div></label>`).join('')}</div>`;
+async function saveMemo(id, text) { const t = String(text || '').trim().slice(0, 500); await FB.set('staffmemo/' + id, t || null); }
+// 編輯一位老師（已申請的）
+function openEdit(uid) {
+  const x = (S.all || {})[uid]; if (!x) return toast('找不到這位老師', true);
+  const memo = (S.memo || {})[uid] || (S.memo || {})[W.ekey(x.email || '')] || '';
+  const m = modal(`<h2>✏️ ${esc(x.name || x.email)}</h2>
+    <div class="small muted">${esc(x.email)}・${(S.ver || {})[uid] ? '✉️ 信箱已驗證' : '✉️ 信箱未驗證'}<br>UID：<code>${esc(uid)}</code></div>
+    <div class="grid2"><div><label class="f">姓名</label><input type="text" id="eName" maxlength="20" value="${esc(x.name)}"></div>
+      <div><label class="f">學校</label><input type="text" id="eSchool" maxlength="30" value="${esc(x.school)}"></div></div>
+    <label class="f">狀態</label><select id="eStatus">${['approved', 'pending', 'disabled', 'rejected'].map((k) => `<option value="${k}" ${x.status === k ? 'selected' : ''}>${W.STATUS[k]}</option>`).join('')}</select>
+    <label class="f">可以使用的系統（狀態是「已核准」才有效）</label>${appCks(x.status === 'approved' ? x.apps || {} : x.want || {})}
+    <label class="f">給對方看的說明（停用、未通過時會顯示）</label><input type="text" id="eNote" maxlength="100" value="${esc(x.note)}">
+    <label class="f">🗒 管理員備註（只有你看得到）</label><textarea id="eMemo" maxlength="500" placeholder="例：大溪高中同事、2026 研習認識">${esc(memo)}</textarea>
+    ${x.purpose ? `<label class="f">申請時寫的用途</label><div class="ro">${esc(x.purpose)}</div>` : ''}
+    <div class="small muted" style="margin-top:8px">申請於 ${fmtD(x.at)}${x.decidedAt ? `・最後處理 ${fmtD(x.decidedAt)}` : ''}</div>
+    <div class="row" style="margin-top:16px"><button class="btn" id="eSave">💾 儲存</button><button class="btn ghost" data-close>取消</button><span class="sp"></span><button class="btn red sm" id="eDel">🗑 從名單刪除</button></div>`);
+  bindBoxes(m);
+  $('#eSave', m).onclick = async () => {
+    const name = $('#eName', m).value.trim(), school = $('#eSchool', m).value.trim(), status = $('#eStatus', m).value, apps = picked(m, 'mapp');
+    if (!name || !school) return toast('姓名、學校都要填', true);
+    if (status === 'approved' && !Object.keys(apps).length) return toast('已核准的老師至少要勾一個系統', true);
+    const v = { name: name.slice(0, 20), school: school.slice(0, 30), status, apps: status === 'approved' ? apps : null, note: $('#eNote', m).value.trim().slice(0, 100) || null };
+    if (status !== x.status || JSON.stringify(v.apps || {}) !== JSON.stringify(x.apps || {})) v.decidedAt = Date.now();
+    try { await FB.update('staff/' + uid, v); await saveMemo(uid, $('#eMemo', m).value); closeModal(); toast('💾 已儲存'); } catch (e) { toast(authErr(e), true); }
+  };
+  $('#eDel', m).onclick = async () => {
+    if (!confirm(`確定把「${x.name || x.email}」從會員名單刪除？\n\n・刪除後他就不能用任何系統（跟停用一樣）\n・他在各系統的資料（班級、題庫…）不會被刪，重新核准後就回來\n・Firebase 的登入帳號還在，要刪請到主控台 Authentication\n\n只是暫時不讓他用的話，建議改用「停用」。`)) return;
+    try { for (const p of ['staff/', 'staffv/', 'staffreq/', 'staffmemo/']) await FB.remove(p + uid); closeModal(); toast('🗑 已從名單刪除'); } catch (e) { toast(authErr(e), true); }
+  };
+}
+// 編輯一筆預先開通
+function openPre(key) {
+  const x = (S.pres || {})[key]; if (!x) return toast('找不到這筆預先開通', true);
+  const m = modal(`<h2>🎫 預先開通：${esc(x.email)}</h2>
+    <p class="small muted">對方用這個 Email 第一次登入會員中心（Google 登入，或 Email＋密碼並驗證信箱）時，就會自動變成「已核准」。</p>
+    <div class="grid2"><div><label class="f">姓名（選填）</label><input type="text" id="pName" maxlength="20" value="${esc(x.name)}"></div>
+      <div><label class="f">學校（選填）</label><input type="text" id="pSchool" maxlength="30" value="${esc(x.school)}"></div></div>
+    <label class="f">可以使用的系統</label>${appCks(x.apps || {})}
+    <label class="f">🗒 管理員備註（只有你看得到）</label><textarea id="pMemo" maxlength="500">${esc((S.memo || {})[key] || '')}</textarea>
+    <div class="row" style="margin-top:16px"><button class="btn" id="pSave">💾 儲存</button><button class="btn ghost" data-close>取消</button><span class="sp"></span><button class="btn red sm" id="pDel">取消預先開通</button></div>`);
+  bindBoxes(m);
+  $('#pSave', m).onclick = async () => {
+    const apps = picked(m, 'mapp'); if (!Object.keys(apps).length) return toast('至少勾一個系統', true);
+    try { await FB.update('staffpre/' + key, { name: $('#pName', m).value.trim().slice(0, 20) || null, school: $('#pSchool', m).value.trim().slice(0, 30) || null, apps }); await saveMemo(key, $('#pMemo', m).value); closeModal(); toast('💾 已儲存'); } catch (e) { toast(authErr(e), true); }
+  };
+  $('#pDel', m).onclick = async () => { if (!confirm(`取消 ${x.email} 的預先開通？`)) return; try { await FB.remove('staffpre/' + key); await FB.remove('staffmemo/' + key); closeModal(); toast('已取消'); } catch (e) { toast(authErr(e), true); } };
+}
+// 手動新增：有 UID → 立刻核准；沒有 → 預先開通（對方第一次登入時自動啟用）
+function openAdd() {
+  const m = modal(`<h2>➕ 手動新增老師</h2>
+    <label class="f">Email（必填）</label><input type="email" id="aEmail" placeholder="例：teacher@school.edu.tw">
+    <div class="grid2"><div><label class="f">姓名</label><input type="text" id="aName" maxlength="20"></div>
+      <div><label class="f">學校</label><input type="text" id="aSchool" maxlength="30"></div></div>
+    <label class="f">可以使用的系統（必選）</label>${appCks({})}
+    <label class="f">🗒 管理員備註（只有你看得到）</label><textarea id="aMemo" maxlength="500" placeholder="例：以前手動開過座位大作戰"></textarea>
+    <label class="f">Firebase UID（選填）</label><input type="text" id="aUid" placeholder="對方已經有帳號才需要填">
+    <div class="hint">・<b>對方已經有帳號</b>（以前在 Firebase 手動建的）：到 Firebase 主控台 → Authentication → 使用者，找到他的 Email，複製同一列的「使用者 UID」貼上，<b>立刻開通</b>，他原本的資料都還在。<br>
+      ・<b>不填 UID</b>：變成「預先開通」，對方第一次用這個 Email 登入會員中心時自動啟用（Google 登入最快；用 Email＋密碼的話要先點驗證信）。</div>
+    <div class="row" style="margin-top:16px"><button class="btn teal" id="aGo">➕ 新增</button><button class="btn ghost" data-close>取消</button></div>`);
+  bindBoxes(m);
+  $('#aGo', m).onclick = async () => {
+    const email = $('#aEmail', m).value.trim().toLowerCase(), name = $('#aName', m).value.trim().slice(0, 20), school = $('#aSchool', m).value.trim().slice(0, 30);
+    const uid = $('#aUid', m).value.trim(), apps = picked(m, 'mapp'), memo = $('#aMemo', m).value, now = Date.now();
+    if (!/^[^\s@#$\[\]\/]+@[^\s@#$\[\]\/]+\.[^\s@#$\[\]\/]+$/.test(email)) return toast('Email 格式不對', true);
+    if (!Object.keys(apps).length) return toast('至少勾一個系統', true);
+    const dup = Object.entries(S.all || {}).find(([, r]) => String(r.email || '').toLowerCase() === email);
+    if (dup) return toast('這個 Email 已經在名單裡了，請在名單上按「✏️ 管理」修改', true);
+    const key = W.ekey(email);
+    if ((S.pres || {})[key]) return toast('這個 Email 已經預先開通了', true);
+    try {
+      if (uid) {
+        if (!/^[A-Za-z0-9]{10,40}$/.test(uid)) return toast('UID 格式看起來不對（從主控台複製「使用者 UID」那一欄）', true);
+        if ((S.all || {})[uid]) return toast('這個 UID 已經在名單裡了', true);
+        await FB.set('staff/' + uid, { email, name: name || email.split('@')[0], school: school || '（未填）', purpose: '巫魚子老師手動新增', want: apps, at: now, status: 'approved', apps, decidedAt: now });
+        await saveMemo(uid, memo); toast('✅ 已新增並開通');
+      } else {
+        const v = { email, apps, at: now }; if (name) v.name = name; if (school) v.school = school;
+        await FB.set('staffpre/' + key, v); await saveMemo(key, memo); toast('🎫 已預先開通，對方第一次登入時自動啟用');
+      }
+      closeModal(); S.tab = 'list'; S.filter = 'all'; drawAdmin();
+    } catch (e) { toast(authErr(e), true); }
+  };
+}
+// 匯出名單（CSV，Excel 可以直接開；開頭加 BOM 中文才不會亂碼）
+function exportCSV() {
+  const cell = (v) => { v = String(v == null ? '' : v); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  const appNames = (o) => Object.keys(o || {}).filter((k) => W.APPS[k]).map((k) => W.APPS[k].name.replace(/^\S+\s/, '')).join('、');
+  const head = ['姓名', '學校', 'Email', '狀態', '可用系統', '想用的系統', '申請／建立日期', '最後處理日期', '信箱驗證', '申請用途', '給對方的說明', '管理員備註', 'UID'];
+  const lines = memberRows().map((x) => [x.name, x.school, x.email, x.kind === 'pre' ? '預先開通' : (W.STATUS[x.status] || x.status).replace(/^\S+\s/, ''), appNames(x.apps), appNames(x.want), fmtD(x.at), fmtD(x.decidedAt), x.kind === 'pre' ? '' : x.ver ? '已驗證' : '未驗證', x.purpose, x.note, x.memo, x.uid || ''].map(cell).join(','));
+  const blob = new Blob(['﻿' + [head.join(','), ...lines].join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `會員名單_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
 }
 
 // ---------- 管理員：舊帳號搬家（+seat、+gps、+excel 的資料改到主帳號名下） ----------
@@ -345,7 +537,7 @@ async function runMove(email, pw, appKey, log) {
 
 $('#out').onclick = async () => { stop(); await FB.logout(); };
 if (!FB) renderLogin();
-else FB.onUser((u) => { if (S.registering) return; if (u) enter(u); else { stop(); S.user = null; renderLogin(); } });
+else FB.onUser((u) => { if (S.registering) return; if (u) enter(u); else { stop(); S.user = null; S.entered = false; renderLogin(); } });
 </script>
 </body>
 </html>

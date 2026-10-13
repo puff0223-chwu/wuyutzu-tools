@@ -81,6 +81,7 @@ function setSave(t, err) { S.saveMsg = [t, !!err]; const el = $('#saveState'); i
 
 // ---------- 登入 ----------
 function renderLogin(msg) {
+  try { localStorage.removeItem('gps_email'); } catch (e) { } // 2026-10-13：不再記住、預先帶入 Email（主帳號改用 Google 登入）
   $('#app').innerHTML = `
   <div class="login">
     <div class="en">THE LOST PLACES</div>
@@ -88,7 +89,7 @@ function renderLogin(msg) {
     <p class="muted" style="margin-bottom:14px">校園照片定向越野・老師後台</p>
     ${msg ? `<div class="alert red">${esc(msg)}</div>` : ''}
     ${window.FBX ? FBX.googleButtonHTML('lgG') : ''}
-    <label class="f">Email</label><input type="email" id="lgEmail" value="${esc(LS.get('gps_email', ''))}" autocomplete="username">
+    <label class="f">Email</label><input type="email" id="lgEmail" autocomplete="username">
     <label class="f">密碼</label><input type="password" id="lgPw" autocomplete="current-password">
     <div class="row" style="margin-top:16px"><button class="btn primary" id="lgGo">🔓 登入</button><span class="spacer"></span><button class="btn ghost sm" id="lgReset">忘記密碼</button></div>
     <p class="small muted" style="margin-top:14px">還沒有帳號？<a href="../../account/?app=gps"><b>👥 到會員中心申請使用</b></a>（巫魚子老師核准後就能用，各系統共用同一個帳號）</p>
@@ -96,7 +97,6 @@ function renderLogin(msg) {
   const go = async () => {
     const email = $('#lgEmail').value.trim(), pw = $('#lgPw').value;
     if (!email || !pw) return toast('請輸入 Email 和密碼', true);
-    LS.set('gps_email', email);
     $('#lgGo').disabled = true;
     try { await FB.login(email, pw); } catch (e) { $('#lgGo').disabled = false; toast(window.FBX ? FBX.authErr(e) : '登入失敗：' + (e.code || e.message), true); }
   };

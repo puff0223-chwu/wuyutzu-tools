@@ -12,7 +12,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="../account/staff.js?v=20261013c"></script>
+<script src="../account/staff.js?v=20261013e"></script>
 <script src="excel-rescue-core.js?v=20261013b"></script>
 <script src="excel-rescue-checker.js?v=20261013b"></script>
 <style>
@@ -865,17 +865,18 @@ try {
 } catch (e) { console.warn(e); }
 const box = (inner) => `<div style="max-width:460px;margin:10vh auto;background:var(--paper);border-radius:12px;padding:28px;color:var(--text)">${inner}</div>`;
 function renderLogin(msg) {
+  try { localStorage.removeItem('excelRescue-teacher:email'); } catch (e) { } // 不再記住、預先帶入 Email
   document.getElementById('erMain').style.display = 'none';
   gate.innerHTML = box(`<h1 style="font-size:1.5rem">🗂️ 消失的實驗數據｜老師登入</h1>
     <p class="note">老師卷宗含全班答案，需要登入。各系統共用同一個老師帳號。</p>
     ${msg ? `<p class="note bad">${esc(msg)}</p>` : ''}${!FB ? '<p class="note bad">雲端服務載入失敗，請確認網路後重新整理。</p>' : ''}
     <div style="margin-top:14px">${gBtn('gG')}</div>
-    <label class="note" style="display:block;margin-top:12px;font-weight:700;color:var(--text)">Email</label><input type="email" id="gE" autocomplete="username" value="${esc(localStorage.getItem('excelRescue-teacher:email') || '')}">
+    <label class="note" style="display:block;margin-top:12px;font-weight:700;color:var(--text)">Email</label><input type="email" id="gE" autocomplete="username">
     <label class="note" style="display:block;margin-top:10px;font-weight:700;color:var(--text)">密碼</label><input type="password" id="gP" autocomplete="current-password">
     <div class="row" style="margin-top:16px"><button class="btn" id="gGo">🔓 登入</button><button class="linkbtn" id="gReset" style="margin-left:auto">忘記密碼</button></div>
     <p class="note" style="margin-top:16px">還沒有帳號？<a href="${W.centerURL('../', 'excel')}" style="font-weight:700;color:var(--ink)">👥 到會員中心申請使用</a>（巫魚子老師核准後就能用）</p>
 `);
-  const go = async () => { const e = document.getElementById('gE').value.trim(), p = document.getElementById('gP').value; if (!e || !p) return; document.getElementById('gGo').disabled = true; try { await FB.login(e, p); localStorage.setItem('excelRescue-teacher:email', e); } catch (err) { renderLogin(authErr(err)); } };
+  const go = async () => { const e = document.getElementById('gE').value.trim(), p = document.getElementById('gP').value; if (!e || !p) return; document.getElementById('gGo').disabled = true; try { await FB.login(e, p); } catch (err) { renderLogin(authErr(err)); } };
   const gg = document.getElementById('gG'); if (gg) gg.onclick = async () => { gg.disabled = true; try { await FB.google(); } catch (err) { renderLogin(authErr(err)); } };
   document.getElementById('gGo').onclick = go; document.getElementById('gP').onkeydown = (ev) => { if (ev.key === 'Enter') go(); };
   document.getElementById('gReset').onclick = async () => { const e = document.getElementById('gE').value.trim(); if (!e) return alert('先輸入 Email'); try { await FB.reset(e); alert('重設密碼的信已寄出'); } catch (err) { alert('寄送失敗：' + (err.code || err.message)); } };

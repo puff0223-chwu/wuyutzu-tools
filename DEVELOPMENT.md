@@ -589,7 +589,14 @@ wuyutzu-tools/
 - **管理員＝主帳號 `puff0223@gmail.com`**（規則同時要求信箱已驗證 `email_verified`；Google 登入一定是已驗證，所以別人沒辦法冒名註冊同一個 Email 拿到管理權）。主帳號可以用全部系統，不用申請
 - **登入方式**：Email＋密碼，或「使用 Google 帳號登入」（popup；被瀏覽器擋就改整頁跳轉）。Google 新使用者第一次登入沒有申請資料 → 會員中心自動顯示「補填申請資料」
 - **流程**：會員中心申請（姓名、學校、想用的系統、用途）→ Email 申請者收驗證信 → `staff/<uid>` 狀態 pending → 管理員在「待核准」分頁勾系統按核准 → 老師重新整理各系統頁面就能用
-- **資料**：`staff/<uid>` = {email, name, school, purpose, want{app}, at, status: pending|approved|rejected|disabled, apps{app:true}, note, decidedAt}；`staffv/<uid>` 信箱已驗證旗標；`staffreq/<uid>` 加開系統申請；`xfer/<uid>` 舊帳號已登記搬家；`sys/retired/<app>` 舊專用帳號已退休
+- **資料**：`staff/<uid>` = {email, name, school, purpose, want{app}, at, status: pending|approved|rejected|disabled, apps{app:true}, note（給對方看的說明）, decidedAt}；`staffv/<uid>` 信箱已驗證旗標；`staffreq/<uid>` 加開系統申請；`staffpre/<Email 鍵>` 預先開通 {email, apps, at, name?, school?}；`staffmemo/<uid 或 Email 鍵>` 管理員私人備註；`xfer/<uid>` 舊帳號已登記搬家；`sys/retired/<app>` 舊專用帳號已退休
+- **Email 鍵**：Email 小寫、`.` 換成 `,`（Firebase 的位置名稱不能有點），前端 `WuStaff.ekey()`、規則 `{{EKEY}}` 同一個算法
+- **管理員介面（2026-10-13 改版）**：分頁 ⏳ 待核准／➕ 加開申請／📋 會員名單／🚚 舊帳號搬家
+  - 📋 會員名單：已申請＋預先開通放在同一張表；搜尋（姓名、學校、Email、備註，不重畫整頁）、狀態篩選、⬇️ 匯出 CSV（有 BOM，Excel 直接開）
+  - ✏️ 管理（彈出視窗）：改姓名、學校、狀態（核准／等待／停用／未通過）、可用系統、給對方的說明、🗒 管理員備註；🗑 從名單刪除（只刪會員資料，各系統的資料和 Firebase 登入帳號都還在）
+  - ➕ 手動新增：有 Firebase UID（主控台 Authentication 複製）→ 直接寫 `staff/<uid>` 立刻開通，適合以前手動建帳號的老師；沒有 UID → 寫 `staffpre`，對方第一次登入會員中心時自動「領取」：規則要求**信箱已驗證**（防止別人先用那個 Email 註冊來冒領），而且開通的系統不能比預先開通的多
+  - 彈出視窗放在 `#app` 外面：名單是即時監聽，有人申請時整個 `#app` 會重畫，視窗放裡面會被洗掉
+- **老師自己改資料**：會員中心「✏️ 修改我的資料」可以改姓名、學校；規則核對狀態、Email、可用系統、給對方的說明都不能變，也不能刪掉自己的紀錄
 - **共用檔**：
   - `account/fb.js`：Firebase 設定、SDK 版本（10.14.1）、`openFirebase(名稱)`、Email／Google 登入、中文錯誤訊息、Google 按鈕樣式。四個老師頁（會員中心、消失的實驗數據、遺落的地點、座位大作戰）都用它，**換 SDK 版本或設定只改這一個檔**
   - `account/staff.js`：`WuStaff.check(get, user, app)`，各系統登入後呼叫；沒權限就顯示 `blockedHTML`（連回會員中心）
@@ -727,6 +734,13 @@ fp/
 - **畫面擋＋規則擋兩層**：前端檢查讓老師看到清楚說明（等待核准／尚未開通／已停用），規則才是真正的鎖；停用帳號後學生寫入也會被擋，測試時兩層都要測
 - **規則改一份就好**：三個系統共用同一個 Firebase 專案，規則以 repo 根目錄 `firebase-rules.json` 為主（2026-10-13 再整合：見 7-10）
 
+### 7-11 會員中心手動管理（2026-10-13）
+- **「預先開通」用 Email，但要防冒名**：Firebase 讓任何人用任何 Email 註冊（不用收信），所以只靠 Email 對得上就開通，別人可以先註冊那個 Email 冒領。規則要求領取時 `email_verified`（Google 登入一定是已驗證；Email＋密碼要先點驗證信）。以前手動建好帳號的老師改用 UID 直接開通，就不用驗證
+- **規則也能處理字串**：`auth.token.email.toLowerCase().replace('.', ',')` 把 Email 變成資料位置的名字（Firebase 的 replace 會換掉全部），前端用一樣的算法
+- **「本人可以改，但只能改某幾格」**：規則沒辦法說「只准改 name」，改成「其他重要欄位改完後必須跟原本一樣」（狀態、Email、三個系統的開通、管理員說明逐一比對）
+- **搜尋框不要重畫整頁**：每打一個字就重畫，游標會跳掉；改成只把表格列藏起來／顯示
+- **測試工具也會塞車**：好幾個頁面同時每 0.25 秒讀資料、每次都跑真正的規則檢查，假 Firebase 來不及處理 → 輪詢放慢、用完的頁面關掉。測試失敗時先分清楚是網頁的問題還是測試工具的問題
+
 ### 7-10 主帳號、Google 登入、全站資源整合（2026-10-13）
 - **用 Email 當管理員要加「已驗證」**：Firebase 讓任何人自己註冊，如果主帳號還沒建，別人可以先用 `puff0223@gmail.com` 註冊拿到管理權。規則加上 `auth.token.email_verified === true`，別人收不到驗證信就冒不了；Google 登入一定是已驗證
 - **資料屬於「帳號」不是「信箱」**：+seat、+gps 都收信到同一個信箱，但對 Firebase 是不同的人。換主帳號要「搬家」：舊帳號登記 `xfer`，主帳號才能把 owner 改成自己；只有三個舊專用帳號能登記，所以管理員也碰不到其他老師的資料
@@ -757,7 +771,7 @@ fp/
 
 ---
 
-## 附錄：Firebase 安全規則全文（2026-10-13b，主帳號 puff0223@gmail.com、Google 登入、舊帳號搬家：新增 xfer、sys）
+## 附錄：Firebase 安全規則全文（2026-10-13c，會員手動管理：新增 staffpre、staffmemo，staff 可領取預先開通、本人改姓名學校）
 
 > 由 `firebase/build_rules.py` 從 `firebase/rules.src.json` 產生，和根目錄 `firebase-rules.json` 相同。要改規則請改原始檔再重新產生，不要直接改這裡。
 
@@ -1085,14 +1099,39 @@ fp/
    ".read": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true)",
    "$uid": {
     ".read": "auth != null && auth.uid === $uid",
-    ".write": "auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (auth.uid === $uid && (!data.exists() || data.child('status').val() === 'pending')))",
-    ".validate": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (newData.hasChildren(['email','name','school','purpose','want','at','status']) && newData.child('status').val() === 'pending' && !newData.child('apps').exists() && newData.child('email').val() === auth.token.email && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && newData.child('purpose').isString() && newData.child('purpose').val().length >= 1 && newData.child('purpose').val().length <= 200 && newData.child('at').isNumber())"
+    ".write": "auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (auth.uid === $uid && newData.exists()))",
+    ".validate": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || ((!data.exists() || data.child('status').val() === 'pending') && newData.hasChildren(['email','name','school','purpose','want','at','status']) && newData.child('status').val() === 'pending' && !newData.child('apps').exists() && newData.child('email').val() === auth.token.email && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && newData.child('purpose').isString() && newData.child('purpose').val().length >= 1 && newData.child('purpose').val().length <= 200 && newData.child('at').isNumber()) || ((!data.exists() || data.child('status').val() === 'pending') && auth.token.email_verified === true && root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')).exists() && newData.child('status').val() === 'approved' && newData.child('email').val() === auth.token.email && newData.hasChildren(['email','name','school','at','status','apps']) && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && (!newData.child('apps/excel').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/excel').val() === true) && (!newData.child('apps/gps').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/gps').val() === true) && (!newData.child('apps/seat').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/seat').val() === true)) || (data.exists() && newData.child('status').val() === data.child('status').val() && newData.child('email').val() === data.child('email').val() && newData.child('note').val() === data.child('note').val() && newData.child('apps/excel').val() === data.child('apps/excel').val() && newData.child('apps/gps').val() === data.child('apps/gps').val() && newData.child('apps/seat').val() === data.child('apps/seat').val() && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30)",
+    "apps": {
+     "$app": {
+      ".validate": "$app.matches(/^(excel|gps|seat)$/) && newData.val() === true"
+     }
+    }
+   }
+  },
+  "staffpre": {
+   ".read": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true)",
+   "$key": {
+    ".read": "auth != null && auth.token.email.toLowerCase().replace('.', ',') === $key",
+    ".write": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (auth != null && auth.token.email.toLowerCase().replace('.', ',') === $key && !newData.exists())",
+    ".validate": "newData.hasChildren(['email','apps','at']) && newData.child('email').isString() && newData.child('email').val().toLowerCase().replace('.', ',') === $key",
+    "apps": {
+     "$app": {
+      ".validate": "$app.matches(/^(excel|gps|seat)$/) && newData.val() === true"
+     }
+    }
+   }
+  },
+  "staffmemo": {
+   ".read": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true)",
+   "$uid": {
+    ".write": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true)",
+    ".validate": "newData.isString() && newData.val().length <= 500"
    }
   },
   "staffv": {
    ".read": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true)",
    "$uid": {
-    ".write": "auth != null && auth.uid === $uid && newData.val() === true && auth.token.email_verified === true"
+    ".write": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (auth != null && auth.uid === $uid && newData.val() === true && auth.token.email_verified === true)"
    }
   },
   "staffreq": {

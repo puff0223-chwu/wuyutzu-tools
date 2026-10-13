@@ -40,6 +40,9 @@ const base = {
   'excel-rescue': { '115-1': { S001: { name: 'a', ts: 1 } } }
 };
 const withXfer = Object.assign({}, base, { xfer: { OLDSEAT: true, OLDGPS: true, OLDEXCEL: true } });
+const ZOO = U('ZOO', 'Zoo@dssh.tyc.edu.tw', true), ZOO_UNV = U('ZOO', 'zoo@dssh.tyc.edu.tw', false);
+const withPre = Object.assign({}, base, { staffpre: { 'zoo@dssh,tyc,edu,tw': { email: 'zoo@dssh.tyc.edu.tw', apps: { seat: true }, at: 1, name: '動物老師' } } });
+const claim = (apps) => ({ email: 'Zoo@dssh.tyc.edu.tw', name: '動物老師', school: '大溪高中', purpose: '管理員手動開通', want: apps, at: 1, status: 'approved', apps });
 const retired = Object.assign({}, base, { sys: { retired: { seat: true } } });
 
 let pass = 0, fail = 0;
@@ -68,6 +71,29 @@ expect('新老師不能自己核准自己', base, STRANGER, W, '/staff/BAD', Obj
 expect('不能用別人的 Email 申請', base, STRANGER, W, '/staff/BAD', pending('tea@school.edu.tw'), false);
 expect('只有管理員看得到全部申請', base, TEA, R, '/staff', null, false);
 expect('主帳號看得到全部申請', base, MAIN, R, '/staff', null, true);
+
+console.log('— 手動管理：預先開通、修改資料、管理員備註 —');
+expect('主帳號可以預先開通一個 Email', base, MAIN, W, '/staffpre/new@school,edu,tw', { email: 'new@school.edu.tw', apps: { seat: true }, at: 1 }, true);
+expect('預先開通的位置要跟 Email 對得上', base, MAIN, W, '/staffpre/new@school,edu,tw', { email: 'other@school.edu.tw', apps: { seat: true }, at: 1 }, false);
+expect('一般老師不能預先開通別人', base, TEA, W, '/staffpre/new@school,edu,tw', { email: 'new@school.edu.tw', apps: { seat: true }, at: 1 }, false);
+expect('被預先開通的老師看得到自己那筆', withPre, ZOO, R, '/staffpre/zoo@dssh,tyc,edu,tw', null, true);
+expect('別人看不到預先開通名單', withPre, TEA, R, '/staffpre/zoo@dssh,tyc,edu,tw', null, false);
+expect('信箱已驗證：可以領取預先開通', withPre, ZOO, W, '/staff/ZOO', claim({ seat: true }), true);
+expect('信箱沒驗證：不能領取（防冒名）', withPre, ZOO_UNV, W, '/staff/ZOO', claim({ seat: true }), false);
+expect('領取時不能多開沒給的系統', withPre, ZOO, W, '/staff/ZOO', claim({ seat: true, gps: true }), false);
+expect('沒被預先開通的人不能自己核准', base, ZOO, W, '/staff/ZOO', claim({ seat: true }), false);
+expect('領取後可以刪掉自己的預先開通', withPre, ZOO, W, '/staffpre/zoo@dssh,tyc,edu,tw', null, true);
+expect('核准的老師可以改自己的姓名', base, TEA, W, '/staff/TEA/name', '新名字', true);
+expect('核准的老師可以改自己的學校', base, TEA, W, '/staff/TEA/school', '新學校', true);
+expect('老師不能自己加開系統', base, NOAPP, W, '/staff/NOAPP/apps/seat', true, false);
+expect('停用的老師不能把自己改回核准', base, OFF, W, '/staff/OFF/status', 'approved', false);
+expect('老師不能刪掉自己的紀錄', base, TEA, W, '/staff/TEA', null, false);
+expect('老師不能改管理員給的說明', base, TEA, W, '/staff/TEA/note', '我很棒', false);
+expect('老師不能改別人的資料', base, TEA, W, '/staff/NOAPP/name', 'hack', false);
+expect('管理員可以手動新增（直接核准）', base, MAIN, W, '/staff/NEW', { email: 'n@x.tw', name: 'N', school: 'S', purpose: '手動', want: { seat: true }, at: 1, status: 'approved', apps: { seat: true } }, true);
+expect('系統名稱只能是三個系統之一', base, MAIN, W, '/staff/TEA/apps/hack', true, false);
+expect('管理員可以寫私人備註', base, MAIN, W, '/staffmemo/TEA', '研習認識的老師', true);
+expect('老師看不到管理員備註', Object.assign({}, base, { staffmemo: { TEA: 'x' } }), TEA, R, '/staffmemo/TEA', null, false);
 
 console.log('— 座位大作戰 —');
 expect('核准且開通的老師可以建班級', base, TEA, W, '/seating/classes/clsnew0001', newClass('TEA'), true);
