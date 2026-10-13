@@ -70,7 +70,7 @@ const Store = {
     }
   },
   async uploadPhoto(file) {
-    const c = await G.compressImage(file, 800, 0.72);
+    const c = await G.compressImage(file, 800, 0.72, 550000);
     const id = G.rid(6);
     await FB.set('orienteering/photos/' + id, { owner: S.user.uid, data: c.data, w: c.w, h: c.h, ts: Date.now() });
     G.cachePhoto(id, c.data);

@@ -97,7 +97,7 @@ input.code{font-family:monospace;font-size:1.8em;letter-spacing:.3em;text-align:
 <body>
 <div id="top"></div>
 <div class="wrap" id="app"><p style="text-align:center;margin-top:30vh" class="muted">載入中…</p></div>
-<script src="core.js?v=20261013c"></script>
+<script src="core.js?v=20261013f"></script>
 <script>
 (function () {
   'use strict';
@@ -113,7 +113,7 @@ input.code{font-family:monospace;font-size:1.8em;letter-spacing:.3em;text-align:
   function sheet(html) { const bg = document.createElement('div'); bg.className = 'sheet-bg'; bg.innerHTML = `<div class="sheet">${html}</div>`; document.body.appendChild(bg); bg.addEventListener('click', (e) => { if (e.target === bg) bg.remove(); }); return { el: bg, close: () => bg.remove() }; }
   async function api(path, method, body) {
     const r = await fetch(DB + path + '.json', { method: method || 'GET', headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
-    if (!r.ok) { const e = new Error('HTTP ' + r.status); e.status = r.status; throw e; }
+    if (!r.ok) { const e = new Error('HTTP ' + r.status); e.status = r.status; try { e.detail = (await r.text()).slice(0, 120); } catch (x) { } throw e; }
     return r.json();
   }
   const isOpen = () => st.meta && st.meta.open && (!st.meta.deadline || Date.now() < st.meta.deadline);
@@ -282,11 +282,12 @@ input.code{font-family:monospace;font-size:1.8em;letter-spacing:.3em;text-align:
   function bindStep() {
     const d = st.d, s = st.step;
     const f = $('#sFile');
-    if (f) f.onchange = async () => { const file = f.files[0]; if (!file) return; try { toast('照片處理中…'); const c = await G.compressImage(file, 800, 0.72); d.photo = c.data; renderStep(); } catch (e) { toast('讀不到這張照片，換一張試試', true); } };
+    if (f) f.onchange = async () => { const file = f.files[0]; if (!file) return; try { toast('照片處理中…'); const c = await G.compressImage(file, 800, 0.72, 300000); d.photo = c.data; renderStep(); } catch (e) { toast('讀不到這張照片，換一張試試', true); } };
     if ($('#sRe')) $('#sRe').onclick = () => f.click();
     $$('[data-pick]').forEach((el) => {
       el.onclick = (e) => {
-        const r = el.getBoundingClientRect(), x = +((e.clientX - r.left) / r.width * 100).toFixed(2), y = +((e.clientY - r.top) / r.height * 100).toFixed(2);
+        const r = el.getBoundingClientRect(), clamp = (v) => Math.min(100, Math.max(0, v)); // 點到地圖最邊邊也要在 0～100（規則會檢查）
+        const x = +clamp((e.clientX - r.left) / r.width * 100).toFixed(2), y = +clamp((e.clientY - r.top) / r.height * 100).toFixed(2);
         if (el.dataset.pick === 'pt') { d.x = x; d.y = y; } else d.cam = { ...(d.cam || {}), x, y };
         keepMap(renderStep);
       };
@@ -311,12 +312,18 @@ input.code{font-family:monospace;font-size:1.8em;letter-spacing:.3em;text-align:
     setTimeout(() => { b.scrollLeft = Math.max(0, tx / 100 * inner.offsetWidth - b.clientWidth / 2); b.scrollTop = Math.max(0, inner.offsetTop + ty / 100 * inner.offsetHeight - b.clientHeight / 2); }, 30);
   }
   async function submit() {
-    const d = st.d;
-    if (!isOpen()) return toast('投稿已經截止了', true);
+    const d = st.d; let step = '準備';
+    if (!isOpen()) { // 頁面記得的狀態可能是舊的（老師剛重新開放）→ 先問一次伺服器
+      try { const m = await api(ROOT() + '/meta'); if (m) st.meta = m; } catch (e) { }
+      if (!isOpen()) return toast(st.meta && !st.meta.open ? '老師目前「暫停收件」，請等老師重新開放後再按一次送出' : '投稿已經截止了', true);
+    }
     $('#sNext').disabled = true; $('#sNext').textContent = '⏳ 上傳中…';
     try {
       const pic = G.rid(6), id = G.rid(5);
+      if (d.photo.length > 380000) d.photo = await shrinkData(d.photo); // 舊版頁面留下的大照片：再縮一次（規則上限 40 萬字）
+      step = '照片';
       await api(`${ROOT()}/pics/${pic}`, 'PUT', { k: st.me.h, data: d.photo, ts: { '.sv': 'timestamp' } });
+      step = '投稿內容';
       const item = { pic, x: d.x, y: d.y, cam: { x: d.cam.x, y: d.cam.y, dir: d.cam.dir }, view: { dist: d.view.dist || '', angle: d.view.angle || '', odd: !!d.view.odd }, name: d.name.slice(0, 30), seat: st.me.seat, who: st.me.name, ts: { '.sv': 'timestamp' } };
       if (d.hint) item.hint = d.hint.slice(0, 40);
       if (d.tq) item.task = { q: d.tq.slice(0, 60), a: (d.ta || '').slice(0, 30) };
@@ -324,7 +331,32 @@ input.code{font-family:monospace;font-size:1.8em;letter-spacing:.3em;text-align:
       st.step = 0; st.d = null; toast('📨 已送出！等老師審核');
       if (!st.items[id]) st.items[id] = { ...item, ts: Date.now() };
       render(); window.scrollTo(0, 0);
-    } catch (e) { $('#sNext').disabled = false; $('#sNext').textContent = '📨 送出投稿'; toast(e.status === 401 || e.status === 403 ? '送不出去：投稿可能已經截止，或你不在老師的名單裡' : '上傳失敗，請確認網路後再按一次', true); }
+    } catch (e) {
+      $('#sNext').disabled = false; $('#sNext').textContent = '📨 送出投稿';
+      if (e.status !== 401 && e.status !== 403) return toast('上傳失敗，請確認網路後再按一次', true);
+      // 2026-10-13：被拒絕時重新查一次，告訴學生「真正的原因」（以前一律說「可能截止或不在名單」）
+      let why = '';
+      try {
+        const m = await api(ROOT() + '/meta'); if (m) st.meta = m;
+        if (!m) why = '找不到這個投稿活動（可能被老師刪除了）';
+        else if (!m.open) why = '老師目前「暫停收件」，請等老師重新開放後再按一次送出';
+        else if (m.deadline && Date.now() > m.deadline) why = '已經過了截止時間';
+        else if (m.roster && !(await api(`${ROOT()}/keys/${st.me.h}`))) why = '老師的名單裡找不到你（座號或姓名跟名單不一樣），請按右上角登出，用名單上的座號姓名再進來';
+      } catch (x) { }
+      if (why) toast('送不出去：' + why, true);
+      else errSheet(`系統拒絕了「${step}」（${e.status}${e.detail ? '：' + e.detail : ''}）`);
+    }
+  }
+  // 查不出原因時：顯示詳細代碼，方便截圖給老師
+  function errSheet(msg) {
+    const s = sheet(`<h3 style="margin-bottom:8px">😵 送不出去</h3><p class="small">請先再按一次「送出投稿」。如果還是不行，把這個畫面截圖給老師：</p>
+      <div style="background:#f3eee2;border-radius:10px;padding:10px;margin:10px 0;font-size:.85em;word-break:break-all">${esc(msg)}<br>代碼 ${esc(CODE)}・${esc(st.me.seat)}・${new Date().toLocaleTimeString('zh-TW')}</div>
+      <button class="btn primary" style="width:100%" data-ok>知道了</button>`);
+    s.el.querySelector('[data-ok]').onclick = s.close;
+  }
+  // 把 dataURL 照片再縮小（長邊 640、品質 0.6）
+  function shrinkData(src) {
+    return new Promise((ok) => { const img = new Image(); img.onload = () => { const k = Math.min(1, 640 / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); ok(c.toDataURL('image/jpeg', 0.6)); }; img.onerror = () => ok(src); img.src = src; });
   }
 
   async function start() {

@@ -104,17 +104,23 @@
       return v || '';
     })());
   }
-  function compressImage(file, max, quality) {
+  // maxChars：結果太大就降品質、再縮小，直到放得進 Firebase（學生投稿上限 40 萬字、老師照片 60 萬字）
+  function compressImage(file, max, quality, maxChars) {
     max = max || 800; quality = quality || 0.72;
     return new Promise((resolve, reject) => {
       const url = URL.createObjectURL(file), img = new Image();
       img.onload = () => {
-        let w = img.naturalWidth, h = img.naturalHeight; const s = Math.min(1, max / Math.max(w, h));
-        w = Math.round(w * s); h = Math.round(h * s);
-        const c = document.createElement('canvas'); c.width = w; c.height = h;
-        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        const draw = (m, q) => {
+          let w = img.naturalWidth, h = img.naturalHeight; const s = Math.min(1, m / Math.max(w, h));
+          w = Math.round(w * s); h = Math.round(h * s);
+          const c = document.createElement('canvas'); c.width = w; c.height = h;
+          c.getContext('2d').drawImage(img, 0, 0, w, h);
+          return { data: c.toDataURL('image/jpeg', q), w, h };
+        };
+        let m = max, q = quality, out = draw(m, q);
+        for (let i = 0; maxChars && out.data.length > maxChars && i < 6; i++) { if (q > 0.5) q -= 0.1; else m = Math.round(m * 0.8); out = draw(m, q); }
         URL.revokeObjectURL(url);
-        resolve({ data: c.toDataURL('image/jpeg', quality), w, h });
+        resolve(out);
       };
       img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('讀不到這張圖片')); };
       img.src = url;
