@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>隱秘的鍵結社</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  /* 學生頁：不連回事務所首頁 */
+  :root { --night: #15121d; --night-2: #201b2c; --night-3: #2c2540; --ink: #2a2238; --paper: #f3e9d2; --paper-2: #e3d4b0; --gold: #e2b44c; --gold-2: #a8801f;
+    --soft: #b9b2d6; --red: #d2482e; --green: #2f9e5a; --candle: #ffcf6b; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans TC', sans-serif; background: radial-gradient(ellipse at top, #2a2140 0%, var(--night) 60%) fixed; color: #f1ecff; min-height: 100vh; line-height: 1.6; }
+  button { font: inherit; cursor: pointer; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  .hidden { display: none !important; }
+  .serif { font-family: 'Noto Serif TC', serif; }
+  .btn { border: none; border-radius: 10px; padding: 10px 16px; font-weight: 700; background: var(--gold); color: var(--ink); box-shadow: 0 3px 0 var(--gold-2); }
+  .btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--gold-2); }
+  .btn.ghost { background: transparent; color: var(--paper); border: 2px solid #4a4266; box-shadow: none; }
+  .btn.dark { background: var(--ink); color: #fff; box-shadow: 0 3px 0 #000; }
+  .btn.sm { padding: 5px 10px; font-size: .88em; }
+  .btn.red { background: var(--red); color: #fff; box-shadow: 0 3px 0 #8a2a17; }
+
+  /* ---- 開始畫面 ---- */
+  #s-title { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
+  .title-box { width: min(560px, 100%); text-align: center; }
+  .candle { font-size: 3em; filter: drop-shadow(0 0 18px #ffb84d); animation: flicker 3s infinite; }
+  @keyframes flicker { 0%, 100% { opacity: 1; } 45% { opacity: .85; } 50% { opacity: .95; } }
+  .title-box h1 { font-family: 'Noto Serif TC', serif; font-size: 2.3em; letter-spacing: .12em; color: var(--candle); text-shadow: 0 0 22px #ffb84d55; }
+  .lore { color: var(--soft); margin: 10px 0 18px; font-size: .96em; }
+  .opt-card { background: var(--night-2); border: 2px solid var(--night-3); border-radius: 14px; padding: 16px; text-align: left; margin-bottom: 12px; }
+  .opt-card h3 { font-size: .95em; color: var(--candle); margin-bottom: 8px; }
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .seg label { display: block; cursor: pointer; }
+  .seg input { display: none; }
+  .seg span { display: block; border: 2px solid var(--night-3); border-radius: 10px; padding: 9px 10px; font-size: .9em; }
+  .seg span b { display: block; font-size: 1.05em; }
+  .seg input:checked + span { border-color: var(--gold); background: #3a2f17; }
+  .code-in { width: 100%; background: var(--night); border: 2px solid var(--night-3); border-radius: 10px; color: #fff; padding: 9px 12px; font: inherit; letter-spacing: .2em; text-transform: uppercase; }
+  .title-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
+
+  /* ---- 遊戲畫面 ---- */
+  .topbar { position: sticky; top: 0; z-index: 20; background: #120f19ee; border-bottom: 1px solid #2c2540; backdrop-filter: blur(6px); }
+  .topbar .in { max-width: 1240px; margin: 0 auto; padding: 8px 14px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .topbar .brand { font-family: 'Noto Serif TC', serif; color: var(--candle); font-weight: 900; margin-right: 6px; }
+  .chip { background: var(--night-2); border: 1px solid var(--night-3); border-radius: 999px; padding: 3px 11px; font-size: .9em; font-weight: 700; white-space: nowrap; }
+  .chip.money { color: var(--candle); } .chip.stealth.low { color: #ff8a73; border-color: #6a2a20; }
+  .topbar .sp { flex: 1; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 14px; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+  @media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+  .card { background: var(--night-2); border: 1px solid var(--night-3); border-radius: 14px; padding: 14px; }
+  .card h2 { font-family: 'Noto Serif TC', serif; font-size: 1.15em; color: var(--candle); margin-bottom: 8px; }
+  .mapbox { background: #b9d3dc; border-radius: 12px; overflow: hidden; border: 3px solid #5a4a2e; box-shadow: inset 0 0 40px #5a4a2e55; }
+  .mapbox svg { width: 100%; height: auto; display: block; }
+  .hex { stroke: #fff8; stroke-width: .6; transition: fill .8s; }
+  .hex.flash { animation: flash 1.2s 3; }
+  @keyframes flash { 50% { fill: #fff; } }
+  .cap-tag { font-family: 'Noto Sans TC', sans-serif; font-weight: 900; font-size: 10px; }
+
+  .powers { margin-top: 12px; display: grid; gap: 7px; }
+  .prow { display: grid; grid-template-columns: 92px 1fr 54px; gap: 8px; align-items: center; font-size: .9em; }
+  .prow .nm { font-weight: 700; } .prow .nm small { display: block; font-weight: 400; color: var(--soft); font-size: .8em; }
+  .bar { position: relative; height: 22px; background: #120f19; border-radius: 6px; overflow: hidden; }
+  .bar .safe { position: absolute; top: 0; bottom: 0; background: #2f9e5a33; border-left: 1px dashed #2f9e5a; border-right: 1px dashed #2f9e5a; }
+  .bar .fill { position: absolute; left: 0; top: 4px; bottom: 4px; border-radius: 0 4px 4px 0; transition: width .8s; }
+  .bar .mk { position: absolute; top: 0; bottom: 0; width: 1px; background: #fff3; }
+  .bar .abs { position: absolute; right: 6px; top: 1px; font-size: .78em; color: #ffffffcc; }
+  .prow .pct { text-align: right; font-weight: 900; }
+  .pct.warn { color: #ffcf6b; } .pct.bad { color: #ff7a63; }
+  .legend { font-size: .78em; color: var(--soft); margin-top: 6px; }
+
+  /* 右側行動面板 */
+  .step-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  .step-h .kicker { color: var(--soft); font-size: .85em; }
+  .comm { background: var(--paper); color: var(--ink); border-radius: 12px; padding: 12px; margin-bottom: 10px; border-left: 6px solid #999; }
+  .comm.done { opacity: .6; } .comm .hd { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }
+  .badge { display: inline-block; border-radius: 6px; padding: 0 8px; font-size: .8em; font-weight: 700; color: #fff; }
+  .kind { background: var(--ink); } .shady { background: #3a0f0f; }
+  .effs { display: flex; gap: 5px; flex-wrap: wrap; margin: 6px 0; }
+  .eff { border-radius: 6px; padding: 0 7px; font-size: .82em; font-weight: 700; }
+  .eff.up { background: #dff3e6; color: #1e6e3e; } .eff.dn { background: #fde3df; color: #9a2f1c; }
+  .comm .ft { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .needs { font-size: .82em; color: #6b5a3a; } .needs .miss { color: var(--red); font-weight: 700; }
+  .note { background: #120f19; border-radius: 10px; padding: 10px 12px; font-size: .92em; color: var(--soft); margin: 8px 0; }
+  .note b { color: #fff; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .warnline { color: #ffcf6b; font-size: .9em; } .badline { color: #ff8a73; font-size: .9em; }
+
+  /* 交易所 */
+  .trade-sec { background: var(--night); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; }
+  .trade-sec h3 { font-size: .95em; color: var(--candle); margin-bottom: 6px; }
+  .trade-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 4px 0; font-size: .9em; }
+  .fbtn { border: 2px solid; border-radius: 8px; padding: 3px 9px; background: transparent; color: #fff; font-weight: 700; font-size: .88em; }
+
+  /* 週期表 */
+  .ptable { display: grid; grid-template-columns: repeat(18, minmax(0, 1fr)); gap: 2px; margin: 8px 0; }
+  .el { aspect-ratio: 1 / 1.1; border: 1px solid #0002; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: clamp(8px, 1.6vw, 12px); line-height: 1.05; padding: 0; color: var(--ink); background: #fff; }
+  .el small { font-size: .7em; opacity: .7; }
+  .el.m { background: #f5e6b8; } .el.n { background: #cfe0f5; } .el.s { background: #d9f0d0; } .el.g { background: #e3d9f2; }
+  .el.sel { outline: 3px solid var(--red); z-index: 1; }
+  .el .cnt { font-size: .7em; color: var(--red); font-weight: 900; }
+  .el.empty { visibility: hidden; }
+
+  /* 任務視窗 */
+  .modal { position: fixed; inset: 0; background: #000b; display: flex; align-items: center; justify-content: center; padding: 14px; z-index: 50; }
+  .mcard { background: var(--paper); color: var(--ink); border-radius: 16px; width: min(720px, 100%); max-height: 92vh; overflow: auto; padding: 18px; }
+  .mcard h2 { font-family: 'Noto Serif TC', serif; font-size: 1.25em; }
+  .mcard .from { font-size: .85em; color: #6b5a3a; }
+  .clues { list-style: none; margin: 10px 0; }
+  .clues li { background: #fff; border-radius: 8px; padding: 6px 10px; margin-bottom: 5px; border-left: 4px solid var(--gold); }
+  .bigf { font-size: 2em; font-weight: 900; text-align: center; margin: 10px 0; font-family: 'Noto Serif TC', serif; }
+  .bigf sub { font-size: .55em; } .bigf sup { font-size: .5em; }
+  .ionbox { display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; margin: 10px 0; }
+  .ionc { background: #fff; border-radius: 12px; padding: 10px 14px; text-align: center; min-width: 140px; }
+  .ionc .ion { font-size: 1.6em; font-weight: 900; } .ionc .ion sub { font-size: .55em; } .ionc .ion sup { font-size: .55em; }
+  .step { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; }
+  .step button { width: 34px; height: 34px; border-radius: 50%; border: none; background: var(--ink); color: #fff; font-size: 1.2em; }
+  .step b { min-width: 24px; display: inline-block; text-align: center; font-size: 1.3em; }
+  .pick { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin: 4px 0 8px; }
+  .pick button { border: 2px solid var(--paper-2); background: #fff; border-radius: 10px; padding: 6px 14px; font-weight: 900; font-size: 1.1em; color: var(--ink); }
+  .pick button.on { border-color: var(--red); background: #fde3df; }
+  .pick button sub { font-size: .6em; }
+  .preview { text-align: center; font-size: 1.6em; font-weight: 900; min-height: 1.6em; } .preview sub { font-size: .55em; }
+  .names { display: grid; gap: 8px; grid-template-columns: 1fr 1fr; margin: 10px 0; }
+  .names button { border: 2px solid var(--paper-2); background: #fff; border-radius: 10px; padding: 10px; font-weight: 700; font-size: 1.05em; color: var(--ink); }
+  .fb { border-radius: 10px; padding: 10px 12px; margin-top: 10px; line-height: 1.75; }
+  .fb.ok { background: #dff3e6; } .fb.bad { background: #fde3df; } .fb.hint { background: #fff3cd; }
+  .ev-choice { display: block; width: 100%; text-align: left; background: #fff; border: 2px solid var(--paper-2); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; color: var(--ink); font-weight: 700; }
+  .ev-choice:hover:not(:disabled) { border-color: var(--gold); }
+  .ev-card { background: var(--paper); color: var(--ink); border-radius: 12px; padding: 14px; }
+  .score-t { width: 100%; border-collapse: collapse; margin: 8px 0; }
+  .score-t td { padding: 5px 8px; border-bottom: 1px dashed var(--paper-2); } .score-t td:last-child { text-align: right; font-weight: 900; }
+  .score-t tr.total td { font-size: 1.2em; border-bottom: none; color: #8a3a12; }
+  .codex-f { border-left: 6px solid; border-radius: 10px; background: #fff; padding: 10px 12px; margin-bottom: 8px; }
+  .pt-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  @media (max-width: 640px) {
+    .pt-wrap .ptable { min-width: 600px; }
+    .topbar .brand .txt, .btn .txt { display: none; }
+    .topbar .in { padding: 6px 10px; gap: 5px; }
+    .chip { padding: 2px 8px; font-size: .82em; }
+    .pt-wrap::after { content: '← 左右滑動看完整週期表 →'; display: block; text-align: center; font-size: .75em; color: #8a7a62; }
+  }
+  .toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); background: #000d; border: 2px solid var(--gold); border-radius: 10px; padding: 9px 16px; z-index: 80; opacity: 0; transition: .3s; pointer-events: none; }
+  .toast.on { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- 開始畫面 -->
+<section id="s-title">
+  <div class="title-box">
+    <div class="candle">🕯️</div>
+    <h1>隱秘的鍵結社</h1>
+    <p class="lore">在一個平行時空的大陸上，共國、離國、金國互相角力。<br>你是不屬於任何國家的秘密組織特工，暗中接下各國的委託。<br><b style="color:#fff">讓各國互相制衡</b>：天下維持均勢，鍵結社才有存在的意義。</p>
+    <div class="opt-card" id="cont-card"><h3>📜 上次的存檔</h3><div id="cont-info" class="note" style="margin:0 0 8px"></div><button class="btn" id="btn-cont" style="width:100%">繼續上次的戰局 ▶</button></div>
+    <div class="opt-card">
+      <h3>🎓 課程程度</h3>
+      <div class="seg">
+        <label><input type="radio" name="lv" value="g10" checked><span><b>高一版</b>共國、離國、金國三國（氫聯邦、凡聯邦以事件登場）</span></label>
+        <label><input type="radio" name="lv" value="g11"><span><b>高二高三版</b>五大勢力全部登場，加入氫鍵與凡得瓦力</span></label>
+      </div>
+    </div>
+    <div class="opt-card">
+      <h3>🗺️ 地圖代碼（選填）</h3>
+      <input class="code-in" id="in-code" maxlength="6" placeholder="留空＝隨機產生新大陸">
+      <p class="hint" style="color:var(--soft);font-size:.82em;margin-top:6px">輸入老師給的代碼，全班可以玩同一張地圖、同樣的開局。</p>
+    </div>
+    <div class="title-actions">
+      <button class="btn" id="btn-new">開始新的戰局 ▶</button>
+      <button class="btn ghost" id="btn-codex">📖 勢力圖鑑與規則</button>
+    </div>
+  </div>
+</section>
+
+<!-- 遊戲畫面 -->
+<section id="s-game" class="hidden">
+  <div class="topbar"><div class="in">
+    <span class="brand">🕯️<span class="txt"> 隱秘的鍵結社</span></span>
+    <span class="chip" id="t-round"></span>
+    <span class="chip money" id="t-money"></span>
+    <span class="chip stealth" id="t-stealth"></span>
+    <span class="sp"></span>
+    <button class="btn sm ghost" id="btn-inv">⛏️<span class="txt"> 倉庫</span></button>
+    <button class="btn sm ghost" id="btn-codex2">📖<span class="txt"> 圖鑑</span></button>
+    <button class="btn sm ghost" id="btn-menu">☰</button>
+  </div></div>
+  <div class="wrap">
+    <div>
+      <div class="card">
+        <div class="step-h"><h2 style="margin:0">🗺️ 大陸局勢</h2><span class="kicker" id="map-code"></span></div>
+        <div class="mapbox"><svg id="map"></svg></div>
+        <div class="powers" id="powers"></div>
+        <div class="legend">國力條是<b>相對國力</b>（目前 ÷ 開局）：綠色區間 60%～150% 是安全範圍；≥200% 天下一統、≤30% 一國滅亡都會讓鍵結社被消滅。右側小字是實際國力。</div>
+      </div>
+    </div>
+    <div class="card" id="panel"></div>
+  </div>
+</section>
+
+<div class="modal hidden" id="modal"><div class="mcard" id="mcard"></div></div>
+<div class="toast" id="toast"></div>
+
+<script src="data.js?v=20261014a"></script>
+<script src="world.js?v=20261014a"></script>
+<script src="tasks.js?v=20261014a"></script>
+<script src="events.js?v=20261014a"></script>
+<script src="game.js?v=20261014a"></script>
+<script>
+const $ = id => document.getElementById(id);
+const F = WORLD.FACTIONS, C = CHEM;
+const SAVE = 'bond-society-save-v1';
+const SEASON = ['春', '夏', '秋', '冬'];
+const KIND = { mine: '⛏️ 尋礦', forge: '⚒️ 鑄造' };
+let S = null, MAP = null;
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const md = s => String(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+let tt; function toast(m) { const t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('on'), 2400); }
+function save() { try { localStorage.setItem(SAVE, JSON.stringify(S)); } catch (e) {} }
+function load() { try { return JSON.parse(localStorage.getItem(SAVE)); } catch (e) { return null; } }
+const fname = f => `${F[f].icon} ${F[f].name}`;
+const effChips = eff => Object.entries(eff || {}).filter(([, v]) => v).map(([f, v]) => `<span class="eff ${v > 0 ? 'up' : 'dn'}">${F[f].name} ${v > 0 ? '+' : ''}${Math.round(v * 10) / 10}%</span>`).join('');
+const roundName = r => `第 ${r}／8 回合・第${r <= 4 ? '一' : '二'}年${SEASON[(r - 1) % 4]}`;
+const roundShort = r => (innerWidth <= 640 ? `${r}／8・${SEASON[(r - 1) % 4]}` : roundName(r));
+function modal(html) { $('mcard').innerHTML = html; $('modal').classList.remove('hidden'); $('mcard').scrollTop = 0; return $('mcard'); }
+function closeModal() { $('modal').classList.add('hidden'); }
+
+/* ---------- 開始畫面 ---------- */
+function showTitle() {
+  $('s-title').classList.remove('hidden'); $('s-game').classList.add('hidden');
+  const sv = load();
+  const can = sv && sv.v === 1 && !sv.ended;
+  $('cont-card').classList.toggle('hidden', !can);
+  if (can) $('cont-info').innerHTML = `${sv.level === 'g11' ? '高二高三版' : '高一版'}・地圖 <b>${sv.code}</b>・${roundName(sv.round)}・💰 ${sv.money}`;
+}
+$('btn-cont').onclick = () => { S = load(); enterGame(); };
+$('btn-new').onclick = () => {
+  const code = $('in-code').value.trim();
+  if (code && !/^[0-9a-z]{1,6}$/i.test(code)) return toast('地圖代碼只能是英文字母和數字（最多 6 個）');
+  const level = document.querySelector('[name=lv]:checked').value;
+  S = WORLD.newGame({ level, code: code || undefined });
+  enterGame(true);
+};
+function enterGame(fresh) {
+  MAP = WORLD.makeMap(S.seed, S.facs);
+  $('s-title').classList.add('hidden'); $('s-game').classList.remove('hidden');
+  drawMap(); drawPowers(); drawTop();
+  if (fresh) intro(); else renderStep();
+}
+function intro() {
+  const m = modal(`<h2>🕯️ 歡迎加入鍵結社</h2>
+    <p style="margin:8px 0">特工，這片大陸上有 ${S.facs.map(f => `<b style="color:${F[f].color}">${F[f].name}</b>`).join('、')}，中央山脈是中立的<b>採礦國</b>，開採原子序 1～36 的元素。</p>
+    <p>你的任務：接下各國的化學委託，但要<b>讓各國互相制衡</b>。任何一國統一天下、或任何一國被消滅，鍵結社都會失去存在的意義。</p>
+    <ul style="margin:8px 0 0 20px"><li>每回合最多接 <b>2 件</b>委託；幫誰，誰就變強。</li><li>強國每回合會<b>蠶食</b>相鄰的弱國。</li><li>交易所可以用錢暗中資助弱國、散播謠言拖慢強國。</li><li>撐過 <b>8 回合</b>（兩年），而且天下均勢，就是最好的結局。</li></ul>
+    <p class="note" style="color:#6b5a3a;background:#fff">💡 各國國力的數字差很多（共國、離國幾百，凡聯邦只有個位數），因為它們代表的化學鍵強弱本來就差很多。判斷平衡要看<b>相對國力</b>（國力條）。</p>
+    <div class="actions" style="justify-content:flex-end"><button class="btn" id="go">開始第一回合 ▶</button></div>`);
+  m.querySelector('#go').onclick = () => { closeModal(); renderStep(); };
+}
+
+/* ---------- 地圖 ---------- */
+function drawMap(flash = []) {
+  const svg = $('map'), M = MAP, W = WORLD;
+  svg.setAttribute('viewBox', `0 0 ${M.width.toFixed(0)} ${M.height.toFixed(0)}`);
+  const colorOf = o => (o ? (o === 'mine' ? '#b9a98c' : F[o].light) : null);
+  let h = `<defs><pattern id="wave" width="24" height="12" patternUnits="userSpaceOnUse"><path d="M0 6 q6 -4 12 0 t12 0" stroke="#9cc0cc" fill="none" stroke-width="1"/></pattern></defs>
+    <rect width="100%" height="100%" fill="#bcd6df"/><rect width="100%" height="100%" fill="url(#wave)" opacity=".7"/>`;
+  M.cells.forEach(c => { if (!c.land) return; const o = S.owner[c.i];
+    h += `<polygon class="hex ${flash.includes(c.i) ? 'flash' : ''}" points="${W.hexPath(c.x, c.y)}" fill="${colorOf(o)}"/>`; });
+  // 國界與海岸線
+  M.cells.forEach(c => {
+    if (!c.land) return; const o = S.owner[c.i];
+    for (let k = 0; k < 6; k++) {
+      const ang = 60 * k * Math.PI / 180;
+      const nx = c.x + Math.cos(ang) * M.S * 1.73, ny = c.y + Math.sin(ang) * M.S * 1.73;
+      const nb = c.nb.map(j => M.cells[j]).find(d => Math.hypot(d.x - nx, d.y - ny) < M.S * 0.5);
+      const no = nb && nb.land ? S.owner[nb.i] : 'sea';
+      if (no === o) continue;
+      const a1 = (60 * k - 30) * Math.PI / 180, a2 = (60 * k + 30) * Math.PI / 180;
+      const x1 = c.x + M.S * Math.cos(a1), y1 = c.y + M.S * Math.sin(a1), x2 = c.x + M.S * Math.cos(a2), y2 = c.y + M.S * Math.sin(a2);
+      h += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${no === 'sea' ? '#5a4a2e' : (o === 'mine' ? '#5a4a2e' : F[o].color)}" stroke-width="${no === 'sea' ? 2.2 : 1.8}" stroke-linecap="round"/>`;
+    }
+  });
+  // 地形裝飾
+  M.cells.forEach(c => {
+    if (!c.land) return;
+    if (c.terrain === 'mount') h += `<path d="M${c.x - 8} ${c.y + 6} L${c.x - 2} ${c.y - 6} L${c.x + 4} ${c.y + 6}Z M${c.x - 1} ${c.y + 6} L${c.x + 4} ${c.y - 2} L${c.x + 9} ${c.y + 6}Z" fill="#7a6a52" opacity=".8"/>`;
+    else if (c.terrain === 'forest') h += `<circle cx="${c.x - 4}" cy="${c.y + 2}" r="3.2" fill="#4c7a4a" opacity=".55"/><circle cx="${c.x + 3}" cy="${c.y - 2}" r="3.6" fill="#4c7a4a" opacity=".55"/>`;
+    else if (c.terrain === 'hill') h += `<path d="M${c.x - 7} ${c.y + 4} q7 -9 14 0" stroke="#7a6a52" fill="none" opacity=".55" stroke-width="1.5"/>`;
+  });
+  // 首都與名稱
+  S.facs.forEach(f => {
+    let cap = M.cells[M.capitals[f]];
+    if (S.owner[cap.i] !== f) { const own = M.cells.filter(c => S.owner[c.i] === f); if (!own.length) return; cap = own[0]; }
+    const w = 52;
+    h += `<g><rect x="${cap.x - w / 2}" y="${cap.y - 9}" width="${w}" height="17" rx="8" fill="${F[f].color}" stroke="#fff" stroke-width="1.2"/><text class="cap-tag" x="${cap.x}" y="${cap.y + 3.5}" text-anchor="middle" fill="#fff">🏰${F[f].name}</text></g>`;
+  });
+  const mineCells = M.cells.filter(c => S.owner[c.i] === 'mine');
+  if (mineCells.length) { const mx = mineCells.reduce((a, c) => a + c.x, 0) / mineCells.length, my = mineCells.reduce((a, c) => a + c.y, 0) / mineCells.length;
+    h += `<rect x="${mx - 30}" y="${my + 8}" width="60" height="16" rx="8" fill="#5a4a2e" stroke="#fff" stroke-width="1"/><text class="cap-tag" x="${mx}" y="${my + 20}" text-anchor="middle" fill="#fff">⛏️採礦國</text>`; }
+  svg.innerHTML = h;
+  $('map-code').textContent = `地圖代碼 ${S.code}・${S.level === 'g11' ? '高二高三版' : '高一版'}`;
+}
+function drawPowers() {
+  const MAX = 220;
+  $('powers').innerHTML = S.facs.map(f => {
+    const r = WORLD.rel(S, f), w = Math.min(100, r / MAX * 100);
+    const cls = r >= 170 || r <= 45 ? 'bad' : r > 150 || r < 60 ? 'warn' : '';
+    return `<div class="prow"><div class="nm" style="color:${F[f].color}">${F[f].icon} ${F[f].name}<small>${F[f].bond}・領土 ${WORLD.territory(S, f)}</small></div>
+      <div class="bar"><div class="safe" style="left:${60 / MAX * 100}%;width:${90 / MAX * 100}%"></div>
+        <div class="mk" style="left:${100 / MAX * 100}%"></div><div class="mk" style="left:${30 / MAX * 100}%;background:#ff7a6377"></div><div class="mk" style="left:${200 / MAX * 100}%;background:#ff7a6377"></div>
+        <div class="fill" style="width:${w}%;background:${F[f].color}"></div><span class="abs">國力 ${WORLD.fmtPower(S, f)}</span></div>
+      <div class="pct ${cls}">${Math.round(r)}%</div></div>`;
+  }).join('');
+}
+function drawTop() {
+  $('t-round').textContent = roundShort(S.round);
+  $('t-money').textContent = `💰 ${S.money}`;
+  $('t-stealth').textContent = `🕵️ 隱密 ${Math.max(0, S.stealth)}`;
+  $('t-stealth').classList.toggle('low', S.stealth <= 30);
+}
+function refresh(flash) { drawMap(flash); drawPowers(); drawTop(); save(); }
+
+/* ---------- 每一步 ---------- */
+function renderStep() {
+  drawTop();
+  if (S.ended) return showEnding();
+  ({ report: stepReport, board: stepBoard, trade: stepTrade, settle: stepSettle, event: stepEvent })[S.step]();
+}
+function warnings() {
+  return S.facs.map(f => { const r = WORLD.rel(S, f);
+    if (r >= 170) return `<div class="badline">🚨 ${F[f].name}相對國力 ${Math.round(r)}%，再不壓制就要統一天下了！${(S.hi[f] || 0) >= 1 ? '（已連續 1 回合 ≥170%，下回合結束還是 ≥170% 就失敗）' : ''}</div>`;
+    if (r > 150) return `<div class="warnline">⚠️ ${F[f].name}過強（${Math.round(r)}%）</div>`;
+    if (r <= 45) return `<div class="badline">🚨 ${F[f].name}快要滅亡了（${Math.round(r)}%）！</div>`;
+    if (r < 60) return `<div class="warnline">⚠️ ${F[f].name}過弱（${Math.round(r)}%）</div>`;
+    return ''; }).join('');
+}
+function stepReport() {
+  const prev = S.history.length > 1 ? S.history[S.history.length - 2] : null;
+  $('panel').innerHTML = `<div class="step-h"><h2>📜 情勢報告</h2><span class="kicker">${roundName(S.round)}</span></div>
+    <p>${S.round === 1 ? '各國剛剛開始角力，局勢還算平衡。' : '上一回合結束後，各國的消長如下：'}</p>
+    ${prev ? `<div class="effs">${S.facs.map(f => { const d = S.history[S.history.length - 1][f] - prev[f]; return `<span class="eff ${d >= 0 ? 'up' : 'dn'}">${F[f].name} ${d >= 0 ? '+' : ''}${d}%</span>`; }).join('')}</div>` : ''}
+    ${warnings() || '<div class="note">✅ 目前各國都在安全範圍內。</div>'}
+    <div class="note">每回合最多接 <b>2 件</b>委託。想一想：該幫弱國一把，還是削弱強國？</div>
+    <div class="actions"><button class="btn" id="go">查看本回合的委託 ▶</button></div>`;
+  $('go').onclick = () => { GAME.startRound(S); save(); renderStep(); };
+}
+function stepBoard() {
+  const open = S.board.filter(c => c.state === 'open');
+  $('panel').innerHTML = `<div class="step-h"><h2>📋 委託公告板</h2><span class="kicker">本回合還能接 <b style="color:var(--candle)">${S.ap}</b> 件</span></div>
+    ${S.board.map(c => {
+      const t = c.task, col = c.from === 'mine' ? F.mine.color : F[c.from].color;
+      const miss = GAME.missing(S, t);
+      const st = c.state === 'done' ? '✅ 已完成' : c.state === 'failed' ? '❌ 失敗' : c.state === 'skipped' ? '已略過' : '';
+      return `<div class="comm ${c.state !== 'open' ? 'done' : ''}" style="border-left-color:${col}">
+        <div class="hd"><span class="badge" style="background:${col}">${fname(c.from)}</span><span class="badge kind">${KIND[t.kind]}</span>${c.shady ? `<span class="badge shady">🗡️ 暗中削弱${F[c.shady].name}</span>` : ''}${st ? `<b style="margin-left:auto">${st}</b>` : ''}</div>
+        <div>${esc(c.text)}</div>
+        <div class="effs">${c.from === 'mine' ? '<span class="eff up">不影響國力</span><span class="eff up">得到 3 單位元素</span>' : effChips(effectsShown(c.effects))}</div>
+        <div class="ft"><span>💰 報酬 <b>${c.reward}</b>${t.kind === 'mine' ? `・⛏️ 得到 ${t.qty} 單位元素` : ''}</span>
+          ${t.kind === 'forge' ? `<span class="needs">原料：${t.needs.map(sym => `<span class="${miss.includes(sym) ? 'miss' : ''}">${sym}${S.inv[sym] ? `×${S.inv[sym]}` : '（缺）'}</span>`).join('、')}</span>` : ''}
+          ${c.state === 'open' ? `<button class="btn sm" data-take="${c.id}" ${S.ap ? '' : 'disabled'}>接下委託</button>` : ''}</div></div>`;
+    }).join('')}
+    <div class="actions"><button class="btn ${open.length && S.ap ? 'ghost' : ''}" id="go">前往交易所 ▶</button></div>`;
+  $('panel').querySelectorAll('[data-take]').forEach(b => b.onclick = () => openTask(S.board.find(c => c.id === b.dataset.take)));
+  $('go').onclick = () => { S.step = 'trade'; save(); renderStep(); };
+}
+// 高二高三版：共國的變化連帶兩聯邦，委託卡上一起顯示
+function effectsShown(eff) {
+  const e = { ...eff };
+  if (eff.co && S.level === 'g11') { e.hb = (e.hb || 0) + eff.co * 0.3; e.vw = (e.vw || 0) + eff.co * 0.3; }
+  return e;
+}
+
+/* ---------- 任務 ---------- */
+function openTask(c) {
+  const t = c.task, miss = GAME.missing(S, t);
+  if (miss.length) {
+    const cost = miss.reduce((a, sym) => a + GAME.buyPrice(S, sym), 0);
+    const m = modal(`<h2>⚒️ 原料不足</h2><p style="margin:8px 0">這件委託要消耗 ${t.needs.map(x => `<b>${x}</b>`).join('、')} 各 1 單位，倉庫裡缺少 ${miss.map(x => `<b style="color:var(--red)">${x}（${C.EL[x].zh}）</b>`).join('、')}。</p>
+      <p>可以向採礦國緊急調貨，共 <b>${cost}</b> 金幣。</p>
+      <div class="actions"><button class="btn" id="buy" ${S.money >= cost ? '' : 'disabled'}>💰 調貨並開始</button><button class="btn dark" id="no">先不要</button></div>`);
+    m.querySelector('#no').onclick = closeModal;
+    m.querySelector('#buy').onclick = () => { miss.forEach(sym => GAME.buy(S, sym)); refresh(); openTask(c); };
+    return;
+  }
+  c.tries = c.tries || 0;
+  const head = `<div class="from">${fname(c.from)}的委託・💰 ${c.reward}</div>`;
+  if (t.kind === 'mine') return mineUI(c, head);
+  if (t.mode === 'f2name') return nameUI(c, head);
+  return forgeUI(c, head);
+}
+function finishTask(c, ok, explain) {
+  const first = ok && c.tries === 0;
+  const applied = GAME.resolve(S, c, { ok, first });
+  const fails = WORLD.checkFail(S);
+  refresh();
+  const m = modal(`<h2>${ok ? '✅ 委託完成' : '❌ 委託失敗'}</h2>
+    <div class="fb ${ok ? 'ok' : 'bad'}">${explain}</div>
+    ${ok ? `<p style="margin-top:8px">💰 得到 <b>${Math.round(c.reward * (first ? 1 : 0.7))}</b> 金幣${first ? '' : '（用了提示，只拿 7 成）'}${c.task.kind === 'mine' ? `，⛏️ ${c.task.answer} ×${c.task.qty}` : ''}</p>` : '<p style="margin-top:8px">🕵️ 隱密度 −10</p>'}
+    <div class="effs">${effChips(applied)}</div>
+    <div class="actions" style="justify-content:flex-end"><button class="btn" id="ok">回到公告板</button></div>`);
+  m.querySelector('#ok').onclick = () => { closeModal(); if (fails) { S.ended = fails; save(); return showEnding(); } renderStep(); };
+}
+function wrong(c, msg, retry) {
+  c.tries++; save();   // 答錯就存檔，重新整理也不能重來
+  if (c.tries >= 2) return null;
+  return `<div class="fb bad">❌ ${md(msg || '不對喔。')}</div><div class="fb hint">💡 提示：${TASKS.hint(c.task)}<br>再試一次（成功只拿 7 成報酬）。</div>`;
+}
+function mineUI(c, head) {
+  const t = c.task; let sel = null;
+  const grid = () => { const cells = []; for (let p = 1; p <= 4; p++) for (let g = 1; g <= 18; g++) { const e = C.ELEMENTS.find(x => x.period === p && x.group === g); cells.push(e ? `<button class="el ${e.type} ${sel === e.sym ? 'sel' : ''}" data-s="${e.sym}"><small>${e.z}</small>${e.sym}</button>` : '<div class="el empty"></div>'); } return cells.join(''); };
+  const draw = (fb = '') => {
+    const m = modal(`${head}<h2>⛏️ 尋礦委託</h2><p>${esc(c.text)} 依照下面的線索，在週期表上找出這個元素：</p>
+      <ul class="clues">${t.clues.map(x => `<li>🔎 ${esc(x)}</li>`).join('')}</ul>
+      <div class="pt-wrap"><div class="ptable">${grid()}</div></div>
+      <div style="font-size:.8em;color:#6b5a3a">底色：<span style="background:#f5e6b8;padding:0 4px">金屬</span> <span style="background:#cfe0f5;padding:0 4px">非金屬</span> <span style="background:#d9f0d0;padding:0 4px">類金屬</span> <span style="background:#e3d9f2;padding:0 4px">惰性氣體</span></div>
+      ${fb}<div class="actions" style="justify-content:space-between"><button class="btn dark" id="x">放棄這件委託</button><button class="btn" id="ok" ${sel ? '' : 'disabled'}>確認開採 ${sel ? sel : ''}</button></div>`);
+    m.querySelectorAll('.el[data-s]').forEach(b => b.onclick = () => { sel = b.dataset.s; draw(fb); });
+    m.querySelector('#x').onclick = () => giveUp(c);
+    m.querySelector('#ok').onclick = () => {
+      const e = C.EL[t.answer];
+      if (sel === t.answer) return finishTask(c, true, `答案是 <b>${e.sym}（${e.zh}）</b>：第 ${e.period} 週期、第 ${e.group} 族，${e.typeZh}${e.val != null && !e.trans ? `，價電子 ${e.val} 個` : ''}。`);
+      const w = wrong(c, `${sel}（${C.EL[sel].zh}）不符合全部的線索。`);
+      if (w === null) return finishTask(c, false, `正確答案是 <b>${e.sym}（${e.zh}）</b>：第 ${e.period} 週期、第 ${e.group} 族，${e.typeZh}${e.val != null && !e.trans ? `，價電子 ${e.val} 個` : ''}。`);
+      sel = null; draw(w);
+    };
+  };
+  draw();
+}
+function forgeUI(c, head) {
+  const t = c.task, ions = t.mode === 'ions';
+  let cs = ions ? t.c : null, as = ions ? t.a : null, m1 = 1, n1 = 1;
+  const plain = id => C.html(C.CAT[id] ? C.CAT[id].f : C.AN[id].f);
+  const draw = (fb = '') => {
+    const prev = cs && as ? C.html(C.build(cs, m1, as, n1)) : '<span style="color:#bbb">？</span>';
+    const m = modal(`${head}<h2>⚒️ 鑄造委託</h2>
+      ${ions ? `<p>${esc(c.text)} 請用下面兩種離子，鑄造出<b>電中性</b>的化合物：</p>
+        <div class="ionbox"><div class="ionc"><div class="ion">${C.ionHtml(C.CAT[t.c])}</div><div>陽離子 ×</div><div class="step"><button data-d="m-">−</button><b>${m1}</b><button data-d="m+">＋</button></div></div>
+        <div class="ionc"><div class="ion">${C.ionHtml(C.AN[t.a])}</div><div>陰離子 ×</div><div class="step"><button data-d="n-">−</button><b>${n1}</b><button data-d="n+">＋</button></div></div></div>`
+      : `<p>${esc(c.text)} 訂單上寫著要鑄造：</p><div class="bigf">${esc(t.name)}</div>
+        <p style="text-align:center;font-size:.9em;color:#6b5a3a">選出組成它的陽離子和陰離子，再決定各要幾個（名稱的後半段是陽離子、前半段是陰離子）</p>
+        <div style="text-align:center"><b>陽離子</b></div><div class="pick">${t.cOpts.map(id => `<button class="${cs === id ? 'on' : ''}" data-c="${id}">${plain(id)}</button>`).join('')}</div>
+        <div style="text-align:center"><b>陰離子</b></div><div class="pick">${t.aOpts.map(id => `<button class="${as === id ? 'on' : ''}" data-a="${id}">${plain(id)}</button>`).join('')}</div>
+        <div class="ionbox"><div>陽離子 ×<div class="step"><button data-d="m-">−</button><b>${m1}</b><button data-d="m+">＋</button></div></div><div>陰離子 ×<div class="step"><button data-d="n-">−</button><b>${n1}</b><button data-d="n+">＋</button></div></div></div>`}
+      <div class="preview">${prev}</div>
+      ${fb}<div class="actions" style="justify-content:space-between"><button class="btn dark" id="x">放棄這件委託</button><button class="btn" id="ok" ${cs && as ? '' : 'disabled'}>確認鑄造</button></div>`);
+    m.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { const d = b.dataset.d; if (d === 'm+') m1 = Math.min(4, m1 + 1); if (d === 'm-') m1 = Math.max(1, m1 - 1); if (d === 'n+') n1 = Math.min(4, n1 + 1); if (d === 'n-') n1 = Math.max(1, n1 - 1); draw(fb); });
+    m.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { cs = b.dataset.c; draw(fb); });
+    m.querySelectorAll('[data-a]').forEach(b => b.onclick = () => { as = b.dataset.a; draw(fb); });
+    m.querySelector('#x').onclick = () => giveUp(c);
+    m.querySelector('#ok').onclick = () => {
+      const r = TASKS.checkForge(t, { c: cs, a: as, m: m1, n: n1 });
+      const ans = `<b>${C.html(t.formula)}</b>（${esc(t.name)}）：${C.ionHtml(C.CAT[t.c])} 和 ${C.ionHtml(C.AN[t.a])}，正負電荷總和為零，最簡整數比 ${t.m}：${t.n}。`;
+      if (r.ok) return finishTask(c, true, `鑄造成功！${ans}`);
+      const w = wrong(c, r.msg);
+      if (w === null) return finishTask(c, false, `${md(r.msg)}<br>正確答案是 ${ans}`);
+      draw(w);
+    };
+  };
+  draw();
+}
+function nameUI(c, head) {
+  const t = c.task;
+  const draw = (fb = '', dis = []) => {
+    const m = modal(`${head}<h2>⚒️ 鑑定化合物</h2><p>${esc(c.text)} 樣本上的標籤只寫了化學式，請說出它的名稱：</p>
+      <div class="bigf">${C.html(t.formula)}</div>
+      <div class="names">${t.opts.map(n => `<button data-n="${esc(n)}" ${dis.includes(n) ? 'disabled' : ''}>${esc(n)}</button>`).join('')}</div>
+      ${fb}<div class="actions"><button class="btn dark" id="x">放棄這件委託</button></div>`);
+    m.querySelectorAll('[data-n]').forEach(b => b.onclick = () => {
+      const r = TASKS.checkForge(t, { name: b.dataset.n });
+      const ans = `<b>${C.html(t.formula)}</b> 由 ${C.ionHtml(C.CAT[t.c])} 和 ${C.ionHtml(C.AN[t.a])} 組成，名稱是「<b>${esc(t.name)}</b>」。`;
+      if (r.ok) return finishTask(c, true, ans);
+      const w = wrong(c, r.msg);
+      if (w === null) return finishTask(c, false, ans);
+      draw(w, [...dis, b.dataset.n]);
+    });
+    m.querySelector('#x').onclick = () => giveUp(c);
+  };
+  draw();
+}
+function giveUp(c) {
+  const m = modal(`<h2>放棄這件委託？</h2><p style="margin:8px 0">放棄等於委託失敗：隱密度 −10，委託國會不太高興。</p>
+    <div class="actions"><button class="btn red" id="y">確定放棄</button><button class="btn dark" id="n">再想想</button></div>`);
+  m.querySelector('#n').onclick = () => openTask(c);
+  m.querySelector('#y').onclick = () => { c.tries = 2; finishTask(c, false, '你放棄了這件委託。'); };
+}
+
+/* ---------- 交易所 ---------- */
+function stepTrade(note = '') {
+  const r = S.round, fc = S.trade.intel ? GAME.forecast(S) : null;
+  const inv = Object.entries(S.inv).filter(([, n]) => n > 0);
+  $('panel').innerHTML = `<div class="step-h"><h2>💱 交易所</h2><span class="kicker">可以不用，直接結束本回合</span></div>
+    ${note}
+    <div class="trade-sec"><h3>🤝 暗中資助（${GAME.PRICE.subsidy(r)} 金幣，該國 +${GAME.SUBSIDY}%）</h3>
+      <div class="trade-row">${S.facs.map(f => `<button class="fbtn" style="border-color:${F[f].color}" data-sub="${f}">${F[f].name}</button>`).join('')}</div></div>
+    <div class="trade-sec"><h3>🗣️ 散播謠言（${GAME.PRICE.rumor(r)} 金幣，該國下次結算的成長減半）</h3>
+      <div class="trade-row">${S.facs.map(f => `<button class="fbtn" style="border-color:${F[f].color}" data-rum="${f}" ${S.rumor[f] ? 'disabled' : ''}>${F[f].name}${S.rumor[f] ? ' ✓' : ''}</button>`).join('')}</div>
+      <div style="font-size:.8em;color:var(--soft)">同一回合散播第 2 次以上，隱密度 −8。</div></div>
+    <div class="trade-sec"><h3>🔍 打探情報（${GAME.PRICE.intel()} 金幣，預估各國這次結算的自然消長）</h3>
+      ${fc ? `<div class="effs">${S.facs.map(f => `<span class="eff ${fc[f] >= 0 ? 'up' : 'dn'}">${F[f].name} 約 ${fc[f] >= 0 ? '+' : ''}${fc[f]}%</span>`).join('')}</div><div style="font-size:.8em;color:var(--soft)">另外還有 ±4% 的運氣成分；相對國力最高的國家還會蠶食鄰國。</div>` : `<button class="btn sm" id="intel">打探</button>`}</div>
+    <div class="trade-sec"><h3>⛏️ 採礦國市場（買元素）</h3><div style="font-size:.82em;color:var(--soft)">點元素買 1 單位；數字是你的庫存</div><div class="pt-wrap"><div class="ptable" id="mkt"></div></div></div>
+    <div class="trade-sec"><h3>📦 賣元素給各國（每單位換 8 成價錢，買方國力 +1%）</h3>
+      ${inv.length ? inv.map(([sym, n]) => { const by = GAME.buyers(S, sym); return `<div class="trade-row"><b style="min-width:58px">${sym} ×${n}</b>${by.length ? by.map(f => `<button class="fbtn" style="border-color:${F[f].color}" data-sell="${sym}|${f}">賣給${F[f].name}</button>`).join('') : '<span style="color:var(--soft)">沒有國家收購</span>'}</div>`; }).join('') : '<span style="color:var(--soft)">倉庫是空的</span>'}</div>
+    <div class="actions"><button class="btn" id="go">結束本回合，進行結算 ▶</button></div>`;
+  const mk = []; for (let p = 1; p <= 4; p++) for (let g = 1; g <= 18; g++) { const e = C.ELEMENTS.find(x => x.period === p && x.group === g); mk.push(e ? `<button class="el ${e.type}" data-buy="${e.sym}" title="${e.zh} ${GAME.buyPrice(S, e.sym)} 金幣">${e.sym}<span class="cnt">${S.inv[e.sym] || ''}</span><small>${GAME.buyPrice(S, e.sym)}</small></button>` : '<div class="el empty"></div>'); }
+  $('mkt').innerHTML = mk.join('');
+  const P = $('panel');
+  P.querySelectorAll('[data-sub]').forEach(b => b.onclick = () => { if (GAME.subsidy(S, b.dataset.sub)) { refresh(); stepTrade(`<div class="note">🤝 已暗中資助${F[b.dataset.sub].name}。</div>`); } else toast('資金不夠'); });
+  P.querySelectorAll('[data-rum]').forEach(b => b.onclick = () => { if (GAME.rumor(S, b.dataset.rum)) { refresh(); stepTrade(`<div class="note">🗣️ 已在${F[b.dataset.rum].name}散播謠言。</div>`); } else toast('資金不夠'); });
+  P.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => { if (GAME.buy(S, b.dataset.buy)) { refresh(); stepTrade(); } else toast('資金不夠'); });
+  P.querySelectorAll('[data-sell]').forEach(b => b.onclick = () => { const [sym, f] = b.dataset.sell.split('|'); if (GAME.sell(S, sym, f)) { refresh(); stepTrade(); } });
+  const ib = $('intel'); if (ib) ib.onclick = () => { if (GAME.intel(S)) { refresh(); stepTrade(); } else toast('資金不夠'); };
+  $('go').onclick = () => {
+    const fail = WORLD.checkFail(S); if (fail) { S.ended = fail; save(); return showEnding(); }
+    const res = GAME.settle(S, MAP); S.step = 'settle'; S.settleView = res; save();
+    refresh(res.annex ? res.annex.cells : []);
+    if (res.fail) { S.ended = res.fail; save(); setTimeout(showEnding, 1600); return; }
+    renderStep();
+  };
+}
+
+/* ---------- 結算 ---------- */
+function stepSettle() {
+  const st = S.settle || {}, d = st.drift || {}, a = st.annex;
+  $('panel').innerHTML = `<div class="step-h"><h2>⚔️ 回合結算</h2><span class="kicker">${roundName(S.round)}</span></div>
+    <p>各國的自然消長（國運、強者越強、運氣）：</p><div class="effs">${effChips(d)}</div>
+    ${a ? `<div class="note">🏴 <b style="color:${F[a.top].color}">${F[a.top].name}</b>蠶食了<b style="color:${F[a.low].color}">${F[a.low].name}</b>的 <b>${a.cells.length}</b> 個省分！（地圖上閃爍的地方）</div>` : '<div class="note">🕊️ 這一季各國邊境平靜，沒有發生蠶食。</div>'}
+    ${st.balanced ? '<div class="note">⚖️ 本回合結束時天下均勢，<b>均勢分 +20</b>。</div>' : '<div class="note">⚠️ 本回合結束時有國家超出安全範圍，沒有均勢分。</div>'}
+    ${warnings()}
+    <div class="actions"><button class="btn" id="go">大陸上發生了一件事…… ▶</button></div>`;
+  $('go').onclick = () => { S.step = 'event'; S.evId = GAME.pickEvent(S).id; save(); renderStep(); };
+}
+
+/* ---------- 事件 ---------- */
+function stepEvent() {
+  const ev = GAME.evById(S.evId);
+  $('panel').innerHTML = `<div class="step-h"><h2>🎲 隨機事件</h2><span class="kicker">${roundName(S.round)}</span></div>
+    <div class="ev-card"><h3 class="serif">${ev.title}</h3><p style="margin:6px 0 10px">${esc(ev.text)}</p>
+    <div id="choices">${ev.choices.map((ch, k) => `<button class="ev-choice" data-k="${k}" ${ch.money < 0 && S.money < -ch.money ? 'disabled' : ''}>${String.fromCharCode(65 + k)}. ${esc(ch.t)}</button>`).join('')}</div>
+    <div id="ev-res"></div></div>`;
+  const showRes = (k, r) => {
+    const ch = ev.choices[k];
+    $('choices').querySelectorAll('button').forEach(x => { x.disabled = true; if (+x.dataset.k === k) x.style.borderColor = 'var(--gold)'; });
+    const last = S.round >= WORLD.RULE.ROUNDS;
+    $('ev-res').innerHTML = `<div class="fb ${ch.ok === false ? 'bad' : ch.ok ? 'ok' : 'hint'}">${ch.ok === true ? '✅ ' : ch.ok === false ? '❌ ' : ''}${esc(ch.res)}${r.gifts && r.gifts.length ? `<br>⛏️ 得到 ${r.gifts.join('、')}` : ''}</div>
+      <div class="effs">${effChips(r.applied)}${ch.money ? `<span class="eff ${ch.money > 0 ? 'up' : 'dn'}">💰 ${ch.money > 0 ? '+' : ''}${ch.money}</span>` : ''}${ch.stealth ? `<span class="eff dn">🕵️ ${ch.stealth}</span>` : ''}</div>
+      <div class="actions"><button class="btn" id="go">${r.fail ? '看結局 ▶' : last ? '兩年過去了……看結局 ▶' : '進入下一回合 ▶'}</button></div>`;
+    $('go').onclick = () => {
+      if (r.fail) { S.ended = r.fail; save(); return showEnding(); }
+      S.evRes = null; GAME.nextRound(S); save(); renderStep();
+    };
+  };
+  if (S.evRes) return showRes(S.evRes.k, S.evRes);   // 已經選過（例如重新整理）：直接顯示結果，不能重選
+  $('panel').querySelectorAll('[data-k]').forEach(b => b.onclick = () => {
+    const k = +b.dataset.k;
+    const r = GAME.chooseEvent(S, ev, k); if (!r.ok) return toast(r.msg);
+    S.evRes = { k, ok: true, applied: r.applied, gifts: r.gifts, fail: r.fail };
+    refresh(); showRes(k, S.evRes);
+  });
+}
+
+/* ---------- 結局 ---------- */
+const ENDINGS = {
+  harmony: { t: '🌀 隱藏結局：大陸大和解', d: '兩年過去，各國的國力幾乎回到起點，誰也吞不下誰。各國元首在採礦國簽下和平條約，條約的見證人欄位上，有一個沒有人認得的燭火印記……' },
+  peace: { t: '⚖️ 均勢和平', d: '兩年過去，各國互相牽制，誰也無法稱霸。各國繼續暗中委託鍵結社，你的組織在陰影中越來越壯大。' },
+  shaky: { t: '⚠️ 危險的平衡', d: '兩年過去，沒有國家統一天下，也沒有國家滅亡，但是有國家已經失衡。鍵結社勉強撐了下來，未來充滿變數。' },
+  unify: { t: '❌ 天下一統', d: '的軍隊橫掃大陸，天下歸於一統。統一的國家不再需要暗中的委託，鍵結社的據點被一一查封……' },
+  destroy: { t: '❌ 一國滅亡', d: '在戰火中滅亡了。失去制衡的大陸陷入混亂，各國開始追查是誰在暗中操控，鍵結社被迫解散……' },
+  exposed: { t: '❌ 組織曝光', d: '鍵結社的存在被揭穿了。各國聯手掃蕩，特工們四散逃亡……' }
+};
+function showEnding() {
+  if (S.step !== 'end') { S.step = 'end'; }
+  const e = S.ended, E = ENDINGS[e.id], sc = WORLD.score(S), fail = WORLD.FAIL_ENDS.includes(e.id);
+  save();
+  refresh();
+  $('panel').innerHTML = `<div class="step-h"><h2>${E.t}</h2><span class="kicker">${roundName(S.round)}</span></div>
+    <div class="ev-card"><p>${e.f ? `<b style="color:${F[e.f].color}">${F[e.f].full}</b>` : ''}${E.d}</p>
+    ${e.id === 'unify' && WORLD.rel(S, e.f) < WORLD.RULE.UNIFY ? `<p class="note" style="background:#fff;color:#6b5a3a">${F[e.f].name}連續 2 回合相對國力超過 170%，勢力已經無法阻擋。</p>` : ''}
+    <table class="score-t">
+      <tr><td>💰 資金${fail ? `（組織被消滅，資產被沒收，只留 ${WORLD.CONFISCATE * 10} 成）` : ''}</td><td>${sc.money}</td></tr>
+      <tr><td>⚖️ 均勢分（均勢回合 ${S.balanceRounds} × 20）</td><td>${sc.balance}</td></tr>
+      <tr><td>📚 學習分（第一次就答對 ${S.stats.firstOk}／${S.stats.tasks} 件 × 200）</td><td>${sc.learn}</td></tr>
+      <tr><td>🕵️ 隱密分</td><td>${sc.stealth}</td></tr>
+      <tr><td>🏁 結局分</td><td>${sc.ending}</td></tr>
+      <tr class="total"><td>總分</td><td>${sc.total}</td></tr>
+    </table>
+    ${chart()}
+    <div class="actions"><button class="btn" id="again">🔁 同一張地圖再挑戰</button><button class="btn dark" id="new">🗺️ 換一張新地圖</button></div></div>`;
+  $('again').onclick = () => { const lv = S.level, code = S.code; S = WORLD.newGame({ level: lv, code }); enterGame(true); };
+  $('new').onclick = () => { try { localStorage.removeItem(SAVE); } catch (e) {} showTitle(); };
+}
+// 各國相對國力的走勢圖
+function chart() {
+  const H = S.history, w = 300, h = 120, max = 220, x = i => 20 + i * (w - 30) / Math.max(1, H.length - 1), y = v => h - 10 - Math.min(max, v) / max * (h - 20);
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;background:#fff;border-radius:10px;margin-top:6px">
+    <rect x="20" y="${y(150)}" width="${w - 30}" height="${y(60) - y(150)}" fill="#2f9e5a22"/>
+    ${[30, 100, 200].map(v => `<line x1="20" x2="${w - 10}" y1="${y(v)}" y2="${y(v)}" stroke="#ccc" stroke-dasharray="3 3"/><text x="2" y="${y(v) + 3}" font-size="8" fill="#999">${v}%</text>`).join('')}
+    ${S.facs.map(f => `<polyline fill="none" stroke="${F[f].color}" stroke-width="2" points="${H.map((p, i) => `${x(i)},${y(p[f])}`).join(' ')}"/>`).join('')}
+    ${H.map((_, i) => `<text x="${x(i)}" y="${h - 1}" font-size="7" fill="#999" text-anchor="middle">${i}</text>`).join('')}</svg>
+    <div style="font-size:.8em;color:#6b5a3a">相對國力走勢（橫軸：回合；綠色是安全範圍）</div>`;
+}
+
+/* ---------- 倉庫、圖鑑、選單 ---------- */
+$('btn-inv').onclick = () => {
+  const inv = Object.entries(S.inv).filter(([, n]) => n > 0);
+  const m = modal(`<h2>⛏️ 鍵結社的倉庫</h2><p style="margin:6px 0">尋礦委託會得到元素；鑄造委託會消耗元素（每種 1 單位）。缺原料時可以在交易所向採礦國購買。</p>
+    <div class="names">${inv.length ? inv.map(([sym, n]) => `<div style="background:#fff;border-radius:10px;padding:8px 12px"><b>${sym}</b> ${C.EL[sym].zh} × <b>${n}</b><br><small style="color:#6b5a3a">${C.EL[sym].typeZh}・第 ${C.EL[sym].period} 週期第 ${C.EL[sym].group} 族</small></div>`).join('') : '倉庫是空的'}</div>
+    <div class="actions" style="justify-content:flex-end"><button class="btn" id="ok">關閉</button></div>`);
+  m.querySelector('#ok').onclick = closeModal;
+};
+function codex() {
+  const list = ['co', 'io', 'me', 'hb', 'vw', 'mine'];
+  const TXT = {
+    co: '人民兩兩<b>共用電子</b>手牽手，組成一個個「分子村落」，例如 H₂O、CO₂、NH₃。最堅固的要塞是整片連在一起的<b>網狀共價</b>城牆（鑽石、石英）。共價鍵很強，所以共國國力很高。',
+    io: '陽離子和陰離子靠<b>正負電互相吸引</b>，排成整齊的大陣列（晶格）。這裡<b>沒有一對一的婚姻</b>：每個陽離子都被一圈陰離子包圍。國名寫成 NaCl 只代表人口比例 1：1，不是一對一對的分子。離子鍵和共價鍵一樣強。',
+    me: '金屬陽離子泡在全國共享的<b>電子海</b>裡。社會很有彈性（延展性），消息傳得快（導電、導熱），閃閃發亮（金屬光澤）。在這個世界設定裡，金屬鍵的強度大約是共價鍵、離子鍵的 1/3。',
+    hb: '成員其實是來自共國的分子村落，靠接在 <b>F、O、N 上的 H</b> 特別強的吸引力結盟（氫鍵）。氫鍵是「分子之間」的作用力，強度大約只有共價鍵的 1/10。共國分子村落越多，氫聯邦就有越多成員可以拉攏。',
+    vw: '一樣由分子村落組成，靠<b>凡得瓦力</b>結盟，是最弱的聯盟，強度大約只有氫鍵的 1/10。不過分子越大、電子越多，凡得瓦力越強，這就是為什麼氯是氣體、溴是液體、碘是固體。',
+    mine: '位在大陸中央山脈，開採原子序 1～36 的元素賣給各國。礦脈的位置就是<b>週期表</b>的位置：橫列是週期、直行是族。稀有氣體是住在山頂、不和任何人往來的隱士。採礦國受各國條約保護，不會被併吞。'
+  };
+  const m = modal(`<h2>📖 勢力圖鑑</h2><p style="margin:6px 0">各國的國力數字差很多，是因為它們代表的化學鍵（或分子間作用力）強弱本來就差很多。遊戲裡的數字是依比例設計的，不是真實的鍵能數值。</p>
+    ${list.map(f => `<div class="codex-f" style="border-color:${F[f].color}"><b style="color:${F[f].color}">${F[f].icon} ${F[f].full}</b>（${F[f].bond}）${F[f].base ? `<span style="font-size:.85em;color:#6b5a3a">・開局國力 ${F[f].base[0]}～${F[f].base[1]}</span>` : ''}<div style="font-size:.92em;margin-top:4px">${TXT[f]}</div></div>`).join('')}
+    <h3 style="margin-top:10px">📏 規則摘要</h3>
+    <ul style="margin:6px 0 0 20px;font-size:.92em"><li>相對國力＝目前國力 ÷ 開局國力。安全範圍 60%～150%。</li><li>任一國 ≥200%（或連續 2 回合 ≥170%）＝天下一統；任一國 ≤30% 或失去所有領土＝一國滅亡；隱密度歸零＝組織曝光。三種都會讓鍵結社被消滅。</li><li>每回合結算：各國自然消長，相對國力最高的國家會蠶食相鄰最弱的國家。</li><li>總分＝資金＋均勢分＋學習分（第一次就答對的比例）＋隱密分＋結局分；組織被消滅時資金只留 3 成。</li></ul>
+    <div class="actions" style="justify-content:flex-end"><button class="btn" id="ok">關閉</button></div>`);
+  m.querySelector('#ok').onclick = closeModal;
+}
+$('btn-codex').onclick = codex; $('btn-codex2').onclick = codex;
+$('btn-menu').onclick = () => {
+  const m = modal(`<h2>☰ 選單</h2><p style="margin:8px 0">地圖代碼 <b>${S.code}</b>（${S.level === 'g11' ? '高二高三版' : '高一版'}）。戰局每一步都會自動存檔。</p>
+    <div class="actions"><button class="btn" id="ok">繼續遊戲</button><button class="btn dark" id="title">回到開始畫面</button></div>`);
+  m.querySelector('#ok').onclick = closeModal;
+  m.querySelector('#title').onclick = () => { closeModal(); showTitle(); };
+};
+showTitle();
+</script>
+</body>
+</html>
