@@ -125,11 +125,17 @@ const TASKS = (() => {
     while (out.length < 3) { const x = pool[Math.floor(rnd() * pool.length)]; if (!out.includes(x)) out.push(x); }
     return out.slice(0, 3).map(v => [rnd(), v]).sort((a, b) => a[0] - b[0]).map(p => p[1]);
   }
-  function forgeTask(tier, from, rnd) {
+  // 題組委託：連續 3 小題（答對 2 題以上才算成功）
+  function setTask(s, rnd) {
+    const Q = typeof QUIZ !== 'undefined' ? QUIZ : require('./quiz.js'), qs = [];
+    for (let i = 0; i < 3; i++) qs.push(Q.make(rnd, s.level, s.prac, qs.map(q => q.tag)));
+    return { kind: 'set', qs, needs: [] };
+  }
+  function forgeTask(tier, from, rnd, force) {
     const p = pairFor(tier, from, rnd), cat = C.CAT[p.c], an = C.AN[p.a];
     const [m, n] = C.ratio(cat, an);
     const base = { kind: 'forge', c: p.c, a: p.a, m, n, formula: C.formula(p.c, p.a), name: C.name(p.c, p.a), needs: C.needs(p.c, p.a) };
-    const mode = tier === 1 ? 'ions' : rnd() < 0.55 ? 'name2f' : 'f2name';
+    const mode = force || (tier === 1 ? 'ions' : 'name2f');
     if (mode === 'ions') return { ...base, mode };
     if (mode === 'name2f') {
       const catPool = C.CATIONS.map(c => c.id), anPool = C.ANIONS.map(a => a.id);
@@ -181,6 +187,10 @@ const TASKS = (() => {
       me: ['金國的冶煉場需要一批礦石樣本來研究。', '金國想知道對手的礦石成分，請你鑄造一份樣本。'],
       co: ['共國的學者想研究離國的物質，請你暗中鑄造一份樣本。', '共國的分子村落需要一種離子化合物當作工業原料。']
     },
+    set: {
+      co: ['共國的學院要招考新的煉丹師，請你代為出一份考卷並寫出標準答案。'], io: ['離國的軍需官遞來一疊問題，說是情報暗號，要你一題一題解開。'],
+      me: ['金國的將軍要考驗你的實力，連續問了三個問題。'], hb: ['氫聯邦的長老想測試鍵結社的學識。'], vw: ['凡聯邦的議會送來三道謎題。'], mine: ['採礦國的礦工考你三個問題。']
+    },
     detect: {
       co: ['共國的邊境哨站攔下一包來路不明的物質，請你鑑定它到底是什麼。', '共國的煉丹師把標籤弄丟了，只好請鍵結社來鑑定。'],
       io: ['離國的海關查獲一批走私品，要你查出它的真面目。', '離國的倉庫裡多了一箱沒有標籤的貨，總管懷疑是間諜放的。'],
@@ -192,16 +202,18 @@ const TASKS = (() => {
   function makeBoard(s) {
     const rnd = Wd.rngFrom(s), tier = tierOf(s.round);
     const n = s.round <= 2 ? 3 : 4, pick = a => a[Math.floor(rnd() * a.length)];
-    const facs = s.facs, kinds = ['mine', 'forge', 'detect'];
-    while (kinds.length < n) kinds.push(['mine', 'forge', 'detect'][Math.floor(rnd() * 3)]);
+    // 題型和國家脫鉤：五種題型輪流出現（這局出現次數少的優先），委託國隨機
+    const facs = s.facs; s.kindN = s.kindN || {};
+    const kinds = ['mine', 'forge', 'name', 'detect', 'set'].map(k => [(s.kindN[k] || 0) + rnd() * 0.9, k]).sort((a, b) => a[0] - b[0]).slice(0, n).map(p => p[1]);
+    kinds.forEach(k => { s.kindN[k] = (s.kindN[k] || 0) + 1; });
     const used = new Set();
     const board = kinds.map((kind, k) => {
       let from;
-      if (kind === 'forge') { const x = rnd(); from = x < 0.5 ? 'io' : x < 0.8 ? 'me' : 'co'; }   // 鑄造委託分散來源，練化學式不必一直幫離國
-      else if (kind === 'detect') from = pick(facs);
-      else { const cand = [...facs, 'mine'].filter(f => !used.has(f)); from = rnd() < 0.2 ? 'mine' : pick(cand.filter(f => f !== 'mine').length ? cand.filter(f => f !== 'mine') : facs); }
+      if (kind === 'mine' && rnd() < 0.2) from = 'mine';
+      else { const cand = facs.filter(f => !used.has(f)); from = pick(cand.length ? cand : facs); }
       used.add(from);
-      const task = kind === 'mine' ? mineTask(pick(POOL[from] || POOL.mine), tier, rnd) : kind === 'detect' ? detectTask(tier, rnd) : forgeTask(tier, from, rnd);
+      const task = kind === 'mine' ? mineTask(pick(rnd() < 0.6 ? (POOL[from] || POOL.mine) : POOL.mine), tier, rnd)
+        : kind === 'detect' ? detectTask(tier, rnd) : kind === 'set' ? setTask(s, rnd) : forgeTask(tier, from, rnd, kind === 'name' ? 'f2name' : null);
       let effects = {}, shady = null, reward;
       if (from === 'mine') { reward = 12; task.qty = 3; }
       else {
@@ -217,10 +229,11 @@ const TASKS = (() => {
           const rv = Wd.RIVAL[from]; if (rv && facs.includes(rv)) effects[rv] = -(2 + Math.round(rnd() * 2));
         }
       }
-      return { id: `r${s.round}k${k}`, from, kind, shady, text: pick((FL[kind][from]) || FL[kind].io), reward, effects, task, tries: 0, state: 'open' };
+      const fk = kind === 'name' ? 'forge' : kind;
+      return { id: `r${s.round}k${k}`, from, kind: task.kind, shady, text: pick((FL[fk][from]) || FL[fk].io), reward, effects, task, tries: 0, state: 'open' };
     });
     return board;
   }
-  return { tierOf, mineTask, forgeTask, detectTask, bestTest, subst, checkForge, hint, makeBoard, ionsOf, FAMLBL };
+  return { tierOf, setTask, mineTask, forgeTask, detectTask, bestTest, subst, checkForge, hint, makeBoard, ionsOf, FAMLBL };
 })();
 if (typeof module !== 'undefined') module.exports = TASKS;

@@ -158,8 +158,18 @@
   .mcard .note b, .ev-card .note b { color: var(--ink); }
   .mcard { line-height: 1.75; font-size: 1.02em; }
   .story { background: #fffaf0; border-left: 5px solid #c9b48a; border-radius: 8px; padding: 8px 12px; margin: 8px 0; font-style: italic; color: #4a3b22; }
-  .ask { background: var(--ink); color: #fff; border-radius: 8px; padding: 8px 12px; margin: 8px 0; font-weight: 700; }
-  .ask small { display: block; font-weight: 400; color: #d8d0f0; }
+  .ask { color: var(--ink); margin: 8px 0 4px; font-weight: 700; }
+  .ask small { display: block; font-weight: 400; color: #8a7a62; font-size: .85em; }
+  .tmr { float: right; font-weight: 900; color: #8a6a22; } .tmr.over { color: #999; font-weight: 400; }
+  .ov { position: fixed; inset: 0; background: #000c; display: flex; align-items: center; justify-content: center; padding: 14px; z-index: 70; }
+  .ovc { background: #fff8e6; color: var(--ink); border: 4px solid var(--candle); border-radius: 16px; width: min(560px, 100%); padding: 16px; box-shadow: 0 0 40px #ffcf6b88; }
+  .ovc h3 { font-family: 'Noto Serif TC', serif; }
+  .ovc .qq { font-size: 1.15em; margin: 8px 0; } .ovc .qq sub, .names sub { font-size: .65em; } .ovc .qq sup, .names sup { font-size: .6em; }
+  .qbar { height: 8px; background: #eee; border-radius: 4px; overflow: hidden; } .qbar i { display: block; height: 100%; background: var(--red); transition: width 1s linear; }
+  .chip.clock.low { color: #ff8a73; border-color: #6a2a20; animation: flicker 1s infinite; }
+  .codex-g { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+  .codex-g div { background: #fff; border-radius: 8px; padding: 6px 10px; border-left: 5px solid #ccc; font-size: .9em; }
+  .codex-g div.ok { border-color: var(--green); } .codex-g div.try { border-color: var(--gold); }
   .rep td.lbl { width: 9em; white-space: nowrap; }
   .clues li .lbl, .rep td.lbl { min-width: 4.8em; font-size: .8em; font-weight: 700; color: #8a6a22; }
   .rep { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; margin: 8px 0; }
@@ -209,6 +219,13 @@
       </div>
     </div>
     <div class="opt-card">
+      <h3>⏱️ 計時模式</h3>
+      <div class="seg">
+        <label><input type="radio" name="tm" value="1" checked><span><b>開啟</b>每回合 4 分鐘、會跳出干擾快問、快速完成委託有獎金</span></label>
+        <label><input type="radio" name="tm" value="0"><span><b>關閉</b>慢慢想，不計時（沒有干擾快問與快手獎金）</span></label>
+      </div>
+    </div>
+    <div class="opt-card">
       <h3>🗺️ 地圖代碼（選填）</h3>
       <input class="code-in" id="in-code" maxlength="6" placeholder="留空＝隨機產生新大陸">
       <p class="hint" style="color:var(--soft);font-size:.82em;margin-top:6px">輸入老師給的代碼，全班可以玩同一張地圖、同樣的開局。</p>
@@ -227,8 +244,10 @@
     <span class="chip" id="t-round"></span>
     <span class="chip money" id="t-money"></span>
     <span class="chip stealth" id="t-stealth"></span>
+    <span class="chip clock" id="t-clock"></span>
     <span class="sp"></span>
     <button class="btn sm ghost" id="btn-inv">⛏️<span class="txt"> 倉庫</span></button>
+    <button class="btn sm ghost" id="btn-prac">📚<span class="txt"> 知識點</span></button>
     <button class="btn sm ghost" id="btn-codex2">📖<span class="txt"> 圖鑑</span></button>
     <button class="btn sm ghost" id="btn-menu">☰</button>
   </div></div>
@@ -238,7 +257,7 @@
         <div class="step-h"><h2 style="margin:0">🗺️ 大陸局勢</h2><span class="kicker" id="map-code"></span></div>
         <div class="mapbox"><svg id="map"></svg></div>
         <div class="powers" id="powers"></div>
-        <div class="legend">國力條是<b>相對國力</b>（目前國力 ÷ 標準國力，開局就有強有弱）：綠色區間 60%～150% 是安全範圍；≥200% 天下一統、≤30% 一國滅亡都會讓鍵結社被消滅。右側小字是實際國力。</div>
+        <div class="legend">國力條是<b>相對國力</b>（目前國力 ÷ 標準國力，開局就有強有弱）：綠色區間 75%～130% 是安全範圍；≥170%（或連續 2 回合 ≥150%）天下一統、≤45% 一國滅亡，都會讓鍵結社被消滅。右側小字是實際國力。</div>
       </div>
     </div>
     <div class="card" id="panel"></div>
@@ -246,20 +265,22 @@
 </section>
 
 <div class="modal hidden" id="modal"><div class="mcard" id="mcard"></div></div>
+<div class="ov hidden" id="ov"><div class="ovc" id="ovc"></div></div>
 <div class="toast" id="toast"></div>
 
-<script src="data.js?v=20261014c"></script>
-<script src="world.js?v=20261014c"></script>
-<script src="facts.js?v=20261014c"></script>
-<script src="tasks.js?v=20261014c"></script>
-<script src="events.js?v=20261014c"></script>
-<script src="game.js?v=20261014c"></script>
+<script src="data.js?v=20261014d"></script>
+<script src="world.js?v=20261014d"></script>
+<script src="facts.js?v=20261014d"></script>
+<script src="quiz.js?v=20261014d"></script>
+<script src="tasks.js?v=20261014d"></script>
+<script src="events.js?v=20261014d"></script>
+<script src="game.js?v=20261014d"></script>
 <script>
 const $ = id => document.getElementById(id);
-const F = WORLD.FACTIONS, C = CHEM;
+const F = WORLD.FACTIONS, C = CHEM, RU = WORLD.RULE;
 const SAVE = 'bond-society-save-v1';
 const SEASON = ['春', '夏', '秋', '冬'];
-const KIND = { mine: '⛏️ 尋礦', forge: '⚒️ 鑄造', detect: '🔍 鑑定' };
+const KIND = { mine: '⛏️ 尋礦', forge: '⚒️ 鑄造', detect: '🔍 鑑定', set: '📚 題組' };
 let S = null, MAP = null;
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const md = s => String(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
@@ -271,14 +292,69 @@ const fname = f => `${F[f].icon} ${F[f].name}`;
 const effChips = eff => Object.entries(eff || {}).filter(([, v]) => v).map(([f, v]) => `<span class="eff ${v > 0 ? 'up' : 'dn'}">${F[f].name} ${v > 0 ? '+' : ''}${Math.round(v * 10) / 10}%</span>`).join('');
 const roundName = r => `第 ${r}／8 回合・第${r <= 4 ? '一' : '二'}年${SEASON[(r - 1) % 4]}`;
 const roundShort = r => (innerWidth <= 640 ? `${r}／8・${SEASON[(r - 1) % 4]}` : roundName(r));
-function modal(html) { $('mcard').innerHTML = html; $('modal').classList.remove('hidden'); $('mcard').scrollTop = 0; return $('mcard'); }
+/* ---------- ⏱️ 計時模式：回合倒數、干擾快問 ---------- */
+let TICK = null, CUR = null, QOPEN = null;
+const mmss = t => `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
+function drawClock() {
+  const el = $('t-clock'); if (!el) return;
+  const on = S && S.timed && !S.ended && ['board', 'trade'].includes(S.step);
+  el.classList.toggle('hidden', !on); if (!on) return;
+  el.textContent = S.timeCrisis ? '⏰ 時間到' : `⏱️ ${mmss(S.tLeft ?? GAME.ROUND_SEC)}`;
+  el.classList.toggle('low', !S.timeCrisis && (S.tLeft ?? 999) <= 30);
+}
+function tick() {
+  drawTaskTimer();
+  if (!S || S.ended || !S.timed || document.hidden || !['board', 'trade'].includes(S.step)) return drawClock();
+  if (QOPEN) quickTick();
+  if (!S.timeCrisis) {
+    S.tLeft = Math.max(0, (S.tLeft ?? GAME.ROUND_SEC) - 1);
+    if (S.tLeft === 0) { const r = GAME.timeUp(S); refresh(); if (!QOPEN) showTimeUp(r); else S.pendingTU = true; return; }
+    if (!QOPEN) { S.qNext = (S.qNext ?? GAME.QUICK_EVERY) - 1; if (S.qNext <= 0) { S.qNext = GAME.QUICK_EVERY; openQuick(); } }
+  }
+  drawClock(); if (S.tLeft % 5 === 0) save();
+}
+function overlay(html) { $('ovc').innerHTML = html; $('ov').classList.remove('hidden'); return $('ovc'); }
+function closeOverlay() { $('ov').classList.add('hidden'); if (S && S.pendingTU) { S.pendingTU = false; showTimeUp({ applied: {} }); } }
+function showTimeUp(r) {
+  const tc = S.timeCrisis;
+  const o = overlay(`<h3>⏰ 時間到！大陸危機爆發</h3><p style="margin:8px 0">鍵結社遲遲沒有行動，<b style="color:${F[tc.top].color}">${F[tc.top].name}</b>趁機擴張（+6%），<b style="color:${F[tc.low].color}">${F[tc.low].name}</b>陷入動亂（−6%），組織也被注意到了（隱密度 −5）。</p>
+    <p>本回合不能再接新的委託。手上的任務做完後，回公告板按「結束本回合」。</p>
+    <div class="actions" style="justify-content:flex-end"><button class="btn" id="ovok">知道了</button></div>`);
+  o.querySelector('#ovok').onclick = () => { closeOverlay(); const f = WORLD.checkFail(S); if (f) { S.ended = f; save(); closeModal(); return showEnding(); } if (!$('modal').classList.contains('hidden') && !CUR) closeModal(); if (!CUR) renderStep(); };
+}
+function openQuick() {
+  const q = GAME.quick(S); QOPEN = { q, left: GAME.QUICK_SEC };
+  const o = overlay(`<h3>⚡ 干擾快問！<span style="float:right" id="qleft">${GAME.QUICK_SEC}</span></h3><div class="qbar"><i id="qbar" style="width:100%"></i></div>
+    <div style="font-size:.8em;color:#8a6a22;margin-top:6px">知識點：${QUIZ.TAGS[q.tag]}・答對 💰+5，答錯或超時隱密度 −3</div>
+    <div class="qq">${q.q}</div><div class="names">${q.opts.map((x, k) => `<button data-x="${k}">${x}</button>`).join('')}</div><div id="qres"></div>`);
+  o.querySelectorAll('[data-x]').forEach(b => b.onclick = () => endQuick(q.opts[+b.dataset.x]));
+}
+function quickTick() {
+  QOPEN.left--; const l = $('qleft'), bar = $('qbar');
+  if (l) l.textContent = Math.max(0, QOPEN.left); if (bar) bar.style.width = `${Math.max(0, QOPEN.left) / GAME.QUICK_SEC * 100}%`;
+  if (QOPEN.left <= 0) endQuick(null);
+}
+function endQuick(ans) {
+  if (!QOPEN || QOPEN.done) return; const q = QOPEN.q, ok = ans === q.ans; QOPEN.done = true;
+  GAME.answerQuick(S, q, ok); drawTop(); save();
+  $('ovc').querySelectorAll('[data-x]').forEach(x => { x.disabled = true; if ($('ovc').querySelector(`[data-x="${x.dataset.x}"]`) && q.opts[+x.dataset.x] === q.ans) x.style.borderColor = 'var(--green)'; });
+  $('qres').innerHTML = `<div class="fb ${ok ? 'ok' : 'bad'}">${ok ? '✅ 答對了！💰 +5' : `${ans === null ? '⌛ 時間到' : '❌ 答錯了'}，正確答案是 ${q.ans}。🕵️ 隱密度 −3`}</div><div class="actions" style="justify-content:flex-end"><button class="btn" id="qok">繼續 ▶</button></div>`;
+  $('qok').onclick = () => { QOPEN = null; closeOverlay(); const f = WORLD.checkFail(S); if (f) { S.ended = f; save(); closeModal(); showEnding(); } };
+}
+function pracView() {
+  const P = S.prac || {}, tags = QUIZ.LEVEL_TAGS[S.level];
+  const done = tags.filter(t => (P[t] || {}).ok > 0).length;
+  return `<p style="margin:6px 0">已練成 <b>${done}</b>／${tags.length} 種知識點（每練成一種，總分 +10）。綠色＝答對過、黃色＝練過但還沒答對、灰色＝還沒遇到。</p>
+    <div class="codex-g">${tags.map(t => { const p = P[t]; return `<div class="${p && p.ok ? 'ok' : p ? 'try' : ''}">${QUIZ.TAGS[t]}<br><small>${p ? `答對 ${p.ok}／${p.n}` : '還沒練過'}</small></div>`; }).join('')}</div>`;
+}
+function modal(html) { $('mcard').innerHTML = html; $('modal').classList.remove('hidden'); $('mcard').scrollTop = 0; drawTaskTimer(); return $('mcard'); }
 function closeModal() { $('modal').classList.add('hidden'); }
 
 /* ---------- 開始畫面 ---------- */
 function showTitle() {
   $('s-title').classList.remove('hidden'); $('s-game').classList.add('hidden');
   const sv = load();
-  const can = sv && sv.v === 3 && !sv.ended;   // 舊版存檔（v1、v2）規則不同，不能接著玩
+  const can = sv && sv.v === 4 && !sv.ended;   // 舊版存檔（v1、v2）規則不同，不能接著玩
   $('cont-card').classList.toggle('hidden', !can);
   if (can) $('cont-info').innerHTML = `${sv.level === 'g11' ? '高二高三版' : '高一版'}・地圖 <b>${sv.code}</b>・${roundName(sv.round)}・💰 ${sv.money}`;
 }
@@ -288,10 +364,12 @@ $('btn-new').onclick = () => {
   if (code && !/^[0-9a-z]{1,6}$/i.test(code)) return toast('地圖代碼只能是英文字母和數字（最多 6 個）');
   const level = document.querySelector('[name=lv]:checked').value;
   S = WORLD.newGame({ level, code: code || undefined });
+  S.timed = document.querySelector('[name=tm]:checked').value === '1';
   enterGame(true);
 };
 function enterGame(fresh) {
   MAP = WORLD.makeMap(S.seed, S.facs);
+  clearInterval(TICK); TICK = setInterval(tick, 1000); QOPEN = null; $('ov').classList.add('hidden');
   $('s-title').classList.add('hidden'); $('s-game').classList.remove('hidden');
   drawMap(); drawPowers(); drawTop();
   if (fresh) intro(); else renderStep();
@@ -340,7 +418,7 @@ function drawMap(flash = []) {
   S.facs.forEach(f => {
     let cap = M.cells[M.capitals[f]];
     if (S.owner[cap.i] !== f) { const own = M.cells.filter(c => S.owner[c.i] === f); if (!own.length) return; cap = own[0]; }
-    const w = F[f].name.length > 2 ? 82 : 72, r = Math.round(WORLD.rel(S, f)), hot = r > 150 || r < 60;
+    const w = F[f].name.length > 2 ? 82 : 72, r = Math.round(WORLD.rel(S, f)), hot = r > RU.SAFE[1] || r < RU.SAFE[0];
     h += `<g><rect x="${cap.x - w / 2}" y="${cap.y - 9}" width="${w}" height="17" rx="8" fill="${F[f].color}" stroke="${hot ? '#ffd84a' : '#fff'}" stroke-width="${hot ? 2.4 : 1.2}"/><text class="cap-tag" x="${cap.x}" y="${cap.y + 3.5}" text-anchor="middle" fill="#fff">🏰${F[f].name} ${r}%</text></g>`;
   });
   const mineCells = M.cells.filter(c => S.owner[c.i] === 'mine');
@@ -350,13 +428,13 @@ function drawMap(flash = []) {
   $('map-code').textContent = `地圖代碼 ${S.code}・${S.level === 'g11' ? '高二高三版' : '高一版'}`;
 }
 function drawPowers() {
-  const MAX = 220;
+  const MAX = 190;
   $('powers').innerHTML = S.facs.map(f => {
     const r = WORLD.rel(S, f), w = Math.min(100, r / MAX * 100);
-    const cls = r >= 170 || r <= 45 ? 'bad' : r > 150 || r < 60 ? 'warn' : '';
+    const cls = r >= RU.UNIFY_SOFT || r <= RU.DESTROY + 10 ? 'bad' : r > RU.SAFE[1] || r < RU.SAFE[0] ? 'warn' : '';
     return `<div class="prow"><div class="nm" style="color:${F[f].color}">${F[f].icon} ${F[f].name}<small>${F[f].bond}・領土 ${WORLD.territory(S, f)}・🤝 ${S.friend ? S.friend[f] : '-'}</small></div>
-      <div class="bar"><div class="safe" style="left:${60 / MAX * 100}%;width:${90 / MAX * 100}%"></div>
-        <div class="mk" style="left:${100 / MAX * 100}%"></div><div class="mk" style="left:${30 / MAX * 100}%;background:#ff7a6377"></div><div class="mk" style="left:${200 / MAX * 100}%;background:#ff7a6377"></div>
+      <div class="bar"><div class="safe" style="left:${RU.SAFE[0] / MAX * 100}%;width:${(RU.SAFE[1] - RU.SAFE[0]) / MAX * 100}%"></div>
+        <div class="mk" style="left:${100 / MAX * 100}%"></div><div class="mk" style="left:${RU.DESTROY / MAX * 100}%;background:#ff7a6377"></div><div class="mk" style="left:${RU.UNIFY / MAX * 100}%;background:#ff7a6377"></div>
         <div class="fill" style="width:${w}%;background:${F[f].color}"></div><span class="abs">國力 ${WORLD.fmtPower(S, f)}</span></div>
       <div class="pct ${cls}">${Math.round(r)}%</div></div>`;
   }).join('');
@@ -366,6 +444,7 @@ function drawTop() {
   $('t-money').textContent = `💰 ${S.money}`;
   $('t-stealth').textContent = `🕵️ 隱密 ${Math.max(0, S.stealth)}`;
   $('t-stealth').classList.toggle('low', S.stealth <= 30);
+  drawClock();
 }
 function refresh(flash) { drawMap(flash); drawPowers(); drawTop(); save(); }
 
@@ -377,10 +456,10 @@ function renderStep() {
 }
 function warnings() {
   return S.facs.map(f => { const r = WORLD.rel(S, f);
-    if (r >= 170) return `<div class="badline">🚨 ${F[f].name}相對國力 ${Math.round(r)}%，再不壓制就要統一天下了！${(S.hi[f] || 0) >= 1 ? '（已連續 1 回合 ≥170%，下回合結束還是 ≥170% 就失敗）' : ''}</div>`;
-    if (r > 150) return `<div class="warnline">⚠️ ${F[f].name}過強（${Math.round(r)}%）</div>`;
-    if (r <= 45) return `<div class="badline">🚨 ${F[f].name}快要滅亡了（${Math.round(r)}%）！</div>`;
-    if (r < 60) return `<div class="warnline">⚠️ ${F[f].name}過弱（${Math.round(r)}%）</div>`;
+    if (r >= RU.UNIFY_SOFT) return `<div class="badline">🚨 ${F[f].name}相對國力 ${Math.round(r)}%，再不壓制就要統一天下了！${(S.hi[f] || 0) >= 1 ? '（已連續 1 回合 ≥${RU.UNIFY_SOFT}%，下回合結束還是 ≥${RU.UNIFY_SOFT}% 就失敗）' : ''}</div>`;
+    if (r > RU.SAFE[1]) return `<div class="warnline">⚠️ ${F[f].name}過強（${Math.round(r)}%）</div>`;
+    if (r <= RU.DESTROY + 10) return `<div class="badline">🚨 ${F[f].name}快要滅亡了（${Math.round(r)}%）！</div>`;
+    if (r < RU.SAFE[0]) return `<div class="warnline">⚠️ ${F[f].name}過弱（${Math.round(r)}%）</div>`;
     return ''; }).join('');
 }
 function stepReport() {
@@ -396,12 +475,13 @@ function stepReport() {
 function stepBoard() {
   const open = S.board.filter(c => c.state === 'open');
   $('panel').innerHTML = `<div class="step-h"><h2>📋 委託公告板</h2><span class="kicker">本回合還能接 <b style="color:var(--candle)">${S.ap}</b> 件</span></div>
+    ${S.timeCrisis ? `<div class="badline" style="margin-bottom:8px">⏰ 時間到，大陸危機已經爆發，本回合不能再接新的委託。</div>` : ''}
     ${S.board.map(c => {
       const t = c.task, col = c.from === 'mine' ? F.mine.color : F[c.from].color;
       const miss = GAME.missing(S, t);
       const st = c.state === 'done' ? '✅ 已完成' : c.state === 'failed' ? '❌ 失敗' : c.state === 'skipped' ? '已略過' : '';
       return `<div class="comm ${c.state !== 'open' ? 'done' : ''}" style="border-left-color:${col}">
-        <div class="hd"><span class="badge" style="background:${col}">${fname(c.from)}</span><span class="badge kind">${KIND[t.kind]}</span>${c.shady ? `<span class="badge shady">🗡️ 暗中削弱${F[c.shady].name}</span>` : ''}${st ? `<b style="margin-left:auto">${st}</b>` : ''}</div>
+        <div class="hd"><span class="badge" style="background:${col}">${fname(c.from)}</span><span class="badge kind">${t.mode === 'f2name' ? '🏷️ 命名' : KIND[t.kind]}</span>${c.shady ? `<span class="badge shady">🗡️ 暗中削弱${F[c.shady].name}</span>` : ''}${st ? `<b style="margin-left:auto">${st}</b>` : ''}</div>
         <div>${esc(c.text)}</div>
         <div class="effs">${c.from === 'mine' ? '<span class="eff up">不影響國力</span><span class="eff up">得到 3 單位元素</span>' : effChips(effectsShown(c.effects))}</div>
         <div class="ft"><span>💰 報酬 <b>${c.reward}</b>${t.kind === 'mine' ? `・⛏️ 得到 ${t.qty} 單位元素` : ''}</span>
@@ -439,20 +519,33 @@ function openTask(c) {
     return;
   }
   c.tries = c.tries || 0;
-  const head = `<div class="from">${fname(c.from)}的委託・💰 ${c.reward}</div>`;
+  if (!c.opened) { c.opened = Date.now(); save(); }
+  CUR = c;
+  const lim = GAME.FAST[TASKS.tierOf(S.round)];
+  const head = `<div class="from">${fname(c.from)}的委託・💰 ${c.reward}${S.timed ? `<span class="tmr" id="tmr" data-lim="${lim}"></span>` : ''}</div>`;
+  setTimeout(drawTaskTimer, 0);
+  if (t.kind === 'set') return setUI(c, head);
   if (t.kind === 'mine') return mineUI(c, head);
   if (t.kind === 'detect') return detectUI(c, head);
   if (t.mode === 'f2name') return nameUI(c, head);
   return forgeUI(c, head);
 }
+function drawTaskTimer() {
+  const el = $('tmr'); if (!el || !CUR || !CUR.opened) return;
+  const lim = +el.dataset.lim, used = Math.floor((Date.now() - CUR.opened) / 1000), left = lim - used;
+  el.textContent = left > 0 ? `⚡ 快手獎金倒數 ${left} 秒` : '⚡ 快手獎金已結束';
+  el.classList.toggle('over', left <= 0);
+}
 function finishTask(c, ok, explain) {
   const first = ok && c.tries === 0;
-  const applied = GAME.resolve(S, c, { ok, first });
+  const fast = !!(S.timed && ok && c.opened && (Date.now() - c.opened) / 1000 <= GAME.FAST[TASKS.tierOf(S.round)]);
+  CUR = null;
+  const applied = GAME.resolve(S, c, { ok, first, fast, answers: c.task.answers });
   const fails = WORLD.checkFail(S);
   refresh();
   const m = modal(`<h2>${ok ? '✅ 委託完成' : '❌ 委託失敗'}</h2>
     <div class="fb ${ok ? 'ok' : 'bad'}">${explain}</div>
-    ${ok ? `<p style="margin-top:8px">💰 得到 <b>${Math.round(c.reward * (first ? 1 : 0.7))}</b> 金幣${first ? '' : '（用了提示，只拿 7 成）'}${c.task.kind === 'mine' ? `，⛏️ ${c.task.answer} ×${c.task.qty}` : ''}${c.task.spent ? `（檢驗花了 💰${c.task.spent}）` : ''}</p>` : '<p style="margin-top:8px">🕵️ 隱密度 −10</p>'}
+    ${ok ? `<p style="margin-top:8px">💰 得到 <b>${c.paid}</b> 金幣${first ? '' : c.task.kind === 'set' ? '（沒有全對，只拿 7 成）' : '（用了提示，只拿 7 成）'}${fast ? '（⚡ 快手獎金 ×1.2）' : ''}${c.task.kind === 'mine' ? `，⛏️ ${c.task.answer} ×${c.task.qty}` : ''}${c.task.spent ? `（檢驗花了 💰${c.task.spent}）` : ''}</p>` : '<p style="margin-top:8px">🕵️ 隱密度 −10</p>'}
     <div class="effs">${effChips(applied)}</div>
     <div class="actions" style="justify-content:flex-end"><button class="btn" id="ok">回到公告板</button></div>`);
   m.querySelector('#ok').onclick = () => { closeModal(); if (fails) { S.ended = fails; save(); return showEnding(); } renderStep(); };
@@ -467,7 +560,6 @@ function mineUI(c, head) {
   const grid = () => { const cells = []; for (let p = 1; p <= 4; p++) for (let g = 1; g <= 18; g++) { const e = C.ELEMENTS.find(x => x.period === p && x.group === g); cells.push(e ? `<button class="el ${e.type} ${sel === e.sym ? 'sel' : ''}" data-s="${e.sym}"><small>${e.z}</small>${e.sym}</button>` : '<div class="el empty"></div>'); } return cells.join(''); };
   const draw = (fb = '') => {
     const m = modal(`${head}<h2>⛏️ 尋礦委託</h2><div class="story">「${esc(c.text)}」</div>
-      <div class="ask">📌 依照${t.fmt === 'report' ? '檢驗報告' : t.fmt === 'story' ? '礦工的筆記' : '線索'}，在週期表上點出這個元素<small>每條線索都會縮小範圍，全部符合的元素只有一個</small></div>
       ${clueBlock(t)}
       <div class="pt-wrap"><div class="ptable">${grid()}</div></div>
       <div style="font-size:.8em;color:#6b5a3a">底色：<span style="background:#f5e6b8;padding:0 4px">金屬</span> <span style="background:#cfe0f5;padding:0 4px">非金屬</span> <span style="background:#d9f0d0;padding:0 4px">類金屬</span> <span style="background:#e3d9f2;padding:0 4px">惰性氣體</span></div>
@@ -494,12 +586,11 @@ function detectUI(c, head) {
   const draw = (fb = '') => {
     const done = X.TESTS.filter(x => t.done.includes(x.id)), todo = X.TESTS.filter(x => !t.done.includes(x.id));
     const opts = t.mode === 'type' ? t.opts.map(b => `<button class="${sel === b ? 'on' : ''}" data-o="${b}">${X.BOND[b]}<small>${X.BOND_NATION[b]}</small></button>`)
-      : t.opts.map(id => { const x = TASKS.subst(id); return `<button class="${sel === id ? 'on' : ''}" data-o="${id}">${esc(x.zh)}<small>${C.html(x.f)}</small></button>`; });
+      : t.opts.map(id => { const x = TASKS.subst(id); return `<button class="${sel === id ? 'on' : ''}" data-o="${id}" style="font-size:1.25em">${C.html(x.f)}${id === 'dia' ? '<small>（鑽石）</small>' : id === 'gra' ? '<small>（石墨）</small>' : ''}</button>`; });
     const m = modal(`${head}<h2>🔍 偵探鑑定</h2><div class="story">「${esc(c.text)}」</div>
-      <div class="ask">📌 ${t.mode === 'type' ? '做檢驗，推理出這個樣本屬於哪一國（哪一種鍵結）' : '樣本是下面四種嫌疑物質的其中一種，做檢驗找出它'}<small>每項檢驗要花一點金幣；做越少就破案，省下越多錢</small></div>
       <table class="rep"><caption>🧾 檢驗紀錄</caption>${done.map(x => `<tr><td class="lbl">${x.icon} ${x.name}</td><td>${esc(tg.r[x.id])}</td></tr>`).join('')}</table>
       ${todo.length ? `<div style="font-weight:700">🧪 還能做的檢驗（目前資金 💰${S.money}）</div><div class="tests">${todo.map(x => `<button data-t="${x.id}" ${S.money < x.cost ? 'disabled' : ''}>${x.icon} ${x.name} <small>💰${x.cost}</small></button>`).join('')}</div>` : ''}
-      <div style="font-weight:700">🕵️ 你的推理</div><div class="suspects">${opts.join('')}</div>
+      <div style="font-weight:700">🕵️ ${t.mode === 'type' ? '這個樣本是哪一類物質？' : '樣本是哪一個？'}</div><div class="suspects">${opts.join('')}</div>
       ${t.spent ? `<div style="font-size:.85em;color:#6b5a3a">這件案子的檢驗費已經花了 💰${t.spent}</div>` : ''}
       ${fb}<div class="actions" style="justify-content:space-between"><button class="btn dark" id="x">放棄這件委託</button><button class="btn" id="ok" ${sel ? '' : 'disabled'}>就是它！</button></div>`);
     m.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { if (GAME.runTest(S, c, b.dataset.t)) { drawTop(); save(); draw(fb); } else toast('資金不夠'); });
@@ -524,10 +615,10 @@ function forgeUI(c, head) {
     const prev = cs && as ? C.html(C.build(cs, m1, as, n1)) : '<span style="color:#bbb">？</span>';
     const m = modal(`${head}<h2>⚒️ 鑄造委託</h2>
       <div class="story">「${esc(c.text)}」</div>
-      ${ions ? `<div class="ask">📌 用下面兩種離子，鑄造出電中性的化合物<small>調整陽離子、陰離子的個數，讓正負電荷總和為零</small></div>
+      ${ions ? `
         <div class="ionbox"><div class="ionc"><div class="ion">${C.ionHtml(C.CAT[t.c])}</div><div>陽離子 ×</div><div class="step"><button data-d="m-">−</button><b>${m1}</b><button data-d="m+">＋</button></div></div>
         <div class="ionc"><div class="ion">${C.ionHtml(C.AN[t.a])}</div><div>陰離子 ×</div><div class="step"><button data-d="n-">−</button><b>${n1}</b><button data-d="n+">＋</button></div></div></div>`
-      : `<div class="ask">📌 照訂單上的名稱，選出陽離子和陰離子，再決定各要幾個<small>名稱的後半段是陽離子、前半段是陰離子</small></div><div class="bigf">${esc(t.name)}</div>
+      : `<div class="bigf">${esc(t.name)}</div>
         <div style="text-align:center"><b>陽離子</b></div><div class="pick">${t.cOpts.map(id => `<button class="${cs === id ? 'on' : ''}" data-c="${id}">${plain(id)}</button>`).join('')}</div>
         <div style="text-align:center"><b>陰離子</b></div><div class="pick">${t.aOpts.map(id => `<button class="${as === id ? 'on' : ''}" data-a="${id}">${plain(id)}</button>`).join('')}</div>
         <div class="ionbox"><div>陽離子 ×<div class="step"><button data-d="m-">−</button><b>${m1}</b><button data-d="m+">＋</button></div></div><div>陰離子 ×<div class="step"><button data-d="n-">−</button><b>${n1}</b><button data-d="n+">＋</button></div></div></div>`}
@@ -551,7 +642,7 @@ function forgeUI(c, head) {
 function nameUI(c, head) {
   const t = c.task;
   const draw = (fb = '', dis = []) => {
-    const m = modal(`${head}<h2>🏷️ 標籤命名</h2><div class="story">「${esc(c.text)}」</div><div class="ask">📌 樣本的標籤只寫了化學式，選出它的中文名稱</div>
+    const m = modal(`${head}<h2>🏷️ 標籤命名</h2><div class="story">「${esc(c.text)}」</div>
       <div class="bigf">${C.html(t.formula)}</div>
       <div class="names">${t.opts.map(n => `<button data-n="${esc(n)}" ${dis.includes(n) ? 'disabled' : ''}>${esc(n)}</button>`).join('')}</div>
       ${fb}<div class="actions"><button class="btn dark" id="x">放棄這件委託</button></div>`);
@@ -566,6 +657,30 @@ function nameUI(c, head) {
     m.querySelector('#x').onclick = () => giveUp(c);
   };
   draw();
+}
+/* 📚 題組委託：連續 3 小題，答對 2 題以上算成功、全對才算「第一次就答對」 */
+function setUI(c, head) {
+  const t = c.task; t.answers = t.answers || [];
+  const i = t.answers.length;
+  if (i >= t.qs.length) return;
+  const q = t.qs[i];
+  const m = modal(`${head}<h2>📚 題組委託 <small style="font-size:.6em;color:#8a6a22">第 ${i + 1}／${t.qs.length} 題</small></h2><div class="story">「${esc(c.text)}」</div>
+    <div style="font-size:.8em;color:#8a6a22">知識點：${QUIZ.TAGS[q.tag]}・答對 2 題以上算成功</div>
+    <div class="qq" style="font-size:1.15em;margin:8px 0">${q.q}</div>
+    <div class="names">${q.opts.map((o, k) => `<button data-q="${k}">${o}</button>`).join('')}</div><div id="qfb"></div>`);
+  m.querySelectorAll('[data-q]').forEach(b => b.onclick = () => {
+    const pickd = q.opts[+b.dataset.q], ok = pickd === q.ans;
+    t.answers.push(pickd); save();
+    m.querySelectorAll('[data-q]').forEach(x => { x.disabled = true; if (q.opts[+x.dataset.q] === q.ans) x.style.borderColor = 'var(--green)'; });
+    b.style.borderColor = ok ? 'var(--green)' : 'var(--red)';
+    $('qfb').innerHTML = `<div class="fb ${ok ? 'ok' : 'bad'}">${ok ? '✅ 答對了！' : `❌ 正確答案是 ${q.ans}`}</div><div class="actions" style="justify-content:flex-end"><button class="btn" id="nx">${i + 1 < t.qs.length ? '下一題 ▶' : '看結果 ▶'}</button></div>`;
+    $('nx').onclick = () => {
+      if (t.answers.length < t.qs.length) return setUI(c, head);
+      const right = t.qs.filter((qq, k) => t.answers[k] === qq.ans).length;
+      c.tries = right === t.qs.length ? 0 : 1;
+      finishTask(c, right >= 2, `三題答對 <b>${right}</b> 題。<br>${t.qs.map((qq, k) => `${t.answers[k] === qq.ans ? '✅' : '❌'} ${qq.q} → <b>${qq.ans}</b>`).join('<br>')}`);
+    };
+  });
 }
 function giveUp(c) {
   const m = modal(`<h2>放棄這件委託？</h2><p style="margin:8px 0">放棄等於委託失敗：隱密度 −10，委託國會不太高興。</p>
@@ -629,7 +744,10 @@ function stepSettle() {
   $('panel').innerHTML = `<div class="step-h"><h2>⚔️ 回合結算</h2><span class="kicker">${roundName(S.round)}</span></div>
     <p>各國的自然消長（國運＋強者越強＋運氣，零和：有人漲就有人跌）：</p><div class="effs">${effChips(d)}</div>
     ${a && a.moves && a.moves.length ? `<div class="note">🏴 領土跟著國力走：${a.moves.map(m => `<b style="color:${F[m.to].color}">${F[m.to].name}</b>從<b style="color:${F[m.from].color}">${F[m.from].name}</b>奪得 <b>${m.n}</b> 個省分`).join('；')}（地圖上閃爍的地方）</div>` : '<div class="note">🕊️ 各國的領土和國力相符，這一季邊境平靜。</div>'}
-    ${st.balanced ? '<div class="note">⚖️ 本回合結束時，所有國家都在安全範圍（60%～150%）內，天下均勢：<b>均勢回合分 +20</b>（最後算總分用，8 回合最多 160 分）。</div>' : '<div class="note">⚠️ 本回合結束時有國家超出安全範圍（60%～150%），這回合拿不到均勢回合分。</div>'}
+    ${st.crisis ? `<div class="note" style="border:2px solid #ff8a73">🌋 <b>大陸危機！</b>各國實力太接近、局勢太平靜，反而醞釀出變故：<b style="color:${F[st.crisis.f].color}">${F[st.crisis.f].name}</b>${st.crisis.d > 0 ? '發現新的資源，國力暴漲' : '爆發內亂，國力重挫'} ${st.crisis.d > 0 ? '+' : ''}${st.crisis.d}%。</div>` : ''}
+    ${st.balanced ? '<div class="note">⚖️ 本回合結束時，所有國家都在安全範圍（75%～130%）內，天下均勢：<b>均勢回合分 +20</b>（8 回合最多 160 分）。</div>'
+      : st.worked === false && S.facs.every(f => WORLD.inSafe(S, f)) ? '<div class="note">💤 天下雖然均勢，但鍵結社這回合沒有完成任何委託，拿不到均勢回合分。</div>'
+      : '<div class="note">⚠️ 本回合結束時有國家超出安全範圍（75%～130%），這回合拿不到均勢回合分。</div>'}
     ${warnings()}
     <div class="actions"><button class="btn" id="go">大陸上發生了一件事…… ▶</button></div>`;
   $('go').onclick = () => { S.step = 'event'; S.evRes = null; S.evId = GAME.pickEvent(S).id; save(); renderStep(); };
@@ -668,12 +786,12 @@ function stepEvent() {
 function puzzleUI(ev) {
   const d = ev.data, N = F[ev.who];
   let ans = ev.kind === 'sort' ? [] : ev.kind === 'classify' ? d.items.map(() => null) : ev.kind === 'balance' ? [...d.l, ...d.r].map(() => 1) : { bp: 0, lp: 0 };
-  const ASK = { sort: `📌 ${d.title}：依序點選下面的物質<small>點錯了可以按「重排」</small>`, classify: `📌 ${d.title}<small>每一種物質點選一個國家</small>`, balance: '📌 調整每個化學式前面的係數，讓兩邊每種原子的數目都相等<small>係數要化成最簡整數比；係數 1 不用寫</small>', lewis: `📌 ${d.f} 的路易斯結構中，共有幾對共用電子？幾對孤對電子？<small>先算每個原子的價電子，再讓每個原子（H 除外）周圍湊滿 8 個電子</small>` };
+  const ASK = { sort: `📌 ${d.title}：依序點選下面的物質<small>點錯了可以按「重排」</small>`, classify: `📌 ${d.title}<small>${d.multi ? '點一下選取、再點一下取消；有的物質同時含有兩種化學鍵' : '每一種物質點選一個聯邦'}</small>`, balance: '📌 調整每個化學式前面的係數，讓兩邊每種原子的數目都相等<small>係數要化成最簡整數比；係數 1 不用寫</small>', lewis: `📌 ${d.f} 的路易斯結構中，共有幾對共用電子？幾對孤對電子？<small>先算每個原子的價電子，再讓每個原子（H 除外）周圍湊滿 8 個電子</small>` };
   const widget = () => {
     if (ev.kind === 'sort') return `<div class="sortbox">${d.shown.map(x => `<button data-s="${esc(x)}" class="${ans.includes(x) ? 'used' : ''}" ${ans.includes(x) ? 'disabled' : ''}>${esc(x)}</button>`).join('')}</div>
       <div class="seq">${ans.length ? ans.map((x, i) => `<span>${i + 1}. ${esc(x)}</span>`).join('') : '<i style="color:#999">依序點選上面的物質</i>'}</div>
       <div class="actions"><button class="btn sm dark" id="reset">↺ 重排</button></div>`;
-    if (ev.kind === 'classify') return d.items.map((it, i) => `<div class="cls-row" data-row="${i}"><b>${esc(it[0])}</b>${Object.entries(d.cats).map(([k, v]) => `<button class="${ans[i] === k ? 'on' : ''}" data-i="${i}" data-c="${k}">${v}</button>`).join('')}</div>`).join('');
+    if (ev.kind === 'classify') return d.items.map((it, i) => `<div class="cls-row" data-row="${i}"><b>${esc(it[0])}</b>${Object.entries(d.cats).map(([k, v]) => `<button class="${(ans[i] || []).includes(k) ? 'on' : ''}" data-i="${i}" data-c="${k}">${(ans[i] || []).includes(k) ? '✔ ' : ''}${v}</button>`).join('')}</div>`).join('');
     if (ev.kind === 'balance') {
       const all = [...d.l, ...d.r], cnt = (fs, off) => { const o = {}; fs.forEach((f, i) => Object.entries(FACTS.atoms(f)).forEach(([k, v]) => { o[k] = (o[k] || 0) + v * ans[off + i]; })); return o; };
       const L = cnt(d.l, 0), R = cnt(d.r, d.l.length), els = Object.keys({ ...L, ...R });
@@ -689,7 +807,7 @@ function puzzleUI(ev) {
   const showRes = r => {
     const res = r.res, last = S.round >= WORLD.RULE.ROUNDS;
     $('pz').querySelectorAll('button').forEach(x => { x.disabled = true; });
-    if (ev.kind === 'classify' && r.ans) r.ans.forEach((a, i) => { if (a !== d.items[i][1]) { const row = $('pz').querySelector(`[data-row="${i}"]`); if (row) row.classList.add('bad'); } });
+    if (ev.kind === 'classify' && r.ans) r.ans.forEach((a, i) => { if ([...(a || [])].sort().join() !== [...d.items[i][1]].sort().join()) { const row = $('pz').querySelector(`[data-row="${i}"]`); if (row) row.classList.add('bad'); } });
     $('ev-res').innerHTML = `<div class="fb ${res.ok ? 'ok' : res.near ? 'hint' : 'bad'}">${res.ok ? `✅ 完全正確！${N.name}對你刮目相看。` : res.near ? '🟡 差一點，只錯了一個。' : '❌ 不太對。'}<br>${res.msg}</div>
       <div class="effs">${effChips(r.applied)}${res.ok ? '<span class="eff up">💰 +12</span>' : res.near ? '<span class="eff up">💰 +5</span>' : '<span class="eff dn">🕵️ −5</span>'}</div>
       <div class="actions"><button class="btn" id="go">${r.fail ? '看結局 ▶' : last ? '兩年過去了……看結局 ▶' : '進入下一回合 ▶'}</button></div>`;
@@ -706,7 +824,8 @@ function puzzleUI(ev) {
     const P = $('pz');
     P.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { ans.push(b.dataset.s); draw(); });
     const rs = $('reset'); if (rs) rs.onclick = () => { ans = []; draw(); };
-    P.querySelectorAll('[data-i]').forEach(b => b.onclick = () => { ans[+b.dataset.i] = b.dataset.c; draw(); });
+    P.querySelectorAll('[data-i]').forEach(b => b.onclick = () => { const i = +b.dataset.i, k = b.dataset.c, cur = ans[i] || [];
+      ans[i] = d.multi ? (cur.includes(k) ? cur.filter(x => x !== k) : [...cur, k]) : [k]; if (!ans[i].length) ans[i] = null; draw(); });
     P.querySelectorAll('[data-b]').forEach(b => b.onclick = () => { const [i, op] = b.dataset.b.split('|'); ans[+i] = Math.max(1, Math.min(9, ans[+i] + (op === '+' ? 1 : -1))); draw(); });
     P.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { const [k, op] = b.dataset.l.split('|'); ans[k] = Math.max(0, Math.min(9, ans[k] + (op === '+' ? 1 : -1))); draw(); });
     $('sub').onclick = () => {
@@ -736,25 +855,27 @@ function showEnding() {
   refresh();
   $('panel').innerHTML = `<div class="step-h"><h2>${E.t}</h2><span class="kicker">${roundName(S.round)}</span></div>
     <div class="ev-card"><p>${e.f ? `<b style="color:${F[e.f].color}">${F[e.f].full}</b>` : ''}${E.d}</p>
-    ${e.id === 'unify' && WORLD.rel(S, e.f) < WORLD.RULE.UNIFY ? `<p class="note" style="background:#fff;color:#6b5a3a">${F[e.f].name}連續 2 回合相對國力超過 170%，勢力已經無法阻擋。</p>` : ''}
+    ${e.id === 'unify' && WORLD.rel(S, e.f) < WORLD.RULE.UNIFY ? `<p class="note" style="background:#fff;color:#6b5a3a">${F[e.f].name}連續 2 回合相對國力超過 ${WORLD.RULE.UNIFY_SOFT}%，勢力已經無法阻擋。</p>` : ''}
     <table class="score-t">
       <tr><td>💰 資金${fail ? `（組織被消滅，資產被沒收，只留 ${WORLD.CONFISCATE * 10} 成）` : ''}</td><td>${sc.money}</td></tr>
       <tr><td>⚖️ 均勢回合分（結算時天下均勢的回合 ${S.balanceRounds} × 20）</td><td>${sc.balance}</td></tr>
       <tr><td>📚 學習分（第一次就答對 ${S.stats.firstOk}／${S.stats.tasks} 件 × 200）</td><td>${sc.learn}</td></tr>
+      <tr><td>🧠 知識點分（練成 ${sc.practice / 10} 種 × 10）</td><td>${sc.practice}</td></tr>
       <tr><td>🕵️ 隱密分</td><td>${sc.stealth}</td></tr>
       <tr><td>🏁 結局分</td><td>${sc.ending}</td></tr>
       <tr class="total"><td>總分</td><td>${sc.total}</td></tr>
     </table>
+    <h3 class="serif" style="margin-top:10px">🧠 知識點圖鑑</h3>${pracView()}
     ${chart()}
     <div class="actions"><button class="btn" id="again">🔁 同一張地圖再挑戰</button><button class="btn dark" id="new">🗺️ 換一張新地圖</button></div></div>`;
-  $('again').onclick = () => { const lv = S.level, code = S.code; S = WORLD.newGame({ level: lv, code }); enterGame(true); };
+  $('again').onclick = () => { const lv = S.level, code = S.code, tm = S.timed; S = WORLD.newGame({ level: lv, code }); S.timed = tm; enterGame(true); };
   $('new').onclick = () => { try { localStorage.removeItem(SAVE); } catch (e) {} showTitle(); };
 }
 // 各國相對國力的走勢圖
 function chart() {
   const H = S.history, w = 300, h = 120, max = 220, x = i => 20 + i * (w - 30) / Math.max(1, H.length - 1), y = v => h - 10 - Math.min(max, v) / max * (h - 20);
   return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;background:#fff;border-radius:10px;margin-top:6px">
-    <rect x="20" y="${y(150)}" width="${w - 30}" height="${y(60) - y(150)}" fill="#2f9e5a22"/>
+    <rect x="20" y="${y(RU.SAFE[1])}" width="${w - 30}" height="${y(RU.SAFE[0]) - y(RU.SAFE[1])}" fill="#2f9e5a22"/>
     ${[30, 100, 200].map(v => `<line x1="20" x2="${w - 10}" y1="${y(v)}" y2="${y(v)}" stroke="#ccc" stroke-dasharray="3 3"/><text x="2" y="${y(v) + 3}" font-size="8" fill="#999">${v}%</text>`).join('')}
     ${S.facs.map(f => `<polyline fill="none" stroke="${F[f].color}" stroke-width="2" points="${H.map((p, i) => `${x(i)},${y(p[f])}`).join(' ')}"/>`).join('')}
     ${H.map((_, i) => `<text x="${x(i)}" y="${h - 1}" font-size="7" fill="#999" text-anchor="middle">${i}</text>`).join('')}</svg>
@@ -782,11 +903,12 @@ function codex() {
   const m = modal(`<h2>📖 勢力圖鑑</h2><p style="margin:6px 0">各國的國力數字差很多，是因為它們代表的化學鍵（或分子間作用力）強弱本來就差很多。遊戲裡的數字是依比例設計的，不是真實的鍵能數值。</p>
     ${list.map(f => `<div class="codex-f" style="border-color:${F[f].color}"><b style="color:${F[f].color}">${F[f].icon} ${F[f].full}</b>（${F[f].bond}）${F[f].base ? `<span style="font-size:.85em;color:#6b5a3a">・標準國力 ${F[f].base[0]}～${F[f].base[1]}</span>` : ''}<div style="font-size:.92em;margin-top:4px">${TXT[f]}</div></div>`).join('')}
     <h3 style="margin-top:10px">📏 規則摘要</h3>
-    <ul style="margin:6px 0 0 20px;font-size:.92em"><li>相對國力＝目前國力 ÷ 標準國力（開局時各國有強有弱，不一定是 100%）。安全範圍 60%～150%。</li><li>任一國 ≥200%（或連續 2 回合 ≥170%）＝天下一統；任一國 ≤30%＝一國滅亡；隱密度歸零＝組織曝光。三種都會讓鍵結社被消滅。</li><li>每回合結算：先算各國自然消長＝國運趨勢＋0.18×（相對國力−各國平均）＋運氣 ±5%，再扣掉各國的平均值（零和：有人漲就有人跌）。接著領土跟著國力走：每國應得面積＝總面積×自己的相對國力÷各國相對國力總和，領土不足的國家向領土過多的鄰國奪地（每回合最多 3 格，首都不會被攻下）。</li><li>交易所：每回合 1 次暗中行動（資助或謠言，只能選一國）；買賣元素每回合選「買」或「賣」，最多 3 筆，只能賣倉庫裡有的。買賣不改變國力，只改變<b>友好度</b>（🤝）：友好度越高賣價越好，採礦國友好度越高買越便宜。礦價會隨買賣量和需求浮動。</li><li>總分＝資金＋均勢回合分（每回合結算時天下均勢 +20）＋學習分（第一次就答對的比例）＋隱密分＋結局分；組織被消滅時資金只留 3 成。</li></ul>
+    <ul style="margin:6px 0 0 20px;font-size:.92em"><li>相對國力＝目前國力 ÷ 標準國力（開局時各國有強有弱，不一定是 100%）。安全範圍 75%～130%。</li><li>任一國 ≥170%（或連續 2 回合 ≥150%）＝天下一統；任一國 ≤45%＝一國滅亡；隱密度歸零＝組織曝光。三種都會讓鍵結社被消滅。</li><li>每回合結算：先算各國自然消長＝國運趨勢＋0.18×（相對國力−各國平均）＋運氣 ±5%，再扣掉各國的平均值（零和：有人漲就有人跌）。接著領土跟著國力走：每國應得面積＝總面積×自己的相對國力÷各國相對國力總和，領土不足的國家向領土過多的鄰國奪地（每回合最多 3 格，首都不會被攻下）。</li><li>交易所：每回合 1 次暗中行動（資助或謠言，只能選一國）；買賣元素每回合選「買」或「賣」，最多 3 筆，只能賣倉庫裡有的。買賣不改變國力，只改變<b>友好度</b>（🤝）：友好度越高賣價越好，採礦國友好度越高買越便宜。礦價會隨買賣量和需求浮動。</li><li>總分＝資金＋均勢回合分（每回合結算時天下均勢、而且本回合至少完成 1 件委託 +20）＋學習分（第一次就答對的比例）＋知識點分（每練成一種知識點 +10）＋隱密分＋結局分；組織被消滅時資金只留 3 成。</li><li>各國最強與最弱的差距小於 15% 時，太平靜反而會爆發「大陸危機」，某一國突然大漲或大跌 12%。</li><li>計時模式：每回合 4 分鐘，時間到還沒結束回合會爆發危機（最強國 +6%、最弱國 −6%、隱密度 −5，不能再接委託）；每 75 秒跳出一題干擾快問（20 秒，答對 💰+5，答錯或超時隱密度 −3）；委託在 60／75／90 秒內（依難度）完成，報酬 ×1.2。</li></ul>
     <div class="actions" style="justify-content:flex-end"><button class="btn" id="ok">關閉</button></div>`);
   m.querySelector('#ok').onclick = closeModal;
 }
 $('btn-codex').onclick = codex; $('btn-codex2').onclick = codex;
+$('btn-prac').onclick = () => { const m = modal(`<h2>📚 知識點圖鑑</h2>${pracView()}<div class="actions" style="justify-content:flex-end"><button class="btn" id="cl">關閉</button></div>`); m.querySelector('#cl').onclick = () => { closeModal(); if (CUR) openTask(CUR); }; };
 $('btn-menu').onclick = () => {
   const m = modal(`<h2>☰ 選單</h2><p style="margin:8px 0">地圖代碼 <b>${S.code}</b>（${S.level === 'g11' ? '高二高三版' : '高一版'}）。戰局每一步都會自動存檔。</p>
     <div class="actions"><button class="btn" id="ok">繼續遊戲</button><button class="btn dark" id="title">回到開始畫面</button></div>`);

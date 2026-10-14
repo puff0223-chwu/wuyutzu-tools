@@ -19,6 +19,7 @@ const GAME = (() => {
   const FX = typeof FACTS !== 'undefined' ? FACTS : require('./facts.js');
   const PRICE = { subsidy: r => 25 + r * 3, rumor: r => 20 + r * 2, intel: () => 10, markup: r => 1 + (r - 1) * 0.05 };
   const SUBSIDY = 6, FAIL_STEALTH = 10, TRADE_MAX = 3, RUSH = 1.3;
+  const ROUND_SEC = 240, QUICK_EVERY = 75, QUICK_SEC = 20, FAST = [0, 60, 75, 90];   // 計時模式：每回合 4 分鐘、每 75 秒一題干擾快問（20 秒）、委託在 60／75／90 秒內完成有快手獎金
   /* 友好度 */
   const TIERS = [
     { min: 80, name: '盟友', sell: 0.95, buy: 0.8 },
@@ -45,7 +46,7 @@ const GAME = (() => {
 
   function startRound(s) {
     s.friend = s.friend || {}; s.mkt = s.mkt || {};
-    s.board = T.makeBoard(s); s.ap = 2; s.step = 'board'; s.trade = { mode: null, n: 0, covert: null, intel: false }; s.lastEvent = null; s.settle = null;
+    s.board = T.makeBoard(s); s.ap = 2; s.step = 'board'; s.timeCrisis = null; s.tLeft = ROUND_SEC; s.qNext = QUICK_EVERY; s.trade = { mode: null, n: 0, covert: null, intel: false }; s.lastEvent = null; s.settle = null;
     marketTick(s);
     return s.board;
   }
@@ -70,13 +71,16 @@ const GAME = (() => {
   // 完成委託：result = { ok, first, hinted }
   function resolve(s, c, result) {
     const kind = c.task.kind;
+    if (kind === 'set') c.task.qs.forEach((q, i) => practice(s, q.tag, (result.answers || [])[i] === q.ans));
+    else practice(s, tagsOf(c.task), result.ok);
     s.stats.tasks++; if (result.ok && result.first) s.stats.firstOk++;
     const bt = (s.stats.byType[kind] = s.stats.byType[kind] || { n: 0, first: 0, fail: 0 });
     bt.n++; if (result.ok && result.first) bt.first++; if (!result.ok) bt.fail++;
     s.ap = Math.max(0, s.ap - 1);
     let applied = {};
     if (result.ok) {
-      s.money += Math.round(c.reward * (result.first ? 1 : 0.7));
+      c.paid = Math.round(c.reward * (result.first ? 1 : 0.7) * (result.fast ? 1.2 : 1));
+      s.money += c.paid;
       applied = Wd.apply(s, c.effects);
       befriend(s, c.from, 10); if (c.shady) befriend(s, c.shady, -8);
       if (kind === 'mine') s.inv[c.task.answer] = (s.inv[c.task.answer] || 0) + (c.task.qty || 2);
@@ -127,14 +131,48 @@ const GAME = (() => {
     return out;
   }
   /* 結算 */
+  // 結算：自然消長 →（太平靜就爆發危機）→ 領土重分 → 判定
+  const CALM = 15;   // 最強和最弱的相對國力差距小於 15%，就算「太平靜」
   function settle(s, map) {
     const before = Object.fromEntries(s.facs.map(f => [f, Wd.rel(s, f)]));
     const drift = Wd.drift(s);
+    let crisis = null;
+    const rels = s.facs.map(f => Wd.rel(s, f));
+    if (Math.max(...rels) - Math.min(...rels) < CALM) {
+      const rnd = Wd.rngFrom(s), f = s.facs[Math.floor(rnd() * s.facs.length)], up = rnd() < 0.5, d = up ? 12 : -12;
+      Wd.apply(s, { [f]: d }); crisis = { f, d, kind: up ? 'boom' : 'plague' };
+    }
     const ann = Wd.annex(s, map);
     const fail = Wd.checkFail(s);
-    const balanced = Wd.closeRound(s);
-    s.settle = { before, drift, annex: ann, balanced };
-    return { drift, annex: ann, fail, balanced, before };
+    const worked = !!(s.board && s.board.some(c => c.state === 'done'));
+    const balanced = Wd.closeRound(s, worked);
+    s.settle = { before, drift, annex: ann, balanced, worked, crisis, timeCrisis: s.timeCrisis || null };
+    return { drift, annex: ann, fail, balanced, before, worked, crisis };
+  }
+  // ⏰ 回合時間到還沒結束：最強國趁機擴張、最弱國陷入動亂，鍵結社的拖延也被注意到
+  function timeUp(s) {
+    if (s.timeCrisis) return null;
+    const sorted = [...s.facs].sort((a, b) => Wd.rel(s, b) - Wd.rel(s, a)), top = sorted[0], low = sorted[sorted.length - 1];
+    const applied = Wd.apply(s, { [top]: 6, [low]: -6 }); s.stealth -= 5;
+    s.timeCrisis = { top, low }; s.ap = 0;
+    return { applied, fail: Wd.checkFail(s) };
+  }
+  /* 知識點圖鑑 */
+  function practice(s, tags, ok) {
+    s.prac = s.prac || {};
+    [].concat(tags).forEach(t => { const p = (s.prac[t] = s.prac[t] || { n: 0, ok: 0 }); p.n++; if (ok) p.ok++; });
+  }
+  function tagsOf(t) {
+    if (t.kind === 'mine') return t.clues.some(c => ['prop', 'react', 'use'].includes(c.fam)) ? ['pos', 'prop'] : ['pos'];
+    if (t.kind === 'detect') return t.mode === 'type' ? ['bond'] : ['detect'];
+    if (t.kind === 'forge') { if (t.mode === 'f2name') return ['name']; const tg = ['formula', 'ion']; if (C.CAT[t.c].poly || C.AN[t.a].poly) tg.push('poly'); return tg; }
+    return [];
+  }
+  /* ⚡ 干擾快問 */
+  function quick(s) { const Q = typeof QUIZ !== 'undefined' ? QUIZ : require('./quiz.js'); return Q.make(Wd.rngFrom(s), s.level, s.prac); }
+  function answerQuick(s, q, ok) {
+    practice(s, q.tag, ok); s.stats.quick = (s.stats.quick || 0) + 1;
+    if (ok) { s.stats.quickOk = (s.stats.quickOk || 0) + 1; s.money += 5; } else s.stealth -= 3;
   }
   /* 偵探鑑定：花錢做檢驗 */
   function runTest(s, c, id) {
@@ -178,9 +216,11 @@ const GAME = (() => {
       }
       if (kind === 'classify') {
         const sets = Object.entries(FX.CLASSIFY).filter(([k, v]) => (!v.lv || v.lv === s.level) && !used.has('cls:' + k)); if (!sets.length) continue;
-        const [k, v] = pick(sets), cats = Object.keys(v.cats), per = cats.length === 2 ? 3 : 2;
-        const items = sh(cats.flatMap(c => sh(v.items.filter(i => i[1] === c)).slice(0, per)));
-        return { id: 'cls:' + k, kind, who, chem: true, title: k === 'imf' ? '🤝 兩聯邦搶成員' : '🗂️ 大陸人口普查', text: k === 'imf' ? '幾個分子村落想加入聯邦，氫聯邦和凡聯邦吵著要人。請你當公證人，依「分子之間有沒有氫鍵」分配。' : `${N}主辦全大陸的物質普查，請你把每一種物質分到它所屬的國家。`, data: { title: v.title, cats: v.cats, items } };
+        const [k, v] = pick(sets), cats = Object.keys(v.cats);
+        const single = c => sh(v.items.filter(i => i[1].length === 1 && i[1][0] === c));
+        const items = v.multi ? sh([...sh(v.items.filter(i => i[1].length > 1)).slice(0, 2), ...single('io').slice(0, 1), ...single('co').slice(0, 2), ...single('me').slice(0, 2)])
+          : sh(cats.flatMap(c => single(c).slice(0, 3)));
+        return { id: 'cls:' + k, kind, who, chem: true, title: k === 'imf' ? '🤝 兩聯邦搶成員' : '🗂️ 大陸人口普查', text: k === 'imf' ? '幾個分子村落想加入聯邦，氫聯邦和凡聯邦吵著要人。請你當公證人，依「分子之間有沒有氫鍵」分配。' : `${N}主辦全大陸的物質普查，請你判斷每一種物質裡含有哪些化學鍵（屬於哪些國家）。`, data: { title: v.title, cats: v.cats, items, multi: !!v.multi } };
       }
       if (kind === 'balance') {
         const pool = FX.EQUATIONS.filter((q, i) => q.t <= tier && !used.has('bal:' + i)); if (!pool.length) continue;
@@ -204,8 +244,9 @@ const GAME = (() => {
       return { ok, msg: `正確順序：${right.join(' → ')}（${d.items.slice().sort((a, b) => (d.dir === 'asc' ? a[1] - b[1] : b[1] - a[1])).map(i => `${i[0]} ${i[1]}${d.unit && d.unit.startsWith('°') ? d.unit : ''}`).join('、')}）。${d.why}` };
     }
     if (ev.kind === 'classify') {
-      const wrong = d.items.filter((it, i) => ans[i] !== it[1]);
-      return { ok: !wrong.length, near: wrong.length === 1, wrong: wrong.map(w => w[0]), msg: d.items.map(it => `${it[0]} → ${d.cats[it[1]]}（${it[2]}）`).join('<br>') };
+      const same = (x, y) => [...(x || [])].sort().join() === [...y].sort().join();
+      const wrong = d.items.filter((it, i) => !same(ans[i], it[1]));
+      return { ok: !wrong.length, near: wrong.length === 1, wrong: wrong.map(w => w[0]), msg: d.items.map(it => `${it[0]} → ${it[1].map(x => d.cats[x]).join('＋')}（${it[2]}）`).join('<br>') };
     }
     if (ev.kind === 'balance') {
       const all = [...d.l, ...d.r], cnt = side => { const o = {}; side.forEach((f, i) => Object.entries(FX.atoms(f)).forEach(([k, v]) => { o[k] = (o[k] || 0) + v * ans[side === d.l ? i : d.l.length + i]; })); return o; };
@@ -222,8 +263,11 @@ const GAME = (() => {
     return { ok: false, msg: '' };
   }
   // 互動題結算：成功 → 金幣 +12、該國 +4；差一點（只錯一個）→ 金幣 +5；失敗 → 該國 −3、隱密度 −5
+  const PUZ_TAG = ev => ev.kind === 'balance' ? 'balance' : ev.kind === 'lewis' ? 'lewis' : ev.kind === 'classify' ? (ev.id === 'cls:imf' ? 'imf' : 'bond')
+    : ['sort:radius3', 'sort:alkali'].includes(ev.id) ? 'trend' : ['sort:force', 'sort:bp-hb'].includes(ev.id) ? 'imf' : 'mp';
   function solvePuzzle(s, ev, res) {
     let applied = {};
+    practice(s, PUZ_TAG(ev), res.ok);
     s.stats.evChem = (s.stats.evChem || 0) + 1;
     if (res.ok) { s.stats.evChemOk = (s.stats.evChemOk || 0) + 1; s.money += 12; applied = Wd.apply(s, { [ev.who]: 4 }); befriend(s, ev.who, 5); }
     else if (res.near) s.money += 5;
@@ -253,6 +297,6 @@ const GAME = (() => {
     if (s.round >= Wd.RULE.ROUNDS) { s.ended = Wd.finalEnding(s); s.step = 'end'; return false; }
     s.round++; s.step = 'report'; return true;
   }
-  return { PRICE, SUBSIDY, TRADE_MAX, TIERS, tier, idx, sellPrice, rushPrice, rush, canTrade, subsidyCost, startRound, buyPrice, missing, buy, resolve, skip, subsidy, rumor, intel, forecast, sell, buyers, settle, pickEvent, evById, chooseEvent, resolveTarget, nextRound, runTest, checkDetect, makePuzzle, checkPuzzle, solvePuzzle };
+  return { ROUND_SEC, QUICK_EVERY, QUICK_SEC, FAST, tagsOf, PRICE, SUBSIDY, TRADE_MAX, TIERS, tier, idx, sellPrice, rushPrice, rush, canTrade, subsidyCost, startRound, buyPrice, missing, buy, resolve, skip, subsidy, rumor, intel, forecast, sell, buyers, settle, pickEvent, evById, chooseEvent, resolveTarget, nextRound, timeUp, practice, quick, answerQuick, CALM, runTest, checkDetect, makePuzzle, checkPuzzle, solvePuzzle };
 })();
 if (typeof module !== 'undefined') module.exports = GAME;

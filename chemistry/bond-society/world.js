@@ -4,7 +4,7 @@
    老師的決定（2026-10-14）：
    ・開局國力依鍵能比例隨機：共國、離國 300～400；金國 100～140；氫聯邦 25～40；凡聯邦 2.5～4.0
    ・國力變化一律用「自己標準國力的百分比」；均勢與勝敗看「相對國力＝目前÷標準國力×100%」
-   ・天下一統（任一國 ≥200%，或連續 2 回合 ≥170%）、一國滅亡（≤30% 或失去所有省分）、組織曝光（隱密度 0）都算失敗
+   ・天下一統（任一國 ≥170%，或連續 2 回合 ≥150%）、一國滅亡（≤45%）（第三次試玩後依模擬收緊，原本 200／170／30、安全 60～150）、組織曝光（隱密度 0）都算失敗
    ・高一版：共國、離國、金國三國；高二高三版：再加氫聯邦、凡聯邦
    第一次試玩後調整（2026-10-14 下午）：
    ・開局不再全部 100%：一強（115～127%）、一弱（76～86%），其他 90～108%，第一回合就有消長與蠶食
@@ -36,7 +36,7 @@ const WORLD = (() => {
   };
   const RIVAL = { co: 'io', io: 'me', me: 'co', hb: 'vw', vw: 'hb' };
   const factionsOf = level => (level === 'g11' ? ['co', 'io', 'me', 'hb', 'vw'] : ['co', 'io', 'me']);
-  const RULE = { ROUNDS: 8, SAFE: [60, 150], UNIFY: 200, UNIFY_SOFT: 170, DESTROY: 30, MONEY0: 40, STEALTH0: 100 };
+  const RULE = { ROUNDS: 8, SAFE: [75, 130], UNIFY: 170, UNIFY_SOFT: 150, DESTROY: 45, MONEY0: 40, STEALTH0: 100 };
 
   /* ---------- 六角格地圖 ---------- */
   const W = 15, H = 11, S = 20, SQ3 = Math.sqrt(3);
@@ -119,7 +119,7 @@ const WORLD = (() => {
     const map = makeMap(seed, facs);
     redraw({ facs, power, base, owner: map.owner }, map, 99);   // 開局地圖就反映強弱
     return {
-      v: 3, level, seed, code: codeOf(seed), facs, round: 1, step: 'report',
+      v: 4, level, seed, code: codeOf(seed), facs, round: 1, step: 'report',
       base, power, owner: map.owner.slice(), rs: (seed * 2654435761) >>> 0,
       money: RULE.MONEY0, stealth: RULE.STEALTH0, inv: {},
       friend: Object.fromEntries([...facs, 'mine'].map(f => [f, 40])), mkt: {},
@@ -207,11 +207,12 @@ const WORLD = (() => {
     }
     return null;
   }
-  // 回合結束時更新「連續 ≥170%」計數與均勢回合數
-  function closeRound(s) {
+  // 回合結束時更新「連續 ≥UNIFY_SOFT」計數與均勢回合數
+  // worked：本回合有沒有完成至少 1 件委託（沒做事就拿不到均勢回合分）
+  function closeRound(s, worked = true) {
     s.facs.forEach(f => { s.hi[f] = rel(s, f) >= RULE.UNIFY_SOFT ? (s.hi[f] || 0) + 1 : 0; });
     const ok = s.facs.every(f => inSafe(s, f));
-    if (ok) s.balanceRounds++;
+    if (ok && worked) s.balanceRounds++;
     s.history.push(snapshot(s));
     return ok;
   }
@@ -227,7 +228,8 @@ const WORLD = (() => {
     const t = s.stats.tasks, rate = t ? s.stats.firstOk / t : 0;
     const parts = {
       money: Math.round(s.money * (s.ended && FAIL_ENDS.includes(s.ended.id) ? CONFISCATE : 1)), balance: s.balanceRounds * 20, learn: Math.round(rate * 200),
-      stealth: Math.max(0, Math.round(s.stealth)), ending: END_BONUS[(s.ended && s.ended.id) || 'shaky'] || 0
+      stealth: Math.max(0, Math.round(s.stealth)), ending: END_BONUS[(s.ended && s.ended.id) || 'shaky'] || 0,
+      practice: Object.values(s.prac || {}).filter(p => p.ok > 0).length * 10   // 知識點圖鑑：每練成一種知識點 +10
     };
     return { ...parts, total: Object.values(parts).reduce((a, b) => a + b, 0), rate };
   }
