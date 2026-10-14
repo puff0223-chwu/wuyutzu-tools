@@ -36,7 +36,7 @@ const WORLD = (() => {
   };
   const RIVAL = { co: 'io', io: 'me', me: 'co', hb: 'vw', vw: 'hb' };
   const factionsOf = level => (level === 'g11' ? ['co', 'io', 'me', 'hb', 'vw'] : ['co', 'io', 'me']);
-  const RULE = { ROUNDS: 8, SAFE: [75, 130], UNIFY: 170, UNIFY_SOFT: 150, DESTROY: 45, MONEY0: 40, STEALTH0: 100 };
+  const RULE = { ROUNDS: 8, SAFE: [75, 130], UNIFY: 170, UNIFY_SOFT: 150, DESTROY: 45, MONEY0: 40, STEALTH0: 100, EXPOSE: 25 };   // 隱密度 ≤25 就曝光
 
   /* ---------- 六角格地圖 ---------- */
   const W = 15, H = 11, S = 20, SQ3 = Math.sqrt(3);
@@ -119,7 +119,7 @@ const WORLD = (() => {
     const map = makeMap(seed, facs);
     redraw({ facs, power, base, owner: map.owner }, map, 99);   // 開局地圖就反映強弱
     return {
-      v: 4, level, seed, code: codeOf(seed), facs, round: 1, step: 'report',
+      v: 5, level, seed, code: codeOf(seed), facs, round: 1, step: 'report',
       base, power, owner: map.owner.slice(), rs: (seed * 2654435761) >>> 0,
       money: RULE.MONEY0, stealth: RULE.STEALTH0, inv: {},
       friend: Object.fromEntries([...facs, 'mine'].map(f => [f, 40])), mkt: {},
@@ -129,7 +129,7 @@ const WORLD = (() => {
     };
   }
   // 國運趨勢：每國有自己的長期走勢（每 3 回合重抽一次），放著不管就會失衡
-  function rollTrend(facs, rnd) { const t = {}; facs.forEach(f => { t[f] = Math.round((rnd() * 11 - 5.5) * 10) / 10; }); return t; }
+  function rollTrend(facs, rnd) { const t = {}; facs.forEach(f => { t[f] = Math.round((rnd() * 13 - 6.5) * 10) / 10; }); return t; }
   function snapshot(s) { return Object.fromEntries(s.facs.map(f => [f, Math.round(rel(s, f))])); }
 
   /* ---------- 國力 ---------- */
@@ -146,10 +146,10 @@ const WORLD = (() => {
   }
   // 每回合自然消長（零和）：國運趨勢 ＋ 強者越強（和平均比）＋ 運氣，再扣掉各國平均 → 有人漲就有人跌
   const avgRel = s => s.facs.reduce((a, f) => a + rel(s, f), 0) / s.facs.length;
-  function rawGrowth(s, f, noise = 0) { return (s.trend ? s.trend[f] : 0) + MOMENTUM * (rel(s, f) - avgRel(s)) + noise; }
+  function rawGrowth(s, f, noise = 0) { return (s.trend ? s.trend[f] : 0) + (MOMENTUM[s.level] || 0.2) * (rel(s, f) - avgRel(s)) + noise; }
   function drift(s) {
     const rnd = rngFrom(s), raw = {}, out = {};
-    s.facs.forEach(f => { raw[f] = rawGrowth(s, f, rnd() * 10 - 5); });
+    s.facs.forEach(f => { raw[f] = rawGrowth(s, f, rnd() * 16 - 8); });
     const mean = s.facs.reduce((a, f) => a + raw[f], 0) / s.facs.length;
     s.facs.forEach(f => {
       let g = raw[f] - mean;
@@ -161,7 +161,7 @@ const WORLD = (() => {
     if (s.round % 3 === 0) s.trend = rollTrend(s.facs, rnd);
     return out;
   }
-  const MOMENTUM = 0.18;
+  const MOMENTUM = { g10: 0.26, g11: 0.16 };   // 強者越強係數（依模擬：認真玩約 8 成撐過）
   // 各國應得的省分數（採礦國不算）
   function shares(s) {
     const land = s.owner.filter(o => o && o !== 'mine').length, tot = s.facs.reduce((a, f) => a + rel(s, f), 0);
@@ -200,7 +200,7 @@ const WORLD = (() => {
   const inSafe = (s, f) => { const r = rel(s, f); return r >= RULE.SAFE[0] && r <= RULE.SAFE[1]; };
   // 回合中途的失敗判定（每次結算、事件之後都檢查）
   function checkFail(s) {
-    if (s.stealth <= 0) return { id: 'exposed' };
+    if (s.stealth <= RULE.EXPOSE) return { id: 'exposed' };
     for (const f of s.facs) {
       if (rel(s, f) >= RULE.UNIFY || (s.hi[f] || 0) >= 2) return { id: 'unify', f };
       if (rel(s, f) <= RULE.DESTROY || territory(s, f) === 0) return { id: 'destroy', f };
@@ -228,7 +228,7 @@ const WORLD = (() => {
     const t = s.stats.tasks, rate = t ? s.stats.firstOk / t : 0;
     const parts = {
       money: Math.round(s.money * (s.ended && FAIL_ENDS.includes(s.ended.id) ? CONFISCATE : 1)), balance: s.balanceRounds * 20, learn: Math.round(rate * 200),
-      stealth: Math.max(0, Math.round(s.stealth)), ending: END_BONUS[(s.ended && s.ended.id) || 'shaky'] || 0,
+      stealth: Math.max(0, Math.round(s.stealth - RULE.EXPOSE)), ending: END_BONUS[(s.ended && s.ended.id) || 'shaky'] || 0,
       practice: Object.values(s.prac || {}).filter(p => p.ok > 0).length * 10   // 知識點圖鑑：每練成一種知識點 +10
     };
     return { ...parts, total: Object.values(parts).reduce((a, b) => a + b, 0), rate };

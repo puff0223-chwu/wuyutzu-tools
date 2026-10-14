@@ -199,9 +199,10 @@ const TASKS = (() => {
       vw: ['凡聯邦的商隊收到一批貨，懷疑被調包了。']
     }
   };
+  const REWARD = { base: 12, tier: 5 };
   function makeBoard(s) {
     const rnd = Wd.rngFrom(s), tier = tierOf(s.round);
-    const n = s.round <= 2 ? 3 : 4, pick = a => a[Math.floor(rnd() * a.length)];
+    const n = (s.round <= 2 ? 3 : 4) - (s.stealth < 40 ? 1 : 0), pick = a => a[Math.floor(rnd() * a.length)];
     // 題型和國家脫鉤：五種題型輪流出現（這局出現次數少的優先），委託國隨機
     const facs = s.facs; s.kindN = s.kindN || {};
     const kinds = ['mine', 'forge', 'name', 'detect', 'set'].map(k => [(s.kindN[k] || 0) + rnd() * 0.9, k]).sort((a, b) => a[0] - b[0]).slice(0, n).map(p => p[1]);
@@ -218,7 +219,7 @@ const TASKS = (() => {
       if (from === 'mine') { reward = 12; task.qty = 3; }
       else {
         const r = Wd.rel(s, from);
-        reward = Math.round(22 + tier * 6 + r * 0.15 + rnd() * 6 + (kind === 'detect' ? 6 : 0));
+        reward = Math.round((REWARD.base + tier * REWARD.tier + r * 0.1 + rnd() * 5 + (kind === 'detect' ? 4 : 0)) * (s.stealth < 50 ? 0.85 : 1));   // 隱密度 <50：各國起疑，出價打折
         if (rnd() < 0.28) {   // 暗中削弱委託
           const targets = facs.filter(f => f !== from);
           shady = pick(targets);
@@ -234,6 +235,6 @@ const TASKS = (() => {
     });
     return board;
   }
-  return { tierOf, setTask, mineTask, forgeTask, detectTask, bestTest, subst, checkForge, hint, makeBoard, ionsOf, FAMLBL };
+  return { REWARD, tierOf, setTask, mineTask, forgeTask, detectTask, bestTest, subst, checkForge, hint, makeBoard, ionsOf, FAMLBL };
 })();
 if (typeof module !== 'undefined') module.exports = TASKS;

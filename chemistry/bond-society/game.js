@@ -19,7 +19,17 @@ const GAME = (() => {
   const FX = typeof FACTS !== 'undefined' ? FACTS : require('./facts.js');
   const PRICE = { subsidy: r => 25 + r * 3, rumor: r => 20 + r * 2, intel: () => 10, markup: r => 1 + (r - 1) * 0.05 };
   const SUBSIDY = 6, FAIL_STEALTH = 10, TRADE_MAX = 3, RUSH = 1.3;
-  const ROUND_SEC = 240, QUICK_EVERY = 75, QUICK_SEC = 20, FAST = [0, 60, 75, 90];   // 計時模式：每回合 4 分鐘、每 75 秒一題干擾快問（20 秒）、委託在 60／75／90 秒內完成有快手獎金
+  /* 🕵️ 隱密度（第四次試玩後）：做太多引人注目的事會被盯上；≤25 就曝光
+     ・暗中削弱委託 −4、暗中資助 −3、散播謠言 −4、委託失敗 −10
+     ・偏袒：最近兩回合幫同一國完成第 3 件以上委託，每件 −5
+     ・財富招搖：結算時資金超過 120，每多 40 金幣 −3
+     ・低調：本回合沒有做任何暗中的事（削弱委託、資助、謠言），結算時 +3
+     ・掩護行動（交易所）：花錢 +10，每回合一次
+     ・隱密度 <50：各國起疑，委託報酬打 85 折；<40：公告板少一件委託 */
+  const ST = { shady: 4, subsidy: 3, rumor: 4, favor: 5, wealth: 120, wealthStep: 40, wealthCost: 3, calm: 3, cover: 10 };
+  const coverCost = r => 18 + r * 3;
+  function sus(s, d, why) { s.stealth += d; (s.susLog = s.susLog || []).push({ d, why }); }
+  const ROUND_SEC = 240, QUICK_EVERY = 90, QUICK_SEC = 20, FAST = [0, 60, 75, 90];   // 計時模式：每回合 4 分鐘、每 75 秒一題干擾快問（20 秒）、委託在 60／75／90 秒內完成有快手獎金
   /* 友好度 */
   const TIERS = [
     { min: 80, name: '盟友', sell: 0.95, buy: 0.8 },
@@ -46,7 +56,8 @@ const GAME = (() => {
 
   function startRound(s) {
     s.friend = s.friend || {}; s.mkt = s.mkt || {};
-    s.board = T.makeBoard(s); s.ap = 2; s.step = 'board'; s.timeCrisis = null; s.tLeft = ROUND_SEC; s.qNext = QUICK_EVERY; s.trade = { mode: null, n: 0, covert: null, intel: false }; s.lastEvent = null; s.settle = null;
+    s.susLog = []; s.loud = false;
+    s.board = T.makeBoard(s); s.ap = 2; s.step = 'board'; s.timeCrisis = null; s.tLeft = ROUND_SEC; s.trade = { mode: null, n: 0, covert: null, intel: false, cover: false }; s.lastEvent = null; s.settle = null;
     marketTick(s);
     return s.board;
   }
@@ -82,12 +93,16 @@ const GAME = (() => {
       c.paid = Math.round(c.reward * (result.first ? 1 : 0.7) * (result.fast ? 1.2 : 1));
       s.money += c.paid;
       applied = Wd.apply(s, c.effects);
-      befriend(s, c.from, 10); if (c.shady) befriend(s, c.shady, -8);
+      befriend(s, c.from, 10); if (c.shady) { befriend(s, c.shady, -8); sus(s, -ST.shady, `暗中削弱${Wd.FACTIONS[c.shady].name}`); s.loud = true; }
+      if (c.from !== 'mine') {
+        s.helpLog = (s.helpLog || []).filter(h => h.r >= s.round - 1); s.helpLog.push({ r: s.round, f: c.from });
+        if (s.helpLog.filter(h => h.f === c.from).length >= 3) sus(s, -ST.favor, `一直幫${Wd.FACTIONS[c.from].name}，被其他國家注意到了`);
+      }
       if (kind === 'mine') s.inv[c.task.answer] = (s.inv[c.task.answer] || 0) + (c.task.qty || 2);
       if (kind === 'forge') (c.task.needs || []).forEach(sym => { s.inv[sym] = Math.max(0, (s.inv[sym] || 0) - 1); });
       c.state = 'done';
     } else {
-      s.stealth -= FAIL_STEALTH; s.stats.fails++;
+      sus(s, -FAIL_STEALTH, '委託失敗，留下了痕跡'); s.stats.fails++;
       if (c.from !== 'mine') applied = Wd.apply(s, { [c.from]: -3 });
       befriend(s, c.from, -8);
       c.state = 'failed';
@@ -100,11 +115,16 @@ const GAME = (() => {
   const subsidyCost = (s, f) => Math.round(PRICE.subsidy(s.round) * (s.friend[f] >= 60 ? 0.8 : 1));
   function subsidy(s, f) {
     const cost = subsidyCost(s, f); if (s.trade.covert || s.money < cost) return false;
-    s.money -= cost; s.trade.covert = { type: 'subsidy', f }; Wd.apply(s, { [f]: SUBSIDY }); befriend(s, f, 8); return true;
+    s.money -= cost; s.trade.covert = { type: 'subsidy', f }; Wd.apply(s, { [f]: SUBSIDY }); befriend(s, f, 8); sus(s, -ST.subsidy, '暗中資助'); s.loud = true; return true;
   }
   function rumor(s, f) {
     const cost = PRICE.rumor(s.round); if (s.trade.covert || s.money < cost) return false;
-    s.money -= cost; s.rumor[f] = 1; s.trade.covert = { type: 'rumor', f }; befriend(s, f, -6); return true;
+    s.money -= cost; s.rumor[f] = 1; s.trade.covert = { type: 'rumor', f }; befriend(s, f, -6); sus(s, -ST.rumor, '散播謠言'); s.loud = true; return true;
+  }
+  // 🧥 掩護行動：花錢打點、製造假線索，隱密度 +10（每回合一次，上限 100）
+  function cover(s) {
+    const cost = coverCost(s.round); if (s.trade.cover || s.money < cost || s.stealth >= 100) return false;
+    s.money -= cost; s.trade.cover = true; sus(s, Math.min(ST.cover, 100 - s.stealth), '掩護行動'); return true;
   }
   function intel(s) {
     if (s.trade.intel || s.money < PRICE.intel()) return null;
@@ -143,17 +163,20 @@ const GAME = (() => {
       Wd.apply(s, { [f]: d }); crisis = { f, d, kind: up ? 'boom' : 'plague' };
     }
     const ann = Wd.annex(s, map);
+    // 隱密度的回合結算
+    if (s.money > ST.wealth) { const d = Math.floor((s.money - ST.wealth) / ST.wealthStep) * ST.wealthCost; if (d) sus(s, -d, `資金 ${s.money} 太招搖`); }
+    if (!s.loud && s.stealth < 100) sus(s, Math.min(ST.calm, 100 - s.stealth), '這回合很低調');
     const fail = Wd.checkFail(s);
     const worked = !!(s.board && s.board.some(c => c.state === 'done'));
     const balanced = Wd.closeRound(s, worked);
-    s.settle = { before, drift, annex: ann, balanced, worked, crisis, timeCrisis: s.timeCrisis || null };
+    s.settle = { before, drift, annex: ann, balanced, worked, crisis, timeCrisis: s.timeCrisis || null, susLog: (s.susLog || []).slice() };
     return { drift, annex: ann, fail, balanced, before, worked, crisis };
   }
   // ⏰ 回合時間到還沒結束：最強國趁機擴張、最弱國陷入動亂，鍵結社的拖延也被注意到
   function timeUp(s) {
     if (s.timeCrisis) return null;
     const sorted = [...s.facs].sort((a, b) => Wd.rel(s, b) - Wd.rel(s, a)), top = sorted[0], low = sorted[sorted.length - 1];
-    const applied = Wd.apply(s, { [top]: 6, [low]: -6 }); s.stealth -= 5;
+    const applied = Wd.apply(s, { [top]: 6, [low]: -6 }); sus(s, -5, '時間到，行動拖延被注意到');
     s.timeCrisis = { top, low }; s.ap = 0;
     return { applied, fail: Wd.checkFail(s) };
   }
@@ -170,9 +193,15 @@ const GAME = (() => {
   }
   /* ⚡ 干擾快問 */
   function quick(s) { const Q = typeof QUIZ !== 'undefined' ? QUIZ : require('./quiz.js'); return Q.make(Wd.rngFrom(s), s.level, s.prac); }
-  function answerQuick(s, q, ok) {
+  // 干擾快問（從進入遊戲就獨立計時，每 90 秒一題）：答對 💰+5；答錯 隱密度 −2；沒作答（超時）隱密度 −4、最強國趁亂 +2%
+  function answerQuick(s, q, ans) {
+    const ok = ans === q.ans, timeout = ans === null;
     practice(s, q.tag, ok); s.stats.quick = (s.stats.quick || 0) + 1;
-    if (ok) { s.stats.quickOk = (s.stats.quickOk || 0) + 1; s.money += 5; } else s.stealth -= 3;
+    let applied = {};
+    if (ok) { s.stats.quickOk = (s.stats.quickOk || 0) + 1; s.money += 5; }
+    else if (timeout) { sus(s, -4, '干擾快問沒有作答'); const top = [...s.facs].sort((a, b) => Wd.rel(s, b) - Wd.rel(s, a))[0]; applied = Wd.apply(s, { [top]: 2 }); }
+    else sus(s, -2, '干擾快問答錯');
+    return { ok, timeout, applied };
   }
   /* 偵探鑑定：花錢做檢驗 */
   function runTest(s, c, id) {
@@ -297,6 +326,6 @@ const GAME = (() => {
     if (s.round >= Wd.RULE.ROUNDS) { s.ended = Wd.finalEnding(s); s.step = 'end'; return false; }
     s.round++; s.step = 'report'; return true;
   }
-  return { ROUND_SEC, QUICK_EVERY, QUICK_SEC, FAST, tagsOf, PRICE, SUBSIDY, TRADE_MAX, TIERS, tier, idx, sellPrice, rushPrice, rush, canTrade, subsidyCost, startRound, buyPrice, missing, buy, resolve, skip, subsidy, rumor, intel, forecast, sell, buyers, settle, pickEvent, evById, chooseEvent, resolveTarget, nextRound, timeUp, practice, quick, answerQuick, CALM, runTest, checkDetect, makePuzzle, checkPuzzle, solvePuzzle };
+  return { ST, cover, coverCost, sus, ROUND_SEC, QUICK_EVERY, QUICK_SEC, FAST, tagsOf, PRICE, SUBSIDY, TRADE_MAX, TIERS, tier, idx, sellPrice, rushPrice, rush, canTrade, subsidyCost, startRound, buyPrice, missing, buy, resolve, skip, subsidy, rumor, intel, forecast, sell, buyers, settle, pickEvent, evById, chooseEvent, resolveTarget, nextRound, timeUp, practice, quick, answerQuick, CALM, runTest, checkDetect, makePuzzle, checkPuzzle, solvePuzzle };
 })();
 if (typeof module !== 'undefined') module.exports = GAME;

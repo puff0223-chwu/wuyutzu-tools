@@ -25,21 +25,32 @@
 
   /* ---- 開始畫面 ---- */
   #s-title { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
-  .title-box { width: min(560px, 100%); text-align: center; }
+  .title-wrap { width: min(920px, 100%); display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: center; }
+  @media (max-width: 760px) { .title-wrap { grid-template-columns: 1fr; gap: 14px; } }
+  .title-intro { text-align: center; }
   .candle { font-size: 3em; filter: drop-shadow(0 0 18px #ffb84d); animation: flicker 3s infinite; }
   @keyframes flicker { 0%, 100% { opacity: 1; } 45% { opacity: .85; } 50% { opacity: .95; } }
-  .title-box h1 { font-family: 'Noto Serif TC', serif; font-size: 2.3em; letter-spacing: .12em; color: var(--candle); text-shadow: 0 0 22px #ffb84d55; }
-  .lore { color: var(--soft); margin: 10px 0 18px; font-size: .96em; }
+  .title-intro h1 { font-family: 'Noto Serif TC', serif; font-size: 2.4em; letter-spacing: .12em; color: var(--candle); text-shadow: 0 0 22px #ffb84d55; line-height: 1.3; }
+  .tagline { color: var(--soft); letter-spacing: .3em; margin-bottom: 14px; }
+  .how { list-style: none; text-align: left; display: grid; gap: 8px; margin-bottom: 14px; }
+  .how li { display: flex; gap: 10px; align-items: flex-start; background: var(--night-2); border: 1px solid var(--night-3); border-radius: 12px; padding: 10px 12px; }
+  .how li span { font-size: 1.4em; line-height: 1.2; }
+  .how li b { display: block; color: #fff; }
+  .how li div { color: var(--soft); font-size: .92em; line-height: 1.55; }
   .opt-card { background: var(--night-2); border: 2px solid var(--night-3); border-radius: 14px; padding: 16px; text-align: left; margin-bottom: 12px; }
-  .opt-card h3 { font-size: .95em; color: var(--candle); margin-bottom: 8px; }
+  .opt-card.cont { border-color: var(--gold-2); }
+  .opt-card h3 { font-size: 1.05em; color: var(--candle); margin-bottom: 8px; }
+  .cont-info { color: var(--soft); font-size: .92em; margin-bottom: 8px; }
+  .row-lbl { font-size: .85em; font-weight: 700; color: #fff; margin: 10px 0 5px; } .row-lbl small { font-weight: 400; color: var(--soft); }
   .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .seg label { display: block; cursor: pointer; }
   .seg input { display: none; }
-  .seg span { display: block; border: 2px solid var(--night-3); border-radius: 10px; padding: 9px 10px; font-size: .9em; }
-  .seg span b { display: block; font-size: 1.05em; }
+  .seg span { display: block; border: 2px solid var(--night-3); border-radius: 10px; padding: 8px 10px; text-align: center; }
+  .seg span b { display: block; font-size: 1.02em; }
+  .seg span small { display: block; color: var(--soft); font-size: .8em; }
   .seg input:checked + span { border-color: var(--gold); background: #3a2f17; }
   .code-in { width: 100%; background: var(--night); border: 2px solid var(--night-3); border-radius: 10px; color: #fff; padding: 9px 12px; font: inherit; letter-spacing: .2em; text-transform: uppercase; }
-  .title-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
+  .btn.big { width: 100%; margin-top: 14px; padding: 13px; font-size: 1.1em; }
 
   /* ---- 遊戲畫面 ---- */
   .topbar { position: sticky; top: 0; z-index: 20; background: #120f19ee; border-bottom: 1px solid #2c2540; backdrop-filter: blur(6px); }
@@ -206,33 +217,36 @@
 
 <!-- 開始畫面 -->
 <section id="s-title">
-  <div class="title-box">
-    <div class="candle">🕯️</div>
-    <h1>隱秘的鍵結社</h1>
-    <p class="lore">在一個平行時空的大陸上，共國、離國、金國互相角力。<br>你是不屬於任何國家的秘密組織特工，暗中接下各國的委託。<br><b style="color:#fff">讓各國互相制衡</b>：天下維持均勢，鍵結社才有存在的意義。</p>
-    <div class="opt-card" id="cont-card"><h3>📜 上次的存檔</h3><div id="cont-info" class="note" style="margin:0 0 8px"></div><button class="btn" id="btn-cont" style="width:100%">繼續上次的戰局 ▶</button></div>
-    <div class="opt-card">
-      <h3>🎓 課程程度</h3>
-      <div class="seg">
-        <label><input type="radio" name="lv" value="g10" checked><span><b>高一版</b>共國、離國、金國三國（氫聯邦、凡聯邦以事件登場）</span></label>
-        <label><input type="radio" name="lv" value="g11"><span><b>高二高三版</b>五大勢力全部登場，加入氫鍵與凡得瓦力</span></label>
+  <div class="title-wrap">
+    <div class="title-intro">
+      <div class="candle">🕯️</div>
+      <h1>隱秘的鍵結社</h1>
+      <p class="tagline">化學鍵 × 策略 × 推理</p>
+      <ul class="how">
+        <li><span>🗺️</span><div><b>平行時空的大陸</b>共國（共價鍵）、離國（離子鍵）、金國（金屬鍵）互相角力</div></li>
+        <li><span>📜</span><div><b>你是秘密組織的特工</b>用化學知識完成各國的委託，幫誰，誰就變強</div></li>
+        <li><span>⚖️</span><div><b>讓各國互相制衡</b>撐過 8 回合；有國家統一、滅亡，或組織曝光，就失敗</div></li>
+      </ul>
+      <button class="btn ghost sm" id="btn-codex">📖 勢力圖鑑與完整規則</button>
+    </div>
+    <div class="title-setup">
+      <div class="opt-card cont" id="cont-card"><h3>📜 上次的存檔</h3><div id="cont-info" class="cont-info"></div><button class="btn" id="btn-cont" style="width:100%">繼續上次的戰局 ▶</button></div>
+      <div class="opt-card">
+        <h3>🎮 開始新的戰局</h3>
+        <div class="row-lbl">課程程度</div>
+        <div class="seg">
+          <label><input type="radio" name="lv" value="g10" checked><span><b>高一版</b><small>三大國</small></span></label>
+          <label><input type="radio" name="lv" value="g11"><span><b>高二高三版</b><small>加入氫鍵、凡得瓦力</small></span></label>
+        </div>
+        <div class="row-lbl">計時模式</div>
+        <div class="seg">
+          <label><input type="radio" name="tm" value="1" checked><span><b>⏱️ 開啟</b><small>回合倒數＋干擾快問</small></span></label>
+          <label><input type="radio" name="tm" value="0"><span><b>🐢 關閉</b><small>慢慢想，不計時</small></span></label>
+        </div>
+        <div class="row-lbl">地圖代碼 <small>（選填：輸入老師給的代碼，全班同一張地圖）</small></div>
+        <input class="code-in" id="in-code" maxlength="6" placeholder="留空＝隨機新大陸">
+        <button class="btn big" id="btn-new">開始新的戰局 ▶</button>
       </div>
-    </div>
-    <div class="opt-card">
-      <h3>⏱️ 計時模式</h3>
-      <div class="seg">
-        <label><input type="radio" name="tm" value="1" checked><span><b>開啟</b>每回合 4 分鐘、會跳出干擾快問、快速完成委託有獎金</span></label>
-        <label><input type="radio" name="tm" value="0"><span><b>關閉</b>慢慢想，不計時（沒有干擾快問與快手獎金）</span></label>
-      </div>
-    </div>
-    <div class="opt-card">
-      <h3>🗺️ 地圖代碼（選填）</h3>
-      <input class="code-in" id="in-code" maxlength="6" placeholder="留空＝隨機產生新大陸">
-      <p class="hint" style="color:var(--soft);font-size:.82em;margin-top:6px">輸入老師給的代碼，全班可以玩同一張地圖、同樣的開局。</p>
-    </div>
-    <div class="title-actions">
-      <button class="btn" id="btn-new">開始新的戰局 ▶</button>
-      <button class="btn ghost" id="btn-codex">📖 勢力圖鑑與規則</button>
     </div>
   </div>
 </section>
@@ -245,6 +259,7 @@
     <span class="chip money" id="t-money"></span>
     <span class="chip stealth" id="t-stealth"></span>
     <span class="chip clock" id="t-clock"></span>
+    <span class="chip clock" id="t-quick"></span>
     <span class="sp"></span>
     <button class="btn sm ghost" id="btn-inv">⛏️<span class="txt"> 倉庫</span></button>
     <button class="btn sm ghost" id="btn-prac">📚<span class="txt"> 知識點</span></button>
@@ -268,13 +283,13 @@
 <div class="ov hidden" id="ov"><div class="ovc" id="ovc"></div></div>
 <div class="toast" id="toast"></div>
 
-<script src="data.js?v=20261014d"></script>
-<script src="world.js?v=20261014d"></script>
-<script src="facts.js?v=20261014d"></script>
-<script src="quiz.js?v=20261014d"></script>
-<script src="tasks.js?v=20261014d"></script>
-<script src="events.js?v=20261014d"></script>
-<script src="game.js?v=20261014d"></script>
+<script src="data.js?v=20261015a"></script>
+<script src="world.js?v=20261015a"></script>
+<script src="facts.js?v=20261015a"></script>
+<script src="quiz.js?v=20261015a"></script>
+<script src="tasks.js?v=20261015a"></script>
+<script src="events.js?v=20261015a"></script>
+<script src="game.js?v=20261015a"></script>
 <script>
 const $ = id => document.getElementById(id);
 const F = WORLD.FACTIONS, C = CHEM, RU = WORLD.RULE;
@@ -295,23 +310,27 @@ const roundShort = r => (innerWidth <= 640 ? `${r}／8・${SEASON[(r - 1) % 4]}`
 /* ---------- ⏱️ 計時模式：回合倒數、干擾快問 ---------- */
 let TICK = null, CUR = null, QOPEN = null;
 const mmss = t => `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
+// 兩個獨立的計時：⏱️ 回合倒數（只在公告板、交易所走）、⚡ 干擾快問（從進入遊戲就一直走，每 90 秒一題）
 function drawClock() {
-  const el = $('t-clock'); if (!el) return;
-  const on = S && S.timed && !S.ended && ['board', 'trade'].includes(S.step);
-  el.classList.toggle('hidden', !on); if (!on) return;
-  el.textContent = S.timeCrisis ? '⏰ 時間到' : `⏱️ ${mmss(S.tLeft ?? GAME.ROUND_SEC)}`;
-  el.classList.toggle('low', !S.timeCrisis && (S.tLeft ?? 999) <= 30);
+  const el = $('t-clock'), eq = $('t-quick'); if (!el) return;
+  const on = !!(S && S.timed && !S.ended);
+  el.classList.toggle('hidden', !on); eq.classList.toggle('hidden', !on); if (!on) return;
+  const running = ['board', 'trade'].includes(S.step);
+  el.textContent = S.timeCrisis ? '⏰ 時間到' : running ? `⏱️ 回合 ${mmss(S.tLeft ?? GAME.ROUND_SEC)}` : `⏱️ 回合 ${mmss(S.tLeft ?? GAME.ROUND_SEC)}（暫停）`;
+  el.classList.toggle('low', running && !S.timeCrisis && (S.tLeft ?? 999) <= 30);
+  eq.textContent = QOPEN ? '⚡ 快問中' : `⚡ 快問 ${mmss(Math.max(0, S.qNext ?? GAME.QUICK_EVERY))}`;
+  eq.classList.toggle('low', !QOPEN && (S.qNext ?? 99) <= 10);
 }
 function tick() {
   drawTaskTimer();
-  if (!S || S.ended || !S.timed || document.hidden || !['board', 'trade'].includes(S.step)) return drawClock();
+  if (!S || S.ended || !S.timed || document.hidden || $('s-game').classList.contains('hidden')) return drawClock();
   if (QOPEN) quickTick();
-  if (!S.timeCrisis) {
+  else { S.qNext = (S.qNext ?? GAME.QUICK_EVERY) - 1; if (S.qNext <= 0) { S.qNext = GAME.QUICK_EVERY; openQuick(); } }
+  if (['board', 'trade'].includes(S.step) && !S.timeCrisis) {
     S.tLeft = Math.max(0, (S.tLeft ?? GAME.ROUND_SEC) - 1);
     if (S.tLeft === 0) { const r = GAME.timeUp(S); refresh(); if (!QOPEN) showTimeUp(r); else S.pendingTU = true; return; }
-    if (!QOPEN) { S.qNext = (S.qNext ?? GAME.QUICK_EVERY) - 1; if (S.qNext <= 0) { S.qNext = GAME.QUICK_EVERY; openQuick(); } }
   }
-  drawClock(); if (S.tLeft % 5 === 0) save();
+  drawClock(); if ((S.qNext ?? 0) % 5 === 0) save();
 }
 function overlay(html) { $('ovc').innerHTML = html; $('ov').classList.remove('hidden'); return $('ovc'); }
 function closeOverlay() { $('ov').classList.add('hidden'); if (S && S.pendingTU) { S.pendingTU = false; showTimeUp({ applied: {} }); } }
@@ -325,7 +344,7 @@ function showTimeUp(r) {
 function openQuick() {
   const q = GAME.quick(S); QOPEN = { q, left: GAME.QUICK_SEC };
   const o = overlay(`<h3>⚡ 干擾快問！<span style="float:right" id="qleft">${GAME.QUICK_SEC}</span></h3><div class="qbar"><i id="qbar" style="width:100%"></i></div>
-    <div style="font-size:.8em;color:#8a6a22;margin-top:6px">知識點：${QUIZ.TAGS[q.tag]}・答對 💰+5，答錯或超時隱密度 −3</div>
+    <div style="font-size:.8em;color:#8a6a22;margin-top:6px">知識點：${QUIZ.TAGS[q.tag]}・答對 💰+5｜答錯 🕵️−2｜沒作答 🕵️−4、最強國趁亂 +2%</div>
     <div class="qq">${q.q}</div><div class="names">${q.opts.map((x, k) => `<button data-x="${k}">${x}</button>`).join('')}</div><div id="qres"></div>`);
   o.querySelectorAll('[data-x]').forEach(b => b.onclick = () => endQuick(q.opts[+b.dataset.x]));
 }
@@ -335,11 +354,11 @@ function quickTick() {
   if (QOPEN.left <= 0) endQuick(null);
 }
 function endQuick(ans) {
-  if (!QOPEN || QOPEN.done) return; const q = QOPEN.q, ok = ans === q.ans; QOPEN.done = true;
-  GAME.answerQuick(S, q, ok); drawTop(); save();
-  $('ovc').querySelectorAll('[data-x]').forEach(x => { x.disabled = true; if ($('ovc').querySelector(`[data-x="${x.dataset.x}"]`) && q.opts[+x.dataset.x] === q.ans) x.style.borderColor = 'var(--green)'; });
-  $('qres').innerHTML = `<div class="fb ${ok ? 'ok' : 'bad'}">${ok ? '✅ 答對了！💰 +5' : `${ans === null ? '⌛ 時間到' : '❌ 答錯了'}，正確答案是 ${q.ans}。🕵️ 隱密度 −3`}</div><div class="actions" style="justify-content:flex-end"><button class="btn" id="qok">繼續 ▶</button></div>`;
-  $('qok').onclick = () => { QOPEN = null; closeOverlay(); const f = WORLD.checkFail(S); if (f) { S.ended = f; save(); closeModal(); showEnding(); } };
+  if (!QOPEN || QOPEN.done) return; const q = QOPEN.q; QOPEN.done = true;
+  const r = GAME.answerQuick(S, q, ans); refresh();
+  $('ovc').querySelectorAll('[data-x]').forEach(x => { x.disabled = true; if (q.opts[+x.dataset.x] === q.ans) x.style.borderColor = 'var(--green)'; });
+  $('qres').innerHTML = `<div class="fb ${r.ok ? 'ok' : 'bad'}">${r.ok ? '✅ 答對了！💰 +5' : r.timeout ? `⌛ 沒有作答！正確答案是 ${q.ans}。🕵️ 隱密度 −4，${Object.keys(r.applied).map(f => F[f].name).join('')}趁亂 +2%` : `❌ 答錯了，正確答案是 ${q.ans}。🕵️ 隱密度 −2`}</div><div class="actions" style="justify-content:flex-end"><button class="btn" id="qok">繼續 ▶</button></div>`;
+  $('qok').onclick = () => { QOPEN = null; closeOverlay(); drawClock(); const f = WORLD.checkFail(S); if (f) { S.ended = f; save(); closeModal(); showEnding(); } };
 }
 function pracView() {
   const P = S.prac || {}, tags = QUIZ.LEVEL_TAGS[S.level];
@@ -354,9 +373,9 @@ function closeModal() { $('modal').classList.add('hidden'); }
 function showTitle() {
   $('s-title').classList.remove('hidden'); $('s-game').classList.add('hidden');
   const sv = load();
-  const can = sv && sv.v === 4 && !sv.ended;   // 舊版存檔（v1、v2）規則不同，不能接著玩
+  const can = sv && sv.v === 5 && !sv.ended;   // 舊版存檔規則不同，不能接著玩
   $('cont-card').classList.toggle('hidden', !can);
-  if (can) $('cont-info').innerHTML = `${sv.level === 'g11' ? '高二高三版' : '高一版'}・地圖 <b>${sv.code}</b>・${roundName(sv.round)}・💰 ${sv.money}`;
+  if (can) $('cont-info').innerHTML = `${sv.level === 'g11' ? '高二高三版' : '高一版'}・${sv.timed ? '⏱️ 計時' : '不計時'}・地圖 <b style="color:#fff">${sv.code}</b><br>${roundName(sv.round)}・💰 ${sv.money}・🕵️ ${sv.stealth}`;
 }
 $('btn-cont').onclick = () => { S = load(); enterGame(); };
 $('btn-new').onclick = () => {
@@ -443,7 +462,8 @@ function drawTop() {
   $('t-round').textContent = roundShort(S.round);
   $('t-money').textContent = `💰 ${S.money}`;
   $('t-stealth').textContent = `🕵️ 隱密 ${Math.max(0, S.stealth)}`;
-  $('t-stealth').classList.toggle('low', S.stealth <= 30);
+  $('t-stealth').title = `隱密度 ≤${RU.EXPOSE} 組織就會曝光；<50 委託報酬打折；<40 公告板少一件委託`;
+  $('t-stealth').classList.toggle('low', S.stealth < 50);
   drawClock();
 }
 function refresh(flash) { drawMap(flash); drawPowers(); drawTop(); save(); }
@@ -465,7 +485,7 @@ function warnings() {
 function stepReport() {
   const prev = S.history.length > 1 ? S.history[S.history.length - 2] : null;
   $('panel').innerHTML = `<div class="step-h"><h2>📜 情勢報告</h2><span class="kicker">${roundName(S.round)}</span></div>
-    <p>${S.round === 1 ? (() => { const o = [...S.facs].sort((a, b) => WORLD.rel(S, b) - WORLD.rel(S, a)); return `各國實力不一：<b style="color:${F[o[0]].color}">${F[o[0]].name}</b>正在崛起（${Math.round(WORLD.rel(S, o[0]))}%），<b style="color:${F[o[o.length - 1]].color}">${F[o[o.length - 1]].name}</b>國勢衰弱（${Math.round(WORLD.rel(S, o[o.length - 1]))}%）。強國每回合結算都會蠶食相鄰的弱國，放著不管就會失衡。`; })() : '上一回合結束後，各國的消長如下：'}</p>
+    <p>${S.round === 1 ? (() => { const o = [...S.facs].sort((a, b) => WORLD.rel(S, b) - WORLD.rel(S, a)); return `各國實力不一：<b style="color:${F[o[0]].color}">${F[o[0]].name}</b>正在崛起（${Math.round(WORLD.rel(S, o[0]))}%），<b style="color:${F[o[o.length - 1]].color}">${F[o[o.length - 1]].name}</b>國勢衰弱（${Math.round(WORLD.rel(S, o[o.length - 1]))}%）。國力強的國家每回合都會奪走鄰國的領土，放著不管就會失衡。`; })() : '上一回合結束後，各國的消長如下：'}</p>
     ${prev ? `<div class="effs">${S.facs.map(f => { const d = S.history[S.history.length - 1][f] - prev[f]; return `<span class="eff ${d >= 0 ? 'up' : 'dn'}">${F[f].name} ${d >= 0 ? '+' : ''}${d}%</span>`; }).join('')}</div>` : ''}
     ${warnings() || '<div class="note">✅ 目前各國都在安全範圍內。</div>'}
     <div class="note">每回合最多接 <b>2 件</b>委託。想一想：該幫弱國一把，還是削弱強國？</div>
@@ -481,7 +501,7 @@ function stepBoard() {
       const miss = GAME.missing(S, t);
       const st = c.state === 'done' ? '✅ 已完成' : c.state === 'failed' ? '❌ 失敗' : c.state === 'skipped' ? '已略過' : '';
       return `<div class="comm ${c.state !== 'open' ? 'done' : ''}" style="border-left-color:${col}">
-        <div class="hd"><span class="badge" style="background:${col}">${fname(c.from)}</span><span class="badge kind">${t.mode === 'f2name' ? '🏷️ 命名' : KIND[t.kind]}</span>${c.shady ? `<span class="badge shady">🗡️ 暗中削弱${F[c.shady].name}</span>` : ''}${st ? `<b style="margin-left:auto">${st}</b>` : ''}</div>
+        <div class="hd"><span class="badge" style="background:${col}">${fname(c.from)}</span><span class="badge kind">${t.mode === 'f2name' ? '🏷️ 命名' : KIND[t.kind]}</span>${c.shady ? `<span class="badge shady">🗡️ 暗中削弱${F[c.shady].name}・🕵️−4</span>` : ''}${st ? `<b style="margin-left:auto">${st}</b>` : ''}</div>
         <div>${esc(c.text)}</div>
         <div class="effs">${c.from === 'mine' ? '<span class="eff up">不影響國力</span><span class="eff up">得到 3 單位元素</span>' : effChips(effectsShown(c.effects))}</div>
         <div class="ft"><span>💰 報酬 <b>${c.reward}</b>${t.kind === 'mine' ? `・⛏️ 得到 ${t.qty} 單位元素` : ''}</span>
@@ -703,8 +723,10 @@ function stepTrade(note = '') {
       ${cv ? `<div class="note" style="margin:0">本回合已經${cv.type === 'subsidy' ? '暗中資助' : '散播謠言打擊'}了 <b style="color:${F[cv.f].color}">${F[cv.f].name}</b>。</div>` : `
       <div style="font-size:.85em;margin-bottom:4px">🤝 <b>暗中資助</b>：該國 +${GAME.SUBSIDY}%（友好度 60 以上打 8 折）</div>
       <div class="trade-row">${S.facs.map(f => `<button class="fbtn" style="border-color:${F[f].color}" data-sub="${f}">${F[f].name} ${GAME.subsidyCost(S, f)}💰</button>`).join('')}</div>
-      <div style="font-size:.85em;margin:8px 0 4px">🗣️ <b>散播謠言</b>（${GAME.PRICE.rumor(r)} 金幣）：該國下次結算的成長減半，但友好度會下降</div>
+      <div style="font-size:.85em;margin:8px 0 4px">🗣️ <b>散播謠言</b>（${GAME.PRICE.rumor(r)} 金幣）：該國下次結算的成長減半，但友好度會下降、隱密度 −4</div>
       <div class="trade-row">${S.facs.map(f => `<button class="fbtn" style="border-color:${F[f].color}" data-rum="${f}">${F[f].name}</button>`).join('')}</div>`}</div>
+    <div class="trade-sec"><h3>🧥 掩護行動（${GAME.coverCost(r)} 金幣，隱密度 +${GAME.ST.cover}，每回合一次）</h3>
+      ${T.cover ? '<div class="note" style="margin:0">本回合已經做過掩護行動。</div>' : `<div style="font-size:.82em;color:var(--soft);margin-bottom:4px">打點關係、製造假線索。隱密度 ≤${RU.EXPOSE} 就會曝光；資金太多（>${GAME.ST.wealth}）也會引人注目。</div><button class="btn sm" id="cover" ${S.stealth >= 100 ? 'disabled' : ''}>掩護（目前隱密 ${S.stealth}）</button>`}</div>
     <div class="trade-sec"><h3>🔍 打探情報（${GAME.PRICE.intel()} 金幣，預估各國這次結算的自然消長）</h3>
       ${fc ? `<div class="effs">${S.facs.map(f => `<span class="eff ${fc[f] >= 0 ? 'up' : 'dn'}">${F[f].name} 約 ${fc[f] >= 0 ? '+' : ''}${fc[f]}%</span>`).join('')}</div><div style="font-size:.8em;color:var(--soft)">另外還有 ±5% 的運氣成分。自然消長是零和的：有人漲就有人跌。</div>` : `<button class="btn sm" id="intel">打探</button>`}</div>
     <div class="trade-sec"><h3>📦 元素買賣（本回合選「買」或「賣」其中一種，最多 ${GAME.TRADE_MAX} 筆）</h3>
@@ -727,6 +749,7 @@ function stepTrade(note = '') {
   P.querySelectorAll('[data-rum]').forEach(b => b.onclick = () => { if (GAME.rumor(S, b.dataset.rum)) { refresh(); stepTrade(`<div class="note">🗣️ 已在${F[b.dataset.rum].name}散播謠言。</div>`); } else toast('資金不夠'); });
   P.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => { if (GAME.buy(S, b.dataset.buy)) { refresh(); stepTrade(); } else toast(GAME.canTrade(S, 'buy') ? '資金不夠' : '本回合不能再買了'); });
   P.querySelectorAll('[data-sell]').forEach(b => b.onclick = () => { const [sym, f] = b.dataset.sell.split('|'); if (GAME.sell(S, sym, f)) { refresh(); stepTrade(); } else toast('本回合不能再賣了'); });
+  const cb = $('cover'); if (cb) cb.onclick = () => { if (GAME.cover(S)) { refresh(); stepTrade('<div class="note">🧥 掩護行動成功，隱密度回升。</div>'); } else toast('資金不夠'); };
   const ib = $('intel'); if (ib) ib.onclick = () => { if (GAME.intel(S)) { refresh(); stepTrade(); } else toast('資金不夠'); };
   $('back').onclick = () => { S.step = 'board'; save(); renderStep(); };
 }
@@ -744,6 +767,7 @@ function stepSettle() {
   $('panel').innerHTML = `<div class="step-h"><h2>⚔️ 回合結算</h2><span class="kicker">${roundName(S.round)}</span></div>
     <p>各國的自然消長（國運＋強者越強＋運氣，零和：有人漲就有人跌）：</p><div class="effs">${effChips(d)}</div>
     ${a && a.moves && a.moves.length ? `<div class="note">🏴 領土跟著國力走：${a.moves.map(m => `<b style="color:${F[m.to].color}">${F[m.to].name}</b>從<b style="color:${F[m.from].color}">${F[m.from].name}</b>奪得 <b>${m.n}</b> 個省分`).join('；')}（地圖上閃爍的地方）</div>` : '<div class="note">🕊️ 各國的領土和國力相符，這一季邊境平靜。</div>'}
+    ${st.susLog && st.susLog.length ? `<div class="note">🕵️ 隱密度變化：${st.susLog.map(x => `<span class="eff ${x.d > 0 ? 'up' : 'dn'}" style="display:inline-block;margin:2px">${x.why} ${x.d > 0 ? '+' : ''}${x.d}</span>`).join('')}<br><small>目前隱密 ${S.stealth}（≤${RU.EXPOSE} 曝光）</small></div>` : ''}
     ${st.crisis ? `<div class="note" style="border:2px solid #ff8a73">🌋 <b>大陸危機！</b>各國實力太接近、局勢太平靜，反而醞釀出變故：<b style="color:${F[st.crisis.f].color}">${F[st.crisis.f].name}</b>${st.crisis.d > 0 ? '發現新的資源，國力暴漲' : '爆發內亂，國力重挫'} ${st.crisis.d > 0 ? '+' : ''}${st.crisis.d}%。</div>` : ''}
     ${st.balanced ? '<div class="note">⚖️ 本回合結束時，所有國家都在安全範圍（75%～130%）內，天下均勢：<b>均勢回合分 +20</b>（8 回合最多 160 分）。</div>'
       : st.worked === false && S.facs.every(f => WORLD.inSafe(S, f)) ? '<div class="note">💤 天下雖然均勢，但鍵結社這回合沒有完成任何委託，拿不到均勢回合分。</div>'
@@ -903,7 +927,7 @@ function codex() {
   const m = modal(`<h2>📖 勢力圖鑑</h2><p style="margin:6px 0">各國的國力數字差很多，是因為它們代表的化學鍵（或分子間作用力）強弱本來就差很多。遊戲裡的數字是依比例設計的，不是真實的鍵能數值。</p>
     ${list.map(f => `<div class="codex-f" style="border-color:${F[f].color}"><b style="color:${F[f].color}">${F[f].icon} ${F[f].full}</b>（${F[f].bond}）${F[f].base ? `<span style="font-size:.85em;color:#6b5a3a">・標準國力 ${F[f].base[0]}～${F[f].base[1]}</span>` : ''}<div style="font-size:.92em;margin-top:4px">${TXT[f]}</div></div>`).join('')}
     <h3 style="margin-top:10px">📏 規則摘要</h3>
-    <ul style="margin:6px 0 0 20px;font-size:.92em"><li>相對國力＝目前國力 ÷ 標準國力（開局時各國有強有弱，不一定是 100%）。安全範圍 75%～130%。</li><li>任一國 ≥170%（或連續 2 回合 ≥150%）＝天下一統；任一國 ≤45%＝一國滅亡；隱密度歸零＝組織曝光。三種都會讓鍵結社被消滅。</li><li>每回合結算：先算各國自然消長＝國運趨勢＋0.18×（相對國力−各國平均）＋運氣 ±5%，再扣掉各國的平均值（零和：有人漲就有人跌）。接著領土跟著國力走：每國應得面積＝總面積×自己的相對國力÷各國相對國力總和，領土不足的國家向領土過多的鄰國奪地（每回合最多 3 格，首都不會被攻下）。</li><li>交易所：每回合 1 次暗中行動（資助或謠言，只能選一國）；買賣元素每回合選「買」或「賣」，最多 3 筆，只能賣倉庫裡有的。買賣不改變國力，只改變<b>友好度</b>（🤝）：友好度越高賣價越好，採礦國友好度越高買越便宜。礦價會隨買賣量和需求浮動。</li><li>總分＝資金＋均勢回合分（每回合結算時天下均勢、而且本回合至少完成 1 件委託 +20）＋學習分（第一次就答對的比例）＋知識點分（每練成一種知識點 +10）＋隱密分＋結局分；組織被消滅時資金只留 3 成。</li><li>各國最強與最弱的差距小於 15% 時，太平靜反而會爆發「大陸危機」，某一國突然大漲或大跌 12%。</li><li>計時模式：每回合 4 分鐘，時間到還沒結束回合會爆發危機（最強國 +6%、最弱國 −6%、隱密度 −5，不能再接委託）；每 75 秒跳出一題干擾快問（20 秒，答對 💰+5，答錯或超時隱密度 −3）；委託在 60／75／90 秒內（依難度）完成，報酬 ×1.2。</li></ul>
+    <ul style="margin:6px 0 0 20px;font-size:.92em"><li>相對國力＝目前國力 ÷ 標準國力（開局時各國有強有弱，不一定是 100%）。安全範圍 75%～130%。</li><li>任一國 ≥170%（或連續 2 回合 ≥150%）＝天下一統；任一國 ≤45%＝一國滅亡；隱密度 ≤25＝組織曝光。三種都會讓鍵結社被消滅。</li><li>每回合結算：先算各國自然消長＝國運趨勢＋0.18×（相對國力−各國平均）＋運氣 ±5%，再扣掉各國的平均值（零和：有人漲就有人跌）。接著領土跟著國力走：每國應得面積＝總面積×自己的相對國力÷各國相對國力總和，領土不足的國家向領土過多的鄰國奪地（每回合最多 3 格，首都不會被攻下）。</li><li>交易所：每回合 1 次暗中行動（資助或謠言，只能選一國）；買賣元素每回合選「買」或「賣」，最多 3 筆，只能賣倉庫裡有的。買賣不改變國力，只改變<b>友好度</b>（🤝）：友好度越高賣價越好，採礦國友好度越高買越便宜。礦價會隨買賣量和需求浮動。</li><li>總分＝資金＋均勢回合分（每回合結算時天下均勢、而且本回合至少完成 1 件委託 +20）＋學習分（第一次就答對的比例）＋知識點分（每練成一種知識點 +10）＋隱密分＋結局分；組織被消滅時資金只留 3 成。</li><li>🕵️ 隱密度：暗中削弱委託 −4、暗中資助 −3、散播謠言 −4、委託失敗 −10；最近兩回合幫同一國完成第 3 件以上 −5；結算時資金超過 120，每多 40 −3；整回合沒做暗中的事 +3；交易所「掩護行動」花錢 +10。隱密度 <50 委託報酬打 85 折、<40 公告板少一件委託。</li><li>各國最強與最弱的差距小於 15% 時，太平靜反而會爆發「大陸危機」，某一國突然大漲或大跌 12%。</li><li>計時模式：每回合 4 分鐘，時間到還沒結束回合會爆發危機（最強國 +6%、最弱國 −6%、隱密度 −5，不能再接委託）；干擾快問從進入遊戲就獨立計時，每 90 秒跳出一題（20 秒，答對 💰+5；答錯隱密度 −2；沒作答隱密度 −4、最強國趁亂 +2%）；委託在 60／75／90 秒內（依難度）完成，報酬 ×1.2。</li></ul>
     <div class="actions" style="justify-content:flex-end"><button class="btn" id="ok">關閉</button></div>`);
   m.querySelector('#ok').onclick = closeModal;
 }
