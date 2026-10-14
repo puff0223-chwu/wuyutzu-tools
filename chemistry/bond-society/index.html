@@ -57,7 +57,7 @@
   .hex { stroke: #fff8; stroke-width: .6; transition: fill .8s; }
   .hex.flash { animation: flash 1.2s 3; }
   @keyframes flash { 50% { fill: #fff; } }
-  .cap-tag { font-family: 'Noto Sans TC', sans-serif; font-weight: 900; font-size: 10px; }
+  .cap-tag { font-family: 'Noto Sans TC', sans-serif; font-weight: 900; font-size: 12px; }
 
   .powers { margin-top: 12px; display: grid; gap: 7px; }
   .prow { display: grid; grid-template-columns: 92px 1fr 54px; gap: 8px; align-items: center; font-size: .9em; }
@@ -154,6 +154,40 @@
     .chip { padding: 2px 8px; font-size: .82em; }
     .pt-wrap::after { content: '← 左右滑動看完整週期表 →'; display: block; text-align: center; font-size: .75em; color: #8a7a62; }
   }
+  /* 易讀性（2026-10-14 晚）：劇情、任務說明、作答區分開 */
+  .mcard .note b, .ev-card .note b { color: var(--ink); }
+  .mcard { line-height: 1.75; font-size: 1.02em; }
+  .story { background: #fffaf0; border-left: 5px solid #c9b48a; border-radius: 8px; padding: 8px 12px; margin: 8px 0; font-style: italic; color: #4a3b22; }
+  .ask { background: var(--ink); color: #fff; border-radius: 8px; padding: 8px 12px; margin: 8px 0; font-weight: 700; }
+  .ask small { display: block; font-weight: 400; color: #d8d0f0; }
+  .rep td.lbl { width: 9em; white-space: nowrap; }
+  .clues li .lbl, .rep td.lbl { min-width: 4.8em; font-size: .8em; font-weight: 700; color: #8a6a22; }
+  .rep { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; margin: 8px 0; }
+  .rep caption { text-align: left; font-weight: 900; padding: 4px 0; }
+  .rep td { border-bottom: 1px dashed var(--paper-2); padding: 6px 10px; vertical-align: top; }
+  .tests { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; margin: 8px 0; }
+  .tests button { border: 2px solid var(--paper-2); background: #fff; border-radius: 10px; padding: 6px 8px; text-align: left; color: var(--ink); font-weight: 700; font-size: .9em; }
+  .tests button small { color: #8a6a22; font-weight: 400; }
+  .suspects { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+  .suspects button { border: 2px solid var(--paper-2); background: #fff; border-radius: 10px; padding: 10px; color: var(--ink); font-weight: 700; }
+  .suspects button.on { border-color: var(--red); background: #fde3df; }
+  .suspects button small { display: block; font-weight: 400; font-size: .85em; }
+  .sortbox { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+  .sortbox button { border: 2px solid var(--paper-2); background: #fff; border-radius: 10px; padding: 8px 12px; font-weight: 900; color: var(--ink); font-size: 1.05em; }
+  .sortbox button.used { opacity: .3; }
+  .seq { min-height: 46px; background: #fff; border: 2px dashed var(--gold); border-radius: 10px; padding: 6px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .seq span { background: var(--ink); color: #fff; border-radius: 8px; padding: 4px 10px; font-weight: 700; }
+  .cls-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; background: #fff; border-radius: 10px; padding: 6px 10px; margin-bottom: 6px; }
+  .cls-row b { min-width: 7em; }
+  .cls-row button { border: 2px solid var(--paper-2); background: #fff; border-radius: 8px; padding: 3px 9px; font-size: .88em; font-weight: 700; color: var(--ink); }
+  .cls-row button.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .cls-row.bad { outline: 2px solid var(--red); }
+  .eqn { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; font-size: 1.25em; font-weight: 900; margin: 10px 0; }
+  .eqn .term { display: flex; flex-direction: column; align-items: center; background: #fff; border-radius: 10px; padding: 6px 10px; }
+  .eqn .term sub { font-size: .6em; }
+  .scale { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; margin: 6px 0; font-size: .95em; }
+  .scale td, .scale th { padding: 4px 8px; text-align: center; border-bottom: 1px dashed var(--paper-2); }
+  .scale .eq { color: var(--green); font-weight: 900; } .scale .ne { color: var(--red); font-weight: 900; }
   .toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); background: #000d; border: 2px solid var(--gold); border-radius: 10px; padding: 9px 16px; z-index: 80; opacity: 0; transition: .3s; pointer-events: none; }
   .toast.on { opacity: 1; }
 </style>
@@ -214,17 +248,18 @@
 <div class="modal hidden" id="modal"><div class="mcard" id="mcard"></div></div>
 <div class="toast" id="toast"></div>
 
-<script src="data.js?v=20261014b"></script>
-<script src="world.js?v=20261014b"></script>
-<script src="tasks.js?v=20261014b"></script>
-<script src="events.js?v=20261014b"></script>
-<script src="game.js?v=20261014b"></script>
+<script src="data.js?v=20261014c"></script>
+<script src="world.js?v=20261014c"></script>
+<script src="facts.js?v=20261014c"></script>
+<script src="tasks.js?v=20261014c"></script>
+<script src="events.js?v=20261014c"></script>
+<script src="game.js?v=20261014c"></script>
 <script>
 const $ = id => document.getElementById(id);
 const F = WORLD.FACTIONS, C = CHEM;
 const SAVE = 'bond-society-save-v1';
 const SEASON = ['春', '夏', '秋', '冬'];
-const KIND = { mine: '⛏️ 尋礦', forge: '⚒️ 鑄造' };
+const KIND = { mine: '⛏️ 尋礦', forge: '⚒️ 鑄造', detect: '🔍 鑑定' };
 let S = null, MAP = null;
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const md = s => String(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
@@ -243,7 +278,7 @@ function closeModal() { $('modal').classList.add('hidden'); }
 function showTitle() {
   $('s-title').classList.remove('hidden'); $('s-game').classList.add('hidden');
   const sv = load();
-  const can = sv && sv.v === 2 && !sv.ended;   // v1 是改版前的存檔，規則不同不能接著玩
+  const can = sv && sv.v === 3 && !sv.ended;   // 舊版存檔（v1、v2）規則不同，不能接著玩
   $('cont-card').classList.toggle('hidden', !can);
   if (can) $('cont-info').innerHTML = `${sv.level === 'g11' ? '高二高三版' : '高一版'}・地圖 <b>${sv.code}</b>・${roundName(sv.round)}・💰 ${sv.money}`;
 }
@@ -265,7 +300,7 @@ function intro() {
   const m = modal(`<h2>🕯️ 歡迎加入鍵結社</h2>
     <p style="margin:8px 0">特工，這片大陸上有 ${S.facs.map(f => `<b style="color:${F[f].color}">${F[f].name}</b>`).join('、')}，中央山脈是中立的<b>採礦國</b>，開採原子序 1～36 的元素。</p>
     <p>你的任務：接下各國的化學委託，但要<b>讓各國互相制衡</b>。任何一國統一天下、或任何一國被消滅，鍵結社都會失去存在的意義。</p>
-    <ul style="margin:8px 0 0 20px"><li>每回合最多接 <b>2 件</b>委託；幫誰，誰就變強。</li><li>強國每回合會<b>蠶食</b>相鄰的弱國。</li><li>開局各國強弱不一，一定有強國和弱國。</li><li>交易所每回合可以做 <b>1 次暗中行動</b>（資助一國或對一國散播謠言），還能買賣元素賺錢。</li><li>撐過 <b>8 回合</b>（兩年），而且天下均勢，就是最好的結局。</li></ul>
+    <ul style="margin:8px 0 0 20px"><li>每回合最多接 <b>2 件</b>委託；幫誰，誰就變強。</li><li><b>領土跟著國力走</b>：國力變強的國家，會奪走鄰國的省分。</li><li>開局各國強弱不一，一定有強國和弱國。</li><li>交易所每回合可以做 <b>1 次暗中行動</b>（資助一國或對一國散播謠言），還能買賣元素賺錢。</li><li>撐過 <b>8 回合</b>（兩年），而且天下均勢，就是最好的結局。</li></ul>
     <p class="note" style="color:#6b5a3a;background:#fff">💡 各國國力的數字差很多（共國、離國幾百，凡聯邦只有個位數），因為它們代表的化學鍵強弱本來就差很多。判斷平衡要看<b>相對國力</b>（國力條）。</p>
     <div class="actions" style="justify-content:flex-end"><button class="btn" id="go">開始第一回合 ▶</button></div>`);
   m.querySelector('#go').onclick = () => { closeModal(); renderStep(); };
@@ -373,9 +408,16 @@ function stepBoard() {
           ${t.kind === 'forge' ? `<span class="needs">原料：${t.needs.map(sym => `<span class="${miss.includes(sym) ? 'miss' : ''}">${sym}${S.inv[sym] ? `×${S.inv[sym]}` : '（缺）'}</span>`).join('、')}</span>` : ''}
           ${c.state === 'open' ? `<button class="btn sm" data-take="${c.id}" ${S.ap ? '' : 'disabled'}>接下委託</button>` : ''}</div></div>`;
     }).join('')}
-    <div class="actions"><button class="btn ${open.length && S.ap ? 'ghost' : ''}" id="go">前往交易所 ▶</button></div>`;
+    <div class="actions"><button class="btn ghost" id="trade">💱 前往交易所</button><button class="btn" id="go">⚔️ 結束本回合，進行結算 ▶</button></div>
+    <div style="font-size:.82em;color:var(--soft);margin-top:6px">交易所可以隨時去、隨時回來；按「結束本回合」才會結算。</div>`;
   $('panel').querySelectorAll('[data-take]').forEach(b => b.onclick = () => openTask(S.board.find(c => c.id === b.dataset.take)));
-  $('go').onclick = () => { S.step = 'trade'; save(); renderStep(); };
+  $('trade').onclick = () => { S.step = 'trade'; save(); renderStep(); };
+  $('go').onclick = () => {
+    if (!open.length || !S.ap) return endRound();
+    const m = modal(`<h2>確定要結束本回合嗎？</h2><p style="margin:8px 0">公告板上還有 <b>${open.length}</b> 件委託，你本回合還能再接 <b>${S.ap}</b> 件。結束後就不能再接了。</p>
+      <div class="actions"><button class="btn" id="y">結束本回合 ▶</button><button class="btn dark" id="n">再看看</button></div>`);
+    m.querySelector('#n').onclick = closeModal; m.querySelector('#y').onclick = () => { closeModal(); endRound(); };
+  };
 }
 // 高二高三版：共國的變化連帶兩聯邦，委託卡上一起顯示
 function effectsShown(eff) {
@@ -399,6 +441,7 @@ function openTask(c) {
   c.tries = c.tries || 0;
   const head = `<div class="from">${fname(c.from)}的委託・💰 ${c.reward}</div>`;
   if (t.kind === 'mine') return mineUI(c, head);
+  if (t.kind === 'detect') return detectUI(c, head);
   if (t.mode === 'f2name') return nameUI(c, head);
   return forgeUI(c, head);
 }
@@ -409,7 +452,7 @@ function finishTask(c, ok, explain) {
   refresh();
   const m = modal(`<h2>${ok ? '✅ 委託完成' : '❌ 委託失敗'}</h2>
     <div class="fb ${ok ? 'ok' : 'bad'}">${explain}</div>
-    ${ok ? `<p style="margin-top:8px">💰 得到 <b>${Math.round(c.reward * (first ? 1 : 0.7))}</b> 金幣${first ? '' : '（用了提示，只拿 7 成）'}${c.task.kind === 'mine' ? `，⛏️ ${c.task.answer} ×${c.task.qty}` : ''}</p>` : '<p style="margin-top:8px">🕵️ 隱密度 −10</p>'}
+    ${ok ? `<p style="margin-top:8px">💰 得到 <b>${Math.round(c.reward * (first ? 1 : 0.7))}</b> 金幣${first ? '' : '（用了提示，只拿 7 成）'}${c.task.kind === 'mine' ? `，⛏️ ${c.task.answer} ×${c.task.qty}` : ''}${c.task.spent ? `（檢驗花了 💰${c.task.spent}）` : ''}</p>` : '<p style="margin-top:8px">🕵️ 隱密度 −10</p>'}
     <div class="effs">${effChips(applied)}</div>
     <div class="actions" style="justify-content:flex-end"><button class="btn" id="ok">回到公告板</button></div>`);
   m.querySelector('#ok').onclick = () => { closeModal(); if (fails) { S.ended = fails; save(); return showEnding(); } renderStep(); };
@@ -423,8 +466,9 @@ function mineUI(c, head) {
   const t = c.task; let sel = null;
   const grid = () => { const cells = []; for (let p = 1; p <= 4; p++) for (let g = 1; g <= 18; g++) { const e = C.ELEMENTS.find(x => x.period === p && x.group === g); cells.push(e ? `<button class="el ${e.type} ${sel === e.sym ? 'sel' : ''}" data-s="${e.sym}"><small>${e.z}</small>${e.sym}</button>` : '<div class="el empty"></div>'); } return cells.join(''); };
   const draw = (fb = '') => {
-    const m = modal(`${head}<h2>⛏️ 尋礦委託</h2><p>${esc(c.text)} 依照下面的線索，在週期表上找出這個元素：</p>
-      <ul class="clues">${t.clues.map(x => `<li>🔎 ${esc(x)}</li>`).join('')}</ul>
+    const m = modal(`${head}<h2>⛏️ 尋礦委託</h2><div class="story">「${esc(c.text)}」</div>
+      <div class="ask">📌 依照${t.fmt === 'report' ? '檢驗報告' : t.fmt === 'story' ? '礦工的筆記' : '線索'}，在週期表上點出這個元素<small>每條線索都會縮小範圍，全部符合的元素只有一個</small></div>
+      ${clueBlock(t)}
       <div class="pt-wrap"><div class="ptable">${grid()}</div></div>
       <div style="font-size:.8em;color:#6b5a3a">底色：<span style="background:#f5e6b8;padding:0 4px">金屬</span> <span style="background:#cfe0f5;padding:0 4px">非金屬</span> <span style="background:#d9f0d0;padding:0 4px">類金屬</span> <span style="background:#e3d9f2;padding:0 4px">惰性氣體</span></div>
       ${fb}<div class="actions" style="justify-content:space-between"><button class="btn dark" id="x">放棄這件委託</button><button class="btn" id="ok" ${sel ? '' : 'disabled'}>確認開採 ${sel ? sel : ''}</button></div>`);
@@ -440,6 +484,38 @@ function mineUI(c, head) {
   };
   draw();
 }
+function clueBlock(t) {
+  if (t.fmt === 'report') return `<table class="rep"><caption>📋 礦石檢驗報告</caption>${t.clues.map(x => `<tr><td class="lbl">${x.lbl}</td><td>${esc(x.t)}</td></tr>`).join('')}</table>`;
+  if (t.fmt === 'story') return `<div class="story" style="font-style:normal">📓 礦工的筆記：「這種元素${t.clues.map(x => esc(x.t.replace(/^這種氣體/, '是一種氣體，').replace(/^原子序/, '的原子序').replace(/^原子核/, '的原子核'))).join('；而且')}。」</div>`;
+  return `<ul class="clues">${t.clues.map(x => `<li><span class="lbl">${x.lbl}</span>${esc(x.t)}</li>`).join('')}</ul>`;
+}
+function detectUI(c, head) {
+  const t = c.task, X = FACTS, tg = TASKS.subst(t.answer); let sel = null;
+  const draw = (fb = '') => {
+    const done = X.TESTS.filter(x => t.done.includes(x.id)), todo = X.TESTS.filter(x => !t.done.includes(x.id));
+    const opts = t.mode === 'type' ? t.opts.map(b => `<button class="${sel === b ? 'on' : ''}" data-o="${b}">${X.BOND[b]}<small>${X.BOND_NATION[b]}</small></button>`)
+      : t.opts.map(id => { const x = TASKS.subst(id); return `<button class="${sel === id ? 'on' : ''}" data-o="${id}">${esc(x.zh)}<small>${C.html(x.f)}</small></button>`; });
+    const m = modal(`${head}<h2>🔍 偵探鑑定</h2><div class="story">「${esc(c.text)}」</div>
+      <div class="ask">📌 ${t.mode === 'type' ? '做檢驗，推理出這個樣本屬於哪一國（哪一種鍵結）' : '樣本是下面四種嫌疑物質的其中一種，做檢驗找出它'}<small>每項檢驗要花一點金幣；做越少就破案，省下越多錢</small></div>
+      <table class="rep"><caption>🧾 檢驗紀錄</caption>${done.map(x => `<tr><td class="lbl">${x.icon} ${x.name}</td><td>${esc(tg.r[x.id])}</td></tr>`).join('')}</table>
+      ${todo.length ? `<div style="font-weight:700">🧪 還能做的檢驗（目前資金 💰${S.money}）</div><div class="tests">${todo.map(x => `<button data-t="${x.id}" ${S.money < x.cost ? 'disabled' : ''}>${x.icon} ${x.name} <small>💰${x.cost}</small></button>`).join('')}</div>` : ''}
+      <div style="font-weight:700">🕵️ 你的推理</div><div class="suspects">${opts.join('')}</div>
+      ${t.spent ? `<div style="font-size:.85em;color:#6b5a3a">這件案子的檢驗費已經花了 💰${t.spent}</div>` : ''}
+      ${fb}<div class="actions" style="justify-content:space-between"><button class="btn dark" id="x">放棄這件委託</button><button class="btn" id="ok" ${sel ? '' : 'disabled'}>就是它！</button></div>`);
+    m.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { if (GAME.runTest(S, c, b.dataset.t)) { drawTop(); save(); draw(fb); } else toast('資金不夠'); });
+    m.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { sel = b.dataset.o; draw(fb); });
+    m.querySelector('#x').onclick = () => giveUp(c);
+    m.querySelector('#ok').onclick = () => {
+      const r = GAME.checkDetect(t, sel);
+      const ans = `樣本是 <b>${esc(tg.zh)}（${C.html(tg.f)}）</b>，屬於<b>${X.BOND[tg.bond]}</b>，是${X.BOND_NATION[tg.bond]}的物質。`;
+      if (r.ok) return finishTask(c, true, `破案！${ans}`);
+      const w = wrong(c, r.msg);
+      if (w === null) return finishTask(c, false, ans);
+      sel = null; draw(w);
+    };
+  };
+  draw();
+}
 function forgeUI(c, head) {
   const t = c.task, ions = t.mode === 'ions';
   let cs = ions ? t.c : null, as = ions ? t.a : null, m1 = 1, n1 = 1;
@@ -447,11 +523,11 @@ function forgeUI(c, head) {
   const draw = (fb = '') => {
     const prev = cs && as ? C.html(C.build(cs, m1, as, n1)) : '<span style="color:#bbb">？</span>';
     const m = modal(`${head}<h2>⚒️ 鑄造委託</h2>
-      ${ions ? `<p>${esc(c.text)} 請用下面兩種離子，鑄造出<b>電中性</b>的化合物：</p>
+      <div class="story">「${esc(c.text)}」</div>
+      ${ions ? `<div class="ask">📌 用下面兩種離子，鑄造出電中性的化合物<small>調整陽離子、陰離子的個數，讓正負電荷總和為零</small></div>
         <div class="ionbox"><div class="ionc"><div class="ion">${C.ionHtml(C.CAT[t.c])}</div><div>陽離子 ×</div><div class="step"><button data-d="m-">−</button><b>${m1}</b><button data-d="m+">＋</button></div></div>
         <div class="ionc"><div class="ion">${C.ionHtml(C.AN[t.a])}</div><div>陰離子 ×</div><div class="step"><button data-d="n-">−</button><b>${n1}</b><button data-d="n+">＋</button></div></div></div>`
-      : `<p>${esc(c.text)} 訂單上寫著要鑄造：</p><div class="bigf">${esc(t.name)}</div>
-        <p style="text-align:center;font-size:.9em;color:#6b5a3a">選出組成它的陽離子和陰離子，再決定各要幾個（名稱的後半段是陽離子、前半段是陰離子）</p>
+      : `<div class="ask">📌 照訂單上的名稱，選出陽離子和陰離子，再決定各要幾個<small>名稱的後半段是陽離子、前半段是陰離子</small></div><div class="bigf">${esc(t.name)}</div>
         <div style="text-align:center"><b>陽離子</b></div><div class="pick">${t.cOpts.map(id => `<button class="${cs === id ? 'on' : ''}" data-c="${id}">${plain(id)}</button>`).join('')}</div>
         <div style="text-align:center"><b>陰離子</b></div><div class="pick">${t.aOpts.map(id => `<button class="${as === id ? 'on' : ''}" data-a="${id}">${plain(id)}</button>`).join('')}</div>
         <div class="ionbox"><div>陽離子 ×<div class="step"><button data-d="m-">−</button><b>${m1}</b><button data-d="m+">＋</button></div></div><div>陰離子 ×<div class="step"><button data-d="n-">−</button><b>${n1}</b><button data-d="n+">＋</button></div></div></div>`}
@@ -475,7 +551,7 @@ function forgeUI(c, head) {
 function nameUI(c, head) {
   const t = c.task;
   const draw = (fb = '', dis = []) => {
-    const m = modal(`${head}<h2>⚒️ 鑑定化合物</h2><p>${esc(c.text)} 樣本上的標籤只寫了化學式，請說出它的名稱：</p>
+    const m = modal(`${head}<h2>🏷️ 標籤命名</h2><div class="story">「${esc(c.text)}」</div><div class="ask">📌 樣本的標籤只寫了化學式，選出它的中文名稱</div>
       <div class="bigf">${C.html(t.formula)}</div>
       <div class="names">${t.opts.map(n => `<button data-n="${esc(n)}" ${dis.includes(n) ? 'disabled' : ''}>${esc(n)}</button>`).join('')}</div>
       ${fb}<div class="actions"><button class="btn dark" id="x">放棄這件委託</button></div>`);
@@ -506,7 +582,7 @@ function stepTrade(note = '') {
   const arrow = sym => { const k = GAME.idx(S, sym); return k >= 1.1 ? `<b class="up">↑</b>` : k <= 0.9 ? `<b class="dn">↓</b>` : ''; };
   const news = S.news ? `<div class="mnews">📰 行情：${S.news.hot.length ? `鑄造委託要用的 ${S.news.hot.map(x => `<b>${x}</b>`).join('、')} 成了熱門貨；` : ''}各國搶購 <b>${S.news.up}</b>${S.news.dn ? `，<b>${S.news.dn}</b> 大豐收價格下跌` : ''}。</div>` : '';
   const friends = [...S.facs, 'mine'].map(f => { const t = GAME.tier(S, f); return `<span class="fr" style="border-color:${F[f].color}">${F[f].name} 🤝${S.friend[f]}<small>${t.name}</small></span>`; }).join('');
-  $('panel').innerHTML = `<div class="step-h"><h2>💱 交易所</h2><span class="kicker">可以不用，直接結束本回合</span></div>
+  $('panel').innerHTML = `<div class="step-h"><h2>💱 交易所</h2><span class="kicker">買賣、暗中行動完，回公告板結束回合</span></div>
     ${note}
     <div class="trade-sec"><h3>🕶️ 暗中行動（每回合 1 次，只能選 1 國）</h3>
       ${cv ? `<div class="note" style="margin:0">本回合已經${cv.type === 'subsidy' ? '暗中資助' : '散播謠言打擊'}了 <b style="color:${F[cv.f].color}">${F[cv.f].name}</b>。</div>` : `
@@ -515,7 +591,7 @@ function stepTrade(note = '') {
       <div style="font-size:.85em;margin:8px 0 4px">🗣️ <b>散播謠言</b>（${GAME.PRICE.rumor(r)} 金幣）：該國下次結算的成長減半，但友好度會下降</div>
       <div class="trade-row">${S.facs.map(f => `<button class="fbtn" style="border-color:${F[f].color}" data-rum="${f}">${F[f].name}</button>`).join('')}</div>`}</div>
     <div class="trade-sec"><h3>🔍 打探情報（${GAME.PRICE.intel()} 金幣，預估各國這次結算的自然消長）</h3>
-      ${fc ? `<div class="effs">${S.facs.map(f => `<span class="eff ${fc[f] >= 0 ? 'up' : 'dn'}">${F[f].name} 約 ${fc[f] >= 0 ? '+' : ''}${fc[f]}%</span>`).join('')}</div><div style="font-size:.8em;color:var(--soft)">另外還有 ±4% 的運氣成分；相對國力最高的國家還會蠶食鄰國。</div>` : `<button class="btn sm" id="intel">打探</button>`}</div>
+      ${fc ? `<div class="effs">${S.facs.map(f => `<span class="eff ${fc[f] >= 0 ? 'up' : 'dn'}">${F[f].name} 約 ${fc[f] >= 0 ? '+' : ''}${fc[f]}%</span>`).join('')}</div><div style="font-size:.8em;color:var(--soft)">另外還有 ±5% 的運氣成分。自然消長是零和的：有人漲就有人跌。</div>` : `<button class="btn sm" id="intel">打探</button>`}</div>
     <div class="trade-sec"><h3>📦 元素買賣（本回合選「買」或「賣」其中一種，最多 ${GAME.TRADE_MAX} 筆）</h3>
       <div class="friends">${friends}</div>
       <div style="font-size:.8em;color:var(--soft);margin:4px 0">買賣不會改變國力，只會改變友好度：賣給某國 → 該國 🤝+4；向採礦國買 → 採礦國 🤝+3。友好度越高，賣價越好、買價越便宜。</div>
@@ -525,7 +601,7 @@ function stepTrade(note = '') {
       ${TRADE_TAB === 'buy' ? `<div style="font-size:.82em;color:var(--soft)">點元素買 1 單位；小字是價錢，↑ 比原價貴、↓ 比原價便宜；右上角是你的庫存</div><div class="pt-wrap"><div class="ptable" id="mkt"></div></div>`
       : (inv.length ? inv.map(([sym, n]) => { const by = GAME.buyers(S, sym); return `<div class="trade-row"><b style="min-width:58px">${sym} ×${n} ${arrow(sym)}</b>${by.length ? by.map(f => `<button class="fbtn" style="border-color:${F[f].color}" data-sell="${sym}|${f}" ${canSell ? '' : 'disabled'}>賣給${F[f].name} ${GAME.sellPrice(S, sym, f)}💰</button>`).join('') : '<span style="color:var(--soft)">沒有國家收購</span>'}</div>`; }).join('') : '<span style="color:var(--soft)">倉庫是空的：解尋礦委託可以挖到元素，或先向採礦國買。</span>')}
     </div>
-    <div class="actions"><button class="btn" id="go">結束本回合，進行結算 ▶</button></div>`;
+    <div class="actions"><button class="btn" id="back">◀ 回公告板</button></div>`;
   if (TRADE_TAB === 'buy') {
     const mk = []; for (let p = 1; p <= 4; p++) for (let g = 1; g <= 18; g++) { const e = C.ELEMENTS.find(x => x.period === p && x.group === g); mk.push(e ? `<button class="el ${e.type}" data-buy="${e.sym}" ${canBuy ? '' : 'disabled'} title="${e.zh} ${GAME.buyPrice(S, e.sym)} 金幣">${e.sym}<span class="cnt">${S.inv[e.sym] || ''}</span><small>${GAME.buyPrice(S, e.sym)}${arrow(e.sym)}</small></button>` : '<div class="el empty"></div>'); }
     $('mkt').innerHTML = mk.join('');
@@ -537,30 +613,32 @@ function stepTrade(note = '') {
   P.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => { if (GAME.buy(S, b.dataset.buy)) { refresh(); stepTrade(); } else toast(GAME.canTrade(S, 'buy') ? '資金不夠' : '本回合不能再買了'); });
   P.querySelectorAll('[data-sell]').forEach(b => b.onclick = () => { const [sym, f] = b.dataset.sell.split('|'); if (GAME.sell(S, sym, f)) { refresh(); stepTrade(); } else toast('本回合不能再賣了'); });
   const ib = $('intel'); if (ib) ib.onclick = () => { if (GAME.intel(S)) { refresh(); stepTrade(); } else toast('資金不夠'); };
-  $('go').onclick = () => {
-    const fail = WORLD.checkFail(S); if (fail) { S.ended = fail; save(); return showEnding(); }
-    const res = GAME.settle(S, MAP); S.step = 'settle'; S.settleView = res; save();
-    refresh(res.annex ? res.annex.cells : []);
-    if (res.fail) { S.ended = res.fail; save(); setTimeout(showEnding, 1600); return; }
-    renderStep();
-  };
+  $('back').onclick = () => { S.step = 'board'; save(); renderStep(); };
+}
+function endRound() {
+  const fail = WORLD.checkFail(S); if (fail) { S.ended = fail; save(); return showEnding(); }
+  const res = GAME.settle(S, MAP); S.step = 'settle'; S.settleView = res; save();
+  refresh(res.annex ? res.annex.cells : []);
+  if (res.fail) { S.ended = res.fail; save(); setTimeout(showEnding, 1600); return; }
+  renderStep();
 }
 
 /* ---------- 結算 ---------- */
 function stepSettle() {
   const st = S.settle || {}, d = st.drift || {}, a = st.annex;
   $('panel').innerHTML = `<div class="step-h"><h2>⚔️ 回合結算</h2><span class="kicker">${roundName(S.round)}</span></div>
-    <p>各國的自然消長（國運、強者越強、運氣）：</p><div class="effs">${effChips(d)}</div>
-    ${a ? `<div class="note">🏴 <b style="color:${F[a.top].color}">${F[a.top].name}</b>蠶食了<b style="color:${F[a.low].color}">${F[a.low].name}</b>的 <b>${a.cells.length}</b> 個省分！（地圖上閃爍的地方）</div>` : '<div class="note">🕊️ 這一季各國邊境平靜，沒有發生蠶食。</div>'}
+    <p>各國的自然消長（國運＋強者越強＋運氣，零和：有人漲就有人跌）：</p><div class="effs">${effChips(d)}</div>
+    ${a && a.moves && a.moves.length ? `<div class="note">🏴 領土跟著國力走：${a.moves.map(m => `<b style="color:${F[m.to].color}">${F[m.to].name}</b>從<b style="color:${F[m.from].color}">${F[m.from].name}</b>奪得 <b>${m.n}</b> 個省分`).join('；')}（地圖上閃爍的地方）</div>` : '<div class="note">🕊️ 各國的領土和國力相符，這一季邊境平靜。</div>'}
     ${st.balanced ? '<div class="note">⚖️ 本回合結束時，所有國家都在安全範圍（60%～150%）內，天下均勢：<b>均勢回合分 +20</b>（最後算總分用，8 回合最多 160 分）。</div>' : '<div class="note">⚠️ 本回合結束時有國家超出安全範圍（60%～150%），這回合拿不到均勢回合分。</div>'}
     ${warnings()}
     <div class="actions"><button class="btn" id="go">大陸上發生了一件事…… ▶</button></div>`;
-  $('go').onclick = () => { S.step = 'event'; S.evId = GAME.pickEvent(S).id; save(); renderStep(); };
+  $('go').onclick = () => { S.step = 'event'; S.evRes = null; S.evId = GAME.pickEvent(S).id; save(); renderStep(); };
 }
 
 /* ---------- 事件 ---------- */
 function stepEvent() {
-  const ev = GAME.evById(S.evId);
+  const ev = S.curEv && S.curEv.id === S.evId ? S.curEv : GAME.evById(S.evId);
+  if (ev.kind) return puzzleUI(ev);
   $('panel').innerHTML = `<div class="step-h"><h2>🎲 隨機事件</h2><span class="kicker">${roundName(S.round)}</span></div>
     <div class="ev-card"><h3 class="serif">${ev.title}</h3><p style="margin:6px 0 10px">${esc(ev.text)}</p>
     <div id="choices">${ev.choices.map((ch, k) => `<button class="ev-choice" data-k="${k}" ${ch.money < 0 && S.money < -ch.money ? 'disabled' : ''}>${String.fromCharCode(65 + k)}. ${esc(ch.t)}</button>`).join('')}</div>
@@ -584,6 +662,62 @@ function stepEvent() {
     S.evRes = { k, ok: true, applied: r.applied, gifts: r.gifts, fail: r.fail };
     refresh(); showRes(k, S.evRes);
   });
+}
+
+/* ---------- 互動題事件（排序、分類、條約天平、路易斯結構） ---------- */
+function puzzleUI(ev) {
+  const d = ev.data, N = F[ev.who];
+  let ans = ev.kind === 'sort' ? [] : ev.kind === 'classify' ? d.items.map(() => null) : ev.kind === 'balance' ? [...d.l, ...d.r].map(() => 1) : { bp: 0, lp: 0 };
+  const ASK = { sort: `📌 ${d.title}：依序點選下面的物質<small>點錯了可以按「重排」</small>`, classify: `📌 ${d.title}<small>每一種物質點選一個國家</small>`, balance: '📌 調整每個化學式前面的係數，讓兩邊每種原子的數目都相等<small>係數要化成最簡整數比；係數 1 不用寫</small>', lewis: `📌 ${d.f} 的路易斯結構中，共有幾對共用電子？幾對孤對電子？<small>先算每個原子的價電子，再讓每個原子（H 除外）周圍湊滿 8 個電子</small>` };
+  const widget = () => {
+    if (ev.kind === 'sort') return `<div class="sortbox">${d.shown.map(x => `<button data-s="${esc(x)}" class="${ans.includes(x) ? 'used' : ''}" ${ans.includes(x) ? 'disabled' : ''}>${esc(x)}</button>`).join('')}</div>
+      <div class="seq">${ans.length ? ans.map((x, i) => `<span>${i + 1}. ${esc(x)}</span>`).join('') : '<i style="color:#999">依序點選上面的物質</i>'}</div>
+      <div class="actions"><button class="btn sm dark" id="reset">↺ 重排</button></div>`;
+    if (ev.kind === 'classify') return d.items.map((it, i) => `<div class="cls-row" data-row="${i}"><b>${esc(it[0])}</b>${Object.entries(d.cats).map(([k, v]) => `<button class="${ans[i] === k ? 'on' : ''}" data-i="${i}" data-c="${k}">${v}</button>`).join('')}</div>`).join('');
+    if (ev.kind === 'balance') {
+      const all = [...d.l, ...d.r], cnt = (fs, off) => { const o = {}; fs.forEach((f, i) => Object.entries(FACTS.atoms(f)).forEach(([k, v]) => { o[k] = (o[k] || 0) + v * ans[off + i]; })); return o; };
+      const L = cnt(d.l, 0), R = cnt(d.r, d.l.length), els = Object.keys({ ...L, ...R });
+      const term = (f, i) => `<div class="term"><div class="step"><button data-b="${i}|-">−</button><b>${ans[i]}</b><button data-b="${i}|+">＋</button></div><div>${C.html(f)}</div></div>`;
+      return `<div class="eqn">${d.l.map((f, i) => term(f, i)).join('<span>＋</span>')}<span>→</span>${d.r.map((f, i) => term(f, d.l.length + i)).join('<span>＋</span>')}</div>
+        <table class="scale"><tr><th>原子</th><th>左邊（反應物）</th><th>右邊（生成物）</th><th></th></tr>${els.map(k => `<tr><td><b>${k}</b></td><td>${L[k] || 0}</td><td>${R[k] || 0}</td><td class="${L[k] === R[k] ? 'eq' : 'ne'}">${L[k] === R[k] ? '⚖️ 平衡' : '✗'}</td></tr>`).join('')}</table>`;
+    }
+    return `<div class="bigf">${d.f}<div style="font-size:.45em;font-weight:700">${d.zh}</div></div>
+      <div class="ionbox"><div class="ionc">共用電子對<div class="step"><button data-l="bp|-">−</button><b>${ans.bp}</b><button data-l="bp|+">＋</button></div></div>
+      <div class="ionc">孤對電子<div class="step"><button data-l="lp|-">−</button><b>${ans.lp}</b><button data-l="lp|+">＋</button></div></div></div>`;
+  };
+  const ready = () => ev.kind === 'sort' ? ans.length === d.items.length : ev.kind === 'classify' ? ans.every(Boolean) : true;
+  const showRes = r => {
+    const res = r.res, last = S.round >= WORLD.RULE.ROUNDS;
+    $('pz').querySelectorAll('button').forEach(x => { x.disabled = true; });
+    if (ev.kind === 'classify' && r.ans) r.ans.forEach((a, i) => { if (a !== d.items[i][1]) { const row = $('pz').querySelector(`[data-row="${i}"]`); if (row) row.classList.add('bad'); } });
+    $('ev-res').innerHTML = `<div class="fb ${res.ok ? 'ok' : res.near ? 'hint' : 'bad'}">${res.ok ? `✅ 完全正確！${N.name}對你刮目相看。` : res.near ? '🟡 差一點，只錯了一個。' : '❌ 不太對。'}<br>${res.msg}</div>
+      <div class="effs">${effChips(r.applied)}${res.ok ? '<span class="eff up">💰 +12</span>' : res.near ? '<span class="eff up">💰 +5</span>' : '<span class="eff dn">🕵️ −5</span>'}</div>
+      <div class="actions"><button class="btn" id="go">${r.fail ? '看結局 ▶' : last ? '兩年過去了……看結局 ▶' : '進入下一回合 ▶'}</button></div>`;
+    $('go').onclick = () => { if (r.fail) { S.ended = r.fail; save(); return showEnding(); } S.evRes = null; S.curEv = null; GAME.nextRound(S); save(); renderStep(); };
+  };
+  const draw = () => {
+    $('panel').innerHTML = `<div class="step-h"><h2>🎲 隨機事件</h2><span class="kicker">${roundName(S.round)}</span></div>
+      <div class="ev-card"><h3 class="serif">${ev.title}</h3><div class="story">${esc(ev.text)}</div><div class="ask">${ASK[ev.kind]}</div>
+      <div id="pz">${widget()}</div>
+      <div class="actions" id="sub-row">${S.evRes ? '' : `<button class="btn" id="sub" ${ready() ? '' : 'disabled'}>✔️ 提交答案</button>`}</div>
+      <div style="font-size:.8em;color:#6b5a3a">答對：💰+12、${N.name}國力 +4｜只錯一個：💰+5｜答錯：${N.name}國力 −3、隱密度 −5</div>
+      <div id="ev-res"></div></div>`;
+    if (S.evRes) return showRes(S.evRes);
+    const P = $('pz');
+    P.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { ans.push(b.dataset.s); draw(); });
+    const rs = $('reset'); if (rs) rs.onclick = () => { ans = []; draw(); };
+    P.querySelectorAll('[data-i]').forEach(b => b.onclick = () => { ans[+b.dataset.i] = b.dataset.c; draw(); });
+    P.querySelectorAll('[data-b]').forEach(b => b.onclick = () => { const [i, op] = b.dataset.b.split('|'); ans[+i] = Math.max(1, Math.min(9, ans[+i] + (op === '+' ? 1 : -1))); draw(); });
+    P.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { const [k, op] = b.dataset.l.split('|'); ans[k] = Math.max(0, Math.min(9, ans[k] + (op === '+' ? 1 : -1))); draw(); });
+    $('sub').onclick = () => {
+      const res = GAME.checkPuzzle(ev, ans), r = GAME.solvePuzzle(S, ev, res);
+      S.evRes = { res, applied: r.applied, fail: r.fail, ans: Array.isArray(ans) ? ans.slice() : { ...ans } };
+      if (ev.kind !== 'sort') { /* 保留作答畫面 */ }
+      refresh(); $('sub-row').innerHTML = ''; showRes(S.evRes);
+    };
+  };
+  if (S.evRes && S.evRes.ans) ans = S.evRes.ans;
+  draw();
 }
 
 /* ---------- 結局 ---------- */
@@ -648,7 +782,7 @@ function codex() {
   const m = modal(`<h2>📖 勢力圖鑑</h2><p style="margin:6px 0">各國的國力數字差很多，是因為它們代表的化學鍵（或分子間作用力）強弱本來就差很多。遊戲裡的數字是依比例設計的，不是真實的鍵能數值。</p>
     ${list.map(f => `<div class="codex-f" style="border-color:${F[f].color}"><b style="color:${F[f].color}">${F[f].icon} ${F[f].full}</b>（${F[f].bond}）${F[f].base ? `<span style="font-size:.85em;color:#6b5a3a">・標準國力 ${F[f].base[0]}～${F[f].base[1]}</span>` : ''}<div style="font-size:.92em;margin-top:4px">${TXT[f]}</div></div>`).join('')}
     <h3 style="margin-top:10px">📏 規則摘要</h3>
-    <ul style="margin:6px 0 0 20px;font-size:.92em"><li>相對國力＝目前國力 ÷ 標準國力（開局時各國有強有弱，不一定是 100%）。安全範圍 60%～150%。</li><li>任一國 ≥200%（或連續 2 回合 ≥170%）＝天下一統；任一國 ≤30%＝一國滅亡；隱密度歸零＝組織曝光。三種都會讓鍵結社被消滅。</li><li>每回合結算：各國自然消長，相對國力最高的國家會蠶食相鄰最弱的國家（首都不會被攻下）。</li><li>交易所：每回合 1 次暗中行動（資助或謠言，只能選一國）；買賣元素每回合選「買」或「賣」，最多 3 筆，只能賣倉庫裡有的。買賣不改變國力，只改變<b>友好度</b>（🤝）：友好度越高賣價越好，採礦國友好度越高買越便宜。礦價會隨買賣量和需求浮動。</li><li>總分＝資金＋均勢回合分（每回合結算時天下均勢 +20）＋學習分（第一次就答對的比例）＋隱密分＋結局分；組織被消滅時資金只留 3 成。</li></ul>
+    <ul style="margin:6px 0 0 20px;font-size:.92em"><li>相對國力＝目前國力 ÷ 標準國力（開局時各國有強有弱，不一定是 100%）。安全範圍 60%～150%。</li><li>任一國 ≥200%（或連續 2 回合 ≥170%）＝天下一統；任一國 ≤30%＝一國滅亡；隱密度歸零＝組織曝光。三種都會讓鍵結社被消滅。</li><li>每回合結算：先算各國自然消長＝國運趨勢＋0.18×（相對國力−各國平均）＋運氣 ±5%，再扣掉各國的平均值（零和：有人漲就有人跌）。接著領土跟著國力走：每國應得面積＝總面積×自己的相對國力÷各國相對國力總和，領土不足的國家向領土過多的鄰國奪地（每回合最多 3 格，首都不會被攻下）。</li><li>交易所：每回合 1 次暗中行動（資助或謠言，只能選一國）；買賣元素每回合選「買」或「賣」，最多 3 筆，只能賣倉庫裡有的。買賣不改變國力，只改變<b>友好度</b>（🤝）：友好度越高賣價越好，採礦國友好度越高買越便宜。礦價會隨買賣量和需求浮動。</li><li>總分＝資金＋均勢回合分（每回合結算時天下均勢 +20）＋學習分（第一次就答對的比例）＋隱密分＋結局分；組織被消滅時資金只留 3 成。</li></ul>
     <div class="actions" style="justify-content:flex-end"><button class="btn" id="ok">關閉</button></div>`);
   m.querySelector('#ok').onclick = closeModal;
 }

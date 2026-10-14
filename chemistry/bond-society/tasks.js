@@ -1,5 +1,5 @@
 /* =========================================================
-   隱秘的鍵結社 —— 委託與任務產生器（第一階段：⛏️ 尋礦、⚒️ 鑄造）
+   隱秘的鍵結社 —— 委託與任務產生器（⛏️ 尋礦、⚒️ 鑄造、🔍 偵探鑑定）
    ---------------------------------------------------------
    ・每回合 3～4 件委託（第 1～2 回合 3 件），一定有尋礦與鑄造各至少一件
    ・委託影響用「委託國標準國力的百分比」；強國出價比較高（誘惑學生偏袒強國）
@@ -27,34 +27,84 @@ const TASKS = (() => {
     return [...new Set(qs)].sort((a, b) => a - b);
   }
   const qtxt = q => `${q > 0 ? '+' : '−'}${Math.abs(q)}`;
-  const CLUE = {
-    period: e => ({ t: `位在第 ${e.period} 週期`, ok: x => x.period === e.period }),
-    group: e => ({ t: `位在第 ${e.group} 族`, ok: x => x.group === e.group }),
-    val: e => (e.val == null || e.trans ? null : { t: `價電子有 ${e.val} 個`, ok: x => x.val === e.val && !x.trans }),
-    type: e => ({ t: `是${e.typeZh}`, ok: x => x.type === e.type }),
-    ion: e => { const qs = ionsOf(e.sym); if (!qs.length) return null; return { t: qs.length > 1 ? `常見的離子有 ${qs.map(qtxt).join(' 和 ')} 兩種` : `常形成帶 ${qtxt(qs[0])} 電荷的離子`, ok: x => JSON.stringify(ionsOf(x.sym)) === JSON.stringify(qs) }; },
-    parity: e => ({ t: `原子序是${e.z % 2 ? '奇' : '偶'}數`, ok: x => x.z % 2 === e.z % 2 }),
-    range: (e, rnd) => { const lo = Math.max(1, e.z - Math.floor(rnd() * 5)), hi = Math.min(36, lo + 5); return { t: `原子序介於 ${lo}～${hi}`, ok: x => x.z >= lo && x.z <= hi }; },
-    above: e => { const up = C.ELEMENTS.find(x => x.group === e.group && x.period === e.period - 1); return up ? { t: `和 ${up.sym}（${up.zh}）同一族，在它的下一個週期`, ok: x => x.group === up.group && x.period === up.period + 1 } : null; },
-    plus: (e, rnd) => { const k = 1 + Math.floor(rnd() * 3); const ref = C.ELEMENTS.find(x => x.z === e.z - k); return ref ? { t: `原子序比 ${ref.sym}（${ref.zh}）多 ${k}`, ok: x => x.z === ref.z + k } : null; }
-  };
-  const unique = (clues) => C.ELEMENTS.filter(x => clues.every(c => c.ok(x))).length === 1;
+  const FX = typeof FACTS !== 'undefined' ? FACTS : require('./facts.js');
+  /* 線索分家族，同一家族只出一條（避免「第 2 族」又「價電子 2 個」這種同義線索）
+     row 週期｜col 族／族名／價電子／離子電荷（四選一）｜kind 類別｜prop 物理性質｜react 化學反應｜use 生活用途｜num 推理 */
+  const FAMLBL = { row: '位置', col: '位置', kind: '類別', prop: '物理性質', react: '化學反應', use: '生活用途', num: '推理線索' };
+  function clueBank(e, rnd) {
+    const out = [];
+    out.push({ fam: 'row', t: `位在第 ${e.period} 週期`, ok: x => x.period === e.period });
+    const col = [{ fam: 'col', t: `位在第 ${e.group} 族`, ok: x => x.group === e.group }];
+    if (FX.FAMILY[e.group] && e.sym !== 'H') col.push({ fam: 'col', t: `屬於${FX.FAMILY[e.group]}家族`, ok: x => x.group === e.group && x.sym !== 'H' });
+    if (e.val != null && !e.trans && e.type !== 'g') col.push({ fam: 'col', t: `價電子有 ${e.val} 個`, ok: x => x.val === e.val && !x.trans && x.type !== 'g' });
+    const qs = ionsOf(e.sym);
+    if (qs.length) col.push({ fam: 'col', t: qs.length > 1 ? `常見的離子有 ${qs.map(qtxt).join(' 和 ')} 兩種` : `常形成帶 ${qtxt(qs[0])} 電荷的離子`, ok: x => JSON.stringify(ionsOf(x.sym)) === JSON.stringify(qs) });
+    out.push(col[Math.floor(rnd() * col.length)]);
+    out.push({ fam: 'kind', t: `是${e.typeZh}`, ok: x => x.type === e.type });
+    ['prop', 'react', 'use'].forEach(cat => {
+      const fs = FX.ELFACTS.filter(f => f.cat === cat && f.els.includes(e.sym));
+      if (fs.length) { const f = fs[Math.floor(rnd() * fs.length)]; out.push({ fam: cat, t: f.t, ok: x => f.els.includes(x.sym) }); }
+    });
+    const nums = [];
+    const up = C.ELEMENTS.find(x => x.group === e.group && x.period === e.period - 1);
+    if (up) nums.push({ fam: 'num', t: `和 ${up.sym}（${up.zh}）同一族，在它的下一個週期`, ok: x => x.group === up.group && x.period === up.period + 1 });
+    const k = 1 + Math.floor(rnd() * 3), ref = C.ELEMENTS.find(x => x.z === e.z - k);
+    if (ref) nums.push({ fam: 'num', t: `原子序比 ${ref.sym}（${ref.zh}）多 ${k}`, ok: x => x.z === ref.z + k });
+    const lo = Math.max(1, e.z - Math.floor(rnd() * 6)), hi = Math.min(36, lo + 7);
+    nums.push({ fam: 'num', t: `原子序介於 ${lo}～${hi} 之間`, ok: x => x.z >= lo && x.z <= hi });
+    out.push(nums[Math.floor(rnd() * nums.length)]);
+    return out;
+  }
+  const left = clues => C.ELEMENTS.filter(x => clues.every(c => c.ok(x))).length;
   function mineTask(sym, tier, rnd) {
     const e = C.EL[sym];
     const shuffle = a => a.map(v => [rnd(), v]).sort((p, q) => p[0] - q[0]).map(p => p[1]);
-    let clues;
-    if (tier === 1) clues = [CLUE.period(e), CLUE.group(e)];
-    else {
-      const start = tier === 3 ? [rnd() < 0.5 ? CLUE.above(e) : CLUE.plus(e, rnd)].filter(Boolean) : [];
-      const extra = shuffle(['period', 'val', 'type', 'ion', 'parity']).map(k => CLUE[k](e, rnd)).filter(Boolean);
-      clues = [...start];
-      for (const c of extra) { if (unique(clues)) break; clues.push(c); }
-      if (!unique(clues)) clues.push(CLUE.range(e, rnd));
-      if (!unique(clues)) clues = [CLUE.period(e), CLUE.group(e)];
+    const bank = clueBank(e, rnd);
+    const isFact = c => ['prop', 'react', 'use'].includes(c.fam);
+    const facts = shuffle(bank.filter(isFact));
+    const fNU = facts.filter(c => left([c]) > 1), fU = facts.filter(c => left([c]) === 1);   // fU：一條就猜得到的特性
+    const pos = shuffle(bank.filter(c => ['row', 'col', 'kind'].includes(c.fam)));
+    const num = bank.filter(c => c.fam === 'num');
+    // 第一階「特性＋位置」、第二階「特性＋特性／推理」、第三階「推理＋特性」
+    const order = tier === 3 ? [...num, ...fNU, ...pos, ...fU] : tier === 2 ? [...fNU, ...num, ...pos, ...fU] : [...fNU, ...pos, ...fU];
+    const clues = [];
+    for (const c of order) {
+      if (left(clues) === 1) break;
+      if (clues.some(x => x.fam === c.fam)) continue;
+      if (!clues.length && left([c]) === 1) continue;                  // 第一條不能一次就猜到
+      if (left([...clues, c]) < left(clues)) clues.push(c);           // 只加能縮小範圍的線索（避免同義重複）
     }
-    return { kind: 'mine', answer: sym, clues: clues.map(c => c.t), qty: 2 };
+    for (let i = 0; i < clues.length && clues.length > 2; i++) { if (left(clues.filter((_, j) => j !== i)) === 1) { clues.splice(i, 1); i--; } }
+    // 整題沒有任何「特性」線索時，換成一條特性線索，讓學生學到元素的性質與用途
+    if (!clues.some(isFact) && fU.length && clues.length) clues.splice(clues.length - 1, 1, fU[0]);
+    if (left(clues) !== 1) { clues.length = 0; clues.push(bank[0], { fam: 'col', t: `位在第 ${e.group} 族`, ok: x => x.group === e.group }); }
+    const fmt = tier === 1 ? (rnd() < 0.5 ? 'list' : 'report') : ['list', 'story', 'report'][Math.floor(rnd() * 3)];
+    return { kind: 'mine', answer: sym, clues: clues.map(c => ({ fam: c.fam, lbl: FAMLBL[c.fam], t: c.t })), fmt, qty: 2 };
   }
 
+  /* ---------- 偵探鑑定 ---------- */
+  // 第一階：判斷是哪一種鍵結（哪一國的物質）；第二、三階：從 4 種可疑物質中找出真正的那一個（第三階的嫌疑物質更相像）
+  function detectTask(tier, rnd) {
+    const S = FX.SUBST, pick = a => a[Math.floor(rnd() * a.length)];
+    const target = pick(S);
+    if (tier === 1) return { kind: 'detect', mode: 'type', answer: target.id, bond: target.bond, opts: ['io', 'me', 'mol', 'net'], done: ['look'] };
+    const same = S.filter(x => x.id !== target.id && x.bond === target.bond), other = S.filter(x => x.id !== target.id && x.bond !== target.bond);
+    const sh = a => a.map(v => [rnd(), v]).sort((p, q) => p[0] - q[0]).map(p => p[1]);
+    const nSame = tier === 3 ? Math.min(2, same.length) : Math.min(1, same.length);
+    const cand = [target, ...sh(same).slice(0, nSame), ...sh(other).slice(0, 3 - nSame)];
+    return { kind: 'detect', mode: 'which', answer: target.id, bond: target.bond, opts: sh(cand).map(x => x.id), done: ['look'] };
+  }
+  const subst = id => FX.SUBST.find(x => x.id === id);
+  // 還沒做的檢驗中，最能分辨選項的那一個（給提示用）
+  const TEST_ORDER = { type: ['cond', 'melt', 'cond2', 'hit', 'water'], which: ['flame', 'acid', 'base', 'mag', 'cond', 'ph', 'water', 'hit', 'melt', 'cond2'] };
+  function bestTest(t) {
+    const T = id => FX.TESTS.find(x => x.id === id);
+    const tgt = subst(t.answer);
+    const others = t.mode === 'type' ? FX.SUBST.filter(x => x.bond !== t.bond) : t.opts.filter(id => id !== t.answer).map(subst);
+    let best = null, bv = 0;
+    TEST_ORDER[t.mode].filter(id => !t.done.includes(id)).forEach(id => { const v = others.filter(o => o.r[id] !== tgt.r[id]).length; if (v > bv) { bv = v; best = T(id); } });
+    return best;
+  }
   /* ---------- 鑄造：化學式與命名 ---------- */
   const isTM = p => C.CAT[p.c].tm && p.c !== 'Zn';
   const poly = p => C.CAT[p.c].poly || C.AN[p.a].poly;
@@ -110,7 +160,8 @@ const TASKS = (() => {
   }
   // 提示（第一次答錯後顯示）
   function hint(t) {
-    if (t.kind === 'mine') return '對照週期表：橫列是週期、直行是族；主族元素的價電子數＝族號的個位數（第 1、2 族就是 1、2）。';
+    if (t.kind === 'mine') return '一條一條縮小範圍：先用「位置」或「類別」圈出一區，再用性質、反應、用途的線索刪去不符合的元素。橫列是週期、直行是族。';
+    if (t.kind === 'detect') { const b = bestTest(t); return t.mode === 'type' ? `想一想：固體能導電的是金屬（或石墨）；固體不導電、溶於水或熔融後能導電的是離子化合物；熔點很低的是分子物質；又硬、熔點又極高、不導電的是網狀共價固體。${b ? `試試「${b.name}」。` : ''}` : `${b ? `「${b.name}」最能分辨這幾種嫌疑物質。` : '比較每種嫌疑物質的特性，找出和檢驗結果不符合的。'}`; }
     if (t.mode === 'f2name') return `這個化合物由 ${C.ionHtml(C.CAT[t.c])} 和 ${C.ionHtml(C.AN[t.a])} 組成。`;
     return `陽離子 ${C.ionHtml(C.CAT[t.c])}、陰離子 ${C.ionHtml(C.AN[t.a])}：讓正負電荷總和為零，再化成最簡整數比。`;
   }
@@ -129,25 +180,33 @@ const TASKS = (() => {
       io: ['離國的軍需官要一批離子化合物補給品。', '離國的鹽商公會下了訂單，要鑄造一種化合物。', '離國的晶格工程師需要一種化合物來修補陣列。'],
       me: ['金國的冶煉場需要一批礦石樣本來研究。', '金國想知道對手的礦石成分，請你鑄造一份樣本。'],
       co: ['共國的學者想研究離國的物質，請你暗中鑄造一份樣本。', '共國的分子村落需要一種離子化合物當作工業原料。']
+    },
+    detect: {
+      co: ['共國的邊境哨站攔下一包來路不明的物質，請你鑑定它到底是什麼。', '共國的煉丹師把標籤弄丟了，只好請鍵結社來鑑定。'],
+      io: ['離國的海關查獲一批走私品，要你查出它的真面目。', '離國的倉庫裡多了一箱沒有標籤的貨，總管懷疑是間諜放的。'],
+      me: ['金國的鑄幣廠發現一塊可疑的原料，想知道它是什麼。', '金國的將軍收到一份「禮物」，擔心有詐，請你鑑定。'],
+      hb: ['氫聯邦的使節帶來一份神秘樣本，請你查明身分。'],
+      vw: ['凡聯邦的商隊收到一批貨，懷疑被調包了。']
     }
   };
   function makeBoard(s) {
     const rnd = Wd.rngFrom(s), tier = tierOf(s.round);
     const n = s.round <= 2 ? 3 : 4, pick = a => a[Math.floor(rnd() * a.length)];
-    const facs = s.facs, kinds = ['mine', 'forge'];
-    while (kinds.length < n) kinds.push(rnd() < 0.5 ? 'mine' : 'forge');
+    const facs = s.facs, kinds = ['mine', 'forge', 'detect'];
+    while (kinds.length < n) kinds.push(['mine', 'forge', 'detect'][Math.floor(rnd() * 3)]);
     const used = new Set();
     const board = kinds.map((kind, k) => {
       let from;
       if (kind === 'forge') { const x = rnd(); from = x < 0.5 ? 'io' : x < 0.8 ? 'me' : 'co'; }   // 鑄造委託分散來源，練化學式不必一直幫離國
+      else if (kind === 'detect') from = pick(facs);
       else { const cand = [...facs, 'mine'].filter(f => !used.has(f)); from = rnd() < 0.2 ? 'mine' : pick(cand.filter(f => f !== 'mine').length ? cand.filter(f => f !== 'mine') : facs); }
       used.add(from);
-      const task = kind === 'mine' ? mineTask(pick(POOL[from] || POOL.mine), tier, rnd) : forgeTask(tier, from, rnd);
+      const task = kind === 'mine' ? mineTask(pick(POOL[from] || POOL.mine), tier, rnd) : kind === 'detect' ? detectTask(tier, rnd) : forgeTask(tier, from, rnd);
       let effects = {}, shady = null, reward;
       if (from === 'mine') { reward = 12; task.qty = 3; }
       else {
         const r = Wd.rel(s, from);
-        reward = Math.round(22 + tier * 6 + r * 0.15 + rnd() * 6);
+        reward = Math.round(22 + tier * 6 + r * 0.15 + rnd() * 6 + (kind === 'detect' ? 6 : 0));
         if (rnd() < 0.28) {   // 暗中削弱委託
           const targets = facs.filter(f => f !== from);
           shady = pick(targets);
@@ -162,6 +221,6 @@ const TASKS = (() => {
     });
     return board;
   }
-  return { tierOf, mineTask, forgeTask, checkForge, hint, makeBoard, ionsOf };
+  return { tierOf, mineTask, forgeTask, detectTask, bestTest, subst, checkForge, hint, makeBoard, ionsOf, FAMLBL };
 })();
 if (typeof module !== 'undefined') module.exports = TASKS;

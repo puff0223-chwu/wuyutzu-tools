@@ -9,6 +9,10 @@
    第一次試玩後調整（2026-10-14 下午）：
    ・開局不再全部 100%：一強（115～127%）、一弱（76～86%），其他 90～108%，第一回合就有消長與蠶食
    ・起始資金 40、倉庫是空的；友好度（0～100）與浮動礦價見 game.js
+   第二次試玩後調整（2026-10-14 晚）：
+   ・自然消長改成「零和」：各國漲跌先算好，再扣掉平均值，有人漲就有人跌
+   ・領土跟著國力走：大陸面積固定，各國應得面積＝總面積×自己的相對國力÷各國相對國力總和；
+     結算時領土不足的國家向領土過多的鄰國奪地（每國每回合最多 ±3 格，首都不會被攻下）；開局就先分好
    地圖：六角格奇幻大陸（亂數種子＝地圖代碼），中央山脈是中立的採礦國（不會被併吞）
    ========================================================= */
 const WORLD = (() => {
@@ -113,8 +117,9 @@ const WORLD = (() => {
     for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
     order.forEach((f, k) => { const r0 = k === 0 ? 115 + rnd() * 12 : k === 1 ? 76 + rnd() * 10 : 90 + rnd() * 18; power[f] = base[f] * Math.round(r0) / 100; });
     const map = makeMap(seed, facs);
+    redraw({ facs, power, base, owner: map.owner }, map, 99);   // 開局地圖就反映強弱
     return {
-      v: 2, level, seed, code: codeOf(seed), facs, round: 1, step: 'report',
+      v: 3, level, seed, code: codeOf(seed), facs, round: 1, step: 'report',
       base, power, owner: map.owner.slice(), rs: (seed * 2654435761) >>> 0,
       money: RULE.MONEY0, stealth: RULE.STEALTH0, inv: {},
       friend: Object.fromEntries([...facs, 'mine'].map(f => [f, 40])), mkt: {},
@@ -124,7 +129,7 @@ const WORLD = (() => {
     };
   }
   // 國運趨勢：每國有自己的長期走勢（每 3 回合重抽一次），放著不管就會失衡
-  function rollTrend(facs, rnd) { const t = {}; facs.forEach(f => { t[f] = Math.round((rnd() * 9 - 3.5) * 10) / 10; }); return t; }
+  function rollTrend(facs, rnd) { const t = {}; facs.forEach(f => { t[f] = Math.round((rnd() * 11 - 5.5) * 10) / 10; }); return t; }
   function snapshot(s) { return Object.fromEntries(s.facs.map(f => [f, Math.round(rel(s, f))])); }
 
   /* ---------- 國力 ---------- */
@@ -139,12 +144,16 @@ const WORLD = (() => {
     if (eff && eff.co && s.level === 'g11') { add('hb', eff.co * 0.3); add('vw', eff.co * 0.3); }
     return out;
   }
-  // 每回合自然消長：強者越強（越不平衡越危險），加一點隨機
+  // 每回合自然消長（零和）：國運趨勢 ＋ 強者越強（和平均比）＋ 運氣，再扣掉各國平均 → 有人漲就有人跌
+  const avgRel = s => s.facs.reduce((a, f) => a + rel(s, f), 0) / s.facs.length;
+  function rawGrowth(s, f, noise = 0) { return (s.trend ? s.trend[f] : 0) + MOMENTUM * (rel(s, f) - avgRel(s)) + noise; }
   function drift(s) {
-    const rnd = rngFrom(s), out = {};
+    const rnd = rngFrom(s), raw = {}, out = {};
+    s.facs.forEach(f => { raw[f] = rawGrowth(s, f, rnd() * 10 - 5); });
+    const mean = s.facs.reduce((a, f) => a + raw[f], 0) / s.facs.length;
     s.facs.forEach(f => {
-      let g = 1 + (s.trend ? s.trend[f] : 0) + 0.10 * (rel(s, f) - 100) + (rnd() * 8 - 4);
-      if (s.rumor[f] && g > 0) g /= 2;
+      let g = raw[f] - mean;
+      if (s.rumor[f] && g > 0) g /= 2;   // 謠言：成長減半
       g = Math.round(g * 10) / 10;
       s.power[f] = Math.max(0, s.power[f] + s.base[f] * g / 100); out[f] = g;
     });
@@ -152,27 +161,40 @@ const WORLD = (() => {
     if (s.round % 3 === 0) s.trend = rollTrend(s.facs, rnd);
     return out;
   }
-  // 蠶食：相對國力最高的國家，向相鄰國家中相對國力最低的一國奪取省分
-  function annex(s, map) {
-    const top = [...s.facs].sort((a, b) => rel(s, b) - rel(s, a))[0];
-    const adj = new Set();
-    map.cells.forEach(c => { if (s.owner[c.i] === top) c.nb.forEach(j => { const o = s.owner[j]; if (o && o !== top && o !== 'mine') adj.add(o); }); });
-    if (!adj.size) return null;
-    const low = [...adj].sort((a, b) => rel(s, a) - rel(s, b))[0];
-    const gap = rel(s, top) - rel(s, low);
-    const n = Math.max(0, Math.min(s.facs.length > 3 ? 2 : 3, Math.floor(gap / 22)));
-    if (!n) return null;
-    const taken = [];
-    for (let k = 0; k < n; k++) {
-      const border = map.cells.filter(c => s.owner[c.i] === low && c.i !== map.capitals[low] && c.nb.some(j => s.owner[j] === top));   // 首都不會被攻下
-      if (!border.length) break;
-      const capT = map.cells[map.capitals[top]];
-      border.sort((a, b) => Math.hypot(a.x - capT.x, a.y - capT.y) - Math.hypot(b.x - capT.x, b.y - capT.y));
-      s.owner[border[0].i] = top; taken.push(border[0].i);
-      s.power[top] += s.base[top] * 0.015; s.power[low] = Math.max(0, s.power[low] - s.base[low] * 0.025);
-    }
-    return { top, low, cells: taken };
+  const MOMENTUM = 0.18;
+  // 各國應得的省分數（採礦國不算）
+  function shares(s) {
+    const land = s.owner.filter(o => o && o !== 'mine').length, tot = s.facs.reduce((a, f) => a + rel(s, f), 0);
+    return Object.fromEntries(s.facs.map(f => [f, land * rel(s, f) / tot]));
   }
+  // 領土跟著國力走：領土不足的國家向領土過多的鄰國奪地；limit＝每國每回合最多增減幾格
+  function redraw(s, map, limit = 3) {
+    const want = shares(s), gain = {}, lose = {}, moves = [], cells = [];
+    const own = f => s.owner.filter(o => o === f).length;
+    for (let guard = 0; guard < 400; guard++) {
+      const need = s.facs.filter(f => want[f] - own(f) >= 0.7 && (gain[f] || 0) < limit).sort((a, b) => (want[b] - own(b)) - (want[a] - own(a)));
+      let done = false;
+      for (const f of need) {
+        // 相鄰、領土過多、而且還能再失地的國家
+        const adj = new Set();
+        map.cells.forEach(c => { if (s.owner[c.i] === f) c.nb.forEach(j => { const o = s.owner[j]; if (o && o !== f && o !== 'mine') adj.add(o); }); });
+        const from = [...adj].filter(g => own(g) - want[g] >= 0.3 && (lose[g] || 0) < limit).sort((a, b) => (own(b) - want[b]) - (own(a) - want[a]))[0];
+        if (!from) continue;
+        const capF = map.cells[map.capitals[f]];
+        const border = map.cells.filter(c => s.owner[c.i] === from && c.i !== map.capitals[from] && c.nb.some(j => s.owner[j] === f));
+        if (!border.length) continue;
+        border.sort((a, b) => Math.hypot(a.x - capF.x, a.y - capF.y) - Math.hypot(b.x - capF.x, b.y - capF.y));
+        s.owner[border[0].i] = f; cells.push(border[0].i);
+        gain[f] = (gain[f] || 0) + 1; lose[from] = (lose[from] || 0) + 1;
+        const m = moves.find(x => x.to === f && x.from === from); if (m) m.n++; else moves.push({ to: f, from, n: 1 });
+        done = true; break;
+      }
+      if (!done) break;
+    }
+    return { moves, cells, want };
+  }
+  // 舊名稱保留：結算時呼叫
+  const annex = (s, map) => redraw(s, map, 3);
 
   /* ---------- 結局 ---------- */
   const inSafe = (s, f) => { const r = rel(s, f); return r >= RULE.SAFE[0] && r <= RULE.SAFE[1]; };
@@ -210,6 +232,6 @@ const WORLD = (() => {
     return { ...parts, total: Object.values(parts).reduce((a, b) => a + b, 0), rate };
   }
 
-  return { FAIL_ENDS, CONFISCATE, FACTIONS, RIVAL, RULE, factionsOf, rngFrom, seeded, codeOf, seedOf, makeMap, hexPath, newGame, rel, fmtPower, territory, apply, drift, annex, inSafe, checkFail, closeRound, finalEnding, score, snapshot };
+  return { FAIL_ENDS, CONFISCATE, FACTIONS, RIVAL, RULE, factionsOf, rngFrom, seeded, codeOf, seedOf, makeMap, hexPath, newGame, rel, fmtPower, territory, apply, drift, annex, redraw, shares, rawGrowth, avgRel, MOMENTUM, inSafe, checkFail, closeRound, finalEnding, score, snapshot };
 })();
 if (typeof module !== 'undefined') module.exports = WORLD;
