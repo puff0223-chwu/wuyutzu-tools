@@ -92,6 +92,18 @@
   .trade-sec { background: var(--night); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; }
   .trade-sec h3 { font-size: .95em; color: var(--candle); margin-bottom: 6px; }
   .trade-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 4px 0; font-size: .9em; }
+  .friends { display: flex; flex-wrap: wrap; gap: 6px; }
+  .fr { border: 2px solid; border-radius: 8px; padding: 2px 8px; font-size: .82em; font-weight: 700; }
+  .fr small { margin-left: 4px; color: var(--soft); font-weight: 400; }
+  .mnews { font-size: .85em; background: #00000033; border-radius: 8px; padding: 6px 8px; margin: 6px 0; }
+  .tmode { font-size: .88em; margin: 6px 0; color: var(--candle); }
+  .tabs { display: flex; gap: 6px; margin-bottom: 6px; }
+  .tab { flex: 1; border: 2px solid var(--candle); background: transparent; color: #fff; border-radius: 8px; padding: 6px; font-weight: 700; }
+  .tab.on { background: var(--candle); color: #2a1d0e; }
+  .tab:disabled { opacity: .35; }
+  .el small .up { color: #c0392b; } .el small .dn { color: #1e8449; }
+  .trade-row b .up { color: #ff8a7a; } .trade-row b .dn { color: #7fe0a0; }
+  .fbtn:disabled { opacity: .35; }
   .fbtn { border: 2px solid; border-radius: 8px; padding: 3px 9px; background: transparent; color: #fff; font-weight: 700; font-size: .88em; }
 
   /* 週期表 */
@@ -192,7 +204,7 @@
         <div class="step-h"><h2 style="margin:0">🗺️ 大陸局勢</h2><span class="kicker" id="map-code"></span></div>
         <div class="mapbox"><svg id="map"></svg></div>
         <div class="powers" id="powers"></div>
-        <div class="legend">國力條是<b>相對國力</b>（目前 ÷ 開局）：綠色區間 60%～150% 是安全範圍；≥200% 天下一統、≤30% 一國滅亡都會讓鍵結社被消滅。右側小字是實際國力。</div>
+        <div class="legend">國力條是<b>相對國力</b>（目前國力 ÷ 標準國力，開局就有強有弱）：綠色區間 60%～150% 是安全範圍；≥200% 天下一統、≤30% 一國滅亡都會讓鍵結社被消滅。右側小字是實際國力。</div>
       </div>
     </div>
     <div class="card" id="panel"></div>
@@ -202,11 +214,11 @@
 <div class="modal hidden" id="modal"><div class="mcard" id="mcard"></div></div>
 <div class="toast" id="toast"></div>
 
-<script src="data.js?v=20261014a"></script>
-<script src="world.js?v=20261014a"></script>
-<script src="tasks.js?v=20261014a"></script>
-<script src="events.js?v=20261014a"></script>
-<script src="game.js?v=20261014a"></script>
+<script src="data.js?v=20261014b"></script>
+<script src="world.js?v=20261014b"></script>
+<script src="tasks.js?v=20261014b"></script>
+<script src="events.js?v=20261014b"></script>
+<script src="game.js?v=20261014b"></script>
 <script>
 const $ = id => document.getElementById(id);
 const F = WORLD.FACTIONS, C = CHEM;
@@ -216,6 +228,7 @@ const KIND = { mine: '⛏️ 尋礦', forge: '⚒️ 鑄造' };
 let S = null, MAP = null;
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const md = s => String(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+let TRADE_TAB = 'buy';
 let tt; function toast(m) { const t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('on'), 2400); }
 function save() { try { localStorage.setItem(SAVE, JSON.stringify(S)); } catch (e) {} }
 function load() { try { return JSON.parse(localStorage.getItem(SAVE)); } catch (e) { return null; } }
@@ -230,7 +243,7 @@ function closeModal() { $('modal').classList.add('hidden'); }
 function showTitle() {
   $('s-title').classList.remove('hidden'); $('s-game').classList.add('hidden');
   const sv = load();
-  const can = sv && sv.v === 1 && !sv.ended;
+  const can = sv && sv.v === 2 && !sv.ended;   // v1 是改版前的存檔，規則不同不能接著玩
   $('cont-card').classList.toggle('hidden', !can);
   if (can) $('cont-info').innerHTML = `${sv.level === 'g11' ? '高二高三版' : '高一版'}・地圖 <b>${sv.code}</b>・${roundName(sv.round)}・💰 ${sv.money}`;
 }
@@ -252,7 +265,7 @@ function intro() {
   const m = modal(`<h2>🕯️ 歡迎加入鍵結社</h2>
     <p style="margin:8px 0">特工，這片大陸上有 ${S.facs.map(f => `<b style="color:${F[f].color}">${F[f].name}</b>`).join('、')}，中央山脈是中立的<b>採礦國</b>，開採原子序 1～36 的元素。</p>
     <p>你的任務：接下各國的化學委託，但要<b>讓各國互相制衡</b>。任何一國統一天下、或任何一國被消滅，鍵結社都會失去存在的意義。</p>
-    <ul style="margin:8px 0 0 20px"><li>每回合最多接 <b>2 件</b>委託；幫誰，誰就變強。</li><li>強國每回合會<b>蠶食</b>相鄰的弱國。</li><li>交易所可以用錢暗中資助弱國、散播謠言拖慢強國。</li><li>撐過 <b>8 回合</b>（兩年），而且天下均勢，就是最好的結局。</li></ul>
+    <ul style="margin:8px 0 0 20px"><li>每回合最多接 <b>2 件</b>委託；幫誰，誰就變強。</li><li>強國每回合會<b>蠶食</b>相鄰的弱國。</li><li>開局各國強弱不一，一定有強國和弱國。</li><li>交易所每回合可以做 <b>1 次暗中行動</b>（資助一國或對一國散播謠言），還能買賣元素賺錢。</li><li>撐過 <b>8 回合</b>（兩年），而且天下均勢，就是最好的結局。</li></ul>
     <p class="note" style="color:#6b5a3a;background:#fff">💡 各國國力的數字差很多（共國、離國幾百，凡聯邦只有個位數），因為它們代表的化學鍵強弱本來就差很多。判斷平衡要看<b>相對國力</b>（國力條）。</p>
     <div class="actions" style="justify-content:flex-end"><button class="btn" id="go">開始第一回合 ▶</button></div>`);
   m.querySelector('#go').onclick = () => { closeModal(); renderStep(); };
@@ -292,8 +305,8 @@ function drawMap(flash = []) {
   S.facs.forEach(f => {
     let cap = M.cells[M.capitals[f]];
     if (S.owner[cap.i] !== f) { const own = M.cells.filter(c => S.owner[c.i] === f); if (!own.length) return; cap = own[0]; }
-    const w = 52;
-    h += `<g><rect x="${cap.x - w / 2}" y="${cap.y - 9}" width="${w}" height="17" rx="8" fill="${F[f].color}" stroke="#fff" stroke-width="1.2"/><text class="cap-tag" x="${cap.x}" y="${cap.y + 3.5}" text-anchor="middle" fill="#fff">🏰${F[f].name}</text></g>`;
+    const w = F[f].name.length > 2 ? 82 : 72, r = Math.round(WORLD.rel(S, f)), hot = r > 150 || r < 60;
+    h += `<g><rect x="${cap.x - w / 2}" y="${cap.y - 9}" width="${w}" height="17" rx="8" fill="${F[f].color}" stroke="${hot ? '#ffd84a' : '#fff'}" stroke-width="${hot ? 2.4 : 1.2}"/><text class="cap-tag" x="${cap.x}" y="${cap.y + 3.5}" text-anchor="middle" fill="#fff">🏰${F[f].name} ${r}%</text></g>`;
   });
   const mineCells = M.cells.filter(c => S.owner[c.i] === 'mine');
   if (mineCells.length) { const mx = mineCells.reduce((a, c) => a + c.x, 0) / mineCells.length, my = mineCells.reduce((a, c) => a + c.y, 0) / mineCells.length;
@@ -306,7 +319,7 @@ function drawPowers() {
   $('powers').innerHTML = S.facs.map(f => {
     const r = WORLD.rel(S, f), w = Math.min(100, r / MAX * 100);
     const cls = r >= 170 || r <= 45 ? 'bad' : r > 150 || r < 60 ? 'warn' : '';
-    return `<div class="prow"><div class="nm" style="color:${F[f].color}">${F[f].icon} ${F[f].name}<small>${F[f].bond}・領土 ${WORLD.territory(S, f)}</small></div>
+    return `<div class="prow"><div class="nm" style="color:${F[f].color}">${F[f].icon} ${F[f].name}<small>${F[f].bond}・領土 ${WORLD.territory(S, f)}・🤝 ${S.friend ? S.friend[f] : '-'}</small></div>
       <div class="bar"><div class="safe" style="left:${60 / MAX * 100}%;width:${90 / MAX * 100}%"></div>
         <div class="mk" style="left:${100 / MAX * 100}%"></div><div class="mk" style="left:${30 / MAX * 100}%;background:#ff7a6377"></div><div class="mk" style="left:${200 / MAX * 100}%;background:#ff7a6377"></div>
         <div class="fill" style="width:${w}%;background:${F[f].color}"></div><span class="abs">國力 ${WORLD.fmtPower(S, f)}</span></div>
@@ -338,12 +351,12 @@ function warnings() {
 function stepReport() {
   const prev = S.history.length > 1 ? S.history[S.history.length - 2] : null;
   $('panel').innerHTML = `<div class="step-h"><h2>📜 情勢報告</h2><span class="kicker">${roundName(S.round)}</span></div>
-    <p>${S.round === 1 ? '各國剛剛開始角力，局勢還算平衡。' : '上一回合結束後，各國的消長如下：'}</p>
+    <p>${S.round === 1 ? (() => { const o = [...S.facs].sort((a, b) => WORLD.rel(S, b) - WORLD.rel(S, a)); return `各國實力不一：<b style="color:${F[o[0]].color}">${F[o[0]].name}</b>正在崛起（${Math.round(WORLD.rel(S, o[0]))}%），<b style="color:${F[o[o.length - 1]].color}">${F[o[o.length - 1]].name}</b>國勢衰弱（${Math.round(WORLD.rel(S, o[o.length - 1]))}%）。強國每回合結算都會蠶食相鄰的弱國，放著不管就會失衡。`; })() : '上一回合結束後，各國的消長如下：'}</p>
     ${prev ? `<div class="effs">${S.facs.map(f => { const d = S.history[S.history.length - 1][f] - prev[f]; return `<span class="eff ${d >= 0 ? 'up' : 'dn'}">${F[f].name} ${d >= 0 ? '+' : ''}${d}%</span>`; }).join('')}</div>` : ''}
     ${warnings() || '<div class="note">✅ 目前各國都在安全範圍內。</div>'}
     <div class="note">每回合最多接 <b>2 件</b>委託。想一想：該幫弱國一把，還是削弱強國？</div>
     <div class="actions"><button class="btn" id="go">查看本回合的委託 ▶</button></div>`;
-  $('go').onclick = () => { GAME.startRound(S); save(); renderStep(); };
+  $('go').onclick = () => { GAME.startRound(S); TRADE_TAB = 'buy'; save(); renderStep(); };
 }
 function stepBoard() {
   const open = S.board.filter(c => c.state === 'open');
@@ -375,12 +388,12 @@ function effectsShown(eff) {
 function openTask(c) {
   const t = c.task, miss = GAME.missing(S, t);
   if (miss.length) {
-    const cost = miss.reduce((a, sym) => a + GAME.buyPrice(S, sym), 0);
+    const cost = miss.reduce((a, sym) => a + GAME.rushPrice(S, sym), 0);
     const m = modal(`<h2>⚒️ 原料不足</h2><p style="margin:8px 0">這件委託要消耗 ${t.needs.map(x => `<b>${x}</b>`).join('、')} 各 1 單位，倉庫裡缺少 ${miss.map(x => `<b style="color:var(--red)">${x}（${C.EL[x].zh}）</b>`).join('、')}。</p>
-      <p>可以向採礦國緊急調貨，共 <b>${cost}</b> 金幣。</p>
+      <p>可以向採礦國<b>緊急調貨</b>，共 <b>${cost}</b> 金幣（比交易所貴 3 成，但不算交易筆數）。小撇步：在交易所先囤一些常用元素，下回合鑄造就不用緊急調貨。</p>
       <div class="actions"><button class="btn" id="buy" ${S.money >= cost ? '' : 'disabled'}>💰 調貨並開始</button><button class="btn dark" id="no">先不要</button></div>`);
     m.querySelector('#no').onclick = closeModal;
-    m.querySelector('#buy').onclick = () => { miss.forEach(sym => GAME.buy(S, sym)); refresh(); openTask(c); };
+    m.querySelector('#buy').onclick = () => { miss.forEach(sym => GAME.rush(S, sym)); refresh(); openTask(c); };
     return;
   }
   c.tries = c.tries || 0;
@@ -487,28 +500,42 @@ function giveUp(c) {
 
 /* ---------- 交易所 ---------- */
 function stepTrade(note = '') {
-  const r = S.round, fc = S.trade.intel ? GAME.forecast(S) : null;
+  const r = S.round, fc = S.trade.intel ? GAME.forecast(S) : null, T = S.trade, cv = T.covert;
   const inv = Object.entries(S.inv).filter(([, n]) => n > 0);
+  const left = GAME.TRADE_MAX - T.n, canBuy = GAME.canTrade(S, 'buy'), canSell = GAME.canTrade(S, 'sell');
+  const arrow = sym => { const k = GAME.idx(S, sym); return k >= 1.1 ? `<b class="up">↑</b>` : k <= 0.9 ? `<b class="dn">↓</b>` : ''; };
+  const news = S.news ? `<div class="mnews">📰 行情：${S.news.hot.length ? `鑄造委託要用的 ${S.news.hot.map(x => `<b>${x}</b>`).join('、')} 成了熱門貨；` : ''}各國搶購 <b>${S.news.up}</b>${S.news.dn ? `，<b>${S.news.dn}</b> 大豐收價格下跌` : ''}。</div>` : '';
+  const friends = [...S.facs, 'mine'].map(f => { const t = GAME.tier(S, f); return `<span class="fr" style="border-color:${F[f].color}">${F[f].name} 🤝${S.friend[f]}<small>${t.name}</small></span>`; }).join('');
   $('panel').innerHTML = `<div class="step-h"><h2>💱 交易所</h2><span class="kicker">可以不用，直接結束本回合</span></div>
     ${note}
-    <div class="trade-sec"><h3>🤝 暗中資助（${GAME.PRICE.subsidy(r)} 金幣，該國 +${GAME.SUBSIDY}%）</h3>
-      <div class="trade-row">${S.facs.map(f => `<button class="fbtn" style="border-color:${F[f].color}" data-sub="${f}">${F[f].name}</button>`).join('')}</div></div>
-    <div class="trade-sec"><h3>🗣️ 散播謠言（${GAME.PRICE.rumor(r)} 金幣，該國下次結算的成長減半）</h3>
-      <div class="trade-row">${S.facs.map(f => `<button class="fbtn" style="border-color:${F[f].color}" data-rum="${f}" ${S.rumor[f] ? 'disabled' : ''}>${F[f].name}${S.rumor[f] ? ' ✓' : ''}</button>`).join('')}</div>
-      <div style="font-size:.8em;color:var(--soft)">同一回合散播第 2 次以上，隱密度 −8。</div></div>
+    <div class="trade-sec"><h3>🕶️ 暗中行動（每回合 1 次，只能選 1 國）</h3>
+      ${cv ? `<div class="note" style="margin:0">本回合已經${cv.type === 'subsidy' ? '暗中資助' : '散播謠言打擊'}了 <b style="color:${F[cv.f].color}">${F[cv.f].name}</b>。</div>` : `
+      <div style="font-size:.85em;margin-bottom:4px">🤝 <b>暗中資助</b>：該國 +${GAME.SUBSIDY}%（友好度 60 以上打 8 折）</div>
+      <div class="trade-row">${S.facs.map(f => `<button class="fbtn" style="border-color:${F[f].color}" data-sub="${f}">${F[f].name} ${GAME.subsidyCost(S, f)}💰</button>`).join('')}</div>
+      <div style="font-size:.85em;margin:8px 0 4px">🗣️ <b>散播謠言</b>（${GAME.PRICE.rumor(r)} 金幣）：該國下次結算的成長減半，但友好度會下降</div>
+      <div class="trade-row">${S.facs.map(f => `<button class="fbtn" style="border-color:${F[f].color}" data-rum="${f}">${F[f].name}</button>`).join('')}</div>`}</div>
     <div class="trade-sec"><h3>🔍 打探情報（${GAME.PRICE.intel()} 金幣，預估各國這次結算的自然消長）</h3>
       ${fc ? `<div class="effs">${S.facs.map(f => `<span class="eff ${fc[f] >= 0 ? 'up' : 'dn'}">${F[f].name} 約 ${fc[f] >= 0 ? '+' : ''}${fc[f]}%</span>`).join('')}</div><div style="font-size:.8em;color:var(--soft)">另外還有 ±4% 的運氣成分；相對國力最高的國家還會蠶食鄰國。</div>` : `<button class="btn sm" id="intel">打探</button>`}</div>
-    <div class="trade-sec"><h3>⛏️ 採礦國市場（買元素）</h3><div style="font-size:.82em;color:var(--soft)">點元素買 1 單位；數字是你的庫存</div><div class="pt-wrap"><div class="ptable" id="mkt"></div></div></div>
-    <div class="trade-sec"><h3>📦 賣元素給各國（每單位換 8 成價錢，買方國力 +1%）</h3>
-      ${inv.length ? inv.map(([sym, n]) => { const by = GAME.buyers(S, sym); return `<div class="trade-row"><b style="min-width:58px">${sym} ×${n}</b>${by.length ? by.map(f => `<button class="fbtn" style="border-color:${F[f].color}" data-sell="${sym}|${f}">賣給${F[f].name}</button>`).join('') : '<span style="color:var(--soft)">沒有國家收購</span>'}</div>`; }).join('') : '<span style="color:var(--soft)">倉庫是空的</span>'}</div>
+    <div class="trade-sec"><h3>📦 元素買賣（本回合選「買」或「賣」其中一種，最多 ${GAME.TRADE_MAX} 筆）</h3>
+      <div class="friends">${friends}</div>
+      <div style="font-size:.8em;color:var(--soft);margin:4px 0">買賣不會改變國力，只會改變友好度：賣給某國 → 該國 🤝+4；向採礦國買 → 採礦國 🤝+3。友好度越高，賣價越好、買價越便宜。</div>
+      ${news}
+      <div class="tmode">${T.mode ? `本回合是「<b>${T.mode === 'buy' ? '買' : '賣'}</b>」，還能交易 <b>${left}</b> 筆` : '還沒交易：第一筆是買或賣，就決定本回合的模式'}</div>
+      <div class="tabs"><button class="tab ${TRADE_TAB === 'buy' ? 'on' : ''}" data-tab="buy" ${canBuy ? '' : 'disabled'}>⛏️ 向採礦國買</button><button class="tab ${TRADE_TAB === 'sell' ? 'on' : ''}" data-tab="sell" ${canSell ? '' : 'disabled'}>📦 賣給各國</button></div>
+      ${TRADE_TAB === 'buy' ? `<div style="font-size:.82em;color:var(--soft)">點元素買 1 單位；小字是價錢，↑ 比原價貴、↓ 比原價便宜；右上角是你的庫存</div><div class="pt-wrap"><div class="ptable" id="mkt"></div></div>`
+      : (inv.length ? inv.map(([sym, n]) => { const by = GAME.buyers(S, sym); return `<div class="trade-row"><b style="min-width:58px">${sym} ×${n} ${arrow(sym)}</b>${by.length ? by.map(f => `<button class="fbtn" style="border-color:${F[f].color}" data-sell="${sym}|${f}" ${canSell ? '' : 'disabled'}>賣給${F[f].name} ${GAME.sellPrice(S, sym, f)}💰</button>`).join('') : '<span style="color:var(--soft)">沒有國家收購</span>'}</div>`; }).join('') : '<span style="color:var(--soft)">倉庫是空的：解尋礦委託可以挖到元素，或先向採礦國買。</span>')}
+    </div>
     <div class="actions"><button class="btn" id="go">結束本回合，進行結算 ▶</button></div>`;
-  const mk = []; for (let p = 1; p <= 4; p++) for (let g = 1; g <= 18; g++) { const e = C.ELEMENTS.find(x => x.period === p && x.group === g); mk.push(e ? `<button class="el ${e.type}" data-buy="${e.sym}" title="${e.zh} ${GAME.buyPrice(S, e.sym)} 金幣">${e.sym}<span class="cnt">${S.inv[e.sym] || ''}</span><small>${GAME.buyPrice(S, e.sym)}</small></button>` : '<div class="el empty"></div>'); }
-  $('mkt').innerHTML = mk.join('');
+  if (TRADE_TAB === 'buy') {
+    const mk = []; for (let p = 1; p <= 4; p++) for (let g = 1; g <= 18; g++) { const e = C.ELEMENTS.find(x => x.period === p && x.group === g); mk.push(e ? `<button class="el ${e.type}" data-buy="${e.sym}" ${canBuy ? '' : 'disabled'} title="${e.zh} ${GAME.buyPrice(S, e.sym)} 金幣">${e.sym}<span class="cnt">${S.inv[e.sym] || ''}</span><small>${GAME.buyPrice(S, e.sym)}${arrow(e.sym)}</small></button>` : '<div class="el empty"></div>'); }
+    $('mkt').innerHTML = mk.join('');
+  }
   const P = $('panel');
+  P.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { TRADE_TAB = b.dataset.tab; stepTrade(); });
   P.querySelectorAll('[data-sub]').forEach(b => b.onclick = () => { if (GAME.subsidy(S, b.dataset.sub)) { refresh(); stepTrade(`<div class="note">🤝 已暗中資助${F[b.dataset.sub].name}。</div>`); } else toast('資金不夠'); });
   P.querySelectorAll('[data-rum]').forEach(b => b.onclick = () => { if (GAME.rumor(S, b.dataset.rum)) { refresh(); stepTrade(`<div class="note">🗣️ 已在${F[b.dataset.rum].name}散播謠言。</div>`); } else toast('資金不夠'); });
-  P.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => { if (GAME.buy(S, b.dataset.buy)) { refresh(); stepTrade(); } else toast('資金不夠'); });
-  P.querySelectorAll('[data-sell]').forEach(b => b.onclick = () => { const [sym, f] = b.dataset.sell.split('|'); if (GAME.sell(S, sym, f)) { refresh(); stepTrade(); } });
+  P.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => { if (GAME.buy(S, b.dataset.buy)) { refresh(); stepTrade(); } else toast(GAME.canTrade(S, 'buy') ? '資金不夠' : '本回合不能再買了'); });
+  P.querySelectorAll('[data-sell]').forEach(b => b.onclick = () => { const [sym, f] = b.dataset.sell.split('|'); if (GAME.sell(S, sym, f)) { refresh(); stepTrade(); } else toast('本回合不能再賣了'); });
   const ib = $('intel'); if (ib) ib.onclick = () => { if (GAME.intel(S)) { refresh(); stepTrade(); } else toast('資金不夠'); };
   $('go').onclick = () => {
     const fail = WORLD.checkFail(S); if (fail) { S.ended = fail; save(); return showEnding(); }
@@ -525,7 +552,7 @@ function stepSettle() {
   $('panel').innerHTML = `<div class="step-h"><h2>⚔️ 回合結算</h2><span class="kicker">${roundName(S.round)}</span></div>
     <p>各國的自然消長（國運、強者越強、運氣）：</p><div class="effs">${effChips(d)}</div>
     ${a ? `<div class="note">🏴 <b style="color:${F[a.top].color}">${F[a.top].name}</b>蠶食了<b style="color:${F[a.low].color}">${F[a.low].name}</b>的 <b>${a.cells.length}</b> 個省分！（地圖上閃爍的地方）</div>` : '<div class="note">🕊️ 這一季各國邊境平靜，沒有發生蠶食。</div>'}
-    ${st.balanced ? '<div class="note">⚖️ 本回合結束時天下均勢，<b>均勢分 +20</b>。</div>' : '<div class="note">⚠️ 本回合結束時有國家超出安全範圍，沒有均勢分。</div>'}
+    ${st.balanced ? '<div class="note">⚖️ 本回合結束時，所有國家都在安全範圍（60%～150%）內，天下均勢：<b>均勢回合分 +20</b>（最後算總分用，8 回合最多 160 分）。</div>' : '<div class="note">⚠️ 本回合結束時有國家超出安全範圍（60%～150%），這回合拿不到均勢回合分。</div>'}
     ${warnings()}
     <div class="actions"><button class="btn" id="go">大陸上發生了一件事…… ▶</button></div>`;
   $('go').onclick = () => { S.step = 'event'; S.evId = GAME.pickEvent(S).id; save(); renderStep(); };
@@ -578,7 +605,7 @@ function showEnding() {
     ${e.id === 'unify' && WORLD.rel(S, e.f) < WORLD.RULE.UNIFY ? `<p class="note" style="background:#fff;color:#6b5a3a">${F[e.f].name}連續 2 回合相對國力超過 170%，勢力已經無法阻擋。</p>` : ''}
     <table class="score-t">
       <tr><td>💰 資金${fail ? `（組織被消滅，資產被沒收，只留 ${WORLD.CONFISCATE * 10} 成）` : ''}</td><td>${sc.money}</td></tr>
-      <tr><td>⚖️ 均勢分（均勢回合 ${S.balanceRounds} × 20）</td><td>${sc.balance}</td></tr>
+      <tr><td>⚖️ 均勢回合分（結算時天下均勢的回合 ${S.balanceRounds} × 20）</td><td>${sc.balance}</td></tr>
       <tr><td>📚 學習分（第一次就答對 ${S.stats.firstOk}／${S.stats.tasks} 件 × 200）</td><td>${sc.learn}</td></tr>
       <tr><td>🕵️ 隱密分</td><td>${sc.stealth}</td></tr>
       <tr><td>🏁 結局分</td><td>${sc.ending}</td></tr>
@@ -619,9 +646,9 @@ function codex() {
     mine: '位在大陸中央山脈，開採原子序 1～36 的元素賣給各國。礦脈的位置就是<b>週期表</b>的位置：橫列是週期、直行是族。稀有氣體是住在山頂、不和任何人往來的隱士。採礦國受各國條約保護，不會被併吞。'
   };
   const m = modal(`<h2>📖 勢力圖鑑</h2><p style="margin:6px 0">各國的國力數字差很多，是因為它們代表的化學鍵（或分子間作用力）強弱本來就差很多。遊戲裡的數字是依比例設計的，不是真實的鍵能數值。</p>
-    ${list.map(f => `<div class="codex-f" style="border-color:${F[f].color}"><b style="color:${F[f].color}">${F[f].icon} ${F[f].full}</b>（${F[f].bond}）${F[f].base ? `<span style="font-size:.85em;color:#6b5a3a">・開局國力 ${F[f].base[0]}～${F[f].base[1]}</span>` : ''}<div style="font-size:.92em;margin-top:4px">${TXT[f]}</div></div>`).join('')}
+    ${list.map(f => `<div class="codex-f" style="border-color:${F[f].color}"><b style="color:${F[f].color}">${F[f].icon} ${F[f].full}</b>（${F[f].bond}）${F[f].base ? `<span style="font-size:.85em;color:#6b5a3a">・標準國力 ${F[f].base[0]}～${F[f].base[1]}</span>` : ''}<div style="font-size:.92em;margin-top:4px">${TXT[f]}</div></div>`).join('')}
     <h3 style="margin-top:10px">📏 規則摘要</h3>
-    <ul style="margin:6px 0 0 20px;font-size:.92em"><li>相對國力＝目前國力 ÷ 開局國力。安全範圍 60%～150%。</li><li>任一國 ≥200%（或連續 2 回合 ≥170%）＝天下一統；任一國 ≤30% 或失去所有領土＝一國滅亡；隱密度歸零＝組織曝光。三種都會讓鍵結社被消滅。</li><li>每回合結算：各國自然消長，相對國力最高的國家會蠶食相鄰最弱的國家。</li><li>總分＝資金＋均勢分＋學習分（第一次就答對的比例）＋隱密分＋結局分；組織被消滅時資金只留 3 成。</li></ul>
+    <ul style="margin:6px 0 0 20px;font-size:.92em"><li>相對國力＝目前國力 ÷ 標準國力（開局時各國有強有弱，不一定是 100%）。安全範圍 60%～150%。</li><li>任一國 ≥200%（或連續 2 回合 ≥170%）＝天下一統；任一國 ≤30%＝一國滅亡；隱密度歸零＝組織曝光。三種都會讓鍵結社被消滅。</li><li>每回合結算：各國自然消長，相對國力最高的國家會蠶食相鄰最弱的國家（首都不會被攻下）。</li><li>交易所：每回合 1 次暗中行動（資助或謠言，只能選一國）；買賣元素每回合選「買」或「賣」，最多 3 筆，只能賣倉庫裡有的。買賣不改變國力，只改變<b>友好度</b>（🤝）：友好度越高賣價越好，採礦國友好度越高買越便宜。礦價會隨買賣量和需求浮動。</li><li>總分＝資金＋均勢回合分（每回合結算時天下均勢 +20）＋學習分（第一次就答對的比例）＋隱密分＋結局分；組織被消滅時資金只留 3 成。</li></ul>
     <div class="actions" style="justify-content:flex-end"><button class="btn" id="ok">關閉</button></div>`);
   m.querySelector('#ok').onclick = closeModal;
 }

@@ -3,9 +3,12 @@
    ---------------------------------------------------------
    老師的決定（2026-10-14）：
    ・開局國力依鍵能比例隨機：共國、離國 300～400；金國 100～140；氫聯邦 25～40；凡聯邦 2.5～4.0
-   ・國力變化一律用「自己開局國力的百分比」；均勢與勝敗看「相對國力＝目前÷開局×100%」
+   ・國力變化一律用「自己標準國力的百分比」；均勢與勝敗看「相對國力＝目前÷標準國力×100%」
    ・天下一統（任一國 ≥200%，或連續 2 回合 ≥170%）、一國滅亡（≤30% 或失去所有省分）、組織曝光（隱密度 0）都算失敗
    ・高一版：共國、離國、金國三國；高二高三版：再加氫聯邦、凡聯邦
+   第一次試玩後調整（2026-10-14 下午）：
+   ・開局不再全部 100%：一強（115～127%）、一弱（76～86%），其他 90～108%，第一回合就有消長與蠶食
+   ・起始資金 40、倉庫是空的；友好度（0～100）與浮動礦價見 game.js
    地圖：六角格奇幻大陸（亂數種子＝地圖代碼），中央山脈是中立的採礦國（不會被併吞）
    ========================================================= */
 const WORLD = (() => {
@@ -29,7 +32,7 @@ const WORLD = (() => {
   };
   const RIVAL = { co: 'io', io: 'me', me: 'co', hb: 'vw', vw: 'hb' };
   const factionsOf = level => (level === 'g11' ? ['co', 'io', 'me', 'hb', 'vw'] : ['co', 'io', 'me']);
-  const RULE = { ROUNDS: 8, SAFE: [60, 150], UNIFY: 200, UNIFY_SOFT: 170, DESTROY: 30, MONEY0: 100, STEALTH0: 100 };
+  const RULE = { ROUNDS: 8, SAFE: [60, 150], UNIFY: 200, UNIFY_SOFT: 170, DESTROY: 30, MONEY0: 40, STEALTH0: 100 };
 
   /* ---------- 六角格地圖 ---------- */
   const W = 15, H = 11, S = 20, SQ3 = Math.sqrt(3);
@@ -104,12 +107,17 @@ const WORLD = (() => {
     const facs = factionsOf(level);
     const rnd = seeded(seed ^ 0x5eed);
     const base = {}, power = {};
-    facs.forEach(f => { const [a, b] = FACTIONS[f].base; const v = a + rnd() * (b - a); base[f] = FACTIONS[f].dec ? Math.round(v * 10) / 10 : Math.round(v); power[f] = base[f]; });
+    facs.forEach(f => { const [a, b] = FACTIONS[f].base; const v = a + rnd() * (b - a); base[f] = FACTIONS[f].dec ? Math.round(v * 10) / 10 : Math.round(v); });
+    // 開局相對國力：洗牌後第 1 國最強、第 2 國最弱，其餘中間
+    const order = facs.slice();
+    for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+    order.forEach((f, k) => { const r0 = k === 0 ? 115 + rnd() * 12 : k === 1 ? 76 + rnd() * 10 : 90 + rnd() * 18; power[f] = base[f] * Math.round(r0) / 100; });
     const map = makeMap(seed, facs);
     return {
-      v: 1, level, seed, code: codeOf(seed), facs, round: 1, step: 'report',
+      v: 2, level, seed, code: codeOf(seed), facs, round: 1, step: 'report',
       base, power, owner: map.owner.slice(), rs: (seed * 2654435761) >>> 0,
-      money: RULE.MONEY0, stealth: RULE.STEALTH0, inv: { H: 2, O: 2, C: 1, Na: 1, Cl: 1 },
+      money: RULE.MONEY0, stealth: RULE.STEALTH0, inv: {},
+      friend: Object.fromEntries([...facs, 'mine'].map(f => [f, 40])), mkt: {},
       stats: { tasks: 0, firstOk: 0, fails: 0, byType: {} }, balanceRounds: 0, hi: {}, rumor: {},
       trend: rollTrend(facs, seeded(seed ^ 0x7e2d)),
       board: null, done: [], ap: 2, history: [snapshot({ facs, power, base })], startedAt: Date.now(), ended: null
@@ -123,7 +131,7 @@ const WORLD = (() => {
   const rel = (s, f) => (s.power[f] / s.base[f]) * 100;
   const fmtPower = (s, f) => { const v = s.power[f]; return FACTIONS[f].dec ? v.toFixed(1) : Math.round(v).toString(); };
   const territory = (s, f) => s.owner.filter(o => o === f).length;
-  // 套用影響（百分比，以開局國力計）；高二高三版共國的變化會帶動兩聯邦（×0.3）
+  // 套用影響（百分比，以標準國力計）；高二高三版共國的變化會帶動兩聯邦（×0.3）
   function apply(s, eff, note) {
     const out = {};
     const add = (f, pct) => { if (!s.facs.includes(f) || !pct) return; s.power[f] = Math.max(0, s.power[f] + s.base[f] * pct / 100); out[f] = (out[f] || 0) + pct; };
@@ -135,7 +143,7 @@ const WORLD = (() => {
   function drift(s) {
     const rnd = rngFrom(s), out = {};
     s.facs.forEach(f => {
-      let g = 1 + (s.trend ? s.trend[f] : 0) + 0.12 * (rel(s, f) - 100) + (rnd() * 8 - 4);
+      let g = 1 + (s.trend ? s.trend[f] : 0) + 0.10 * (rel(s, f) - 100) + (rnd() * 8 - 4);
       if (s.rumor[f] && g > 0) g /= 2;
       g = Math.round(g * 10) / 10;
       s.power[f] = Math.max(0, s.power[f] + s.base[f] * g / 100); out[f] = g;
@@ -152,11 +160,11 @@ const WORLD = (() => {
     if (!adj.size) return null;
     const low = [...adj].sort((a, b) => rel(s, a) - rel(s, b))[0];
     const gap = rel(s, top) - rel(s, low);
-    const n = Math.max(0, Math.min(3, Math.floor(gap / 25)));
+    const n = Math.max(0, Math.min(s.facs.length > 3 ? 2 : 3, Math.floor(gap / 22)));
     if (!n) return null;
     const taken = [];
     for (let k = 0; k < n; k++) {
-      const border = map.cells.filter(c => s.owner[c.i] === low && c.nb.some(j => s.owner[j] === top));
+      const border = map.cells.filter(c => s.owner[c.i] === low && c.i !== map.capitals[low] && c.nb.some(j => s.owner[j] === top));   // 首都不會被攻下
       if (!border.length) break;
       const capT = map.cells[map.capitals[top]];
       border.sort((a, b) => Math.hypot(a.x - capT.x, a.y - capT.y) - Math.hypot(b.x - capT.x, b.y - capT.y));
