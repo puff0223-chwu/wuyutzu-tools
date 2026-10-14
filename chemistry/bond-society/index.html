@@ -264,18 +264,7 @@
       <div class="opt-card cont" id="cont-card"><h3>📜 上次的存檔</h3><div id="cont-info" class="cont-info"></div><button class="btn" id="btn-cont" style="width:100%">繼續上次的戰局 ▶</button></div>
       <div class="opt-card">
         <h3>🎮 開始新的戰局</h3>
-        <div class="row-lbl">課程程度</div>
-        <div class="seg">
-          <label><input type="radio" name="lv" value="g10" checked><span><b>高一版</b><small>三大國</small></span></label>
-          <label><input type="radio" name="lv" value="g11"><span><b>高二高三版</b><small>加入氫鍵、凡得瓦力</small></span></label>
-        </div>
-        <div class="row-lbl">計時模式</div>
-        <div class="seg">
-          <label><input type="radio" name="tm" value="1" checked><span><b>⏱️ 開啟</b><small>回合倒數＋干擾快問</small></span></label>
-          <label><input type="radio" name="tm" value="0"><span><b>🐢 關閉</b><small>慢慢想，不計時</small></span></label>
-        </div>
-        <div class="row-lbl">地圖代碼 <small>（選填：輸入老師給的代碼，全班同一張地圖）</small></div>
-        <input class="code-in" id="in-code" maxlength="6" placeholder="留空＝隨機新大陸">
+        <div class="cont-info" id="play-set"></div>
         <button class="btn big" id="btn-new">開始新的戰局 ▶</button>
       </div>
       </div>
@@ -315,15 +304,15 @@
 <div class="ov hidden" id="ov"><div class="ovc" id="ovc"></div></div>
 <div class="toast" id="toast"></div>
 
-<script src="data.js?v=20261015b"></script>
-<script src="world.js?v=20261015b"></script>
-<script src="facts.js?v=20261015b"></script>
-<script src="bank.js?v=20261015b"></script>
-<script src="quiz.js?v=20261015b"></script>
-<script src="tasks.js?v=20261015b"></script>
-<script src="events.js?v=20261015b"></script>
-<script src="game.js?v=20261015b"></script>
-<script src="cloud.js?v=20261015b"></script>
+<script src="data.js?v=20261015c"></script>
+<script src="world.js?v=20261015c"></script>
+<script src="facts.js?v=20261015c"></script>
+<script src="bank.js?v=20261015c"></script>
+<script src="quiz.js?v=20261015c"></script>
+<script src="tasks.js?v=20261015c"></script>
+<script src="events.js?v=20261015c"></script>
+<script src="game.js?v=20261015c"></script>
+<script src="cloud.js?v=20261015c"></script>
 <script>
 const $ = id => document.getElementById(id);
 const F = WORLD.FACTIONS, C = CHEM, RU = WORLD.RULE;
@@ -509,13 +498,16 @@ function fixGame(g) {
   if (g.trade) { g.trade.n = g.trade.n || 0; }
   return g;
 }
+// 戰局設定由老師的入口連結決定（?lv=g10|g11&tm=1|0&code=地圖代碼），學生不能自己選（老師 2026-10-15 決定）
+const PLAY = (() => {
+  const q = new URLSearchParams(location.search), code = (q.get('code') || '').trim().toUpperCase();
+  return { level: q.get('lv') === 'g11' ? 'g11' : 'g10', timed: q.get('tm') !== '0', code: /^[0-9A-Z]{1,6}$/.test(code) ? code : '' };
+})();
+$('play-set').innerHTML = `老師的設定：<b style="color:#fff">${PLAY.level === 'g11' ? '高二高三版' : '高一版'}</b>・${PLAY.timed ? '⏱️ 計時模式' : '🐢 不計時'}・${PLAY.code ? `地圖 <b style="color:#fff">${PLAY.code}</b>（全班同一張）` : '每人隨機一張地圖'}`;
 $('btn-new').onclick = () => {
-  const code = $('in-code').value.trim();
-  if (code && !/^[0-9a-z]{1,6}$/i.test(code)) return toast('地圖代碼只能是英文字母和數字（最多 6 個）');
-  const level = document.querySelector('[name=lv]:checked').value;
-  S = WORLD.newGame({ level, code: code || undefined });
-  S.timed = document.querySelector('[name=tm]:checked').value === '1';
-  if (P) BSC.log(P.sid, 'start', { level, code: S.code, timed: S.timed });
+  S = WORLD.newGame({ level: PLAY.level, code: PLAY.code || undefined });
+  S.timed = PLAY.timed;
+  if (P) BSC.log(P.sid, 'start', { level: S.level, code: S.code, timed: S.timed });
   enterGame(true);
 };
 function enterGame(fresh) {
