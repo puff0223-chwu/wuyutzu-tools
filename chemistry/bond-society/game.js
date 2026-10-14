@@ -82,8 +82,8 @@ const GAME = (() => {
   // 完成委託：result = { ok, first, hinted }
   function resolve(s, c, result) {
     const kind = c.task.kind;
-    if (kind === 'set') c.task.qs.forEach((q, i) => practice(s, q.tag, (result.answers || [])[i] === q.ans));
-    else practice(s, tagsOf(c.task), result.ok);
+    if (kind === 'set') c.task.qs.forEach((q, i) => { const a = (result.answers || [])[i], ok = a === q.ans; practice(s, q.tag, ok); record(s, { src: 'set', tag: q.tag, id: q.id, q: q.q, pick: a, ans: q.ans, ok }); });
+    else { practice(s, tagsOf(c.task), result.ok); const k = taskKey(c.task); record(s, { src: 'task', tag: tagsOf(c.task), id: k.id, q: k.q, pick: (c.picks || []).join('、') || (result.ok ? '' : '放棄'), ans: k.ans, ok: result.ok && result.first }); }
     s.stats.tasks++; if (result.ok && result.first) s.stats.firstOk++;
     const bt = (s.stats.byType[kind] = s.stats.byType[kind] || { n: 0, first: 0, fail: 0 });
     bt.n++; if (result.ok && result.first) bt.first++; if (!result.ok) bt.fail++;
@@ -189,7 +189,29 @@ const GAME = (() => {
     if (t.kind === 'mine') return t.clues.some(c => ['prop', 'react', 'use'].includes(c.fam)) ? ['pos', 'prop'] : ['pos'];
     if (t.kind === 'detect') return t.mode === 'type' ? ['bond'] : ['detect'];
     if (t.kind === 'forge') { if (t.mode === 'f2name') return ['name']; const tg = ['formula', 'ion']; if (C.CAT[t.c].poly || C.AN[t.a].poly) tg.push('poly'); return tg; }
-    return [];
+    return { struct: ['struct', 'lewis'], eng: ['eng'], treaty: ['balance'], imf: ['imf'] }[t.kind] || [];
+  }
+  // 作答紀錄（給學生的本局分析、老師頁的錯題統計）：{ src 來源, tag 知識點, id 題目代號, q 題目文字, pick 學生的答案, ans 正確答案, ok }
+  const SUPD = { '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹', '+': '⁺', '-': '⁻', '−': '⁻' };
+  const strip = x => String(x ?? '').replace(/<sub>(\d+)<\/sub>/g, (m, d) => d.split('').map(c => '₀₁₂₃₄₅₆₇₈₉'[c]).join('')).replace(/<sup>([^<]*)<\/sup>/g, (m, d) => d.split('').map(c => SUPD[c] || c).join('')).replace(/<[^>]+>/g, '').slice(0, 80);
+  function record(s, r) {
+    s.ansLog = s.ansLog || [];
+    if (s.ansLog.length >= 250) return;
+    s.ansLog.push({ src: r.src, tag: [].concat(r.tag)[0] || '', id: String(r.id || '').slice(0, 90), q: strip(r.q), pick: strip(r.pick), ans: strip(r.ans), ok: !!r.ok, rd: s.round });
+  }
+  // 委託的題目代號與文字
+  function taskKey(t) {
+    const B = typeof BANK !== 'undefined' ? BANK : require('./bank.js'), FXX = typeof FACTS !== 'undefined' ? FACTS : require('./facts.js');
+    switch (t.kind) {
+      case 'mine': return { id: 'mine:' + t.answer, q: `尋礦：${t.clues.map(c => c.t).join('；')}`, ans: `${t.answer}（${C.EL[t.answer].zh}）` };
+      case 'forge': return { id: `forge:${t.mode}:${t.c}-${t.a}`, q: t.mode === 'f2name' ? `命名：${C.html(t.formula)}` : t.mode === 'name2f' ? `鑄造：${t.name}` : `鑄造：${C.CAT[t.c].f} 與 ${C.AN[t.a].f}`, ans: t.mode === 'f2name' ? t.name : C.html(t.formula) };
+      case 'detect': { const x = T.subst(t.answer); return { id: `detect:${t.mode}:${t.answer}`, q: t.mode === 'type' ? `鑑定鍵結類型：${x.zh}` : `鑑定樣本：${t.opts.map(id => C.html(T.subst(id).f)).join('／')}`, ans: t.mode === 'type' ? FXX.BOND[t.bond] : C.html(x.f) }; }
+      case 'struct': return { id: 'struct:' + t.f, q: `結構工坊：${t.f}`, ans: '標準路易斯結構' };
+      case 'eng': return { id: 'eng:' + t.ei, q: `工程應用：${t.need}`, ans: `${t.right}／${t.reason}` };
+      case 'treaty': return { id: 'treaty:' + t.qi, q: `條約配係數：${t.l.map(C.html).join(' + ')} → ${t.r.map(C.html).join(' + ')}`, ans: t.ans.join('、') };
+      case 'imf': return { id: 'imf:' + t.pair.slice().sort().join('|'), q: `沸點比較：${t.pair.join(' vs ')}`, ans: `${t.right}／${t.reason}` };
+      default: return { id: t.kind, q: t.kind, ans: '' };
+    }
   }
   /* ⚡ 干擾快問 */
   function quick(s) { const Q = typeof QUIZ !== 'undefined' ? QUIZ : require('./quiz.js'); return Q.make(Wd.rngFrom(s), s.level, s.prac); }
@@ -197,6 +219,7 @@ const GAME = (() => {
   function answerQuick(s, q, ans) {
     const ok = ans === q.ans, timeout = ans === null;
     practice(s, q.tag, ok); s.stats.quick = (s.stats.quick || 0) + 1;
+    record(s, { src: 'quick', tag: q.tag, id: q.id, q: q.q, pick: timeout ? '（沒作答）' : ans, ans: q.ans, ok });
     let applied = {};
     if (ok) { s.stats.quickOk = (s.stats.quickOk || 0) + 1; s.money += 5; }
     else if (timeout) { sus(s, -4, '干擾快問沒有作答'); const top = [...s.facs].sort((a, b) => Wd.rel(s, b) - Wd.rel(s, a))[0]; applied = Wd.apply(s, { [top]: 2 }); }
@@ -297,6 +320,7 @@ const GAME = (() => {
   function solvePuzzle(s, ev, res) {
     let applied = {};
     practice(s, PUZ_TAG(ev), res.ok);
+    record(s, { src: 'event', tag: PUZ_TAG(ev), id: 'ev:' + ev.id, q: `${ev.title}：${ev.data.title || ev.data.f || (ev.data.l ? ev.data.l.join(' + ') + ' → ' + ev.data.r.join(' + ') : '')}`, pick: res.pickText || '', ans: '', ok: res.ok });
     s.stats.evChem = (s.stats.evChem || 0) + 1;
     if (res.ok) { s.stats.evChemOk = (s.stats.evChemOk || 0) + 1; s.money += 12; applied = Wd.apply(s, { [ev.who]: 4 }); befriend(s, ev.who, 5); }
     else if (res.near) s.money += 5;
@@ -319,6 +343,7 @@ const GAME = (() => {
     const gifts = [];
     if (ch.gift) { const rnd = Wd.rngFrom(s); for (let i = 0; i < ch.gift; i++) { const e = C.ELEMENTS.filter(x => x.type !== 'g')[Math.floor(rnd() * 32)]; s.inv[e.sym] = (s.inv[e.sym] || 0) + 1; gifts.push(e.sym); } }
     if (ev.chem) { s.stats.evChem = (s.stats.evChem || 0) + 1; if (ch.ok) s.stats.evChemOk = (s.stats.evChemOk || 0) + 1; }
+    if (ev.chem) { const right = ev.choices.find(x => x.ok); record(s, { src: 'event', tag: 'concept', id: 'ev:' + ev.id, q: `${ev.title}：${ev.text}`, pick: ch.t, ans: right ? right.t : '', ok: !!ch.ok }); practice(s, 'concept', !!ch.ok); }
     s.lastEvent = { id: ev.id, k };
     return { ok: true, applied, gifts, fail: Wd.checkFail(s) };
   }
@@ -326,6 +351,6 @@ const GAME = (() => {
     if (s.round >= Wd.RULE.ROUNDS) { s.ended = Wd.finalEnding(s); s.step = 'end'; return false; }
     s.round++; s.step = 'report'; return true;
   }
-  return { ST, cover, coverCost, sus, ROUND_SEC, QUICK_EVERY, QUICK_SEC, FAST, tagsOf, PRICE, SUBSIDY, TRADE_MAX, TIERS, tier, idx, sellPrice, rushPrice, rush, canTrade, subsidyCost, startRound, buyPrice, missing, buy, resolve, skip, subsidy, rumor, intel, forecast, sell, buyers, settle, pickEvent, evById, chooseEvent, resolveTarget, nextRound, timeUp, practice, quick, answerQuick, CALM, runTest, checkDetect, makePuzzle, checkPuzzle, solvePuzzle };
+  return { record, taskKey, ST, cover, coverCost, sus, ROUND_SEC, QUICK_EVERY, QUICK_SEC, FAST, tagsOf, PRICE, SUBSIDY, TRADE_MAX, TIERS, tier, idx, sellPrice, rushPrice, rush, canTrade, subsidyCost, startRound, buyPrice, missing, buy, resolve, skip, subsidy, rumor, intel, forecast, sell, buyers, settle, pickEvent, evById, chooseEvent, resolveTarget, nextRound, timeUp, practice, quick, answerQuick, CALM, runTest, checkDetect, makePuzzle, checkPuzzle, solvePuzzle };
 })();
 if (typeof module !== 'undefined') module.exports = GAME;

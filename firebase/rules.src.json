@@ -148,6 +148,44 @@
     }
    }
   },
+  "bond-society": {
+   "players": {
+    ".read": true,
+    "$sid": {
+     ".write": "$sid.length <= 40",
+     ".validate": "newData.hasChildren(['sid','cls','seat','name','term','updatedAt']) && newData.child('sid').val() == $sid && newData.child('name').isString() && newData.child('name').val().length <= 12 && newData.child('cls').isString() && newData.child('cls').val().length <= 10 && newData.child('updatedAt').isNumber()"
+    }
+   },
+   "saves": {
+    ".read": true,
+    "$sid": {
+     ".write": "$sid.length <= 40",
+     ".validate": "newData.hasChildren(['v','updatedAt','level']) && newData.child('updatedAt').isNumber()"
+    }
+   },
+   "logs": {
+    ".read": true,
+    "$sid": {
+     ".write": "$sid.length <= 40 && !newData.exists()",
+     "$k": {
+      ".write": "$sid.length <= 40",
+      ".validate": "newData.hasChildren(['t','type']) && newData.child('t').isNumber() && newData.child('type').isString() && newData.child('type').val().length <= 12"
+     }
+    }
+   },
+   "config": {
+    ".read": true,
+    ".write": "newData.exists()",
+    ".validate": "newData.hasChildren(['current','terms']) && newData.child('current').isString() && newData.child('current').val().length <= 6"
+   },
+   "deleted": {
+    ".read": true,
+    "$sid": {
+     ".write": "$sid.length <= 40",
+     ".validate": "newData.isNumber()"
+    }
+   }
+  },
   "seating": {
    "owners": {
     "$uid": {

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>隱秘的鍵結社：老師頁</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Noto+Serif+TC:wght@900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  /* 老師頁（2026-10-15 第二階段）：學期設定、學生成績、知識點熱點圖、常錯題目、Excel、清除測試資料 */
+  :root { --ink: #2a2238; --gold: #f3c64b; --paper: #f6eedb; --line: #e2d6b8; --soft: #7a6f8f; --red: #c0392b; --green: #2f9e5a; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans TC', sans-serif; background: #f3efe6; color: var(--ink); }
+  .hidden { display: none !important; }
+  header { background: #15121d; color: #fff; padding: 12px 20px; }
+  header h1 { font-family: 'Noto Serif TC', serif; font-size: 1.3em; } header h1 span { color: var(--gold); }
+  main { max-width: 1240px; margin: 0 auto; padding: 14px; display: grid; gap: 12px; }
+  .box { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+  .box h2 { font-size: 1.08em; margin-bottom: 6px; }
+  .top { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } @media (max-width: 800px) { .top { grid-template-columns: 1fr; } }
+  .link { display: flex; gap: 14px; align-items: center; }
+  #qr { width: 92px; height: 92px; flex: none; } #qr img, #qr canvas { width: 100% !important; height: 100% !important; }
+  .url { font-family: monospace; font-size: .8em; word-break: break-all; color: #555; margin: 4px 0 6px; }
+  .btn { border: none; border-radius: 8px; padding: 7px 12px; font: inherit; font-size: .92em; font-weight: 700; background: var(--gold); color: var(--ink); cursor: pointer; }
+  .btn.dark { background: var(--ink); color: #fff; } .btn.ghost { background: #fff; border: 1px solid var(--line); } .btn.red { background: var(--red); color: #fff; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  select, input.in { padding: 6px 9px; border-radius: 8px; border: 1px solid var(--line); font: inherit; font-size: .92em; background: #fff; }
+  .hint { color: var(--soft); font-size: .84em; }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
+  .tabs button { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 6px 14px; font: inherit; font-weight: 700; cursor: pointer; }
+  .tabs button.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .strip { display: flex; flex-wrap: wrap; gap: 6px 18px; background: var(--paper); border-radius: 10px; padding: 8px 14px; margin: 8px 0; font-size: .92em; } .strip b { font-size: 1.15em; }
+  .tw { max-height: 560px; overflow: auto; border: 1px solid #eee5cf; border-radius: 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: .88em; }
+  th, td { padding: 6px 8px; border-bottom: 1px solid #f1ead8; text-align: center; white-space: nowrap; }
+  th { background: var(--paper); position: sticky; top: 0; z-index: 1; font-size: .92em; cursor: pointer; }
+  td.l { text-align: left; white-space: normal; min-width: 200px; } tr.click { cursor: pointer; } tr.click:hover td { background: #fffaf0; }
+  .heat td.c { min-width: 52px; font-size: .82em; } .heat th.v { white-space: normal; width: 60px; min-width: 52px; font-size: .78em; line-height: 1.25; cursor: default; vertical-align: bottom; }
+  .heat td.n { text-align: left; position: sticky; left: 0; background: #fff; z-index: 1; } .heat tr.avg td { font-weight: 900; border-bottom: 2px solid var(--ink); }
+  .legend span { display: inline-block; padding: 1px 8px; border-radius: 4px; margin-right: 4px; font-size: .82em; }
+  .selbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; background: #fde3df; border: 1px solid #f3b8ad; border-radius: 10px; padding: 8px 12px; margin-bottom: 8px; }
+  tr.picked td { background: #fff1ee !important; }
+  .modal { position: fixed; inset: 0; background: #0009; display: flex; align-items: center; justify-content: center; padding: 14px; z-index: 50; }
+  .mcard { background: #fff; border-radius: 16px; width: min(900px, 100%); max-height: 92vh; overflow: auto; padding: 18px; }
+  .mcard h3 { margin: 12px 0 6px; }
+  .bars { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 6px; }
+  .bars div { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font-size: .86em; } .bars i { display: block; height: 6px; border-radius: 3px; background: var(--green); margin-top: 3px; }
+  .picks { font-size: .82em; color: #6b5a3a; }
+</style>
+</head>
+<body>
+<header><h1>🕯️ 隱秘的鍵結社：<span>老師頁</span></h1></header>
+<main>
+  <div class="top">
+    <div class="box">
+      <h2>📱 學生入口</h2>
+      <div class="link"><div id="qr"></div><div><div class="url" id="url"></div><div class="row"><button class="btn ghost" id="copy">📋 複製連結</button><button class="btn ghost" id="big-qr">🔳 投影 QR</button><a class="btn ghost" id="open" target="_blank" style="text-decoration:none">↗ 開啟</a></div></div></div>
+    </div>
+    <div class="box">
+      <h2>📅 學期設定</h2>
+      <p class="hint">學生登入時會自動用「目前學期」。換學期時新增一個，學生資料會分開存。</p>
+      <div class="row" style="margin-top:8px"><span>目前學期：</span><select id="term-cur"></select><input class="in" id="term-new" placeholder="例：115-2" style="width:110px"><button class="btn ghost" id="term-add">＋ 新增</button><button class="btn ghost" id="term-del">移出清單</button></div>
+      <div class="hint" id="term-msg" style="margin-top:6px"></div>
+    </div>
+  </div>
+  <div class="box">
+    <div class="row" style="justify-content:space-between">
+      <div class="row"><select id="f-term"></select><select id="f-cls"><option value="">全部班級</option></select><select id="f-pur"><option value="">全部用途</option></select><input class="in" id="f-q" placeholder="搜尋姓名、學號、座號"><button class="btn ghost" id="reload">🔄 重新整理</button></div>
+      <div class="row"><button class="btn dark" id="xlsx">📥 Excel</button><button class="btn ghost" id="sel-mode">🧹 清除資料</button></div>
+    </div>
+    <div class="strip" id="strip"></div>
+    <div class="tabs" id="tabs"><button data-v="stu" class="on">👩‍🎓 學生成績</button><button data-v="heat">🧠 知識點熱點圖</button><button data-v="wrong">❌ 常錯題目</button></div>
+    <div id="selbar" class="selbar hidden"><b>🧹 清除模式</b><span class="hint">勾選要刪除的學生（例如測試帳號），刪除後無法復原。</span><button class="btn ghost" id="sel-all">全選這頁</button><button class="btn red" id="sel-del">刪除勾選的 <span id="sel-n">0</span> 位</button><button class="btn ghost" id="sel-x">取消</button></div>
+    <div id="view"></div>
+  </div>
+</main>
+<div class="modal hidden" id="modal"><div class="mcard" id="mcard"></div></div>
+
+<script src="data.js?v=20261015b"></script>
+<script src="facts.js?v=20261015b"></script>
+<script src="bank.js?v=20261015b"></script>
+<script src="quiz.js?v=20261015b"></script>
+<script src="cloud.js?v=20261015b"></script>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pct = (a, b) => (b ? Math.round(a / b * 100) : null);
+const TAGS = QUIZ.LEVEL_TAGS.g11, TZ = QUIZ.TAGS;
+const END_ZH = { harmony: '大和解', peace: '均勢和平', shaky: '危險的平衡', unify: '天下一統', destroy: '一國滅亡', exposed: '組織曝光' };
+const fmtD = t => t ? new Date(t).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+let ALL = [], CFG = null, VIEW = 'stu', SORT = { k: 'cls', d: 1 }, SEL = null, TAGF = '';
+
+/* 學生入口 */
+const stuUrl = location.href.replace(/teacher\.html.*$/, 'index.html');
+$('url').textContent = stuUrl; $('open').href = stuUrl;
+try { new QRCode($('qr'), { text: stuUrl, width: 184, height: 184 }); } catch (e) {}
+$('copy').onclick = () => navigator.clipboard.writeText(stuUrl).then(() => alert('已複製學生連結'));
+$('big-qr').onclick = () => { const m = modal(`<h2>掃描進入「隱秘的鍵結社」</h2><div id="qr2" style="width:min(70vh,90%);margin:12px auto"></div><div style="text-align:center"><button class="btn" id="cl">關閉</button></div>`); try { new QRCode(m.querySelector('#qr2'), { text: stuUrl, width: 600, height: 600 }); m.querySelectorAll('#qr2 img,#qr2 canvas').forEach(x => { x.style.width = '100%'; x.style.height = 'auto'; }); } catch (e) {} m.querySelector('#cl').onclick = closeModal; };
+function modal(h) { $('mcard').innerHTML = h; $('modal').classList.remove('hidden'); $('mcard').scrollTop = 0; return $('mcard'); }
+function closeModal() { $('modal').classList.add('hidden'); }
+$('modal').onclick = e => { if (e.target.id === 'modal') closeModal(); };
+
+/* 學期設定 */
+function drawTerms() {
+  $('term-cur').innerHTML = CFG.terms.map(t => `<option ${t === CFG.current ? 'selected' : ''}>${t}</option>`).join('');
+  const ts = [...new Set([...CFG.terms, ...ALL.map(p => p.term)])].sort().reverse();
+  const keep = $('f-term').value || CFG.current;
+  $('f-term').innerHTML = `<option value="*">全部學期</option>` + ts.map(t => `<option ${t === keep ? 'selected' : ''}>${t}</option>`).join('');
+  $('term-msg').textContent = CFG.fallback ? '（還沒設定過，現在用日期推算的學期）' : '';
+}
+async function saveTerms(msg) { try { await BSC.saveConfig(CFG); CFG.fallback = false; drawTerms(); $('term-msg').textContent = msg; } catch (e) { alert('儲存失敗：' + e.message); } }
+$('term-cur').onchange = () => { CFG.current = $('term-cur').value; saveTerms(`已切換：學生現在登入會進入 ${CFG.current}`); };
+$('term-add').onclick = () => { const t = $('term-new').value.trim(); if (!BSC.validTerm(t)) return alert('學期格式：學年-1 或 學年-2，例如 115-2'); if (!CFG.terms.includes(t)) CFG.terms.push(t); CFG.terms.sort(); CFG.current = t; $('term-new').value = ''; saveTerms(`已新增並切換到 ${t}`); };
+$('term-del').onclick = () => { const t = $('term-cur').value; if (CFG.terms.length <= 1) return alert('至少要留一個學期'); if (!confirm(`把 ${t} 移出清單？（學生資料不會被刪除）`)) return; CFG.terms = CFG.terms.filter(x => x !== t); if (CFG.current === t) CFG.current = CFG.terms[CFG.terms.length - 1]; saveTerms(`已移出 ${t}`); };
+
+/* 讀資料 */
+async function loadAll() {
+  $('view').innerHTML = '<p class="hint">讀取中……</p>';
+  [CFG, ALL] = await Promise.all([BSC.loadConfig(), BSC.loadPlayers().then(o => Object.values(o || {}).filter(p => p && p.sid)).catch(() => [])]);
+  ALL.forEach(p => { p.best = p.best || {}; p.prac = p.prac || {}; p.qs = p.qs || {}; p.tot = p.tot || {}; p.hist = Array.isArray(p.hist) ? p.hist : Object.values(p.hist || {}); });
+  drawTerms();
+  const cls = [...new Set(ALL.map(p => p.cls))].sort();
+  const keep = $('f-cls').value;
+  $('f-cls').innerHTML = '<option value="">全部班級</option>' + cls.map(c => `<option ${c === keep ? 'selected' : ''}>${esc(c)}</option>`).join('');
+  $('f-pur').innerHTML = '<option value="">全部用途</option>' + BSC.CONFIG.PURPOSES.map(x => `<option>${x}</option>`).join('');
+  render();
+}
+['f-term', 'f-cls', 'f-pur'].forEach(id => $(id).onchange = render); $('f-q').oninput = render; $('reload').onclick = loadAll;
+$('tabs').onclick = e => { const b = e.target.closest('button'); if (!b) return; VIEW = b.dataset.v; [...$('tabs').children].forEach(x => x.classList.toggle('on', x === b)); render(); };
+function list() {
+  const t = $('f-term').value, c = $('f-cls').value, pu = $('f-pur').value, q = $('f-q').value.trim();
+  return ALL.filter(p => (t === '*' || p.term === t) && (!c || p.cls === c) && (!pu || p.purpose === pu) && (!q || [p.name, p.stuNo, String(p.seat)].some(x => String(x || '').includes(q))));
+}
+// 每位學生的數字
+function row(p) {
+  const T = p.tot, done = TAGS.filter(t => (p.prac[t] || {}).ok > 0).length, last = p.hist[0];
+  return { p, cls: p.cls, seat: +p.seat, name: p.name, stuNo: p.stuNo, purpose: p.purpose, games: p.games || 0,
+    b10: p.best.g10 ? p.best.g10.score : null, b11: p.best.g11 ? p.best.g11.score : null, first: pct(T.firstOk || 0, T.tasks || 0), quick: pct(T.quickOk || 0, T.quick || 0),
+    prac: done, ok8: p.hist.filter(h => ['peace', 'harmony', 'shaky'].includes(h.end)).length, last: (last && last.at) || p.updatedAt };
+}
+const COLS = [['cls', '班級'], ['seat', '座號'], ['name', '姓名'], ['stuNo', '學號'], ['purpose', '用途'], ['games', '完成局數'], ['ok8', '撐過 8 回合'], ['b10', '高一版最佳'], ['b11', '高二高三版最佳'], ['first', '委託一次答對%'], ['quick', '快問答對%'], ['prac', '練成知識點'], ['last', '最近遊玩']];
+function render() {
+  const L = list(), R = L.map(row);
+  const g = R.reduce((a, r) => a + r.games, 0), act = R.filter(r => r.games).length;
+  const avg = k => { const v = R.map(r => r[k]).filter(x => x != null); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : '—'; };
+  $('strip').innerHTML = `<span>學生 <b>${R.length}</b> 人</span><span>完成過一局 <b>${act}</b> 人</span><span>總局數 <b>${g}</b></span><span>平均高一版最佳 <b>${avg('b10')}</b></span><span>委託一次答對 <b>${avg('first')}%</b></span><span>快問答對 <b>${avg('quick')}%</b></span><span>平均練成知識點 <b>${avg('prac')}</b>／${TAGS.length}</span>`;
+  if (VIEW === 'stu') return drawStu(R);
+  if (VIEW === 'heat') return drawHeat(L);
+  return drawWrong(L);
+}
+function drawStu(R) {
+  R.sort((a, b) => { const x = a[SORT.k], y = b[SORT.k]; if (x == null && y == null) return a.seat - b.seat; if (x == null) return 1; if (y == null) return -1; return (x > y ? 1 : x < y ? -1 : a.seat - b.seat) * SORT.d; });
+  $('view').innerHTML = `<div class="tw"><table><tr>${SEL ? '<th>勾選</th>' : ''}${COLS.map(([k, v]) => `<th data-k="${k}">${v}${SORT.k === k ? (SORT.d > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('')}</tr>
+    ${R.map(r => `<tr class="click ${SEL && SEL.has(r.p.sid) ? 'picked' : ''}" data-sid="${esc(r.p.sid)}">${SEL ? `<td><input type="checkbox" ${SEL.has(r.p.sid) ? 'checked' : ''}></td>` : ''}${COLS.map(([k]) => `<td>${k === 'last' ? fmtD(r[k]) : r[k] == null ? '—' : esc(r[k])}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${COLS.length}">沒有符合的學生</td></tr>`}</table></div>
+    <p class="hint" style="margin-top:6px">點標題排序；點學生看個人紀錄。</p>`;
+  $('view').querySelectorAll('th[data-k]').forEach(th => th.onclick = () => { const k = th.dataset.k; SORT = { k, d: SORT.k === k ? -SORT.d : 1 }; render(); });
+  $('view').querySelectorAll('tr[data-sid]').forEach(tr => tr.onclick = () => { const sid = tr.dataset.sid; if (SEL) { SEL.has(sid) ? SEL.delete(sid) : SEL.add(sid); $('sel-n').textContent = SEL.size; return render(); } student(ALL.find(p => p.sid === sid)); });
+}
+// 熱點圖：一列一位學生、一欄一個知識點；顏色＝累積答對率
+const heatColor = r => r == null ? '#f4f1ea' : r >= 80 ? '#7fd19b' : r >= 60 ? '#c9ec9f' : r >= 40 ? '#ffe08a' : '#f6a28f';
+function drawHeat(L) {
+  const sum = {}; TAGS.forEach(t => { sum[t] = { n: 0, ok: 0, who: 0 }; });
+  L.forEach(p => TAGS.forEach(t => { const x = p.prac[t]; if (x && x.n) { sum[t].n += x.n; sum[t].ok += x.ok; sum[t].who++; } }));
+  const weak = TAGS.filter(t => sum[t].n >= 5).sort((a, b) => sum[a].ok / sum[a].n - sum[b].ok / sum[b].n).slice(0, 3);
+  $('view').innerHTML = `<p class="legend" style="margin:4px 0"><span style="background:#7fd19b">≥80%</span><span style="background:#c9ec9f">60～79%</span><span style="background:#ffe08a">40～59%</span><span style="background:#f6a28f">&lt;40%</span><span style="background:#f4f1ea">還沒練過</span>
+    ${weak.length ? `　全班最弱：<b style="color:var(--red)">${weak.map(t => `${TZ[t]}（${pct(sum[t].ok, sum[t].n)}%）`).join('、')}</b>` : ''}</p>
+    <div class="tw"><table class="heat"><tr><th>學生</th>${TAGS.map(t => `<th class="v">${TZ[t]}</th>`).join('')}</tr>
+    <tr class="avg"><td class="n">全班平均</td>${TAGS.map(t => { const r = pct(sum[t].ok, sum[t].n); return `<td class="c" style="background:${heatColor(r)}" title="${sum[t].who} 人練過，共 ${sum[t].n} 題">${r == null ? '' : r + '%'}</td>`; }).join('')}</tr>
+    ${L.sort((a, b) => String(a.cls).localeCompare(b.cls) || a.seat - b.seat).map(p => `<tr class="click" data-sid="${esc(p.sid)}"><td class="n">${esc(p.cls)}-${p.seat} ${esc(p.name)}</td>${TAGS.map(t => { const x = p.prac[t], r = x && x.n ? pct(x.ok, x.n) : null; return `<td class="c" style="background:${heatColor(r)}" title="${x ? `答對 ${x.ok}／${x.n}` : '還沒練過'}">${r == null ? '' : r}</td>`; }).join('')}</tr>`).join('')}</table></div>`;
+  $('view').querySelectorAll('tr[data-sid]').forEach(tr => tr.onclick = () => student(ALL.find(p => p.sid === tr.dataset.sid)));
+}
+// 常錯題目：彙整所有學生的錯題統計
+function wrongAgg(L) {
+  const m = {};
+  L.forEach(p => Object.values(p.qs).forEach(x => { const k = x.id || x.q, a = m[k] || (m[k] = { q: x.q, a: x.a, tag: x.tag, n: 0, w: 0, who: 0, p: {} }); a.n += x.n || 0; a.w += x.w || 0; if (x.w) a.who++; Object.entries(x.p || {}).forEach(([pk, c]) => { a.p[pk] = (a.p[pk] || 0) + c; }); }));
+  return Object.values(m).filter(x => x.w > 0);
+}
+function drawWrong(L) {
+  const A = wrongAgg(L).filter(x => !TAGF || x.tag === TAGF).sort((a, b) => b.who - a.who || b.w - a.w).slice(0, 60);
+  $('view').innerHTML = `<div class="row" style="margin:4px 0 8px"><span>知識點：</span><select id="tagf"><option value="">全部</option>${TAGS.map(t => `<option value="${t}" ${TAGF === t ? 'selected' : ''}>${TZ[t]}</option>`).join('')}</select><span class="hint">依「答錯的人數」排序；錯誤答案可以看出常見迷思</span></div>
+    <div class="tw"><table><tr><th>#</th><th>知識點</th><th>題目</th><th>正確答案</th><th>答錯人數</th><th>答錯／作答</th><th>學生常選的錯誤答案</th></tr>
+    ${A.map((x, i) => `<tr><td>${i + 1}</td><td>${TZ[x.tag] || x.tag || ''}</td><td class="l">${esc(x.q)}</td><td class="l">${esc(x.a)}</td><td>${x.who}</td><td>${x.w}／${x.n}（${pct(x.w, x.n)}%）</td><td class="l picks">${Object.entries(x.p).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, c]) => `${esc(k)} ×${c}`).join('<br>')}</td></tr>`).join('') || '<tr><td colspan="7">目前沒有答錯的紀錄</td></tr>'}</table></div>`;
+  $('tagf').onchange = () => { TAGF = $('tagf').value; render(); };
+}
+
+/* 個人紀錄 */
+const LOGZH = { login: '🔑 登入', start: '▶ 開始新的一局', end: '🏁 一局結束' };
+async function student(p) {
+  const T = p.tot, tags = TAGS;
+  const m = modal(`<div class="row" style="justify-content:space-between"><h2>${esc(p.cls)} 班 ${p.seat} 號 ${esc(p.name)}</h2><button class="btn ghost" id="cl">關閉</button></div>
+    <p class="hint">${p.term}・學號 ${esc(p.stuNo)}・${esc(p.purpose)}・完成 ${p.games || 0} 局・委託一次答對 ${pct(T.firstOk || 0, T.tasks || 0) ?? '—'}%・快問答對 ${pct(T.quickOk || 0, T.quick || 0) ?? '—'}%</p>
+    <h3>🏅 每局成績（最近 30 局）</h3>
+    <div class="tw" style="max-height:240px"><table><tr><th>時間</th><th>版本</th><th>計時</th><th>地圖</th><th>結局</th><th>回合</th><th>總分</th><th>一次答對</th><th>知識點</th></tr>${p.hist.map(h => `<tr><td>${fmtD(h.at)}</td><td>${h.level === 'g11' ? '高二高三' : '高一'}</td><td>${h.timed ? '⏱️' : ''}</td><td>${esc(h.code)}</td><td>${END_ZH[h.end] || h.end}</td><td>${h.rounds}</td><td><b>${h.score}</b></td><td>${h.rate}%</td><td>${h.prac}</td></tr>`).join('') || '<tr><td colspan="9">還沒完成任何一局</td></tr>'}</table></div>
+    <h3>🧠 知識點（累積）</h3><div class="bars">${tags.map(t => { const x = p.prac[t], r = x && x.n ? pct(x.ok, x.n) : null; return `<div>${TZ[t]}<br><small>${x ? `答對 ${x.ok}／${x.n}（${r}%）` : '還沒練過'}</small><i style="width:${r || 0}%;background:${heatColor(r)}"></i></div>`; }).join('')}</div>
+    <h3>❌ 最常答錯</h3><div class="tw" style="max-height:240px"><table><tr><th>題目</th><th>正確答案</th><th>錯／答</th><th>他選的</th></tr>${Object.values(p.qs).filter(x => x.w).sort((a, b) => b.w - a.w).slice(0, 20).map(x => `<tr><td class="l">${esc(x.q)}</td><td class="l">${esc(x.a)}</td><td>${x.w}／${x.n}</td><td class="l picks">${Object.keys(x.p || {}).slice(0, 3).map(esc).join('<br>')}</td></tr>`).join('') || '<tr><td colspan="4">沒有</td></tr>'}</table></div>
+    <h3>📜 遊戲歷程</h3><div id="logs" class="hint">讀取中……</div>`);
+  m.querySelector('#cl').onclick = closeModal;
+  try {
+    const L = await BSC.loadLogs(p.sid);
+    m.querySelector('#logs').outerHTML = `<div class="tw" style="max-height:260px"><table><tr><th>時間</th><th>事件</th><th>內容</th></tr>${L.slice().reverse().map(e => `<tr><td>${fmtD(e.t)}</td><td>${LOGZH[e.type] || e.type}</td><td class="l">${e.type === 'end' ? `${e.level === 'g11' ? '高二高三' : '高一'}・${END_ZH[e.end] || ''}・${e.score} 分・答錯 ${(e.wrong || []).length} 題` : e.type === 'start' ? `${e.level === 'g11' ? '高二高三' : '高一'}・地圖 ${esc(e.code)}${e.timed ? '・計時' : ''}` : esc(e.purpose || '')}</td></tr>`).join('')}</table></div>`;
+  } catch (e) { m.querySelector('#logs').textContent = '讀取失敗'; }
+}
+
+/* Excel */
+$('xlsx').onclick = () => {
+  const L = list(), wb = XLSX.utils.book_new();
+  const rows1 = L.map(row).map(r => { const o = {}; COLS.forEach(([k, v]) => { o[v] = k === 'last' ? fmtD(r[k]) : r[k] ?? ''; }); o['學期'] = r.p.term; return o; });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows1), '學生成績');
+  const rows2 = L.map(p => { const o = { 學期: p.term, 班級: p.cls, 座號: p.seat, 姓名: p.name }; TAGS.forEach(t => { const x = p.prac[t]; o[TZ[t]] = x && x.n ? `${pct(x.ok, x.n)}%（${x.ok}/${x.n}）` : ''; }); return o; });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows2), '知識點答對率');
+  const rows3 = wrongAgg(L).sort((a, b) => b.who - a.who || b.w - a.w).map(x => ({ 知識點: TZ[x.tag] || x.tag, 題目: x.q, 正確答案: x.a, 答錯人數: x.who, 答錯次數: x.w, 作答次數: x.n, 錯誤率: `${pct(x.w, x.n)}%`, 常見錯誤答案: Object.entries(x.p).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, c]) => `${k}×${c}`).join('；') }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows3.length ? rows3 : [{ 說明: '目前沒有答錯紀錄' }]), '常錯題目');
+  const rows4 = []; L.forEach(p => p.hist.forEach(h => rows4.push({ 學期: p.term, 班級: p.cls, 座號: p.seat, 姓名: p.name, 時間: fmtD(h.at), 版本: h.level === 'g11' ? '高二高三' : '高一', 計時: h.timed ? '是' : '否', 地圖: h.code, 結局: END_ZH[h.end] || h.end, 回合: h.rounds, 總分: h.score, 一次答對率: h.rate + '%', 練成知識點: h.prac })));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows4.length ? rows4 : [{ 說明: '目前沒有紀錄' }]), '每局紀錄');
+  XLSX.writeFile(wb, `隱秘的鍵結社_${$('f-term').value === '*' ? '全部學期' : $('f-term').value}${$('f-cls').value ? '_' + $('f-cls').value : ''}.xlsx`);
+};
+
+/* 清除測試資料 */
+$('sel-mode').onclick = () => { SEL = new Set(); VIEW = 'stu'; [...$('tabs').children].forEach(x => x.classList.toggle('on', x.dataset.v === 'stu')); $('selbar').classList.remove('hidden'); $('sel-n').textContent = 0; render(); };
+$('sel-x').onclick = () => { SEL = null; $('selbar').classList.add('hidden'); render(); };
+$('sel-all').onclick = () => { list().forEach(p => SEL.add(p.sid)); $('sel-n').textContent = SEL.size; render(); };
+$('sel-del').onclick = async () => {
+  if (!SEL.size) return; const names = ALL.filter(p => SEL.has(p.sid)).map(p => `${p.cls}-${p.seat} ${p.name}`);
+  if (!confirm(`確定刪除這 ${SEL.size} 位學生的所有紀錄？\n${names.slice(0, 15).join('\n')}${names.length > 15 ? '\n……' : ''}\n\n刪除後無法復原。`)) return;
+  for (const sid of SEL) { try { await BSC.removePlayer(sid); } catch (e) { alert('刪除失敗：' + sid); } }
+  SEL = null; $('selbar').classList.add('hidden'); loadAll();
+};
+loadAll();
+</script>
+</body>
+</html>

@@ -7,10 +7,11 @@
 const QUIZ = (() => {
   const C = typeof CHEM !== 'undefined' ? CHEM : require('./data.js');
   const FX = typeof FACTS !== 'undefined' ? FACTS : require('./facts.js');
+  const BK = typeof BANK !== 'undefined' ? BANK : require('./bank.js');
 
   // 知識點圖鑑：tag → 名稱
   const TAGS = {
-    pos: '週期表位置', val: '價電子', ion: '離子電荷', poly: '多原子離子', formula: '離子化合物化學式', name: '化合物命名',
+    concept: '化學鍵觀念', app: '物質的應用與檢驗', struct: '結構工坊', eng: '工程應用', pos: '週期表位置', val: '價電子', ion: '離子電荷', poly: '多原子離子', formula: '離子化合物化學式', name: '化合物命名',
     prop: '元素的性質與用途', bond: '鍵結類型判斷', detect: '物質鑑定', mp: '熔沸點比較', trend: '週期趨勢', balance: '反應式平衡', lewis: '路易斯結構', imf: '分子間作用力'
   };
   const qtxt = q => `${Math.abs(q) > 1 ? Math.abs(q) : ''}${q > 0 ? '+' : '−'}`;
@@ -24,6 +25,7 @@ const QUIZ = (() => {
   const shuf = (rnd, a) => a.map(v => [rnd(), v]).sort((x, y) => x[0] - y[0]).map(p => p[1]);
   const mainEls = C.ELEMENTS.filter(e => !e.trans);
 
+  const BYTAG = {};
   const GEN = {
     pos: rnd => { const e = pick(rnd, mainEls.filter(x => x.z > 2)); const r = `第 ${e.period} 週期、第 ${e.group} 族`;
       return mk(rnd, 'pos', `<b>${e.sym}（${e.zh}）</b>在週期表的哪個位置？`, r, shuf(rnd, [`第 ${e.period + (e.period < 4 ? 1 : -1)} 週期、第 ${e.group} 族`, `第 ${e.period} 週期、第 ${e.group === 1 ? 2 : e.group - 1} 族`, `第 ${e.group % 10 || 1} 週期、第 ${e.period} 族`, `第 ${e.period + (e.period > 1 ? -1 : 2)} 週期、第 ${e.group === 18 ? 17 : e.group + 1} 族`])); },
@@ -63,14 +65,24 @@ const QUIZ = (() => {
     imf: rnd => { const it = pick(rnd, FX.CLASSIFY.imf.items); const yes = it[1][0] === 'hb';
       return mk(rnd, 'imf', `<b>${it[0]}</b> 的分子之間有沒有氫鍵？`, yes ? '有氫鍵' : '沒有，只有凡得瓦力', [yes ? '沒有，只有凡得瓦力' : '有氫鍵', '分子之間是共價鍵', '分子之間是離子鍵']); }
   };
-  const LEVEL_TAGS = { g10: ['pos', 'val', 'ion', 'poly', 'formula', 'name', 'prop', 'bond', 'detect', 'mp', 'trend', 'lewis'], g11: Object.keys(GEN) };
+  // 觀念題庫（手寫）：每題有固定 id（c0、c1……），老師頁用它統計
+  BK.CONCEPT.forEach(([tag, q, right, wrongs, ex], i) => { (BYTAG[tag] = BYTAG[tag] || []).push(i); });
+  function fromBank(rnd, i) { const [tag, q, right, wrongs, ex] = BK.CONCEPT[i]; return { ...mk(rnd, tag, q, right, wrongs), id: 'c' + i, ex }; }
+  GEN.concept = rnd => fromBank(rnd, pick(rnd, BYTAG.concept));
+  GEN.app = rnd => fromBank(rnd, pick(rnd, BYTAG.app));
+  const LEVEL_TAGS = { g10: ['concept', 'app', 'pos', 'val', 'ion', 'poly', 'formula', 'name', 'prop', 'bond', 'detect', 'mp', 'trend', 'lewis', 'balance', 'struct', 'eng', 'imf'], g11: ['concept', 'app', 'pos', 'val', 'ion', 'poly', 'formula', 'name', 'prop', 'bond', 'detect', 'mp', 'trend', 'lewis', 'balance', 'struct', 'eng', 'imf'] };
+  const QUIZ_TAGS = { g10: LEVEL_TAGS.g10.filter(t => GEN[t]), g11: LEVEL_TAGS.g11.filter(t => GEN[t]) };
   // 出題：優先挑學生還沒練過的知識點
+  // 出題：優先挑學生還沒練過的知識點；有手寫觀念題的知識點，一半機率出手寫題
   function make(rnd, level, prac = {}, avoid = []) {
-    const tags = LEVEL_TAGS[level] || LEVEL_TAGS.g10;
+    const tags = QUIZ_TAGS[level] || QUIZ_TAGS.g10;
     const order = shuf(rnd, tags).sort((a, b) => ((prac[a] || {}).ok ? 1 : 0) - ((prac[b] || {}).ok ? 1 : 0) || avoid.includes(a) - avoid.includes(b));
-    for (const t of order) { const q = GEN[t](rnd); if (q && q.opts.length === 4) return q; }
+    for (const t of order) {
+      const q = BYTAG[t] && rnd() < 0.5 ? fromBank(rnd, pick(rnd, BYTAG[t])) : GEN[t](rnd);
+      if (q && q.opts.length === 4) { q.id = q.id || 'g:' + t + ':' + q.q.replace(/<[^>]+>/g, '').slice(0, 60); return q; }
+    }
     return GEN.name(rnd);
   }
-  return { TAGS, GEN, make, LEVEL_TAGS };
+  return { TAGS, GEN, make, LEVEL_TAGS, QUIZ_TAGS, BYTAG };
 })();
 if (typeof module !== 'undefined') module.exports = QUIZ;

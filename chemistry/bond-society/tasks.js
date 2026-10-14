@@ -125,6 +125,34 @@ const TASKS = (() => {
     while (out.length < 3) { const x = pool[Math.floor(rnd() * pool.length)]; if (!out.includes(x)) out.push(x); }
     return out.slice(0, 3).map(v => [rnd(), v]).sort((a, b) => a[0] - b[0]).map(p => p[1]);
   }
+  /* ---------- 第二階段新委託 ---------- */
+  const BKK = () => (typeof BANK !== 'undefined' ? BANK : require('./bank.js'));
+  const byTier = (list, tier, rnd) => { const a = list.filter(x => (x.t || 1) === tier); const b = list.filter(x => (x.t || 1) <= tier); const pool = a.length && rnd() < 0.7 ? a : b; return pool[Math.floor(rnd() * pool.length)]; };
+  const shf = (a, rnd) => a.map(v => [rnd(), v]).sort((p, q) => p[0] - q[0]).map(p => p[1]);
+  // 🧱 結構工坊：在骨架上決定每個鍵是單／雙／參鍵，以及每個原子的孤對電子
+  function structTask(tier, rnd) { const L = BKK().STRUCT, m = byTier(L, tier, rnd); return { kind: 'struct', mi: L.indexOf(m), f: m.f, zh: m.zh, needs: [] }; }
+  function checkStruct(t, ans) {
+    const B = BKK(), m = B.STRUCT[t.mi], n = m.atoms.length, e = Array(n).fill(0);
+    m.bonds.forEach(([i, j], k) => { e[i] += 2 * ans.bo[k]; e[j] += 2 * ans.bo[k]; });
+    ans.lp.forEach((l, i) => { e[i] += 2 * l; });
+    const bad = m.atoms.map(([sym], i) => [sym, e[i], sym === 'H' ? 2 : 8]).filter(x => x[1] !== x[2]);
+    const tot = m.atoms.reduce((a, [sym]) => a + B.VAL[sym], 0), used = e.reduce((a, b) => a + b, 0) - ans.bo.reduce((a, b) => a + 2 * b, 0);
+    if (bad.length) return { ok: false, msg: `${bad.map(([sym, have, need]) => `${sym} 周圍有 ${have} 個電子（要 ${need} 個）`).join('、')}。` };
+    if (used !== tot) return { ok: false, msg: `每個原子都滿了，但整個分子用了 ${used} 個電子，價電子總數只有 ${tot} 個。` };
+    const same = m.bonds.every((b, k) => b[2] === ans.bo[k]) && m.lp.every((l, i) => l === ans.lp[i]);
+    return same ? { ok: true } : { ok: false, msg: '每個原子都符合八隅體了，但這不是最常見的結構：對稱的分子，兩邊的鍵通常一樣。' };
+  }
+  // 🏗️ 工程應用：依需求挑材料，再選理由
+  function engTask(rnd) { const L = BKK().ENG, i = Math.floor(rnd() * L.length), e = L[i]; return { kind: 'eng', ei: i, need: e[0], mats: shf([e[1], ...e[2]], rnd), right: e[1], reasons: shf([e[3], ...e[4]], rnd), reason: e[3], needs: [] }; }
+  // ⚖️ 條約委託：配係數（第一階會即時顯示兩邊原子數，之後要自己數）
+  function treatyTask(tier, rnd) { const L = (typeof FACTS !== 'undefined' ? FACTS : require('./facts.js')).EQUATIONS, q = byTier(L, tier, rnd); return { kind: 'treaty', qi: L.indexOf(q), l: q.l, r: q.r, ans: q.ans, show: tier === 1, needs: [] }; }
+  // 🌡️ 分子間作用力：哪一個沸點比較高？為什麼？
+  function imfTask(rnd) {
+    const B = BKK(), x = B.IMF[Math.floor(rnd() * B.IMF.length)];
+    const rs = shf([...new Set([x[2], ...['分子之間有氫鍵', '分子較大、電子較多，凡得瓦力較強', '要打斷的是化學鍵（離子鍵或共價鍵），比分子間作用力強得多'].filter(r => r !== x[2]).slice(0, 2), B.R_WRONG[Math.floor(rnd() * B.R_WRONG.length)]])], rnd);
+    return { kind: 'imf', pair: shf([x[0], x[1]], rnd), right: x[0], reasons: rs, reason: x[2], needs: [] };
+  }
+
   // 題組委託：連續 3 小題（答對 2 題以上才算成功）
   function setTask(s, rnd) {
     const Q = typeof QUIZ !== 'undefined' ? QUIZ : require('./quiz.js'), qs = [];
@@ -166,6 +194,10 @@ const TASKS = (() => {
   }
   // 提示（第一次答錯後顯示）
   function hint(t) {
+    if (t.kind === 'struct') return '先算出所有原子的價電子總數；H 周圍只要 2 個電子，其他原子要 8 個。電子不夠時，把單鍵改成雙鍵或參鍵。';
+    if (t.kind === 'eng') return '先想這個需求要的是哪一種性質（導電、硬度、熔點、延展性……），再想哪一種鍵結會有這種性質。';
+    if (t.kind === 'treaty') return '先配平只出現在一個化學式裡的元素，最後再處理 O 和 H；係數只能改前面的數字，不能改下標。';
+    if (t.kind === 'imf') return '先判斷兩者沸騰時要克服的是什麼：化學鍵、氫鍵（H 接在 F、O、N 上），還是凡得瓦力（分子越大越強）。';
     if (t.kind === 'mine') return '一條一條縮小範圍：先用「位置」或「類別」圈出一區，再用性質、反應、用途的線索刪去不符合的元素。橫列是週期、直行是族。';
     if (t.kind === 'detect') { const b = bestTest(t); return t.mode === 'type' ? `想一想：固體能導電的是金屬（或石墨）；固體不導電、溶於水或熔融後能導電的是離子化合物；熔點很低的是分子物質；又硬、熔點又極高、不導電的是網狀共價固體。${b ? `試試「${b.name}」。` : ''}` : `${b ? `「${b.name}」最能分辨這幾種嫌疑物質。` : '比較每種嫌疑物質的特性，找出和檢驗結果不符合的。'}`; }
     if (t.mode === 'f2name') return `這個化合物由 ${C.ionHtml(C.CAT[t.c])} 和 ${C.ionHtml(C.AN[t.a])} 組成。`;
@@ -187,6 +219,22 @@ const TASKS = (() => {
       me: ['金國的冶煉場需要一批礦石樣本來研究。', '金國想知道對手的礦石成分，請你鑄造一份樣本。'],
       co: ['共國的學者想研究離國的物質，請你暗中鑄造一份樣本。', '共國的分子村落需要一種離子化合物當作工業原料。']
     },
+    struct: {
+      co: ['共國的分子村落要登記戶口，請你畫出村民的電子分布。', '共國的建築師拿來一張分子骨架圖，請你補上鍵和孤對電子。'], io: ['離國想研究共國的分子，請你畫出它的結構。'], me: ['金國的學者看不懂共國的分子，請你畫給他看。'],
+      hb: ['氫聯邦想確認新成員的結構。'], vw: ['凡聯邦要替新成員建立檔案。'], mine: ['採礦國想知道這種分子長什麼樣子。']
+    },
+    eng: {
+      co: ['共國要蓋一座新工程，請你挑選最適合的材料。'], io: ['離國的工匠公會遇到難題，請你推薦材料。'], me: ['金國的工坊需要一種材料，請你挑選並說明理由。'],
+      hb: ['氫聯邦的工程師請你幫忙選材料。'], vw: ['凡聯邦的商隊要訂購材料，請你給建議。'], mine: ['採礦國的工程隊需要建議。']
+    },
+    treaty: {
+      co: ['共國要和採礦國簽貿易條約，條約上的反應式必須平衡。'], io: ['離國的條約草稿上有一條反應式還沒配平。'], me: ['金國的冶煉協議寫著一條反應式，請你配平它。'],
+      hb: ['氫聯邦的盟約需要一條平衡的反應式。'], vw: ['凡聯邦的契約上有一條反應式。'], mine: ['採礦國的出貨單上有一條反應式。']
+    },
+    imf: {
+      co: ['共國的分子村落在比賽誰比較不容易沸騰，請你當裁判。'], io: ['離國的學者想知道哪一種物質沸點比較高。'], me: ['金國的鍋爐師傅想知道哪一種物質比較耐熱。'],
+      hb: ['氫聯邦想證明自己的成員比較團結。'], vw: ['凡聯邦想知道成員之間誰的吸引力比較強。'], mine: ['採礦國的倉庫要分類存放兩種物質。']
+    },
     set: {
       co: ['共國的學院要招考新的煉丹師，請你代為出一份考卷並寫出標準答案。'], io: ['離國的軍需官遞來一疊問題，說是情報暗號，要你一題一題解開。'],
       me: ['金國的將軍要考驗你的實力，連續問了三個問題。'], hb: ['氫聯邦的長老想測試鍵結社的學識。'], vw: ['凡聯邦的議會送來三道謎題。'], mine: ['採礦國的礦工考你三個問題。']
@@ -205,7 +253,7 @@ const TASKS = (() => {
     const n = (s.round <= 2 ? 3 : 4) - (s.stealth < 40 ? 1 : 0), pick = a => a[Math.floor(rnd() * a.length)];
     // 題型和國家脫鉤：五種題型輪流出現（這局出現次數少的優先），委託國隨機
     const facs = s.facs; s.kindN = s.kindN || {};
-    const kinds = ['mine', 'forge', 'name', 'detect', 'set'].map(k => [(s.kindN[k] || 0) + rnd() * 0.9, k]).sort((a, b) => a[0] - b[0]).slice(0, n).map(p => p[1]);
+    const kinds = ['mine', 'forge', 'name', 'detect', 'set', 'struct', 'eng', 'treaty', 'imf'].map(k => [(s.kindN[k] || 0) + rnd() * 0.9, k]).sort((a, b) => a[0] - b[0]).slice(0, n).map(p => p[1]);
     kinds.forEach(k => { s.kindN[k] = (s.kindN[k] || 0) + 1; });
     const used = new Set();
     const board = kinds.map((kind, k) => {
@@ -214,7 +262,8 @@ const TASKS = (() => {
       else { const cand = facs.filter(f => !used.has(f)); from = pick(cand.length ? cand : facs); }
       used.add(from);
       const task = kind === 'mine' ? mineTask(pick(rnd() < 0.6 ? (POOL[from] || POOL.mine) : POOL.mine), tier, rnd)
-        : kind === 'detect' ? detectTask(tier, rnd) : kind === 'set' ? setTask(s, rnd) : forgeTask(tier, from, rnd, kind === 'name' ? 'f2name' : null);
+        : kind === 'detect' ? detectTask(tier, rnd) : kind === 'set' ? setTask(s, rnd) : kind === 'struct' ? structTask(tier, rnd) : kind === 'eng' ? engTask(rnd)
+        : kind === 'treaty' ? treatyTask(tier, rnd) : kind === 'imf' ? imfTask(rnd) : forgeTask(tier, from, rnd, kind === 'name' ? 'f2name' : null);
       let effects = {}, shady = null, reward;
       if (from === 'mine') { reward = 12; task.qty = 3; }
       else {
@@ -235,6 +284,6 @@ const TASKS = (() => {
     });
     return board;
   }
-  return { REWARD, tierOf, setTask, mineTask, forgeTask, detectTask, bestTest, subst, checkForge, hint, makeBoard, ionsOf, FAMLBL };
+  return { REWARD, structTask, checkStruct, engTask, treatyTask, imfTask, tierOf, setTask, mineTask, forgeTask, detectTask, bestTest, subst, checkForge, hint, makeBoard, ionsOf, FAMLBL };
 })();
 if (typeof module !== 'undefined') module.exports = TASKS;

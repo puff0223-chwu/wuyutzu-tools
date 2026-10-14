@@ -131,5 +131,17 @@ expect('舊版學期整班紀錄只有主帳號看得到', base, TEA, R, '/excel
 expect('主帳號看得到舊版學期整班紀錄', base, MAIN, R, '/excel-rescue/115-1', null, true);
 expect('學生看得到自己的舊版紀錄', base, null, R, '/excel-rescue/115-1/S001', null, true);
 
+console.log('— 隱秘的鍵結社 —');
+const bsP = { sid: '115-1_101_7', cls: '101', seat: 7, name: '小明', term: '115-1', updatedAt: 1, games: 1 };
+expect('學生寫入自己的成績', base, null, W, '/bond-society/players/115-1_101_7', bsP, true);
+expect('sid 和路徑不同不能寫', base, null, W, '/bond-society/players/115-1_101_8', bsP, false);
+expect('名字太長不能寫', base, null, W, '/bond-society/players/115-1_101_7', Object.assign({}, bsP, { name: '一二三四五六七八九十一二三' }), false);
+expect('任何人都能讀排行榜', base, null, R, '/bond-society/players', null, true);
+expect('學生存進行中的一局', base, null, W, '/bond-society/saves/115-1_101_7', { v: 5, updatedAt: 1, level: 'g10' }, true);
+expect('存檔缺欄位不能寫', base, null, W, '/bond-society/saves/115-1_101_7', { foo: 1 }, false);
+expect('學生新增一筆歷程', base, null, W, '/bond-society/logs/115-1_101_7/-abc', { t: 1, type: 'end', score: 300 }, true);
+expect('不能整批覆蓋歷程', base, null, W, '/bond-society/logs/115-1_101_7', { x: { t: 1, type: 'end' } }, false);
+expect('老師頁可以刪除整份歷程', Object.assign({}, base, { 'bond-society': { logs: { '115-1_101_7': { a: { t: 1, type: 'end' } } } } }), null, W, '/bond-society/logs/115-1_101_7', null, true);
+expect('學期設定', base, null, W, '/bond-society/config', { current: '115-1', terms: ['115-1'] }, true);
 console.log(`\n${fail ? '❌' : '✅'} 通過 ${pass} 項，失敗 ${fail} 項`);
 process.exit(fail ? 1 : 0);

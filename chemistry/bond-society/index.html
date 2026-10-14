@@ -51,6 +51,18 @@
   .seg input:checked + span { border-color: var(--gold); background: #3a2f17; }
   .code-in { width: 100%; background: var(--night); border: 2px solid var(--night-3); border-radius: 10px; color: #fff; padding: 9px 12px; font: inherit; letter-spacing: .2em; text-transform: uppercase; }
   .btn.big { width: 100%; margin-top: 14px; padding: 13px; font-size: 1.1em; }
+  .code-in.plain { letter-spacing: normal; text-transform: none; }
+  .lg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+  .seg.three { grid-template-columns: 1fr 1fr 1fr; }
+  .lg-msg { min-height: 1.4em; margin-top: 8px; color: #ff8a73; font-size: .9em; text-align: center; } .lg-msg.info { color: var(--soft); }
+  .lg-term { text-align: center; color: var(--gold); font-size: .85em; }
+  .who-bar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; color: var(--soft); font-size: .92em; } .who-bar .sp { flex: 1; } .who-bar b { color: #fff; }
+  .tabs2 { display: flex; gap: 6px; margin: 8px 0; flex-wrap: wrap; } .tabs2 button { border: 2px solid var(--paper-2); background: #fff; border-radius: 999px; padding: 4px 12px; font-weight: 700; color: var(--ink); } .tabs2 button.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .mini-t { width: 100%; border-collapse: collapse; font-size: .9em; background: #fff; border-radius: 8px; overflow: hidden; } .mini-t th, .mini-t td { padding: 5px 8px; border-bottom: 1px dashed var(--paper-2); text-align: left; } .mini-t th { background: #f3e9d2; }
+  .mini-t tr.me td { background: #fff3cd; font-weight: 900; }
+  .stat-g { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; margin: 8px 0; } .stat-g div { background: #fff; border-radius: 10px; padding: 8px; text-align: center; } .stat-g b { display: block; font-size: 1.4em; color: #8a3a12; }
+  .wrong-l { list-style: none; } .wrong-l li { background: #fff; border-left: 4px solid var(--red); border-radius: 8px; padding: 6px 10px; margin-bottom: 6px; font-size: .9em; } .wrong-l small { color: #6b5a3a; }
+  .bar2 { height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin-top: 3px; } .bar2 i { display: block; height: 100%; background: var(--green); }
 
   /* ---- 遊戲畫面 ---- */
   .topbar { position: sticky; top: 0; z-index: 20; background: #120f19ee; border-bottom: 1px solid #2c2540; backdrop-filter: blur(6px); }
@@ -178,7 +190,7 @@
   .ovc .qq { font-size: 1.15em; margin: 8px 0; } .ovc .qq sub, .names sub { font-size: .65em; } .ovc .qq sup, .names sup { font-size: .6em; }
   .qbar { height: 8px; background: #eee; border-radius: 4px; overflow: hidden; } .qbar i { display: block; height: 100%; background: var(--red); transition: width 1s linear; }
   .chip.clock.low { color: #ff8a73; border-color: #6a2a20; animation: flicker 1s infinite; }
-  .codex-g { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+  .codex-g { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 6px; }
   .codex-g div { background: #fff; border-radius: 8px; padding: 6px 10px; border-left: 5px solid #ccc; font-size: .9em; }
   .codex-g div.ok { border-color: var(--green); } .codex-g div.try { border-color: var(--gold); }
   .rep td.lbl { width: 9em; white-space: nowrap; }
@@ -186,6 +198,9 @@
   .rep { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; margin: 8px 0; }
   .rep caption { text-align: left; font-weight: 900; padding: 4px 0; }
   .rep td { border-bottom: 1px dashed var(--paper-2); padding: 6px 10px; vertical-align: top; }
+  .lp-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 8px 0; }
+  .lp-c { background: #fff; border-radius: 10px; padding: 6px 10px; text-align: center; min-width: 96px; }
+  .lp-c .step button { width: 28px; height: 28px; }
   .tests { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; margin: 8px 0; }
   .tests button { border: 2px solid var(--paper-2); background: #fff; border-radius: 10px; padding: 6px 8px; text-align: left; color: var(--ink); font-weight: 700; font-size: .9em; }
   .tests button small { color: #8a6a22; font-weight: 400; }
@@ -230,6 +245,22 @@
       <button class="btn ghost sm" id="btn-codex">📖 勢力圖鑑與完整規則</button>
     </div>
     <div class="title-setup">
+      <div class="opt-card" id="login-card">
+        <h3>🔑 特工登入</h3>
+        <div class="lg-grid">
+          <div><div class="row-lbl">班級</div><input class="code-in plain" id="in-cls" maxlength="10" placeholder="例：101"></div>
+          <div><div class="row-lbl">座號</div><input class="code-in plain" id="in-seat" type="number" min="1" max="199" placeholder="例：7"></div>
+          <div><div class="row-lbl">姓名</div><input class="code-in plain" id="in-name" maxlength="12" placeholder="你的名字"></div>
+          <div><div class="row-lbl">學號</div><input class="code-in plain" id="in-no" maxlength="12" placeholder="例：1150123"></div>
+        </div>
+        <div class="row-lbl">這次是用在……</div>
+        <div class="seg three" id="in-purpose"></div>
+        <button class="btn big" id="btn-login">進入鍵結社 ▶</button>
+        <div class="lg-msg" id="login-msg"></div>
+        <div class="lg-term" id="term-tag"></div>
+      </div>
+      <div id="play-cards" class="hidden">
+      <div class="who-bar"><span id="who"></span><span class="sp"></span><button class="btn sm ghost" id="btn-my">📊 我的紀錄</button><button class="btn sm ghost" id="btn-rank">🏆 排行榜</button><button class="btn sm ghost" id="btn-out">登出</button></div>
       <div class="opt-card cont" id="cont-card"><h3>📜 上次的存檔</h3><div id="cont-info" class="cont-info"></div><button class="btn" id="btn-cont" style="width:100%">繼續上次的戰局 ▶</button></div>
       <div class="opt-card">
         <h3>🎮 開始新的戰局</h3>
@@ -247,6 +278,7 @@
         <input class="code-in" id="in-code" maxlength="6" placeholder="留空＝隨機新大陸">
         <button class="btn big" id="btn-new">開始新的戰局 ▶</button>
       </div>
+      </div>
     </div>
   </div>
 </section>
@@ -262,7 +294,7 @@
     <span class="chip clock" id="t-quick"></span>
     <span class="sp"></span>
     <button class="btn sm ghost" id="btn-inv">⛏️<span class="txt"> 倉庫</span></button>
-    <button class="btn sm ghost" id="btn-prac">📚<span class="txt"> 知識點</span></button>
+    <button class="btn sm ghost" id="btn-prac">📊<span class="txt"> 我的紀錄</span></button>
     <button class="btn sm ghost" id="btn-codex2">📖<span class="txt"> 圖鑑</span></button>
     <button class="btn sm ghost" id="btn-menu">☰</button>
   </div></div>
@@ -283,25 +315,27 @@
 <div class="ov hidden" id="ov"><div class="ovc" id="ovc"></div></div>
 <div class="toast" id="toast"></div>
 
-<script src="data.js?v=20261015a"></script>
-<script src="world.js?v=20261015a"></script>
-<script src="facts.js?v=20261015a"></script>
-<script src="quiz.js?v=20261015a"></script>
-<script src="tasks.js?v=20261015a"></script>
-<script src="events.js?v=20261015a"></script>
-<script src="game.js?v=20261015a"></script>
+<script src="data.js?v=20261015b"></script>
+<script src="world.js?v=20261015b"></script>
+<script src="facts.js?v=20261015b"></script>
+<script src="bank.js?v=20261015b"></script>
+<script src="quiz.js?v=20261015b"></script>
+<script src="tasks.js?v=20261015b"></script>
+<script src="events.js?v=20261015b"></script>
+<script src="game.js?v=20261015b"></script>
+<script src="cloud.js?v=20261015b"></script>
 <script>
 const $ = id => document.getElementById(id);
 const F = WORLD.FACTIONS, C = CHEM, RU = WORLD.RULE;
 const SAVE = 'bond-society-save-v1';
 const SEASON = ['春', '夏', '秋', '冬'];
-const KIND = { mine: '⛏️ 尋礦', forge: '⚒️ 鑄造', detect: '🔍 鑑定', set: '📚 題組' };
+const KIND = { mine: '⛏️ 尋礦', forge: '⚒️ 鑄造', detect: '🔍 鑑定', set: '📚 題組', struct: '🧱 結構', eng: '🏗️ 工程', treaty: '⚖️ 條約', imf: '🌡️ 作用力' };
 let S = null, MAP = null;
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const md = s => String(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
 let TRADE_TAB = 'buy';
 let tt; function toast(m) { const t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('on'), 2400); }
-function save() { try { localStorage.setItem(SAVE, JSON.stringify(S)); } catch (e) {} }
+function save() { if (!S) return; try { localStorage.setItem(SAVE, JSON.stringify(S)); } catch (e) {} if (P && !S.reported) BSC.saveGame(P, S); }
 function load() { try { return JSON.parse(localStorage.getItem(SAVE)); } catch (e) { return null; } }
 const fname = f => `${F[f].icon} ${F[f].name}`;
 const effChips = eff => Object.entries(eff || {}).filter(([, v]) => v).map(([f, v]) => `<span class="eff ${v > 0 ? 'up' : 'dn'}">${F[f].name} ${v > 0 ? '+' : ''}${Math.round(v * 10) / 10}%</span>`).join('');
@@ -360,6 +394,61 @@ function endQuick(ans) {
   $('qres').innerHTML = `<div class="fb ${r.ok ? 'ok' : 'bad'}">${r.ok ? '✅ 答對了！💰 +5' : r.timeout ? `⌛ 沒有作答！正確答案是 ${q.ans}。🕵️ 隱密度 −4，${Object.keys(r.applied).map(f => F[f].name).join('')}趁亂 +2%` : `❌ 答錯了，正確答案是 ${q.ans}。🕵️ 隱密度 −2`}</div><div class="actions" style="justify-content:flex-end"><button class="btn" id="qok">繼續 ▶</button></div>`;
   $('qok').onclick = () => { QOPEN = null; closeOverlay(); drawClock(); const f = WORLD.checkFail(S); if (f) { S.ended = f; save(); closeModal(); showEnding(); } };
 }
+/* ---------- 📊 學生自己的分析（本局＋累積）與排行榜 ---------- */
+const SRC = { task: '委託', set: '題組', quick: '快問', event: '事件' };
+const pct = (a, b) => (b ? Math.round(a / b * 100) : 0);
+function tagBars(prac, tags) {
+  return `<div class="codex-g">${tags.map(t => { const p = prac[t]; return `<div class="${p && p.ok ? 'ok' : p ? 'try' : ''}">${QUIZ.TAGS[t]}<br><small>${p ? `答對 ${p.ok}／${p.n}（${pct(p.ok, p.n)}%）` : '還沒練過'}</small>${p ? `<div class="bar2"><i style="width:${pct(p.ok, p.n)}%"></i></div>` : ''}</div>`; }).join('')}</div>`;
+}
+function gameAnalysis(G) {
+  const L = G.ansLog || [], okN = L.filter(a => a.ok).length, wrong = L.filter(a => !a.ok);
+  const by = {}; L.forEach(a => { const x = (by[a.src] = by[a.src] || [0, 0]); x[1]++; if (a.ok) x[0]++; });
+  const tags = QUIZ.LEVEL_TAGS[G.level], weak = tags.filter(t => G.prac && G.prac[t] && G.prac[t].ok / G.prac[t].n < 0.6), none = tags.filter(t => !(G.prac || {})[t]);
+  return `<div class="stat-g"><div><b>${L.length}</b>這局作答題數</div><div><b>${pct(okN, L.length)}%</b>答對率</div>${Object.entries(by).map(([k, v]) => `<div><b>${v[0]}／${v[1]}</b>${SRC[k] || k}答對</div>`).join('')}</div>
+    ${weak.length ? `<div class="note" style="background:#fff;color:#6b5a3a">💪 這局比較弱的知識點：<b style="color:#8a3a12">${weak.map(t => QUIZ.TAGS[t]).join('、')}</b></div>` : ''}
+    ${none.length ? `<div class="note" style="background:#fff;color:#6b5a3a">🔍 這局還沒練到：${none.map(t => QUIZ.TAGS[t]).join('、')}</div>` : ''}
+    ${tagBars(G.prac || {}, tags)}
+    ${wrong.length ? `<h4 style="margin:10px 0 6px">❌ 這局答錯的題目（${wrong.length}）</h4><ul class="wrong-l">${wrong.slice(0, 30).map(a => `<li>${esc(a.q)}<br><small>你的答案：${esc(a.pick || '—')}${a.ans ? `｜正確：<b>${esc(a.ans)}</b>` : ''}・${SRC[a.src] || ''}・第 ${a.rd} 回合</small></li>`).join('')}</ul>` : '<p style="margin:8px 0">🎉 這局沒有答錯的題目！</p>'}`;
+}
+const END_ZH = { harmony: '🌀 大和解', peace: '⚖️ 均勢和平', shaky: '⚠️ 危險的平衡', unify: '❌ 天下一統', destroy: '❌ 一國滅亡', exposed: '❌ 組織曝光' };
+function myRecord(G) {
+  if (!P) { if (G) { const m = modal(`<h2>📊 本局分析</h2>${gameAnalysis(G)}<div class="actions" style="justify-content:flex-end"><button class="btn" id="cl">關閉</button></div>`); m.querySelector('#cl').onclick = () => { closeModal(); if (CUR) openTask(CUR); }; } return; }
+  let tab = G && !G.ended ? 'now' : 'sum';
+  const draw = () => {
+    const tags = QUIZ.LEVEL_TAGS.g11, T = P.tot || {};
+    const qs = Object.values(P.qs || {}).filter(x => x.w > 0).sort((a, b) => b.w - a.w || b.w / b.n - a.w / a.n).slice(0, 15);
+    const body = tab === 'now' ? gameAnalysis(G)
+      : tab === 'sum' ? `<div class="stat-g"><div><b>${P.games || 0}</b>完成局數</div><div><b>${(P.best.g10 || {}).score ?? '—'}</b>高一版最佳</div><div><b>${(P.best.g11 || {}).score ?? '—'}</b>高二高三版最佳</div><div><b>${pct(T.firstOk, T.tasks)}%</b>委託一次答對</div><div><b>${pct(T.quickOk, T.quick)}%</b>快問答對</div></div>
+          ${(P.hist || []).length ? `<table class="mini-t"><tr><th>時間</th><th>版本</th><th>結局</th><th>回合</th><th>總分</th><th>一次答對</th></tr>${P.hist.map(h => `<tr><td>${new Date(h.at).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })} ${new Date(h.at).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}</td><td>${h.level === 'g11' ? '高二高三' : '高一'}</td><td>${END_ZH[h.end] || h.end}</td><td>${h.rounds}</td><td><b>${h.score}</b></td><td>${h.rate}%</td></tr>`).join('')}</table>` : '<p>還沒有完成過任何一局。</p>'}`
+      : tab === 'prac' ? `<p style="margin:6px 0">所有局數累積起來，各知識點的答對率：</p>${tagBars(P.prac || {}, tags)}`
+      : `<p style="margin:6px 0">你累積最常答錯的題目（複習用）：</p>${qs.length ? `<ul class="wrong-l">${qs.map(x => `<li>${esc(x.q)}<br><small>錯 ${x.w}／${x.n} 次${x.a ? `｜正確：<b>${esc(x.a)}</b>` : ''}</small></li>`).join('')}</ul>` : '<p>目前沒有答錯的紀錄。</p>'}`;
+    const m = modal(`<h2>📊 我的紀錄</h2><div style="color:#6b5a3a;font-size:.9em">${P.term}・${esc(P.cls)} 班 ${P.seat} 號 ${esc(P.name)}</div>
+      <div class="tabs2">${G && G.ansLog ? `<button data-t="now" class="${tab === 'now' ? 'on' : ''}">📈 ${G.ended ? '剛剛這局' : '這一局'}</button>` : ''}<button data-t="sum" class="${tab === 'sum' ? 'on' : ''}">🏅 累積成績</button><button data-t="prac" class="${tab === 'prac' ? 'on' : ''}">🧠 累積知識點</button><button data-t="wrong" class="${tab === 'wrong' ? 'on' : ''}">📝 常錯題目</button></div>
+      ${body}<div class="actions" style="justify-content:flex-end"><button class="btn" id="cl">關閉</button></div>`);
+    m.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { tab = b.dataset.t; draw(); });
+    m.querySelector('#cl').onclick = () => { closeModal(); if (CUR) openTask(CUR); };
+  };
+  draw();
+}
+async function rankBoard() {
+  let scope = 'cls', lv = (S && S.level) || 'g10', all = null;
+  const m0 = modal('<h2>🏆 排行榜</h2><p>讀取中……</p>');
+  try { all = Object.values(await BSC.loadPlayers()); } catch (e) { m0.innerHTML = '<h2>🏆 排行榜</h2><p>連不上雲端，暫時看不到排行榜。</p><div class="actions"><button class="btn" id="cl">關閉</button></div>'; m0.querySelector('#cl').onclick = closeModal; return; }
+  const draw = () => {
+    const rows = all.filter(x => x && x.best && x.best[lv] && (scope === 'all' || x.term === (P || {}).term) && (scope !== 'cls' || x.cls === (P || {}).cls))
+      .map(x => ({ sid: x.sid, cls: x.cls, seat: x.seat, name: x.name, term: x.term, ...x.best[lv] })).sort((a, b) => b.score - a.score);
+    const meI = P ? rows.findIndex(r => r.sid === P.sid) : -1;
+    const m = modal(`<h2>🏆 排行榜</h2>
+      <div class="tabs2">${[['cls', '本班'], ['term', '本學期・跨班'], ['all', '歷屆・全部']].map(([k, v]) => `<button data-s="${k}" class="${scope === k ? 'on' : ''}">${v}</button>`).join('')}<span style="width:10px"></span>${[['g10', '高一版'], ['g11', '高二高三版']].map(([k, v]) => `<button data-l="${k}" class="${lv === k ? 'on' : ''}">${v}</button>`).join('')}</div>
+      ${rows.length ? `<table class="mini-t"><tr><th>名次</th><th>${scope === 'all' ? '學期・' : ''}班級</th><th>姓名</th><th>最佳總分</th><th>結局</th></tr>${rows.slice(0, 30).map((r, i) => `<tr class="${P && r.sid === P.sid ? 'me' : ''}"><td>${i + 1}</td><td>${scope === 'all' ? r.term + '・' : ''}${esc(r.cls)}</td><td>${esc(r.name)}</td><td>${r.score}</td><td>${END_ZH[r.end] || ''}</td></tr>`).join('')}</table>
+        ${meI >= 30 ? `<p style="margin-top:6px">你的名次：第 <b>${meI + 1}</b> 名（${rows[meI].score} 分）</p>` : ''}` : '<p>還沒有人完成這個版本的戰局。</p>'}
+      <div class="actions" style="justify-content:flex-end"><button class="btn" id="cl">關閉</button></div>`);
+    m.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { scope = b.dataset.s; draw(); });
+    m.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { lv = b.dataset.l; draw(); });
+    m.querySelector('#cl').onclick = () => { closeModal(); if (CUR) openTask(CUR); };
+  };
+  draw();
+}
 function pracView() {
   const P = S.prac || {}, tags = QUIZ.LEVEL_TAGS[S.level];
   const done = tags.filter(t => (P[t] || {}).ok > 0).length;
@@ -372,18 +461,61 @@ function closeModal() { $('modal').classList.add('hidden'); }
 /* ---------- 開始畫面 ---------- */
 function showTitle() {
   $('s-title').classList.remove('hidden'); $('s-game').classList.add('hidden');
-  const sv = load();
+  $('login-card').classList.toggle('hidden', !!P); $('play-cards').classList.toggle('hidden', !P);
+  if (!P) return;
+  $('who').innerHTML = `${P.term}・<b>${esc(P.cls)} 班 ${P.seat} 號 ${esc(P.name)}</b>${BSC.isOnline() ? '' : '（離線，進度先存在這台裝置）'}`;
+  const sv = G0;
   const can = sv && sv.v === 5 && !sv.ended;   // 舊版存檔規則不同，不能接著玩
   $('cont-card').classList.toggle('hidden', !can);
   if (can) $('cont-info').innerHTML = `${sv.level === 'g11' ? '高二高三版' : '高一版'}・${sv.timed ? '⏱️ 計時' : '不計時'}・地圖 <b style="color:#fff">${sv.code}</b><br>${roundName(sv.round)}・💰 ${sv.money}・🕵️ ${sv.stealth}`;
 }
-$('btn-cont').onclick = () => { S = load(); enterGame(); };
+$('btn-cont').onclick = () => { S = fixGame(G0); enterGame(); };
+/* ---------- 登入（同時光手稿） ---------- */
+let P = null, G0 = null, CFG = null, JOINING = false;
+const loginMsg = (t, info) => { const m = $('login-msg'); m.textContent = t; m.classList.toggle('info', !!info); };
+$('in-purpose').innerHTML = BSC.CONFIG.PURPOSES.map((x, i) => `<label><input type="radio" name="pur" value="${x}" ${i === 0 ? 'checked' : ''}><span><b style="font-size:.92em">${x}</b></span></label>`).join('');
+BSC.loadConfig().then(c => { CFG = c; $('term-tag').textContent = `目前學期：${c.current}`; });
+(() => { const p = BSC.lastProfile(); if (!p) return; $('in-cls').value = p.cls || ''; $('in-seat').value = p.seat || ''; $('in-name').value = p.name || ''; $('in-no').value = p.stuNo || ''; const r = document.querySelector(`[name=pur][value="${p.purpose}"]`); if (r) r.checked = true; })();
+$('btn-login').onclick = async () => {
+  const cls = BSC.toHalf($('in-cls').value).toUpperCase(), seat = parseInt(BSC.toHalf($('in-seat').value), 10), name = $('in-name').value.trim();
+  const stuNo = BSC.toHalf($('in-no').value).toUpperCase(), purpose = (document.querySelector('[name=pur]:checked') || {}).value;
+  if (!cls || !seat || !name || !stuNo) return loginMsg('班級、座號、姓名、學號都要填喔！');
+  if (seat < 1 || seat > 199) return loginMsg('座號要是 1～199 的數字喔！');
+  if (JOINING) return; JOINING = true;
+  loginMsg('⏳ 讀取進度中……', true);
+  const slow = setTimeout(() => loginMsg('⏳ 網路比較慢，正在讀取雲端進度，請稍候……', true), 3000);
+  if (!CFG) CFG = await BSC.loadConfig();
+  const term = CFG.current;
+  const r = await BSC.login({ cls, seat, name, stuNo, purpose, term, sid: BSC.makeSid(term, cls, seat) });
+  clearTimeout(slow); loginMsg(''); JOINING = false;
+  P = r.player; G0 = r.game;
+  BSC.savePlayer(P);
+  showTitle();
+};
+['in-cls', 'in-seat', 'in-name', 'in-no'].forEach(id => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-login').click(); }));
+$('btn-out').onclick = () => { if (S && P && !S.ended) BSC.flushGame(P); P = null; G0 = null; S = null; showTitle(); };
+$('btn-my').onclick = () => myRecord(null);
+$('btn-rank').onclick = () => rankBoard();
+// 雲端存檔會把空物件、陣列裡的 null 拿掉：讀回來時補齊
+function fixGame(g) {
+  if (!g) return g;
+  const N = WORLD.makeMap(g.seed, g.facs).cells.length;
+  if (!Array.isArray(g.owner)) { const a = new Array(N).fill(null); Object.entries(g.owner || {}).forEach(([k, v]) => { a[+k] = v; }); g.owner = a; }
+  while (g.owner.length < N) g.owner.push(null);
+  ['inv', 'rumor', 'hi', 'mkt', 'friend', 'prac', 'kindN'].forEach(k => { if (!g[k] || typeof g[k] !== 'object') g[k] = {}; });
+  g.stats = g.stats || {}; g.stats.byType = g.stats.byType || {}; ['tasks', 'firstOk', 'fails'].forEach(k => { g.stats[k] = g.stats[k] || 0; });
+  ['seenEv', 'ansLog', 'history', 'helpLog', 'susLog'].forEach(k => { if (!Array.isArray(g[k])) g[k] = g[k] ? Object.values(g[k]) : []; });
+  if (g.board && !Array.isArray(g.board)) g.board = Object.values(g.board);
+  if (g.trade) { g.trade.n = g.trade.n || 0; }
+  return g;
+}
 $('btn-new').onclick = () => {
   const code = $('in-code').value.trim();
   if (code && !/^[0-9a-z]{1,6}$/i.test(code)) return toast('地圖代碼只能是英文字母和數字（最多 6 個）');
   const level = document.querySelector('[name=lv]:checked').value;
   S = WORLD.newGame({ level, code: code || undefined });
   S.timed = document.querySelector('[name=tm]:checked').value === '1';
+  if (P) BSC.log(P.sid, 'start', { level, code: S.code, timed: S.timed });
   enterGame(true);
 };
 function enterGame(fresh) {
@@ -545,11 +677,16 @@ function openTask(c) {
   const head = `<div class="from">${fname(c.from)}的委託・💰 ${c.reward}${S.timed ? `<span class="tmr" id="tmr" data-lim="${lim}"></span>` : ''}</div>`;
   setTimeout(drawTaskTimer, 0);
   if (t.kind === 'set') return setUI(c, head);
+  if (t.kind === 'struct') return structUI(c, head);
+  if (t.kind === 'eng') return engUI(c, head);
+  if (t.kind === 'treaty') return treatyUI(c, head);
+  if (t.kind === 'imf') return imfUI(c, head);
   if (t.kind === 'mine') return mineUI(c, head);
   if (t.kind === 'detect') return detectUI(c, head);
   if (t.mode === 'f2name') return nameUI(c, head);
   return forgeUI(c, head);
 }
+function addPick(c, x) { c.picks = (c.picks || []).concat(String(x)); }
 function drawTaskTimer() {
   const el = $('tmr'); if (!el || !CUR || !CUR.opened) return;
   const lim = +el.dataset.lim, used = Math.floor((Date.now() - CUR.opened) / 1000), left = lim - used;
@@ -587,7 +724,7 @@ function mineUI(c, head) {
     m.querySelectorAll('.el[data-s]').forEach(b => b.onclick = () => { sel = b.dataset.s; draw(fb); });
     m.querySelector('#x').onclick = () => giveUp(c);
     m.querySelector('#ok').onclick = () => {
-      const e = C.EL[t.answer];
+      const e = C.EL[t.answer]; addPick(c, sel);
       if (sel === t.answer) return finishTask(c, true, `答案是 <b>${e.sym}（${e.zh}）</b>：第 ${e.period} 週期、第 ${e.group} 族，${e.typeZh}${e.val != null && !e.trans ? `，價電子 ${e.val} 個` : ''}。`);
       const w = wrong(c, `${sel}（${C.EL[sel].zh}）不符合全部的線索。`);
       if (w === null) return finishTask(c, false, `正確答案是 <b>${e.sym}（${e.zh}）</b>：第 ${e.period} 週期、第 ${e.group} 族，${e.typeZh}${e.val != null && !e.trans ? `，價電子 ${e.val} 個` : ''}。`);
@@ -617,7 +754,7 @@ function detectUI(c, head) {
     m.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { sel = b.dataset.o; draw(fb); });
     m.querySelector('#x').onclick = () => giveUp(c);
     m.querySelector('#ok').onclick = () => {
-      const r = GAME.checkDetect(t, sel);
+      const r = GAME.checkDetect(t, sel); addPick(c, t.mode === 'type' ? X.BOND[sel] : C.html(TASKS.subst(sel).f));
       const ans = `樣本是 <b>${esc(tg.zh)}（${C.html(tg.f)}）</b>，屬於<b>${X.BOND[tg.bond]}</b>，是${X.BOND_NATION[tg.bond]}的物質。`;
       if (r.ok) return finishTask(c, true, `破案！${ans}`);
       const w = wrong(c, r.msg);
@@ -649,7 +786,7 @@ function forgeUI(c, head) {
     m.querySelectorAll('[data-a]').forEach(b => b.onclick = () => { as = b.dataset.a; draw(fb); });
     m.querySelector('#x').onclick = () => giveUp(c);
     m.querySelector('#ok').onclick = () => {
-      const r = TASKS.checkForge(t, { c: cs, a: as, m: m1, n: n1 });
+      const r = TASKS.checkForge(t, { c: cs, a: as, m: m1, n: n1 }); addPick(c, C.html(C.build(cs, m1, as, n1)));
       const ans = `<b>${C.html(t.formula)}</b>（${esc(t.name)}）：${C.ionHtml(C.CAT[t.c])} 和 ${C.ionHtml(C.AN[t.a])}，正負電荷總和為零，最簡整數比 ${t.m}：${t.n}。`;
       if (r.ok) return finishTask(c, true, `鑄造成功！${ans}`);
       const w = wrong(c, r.msg);
@@ -667,7 +804,7 @@ function nameUI(c, head) {
       <div class="names">${t.opts.map(n => `<button data-n="${esc(n)}" ${dis.includes(n) ? 'disabled' : ''}>${esc(n)}</button>`).join('')}</div>
       ${fb}<div class="actions"><button class="btn dark" id="x">放棄這件委託</button></div>`);
     m.querySelectorAll('[data-n]').forEach(b => b.onclick = () => {
-      const r = TASKS.checkForge(t, { name: b.dataset.n });
+      const r = TASKS.checkForge(t, { name: b.dataset.n }); addPick(c, b.dataset.n);
       const ans = `<b>${C.html(t.formula)}</b> 由 ${C.ionHtml(C.CAT[t.c])} 和 ${C.ionHtml(C.AN[t.a])} 組成，名稱是「<b>${esc(t.name)}</b>」。`;
       if (r.ok) return finishTask(c, true, ans);
       const w = wrong(c, r.msg);
@@ -675,6 +812,117 @@ function nameUI(c, head) {
       draw(w, [...dis, b.dataset.n]);
     });
     m.querySelector('#x').onclick = () => giveUp(c);
+  };
+  draw();
+}
+/* 🧱 結構工坊：點鍵切換單／雙／參鍵，點原子下方的 ± 調整孤對電子 */
+function structUI(c, head) {
+  const t = c.task, m = BANK.STRUCT[t.mi];
+  t.bo = t.bo || m.bonds.map(() => 1); t.lp = t.lp || m.atoms.map(() => 0);
+  const need = m.atoms.reduce((a, [sym]) => a + BANK.VAL[sym], 0);
+  const draw = (fb = '') => {
+    const e = m.atoms.map(() => 0); m.bonds.forEach(([i, j], k) => { e[i] += 2 * t.bo[k]; e[j] += 2 * t.bo[k]; }); t.lp.forEach((l, i) => { e[i] += 2 * l; });
+    const used = t.bo.reduce((a, b) => a + 2 * b, 0) + t.lp.reduce((a, b) => a + 2 * b, 0);
+    let svg = '';
+    m.bonds.forEach(([i, j], k) => {
+      const [, x1, y1] = m.atoms[i], [, x2, y2] = m.atoms[j], dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy), nx = -dy / L, ny = dx / L, o = t.bo[k];
+      for (let q = 0; q < o; q++) { const off = (q - (o - 1) / 2) * 6; svg += `<line x1="${x1 + nx * off}" y1="${y1 + ny * off}" x2="${x2 + nx * off}" y2="${y2 + ny * off}" stroke="#2a2238" stroke-width="3"/>`; }
+      svg += `<line class="bhit" data-b="${k}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="transparent" stroke-width="22" style="cursor:pointer"/>`;
+    });
+    m.atoms.forEach(([sym, x, y], i) => {
+      const ok = e[i] === (sym === 'H' ? 2 : 8);
+      if (sym !== 'H') svg += `<text x="${x + 15}" y="${y - 14}" font-size="10" fill="#8a6a22">${'①②③④⑤⑥'[i]}</text>`;
+      svg += `<circle cx="${x}" cy="${y}" r="17" fill="${sym === 'H' ? '#fff' : '#f5e6b8'}" stroke="${ok ? '#2f9e5a' : '#c9b48a'}" stroke-width="3"/><text x="${x}" y="${y + 6}" text-anchor="middle" font-weight="900" font-size="16">${sym}</text>`;
+      for (let q = 0; q < t.lp[i]; q++) { const a = (q * 90 + 45) * Math.PI / 180; svg += `<circle cx="${x + Math.cos(a) * 25 - 3}" cy="${y + Math.sin(a) * 25}" r="2.6" fill="#c0392b"/><circle cx="${x + Math.cos(a) * 25 + 3}" cy="${y + Math.sin(a) * 25}" r="2.6" fill="#c0392b"/>`; }
+    });
+    const md2 = modal(`${head}<h2>🧱 結構工坊</h2><div class="story">「${esc(c.text)}」</div>
+      <div class="ask">畫出 <b>${t.f}（${t.zh}）</b> 的路易斯結構<small>點兩個原子之間的線，切換單鍵／雙鍵／參鍵；用每個原子的 ± 調整孤對電子（紅點）</small></div>
+      <svg viewBox="0 0 300 180" style="width:100%;max-width:420px;display:block;margin:0 auto;background:#fff;border-radius:12px">${svg}</svg>
+      <div class="lp-row">${m.atoms.map(([sym], i) => sym === 'H' ? '' : `<div class="lp-c"><b>${'①②③④⑤⑥'[i]} ${sym}</b><div class="step"><button data-l="${i}|-">−</button><b>${t.lp[i]}</b><button data-l="${i}|+">＋</button></div><small style="color:${e[i] === 8 ? 'var(--green)' : '#8a6a22'}">周圍 ${e[i]} 個電子</small></div>`).join('')}</div>
+      ${TASKS.tierOf(S.round) === 1 ? `<div style="text-align:center;font-size:.9em">價電子總數：需要 <b>${need}</b> 個，目前畫了 <b style="color:${used === need ? 'var(--green)' : 'var(--red)'}">${used}</b> 個</div>` : `<div style="text-align:center;font-size:.85em;color:#8a6a22">提示：先自己算出價電子總數</div>`}
+      ${fb}<div class="actions" style="justify-content:space-between"><button class="btn dark" id="x">放棄這件委託</button><button class="btn" id="ok">送出結構</button></div>`);
+    md2.querySelectorAll('[data-b]').forEach(b => b.onclick = () => { const k = +b.dataset.b; t.bo[k] = t.bo[k] % 3 + 1; draw(fb); });
+    md2.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { const [i, op] = b.dataset.l.split('|'); t.lp[+i] = Math.max(0, Math.min(4, t.lp[+i] + (op === '+' ? 1 : -1))); draw(fb); });
+    md2.querySelector('#x').onclick = () => giveUp(c);
+    md2.querySelector('#ok').onclick = () => {
+      const r = TASKS.checkStruct(t, { bo: t.bo, lp: t.lp }); addPick(c, `鍵 ${t.bo.join(',')}｜孤對 ${t.lp.join(',')}`);
+      const LW = FACTS.LEWIS.find(x => x.f === t.f), ans = `${t.f}：價電子共 ${need} 個。${LW ? LW.draw + '。' : ''}`;
+      if (r.ok) return finishTask(c, true, `結構正確！${ans}`);
+      const w = wrong(c, r.msg);
+      if (w === null) return finishTask(c, false, `${r.msg}<br>正確答案：${ans}`);
+      draw(w);
+    };
+  };
+  draw();
+}
+/* 🏗️ 工程應用：挑材料＋選理由 */
+function engUI(c, head) {
+  const t = c.task; let mat = null, why = null;
+  const draw = (fb = '') => {
+    const m = modal(`${head}<h2>🏗️ 工程應用</h2><div class="story">「${esc(c.text)}」</div>
+      <div class="ask">需求：${esc(t.need)}</div>
+      <div style="font-weight:700">① 最適合的材料</div><div class="suspects">${t.mats.map(x => `<button class="${mat === x ? 'on' : ''}" data-m="${esc(x)}">${esc(x)}</button>`).join('')}</div>
+      <div style="font-weight:700">② 為什麼？</div><div class="names" style="grid-template-columns:1fr">${t.reasons.map(x => `<button style="text-align:left;${why === x ? 'border-color:var(--red);background:#fde3df' : ''}" data-w="${esc(x)}">${esc(x)}</button>`).join('')}</div>
+      ${fb}<div class="actions" style="justify-content:space-between"><button class="btn dark" id="x">放棄這件委託</button><button class="btn" id="ok" ${mat && why ? '' : 'disabled'}>就用它！</button></div>`);
+    m.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { mat = b.dataset.m; draw(fb); });
+    m.querySelectorAll('[data-w]').forEach(b => b.onclick = () => { why = b.dataset.w; draw(fb); });
+    m.querySelector('#x').onclick = () => giveUp(c);
+    m.querySelector('#ok').onclick = () => {
+      addPick(c, `${mat}／${why}`);
+      const ans = `最適合的是 <b>${esc(t.right)}</b>：${esc(t.reason)}。`;
+      if (mat === t.right && why === t.reason) return finishTask(c, true, ans);
+      const msg = mat !== t.right ? `「${esc(mat)}」不太適合這個需求。` : '材料選對了，但理由不對。';
+      const w = wrong(c, msg);
+      if (w === null) return finishTask(c, false, ans);
+      mat = null; why = null; draw(w);
+    };
+  };
+  draw();
+}
+/* ⚖️ 條約委託：配係數 */
+function treatyUI(c, head) {
+  const t = c.task; t.co = t.co || [...t.l, ...t.r].map(() => 1);
+  const draw = (fb = '') => {
+    const cnt = (fs, off) => { const o = {}; fs.forEach((f, i) => Object.entries(FACTS.atoms(f)).forEach(([k, v]) => { o[k] = (o[k] || 0) + v * t.co[off + i]; })); return o; };
+    const L = cnt(t.l, 0), R = cnt(t.r, t.l.length), els = Object.keys({ ...L, ...R });
+    const term = (f, i) => `<div class="term"><div class="step"><button data-b="${i}|-">−</button><b>${t.co[i]}</b><button data-b="${i}|+">＋</button></div><div>${C.html(f)}</div></div>`;
+    const m = modal(`${head}<h2>⚖️ 條約委託</h2><div class="story">「${esc(c.text)}」</div>
+      <div class="ask">調整係數，讓兩邊每種原子的數目相等<small>係數要化成最簡整數比；係數 1 不用寫</small></div>
+      <div class="eqn">${t.l.map((f, i) => term(f, i)).join('<span>＋</span>')}<span>→</span>${t.r.map((f, i) => term(f, t.l.length + i)).join('<span>＋</span>')}</div>
+      ${t.show ? `<table class="scale"><tr><th>原子</th><th>左邊</th><th>右邊</th></tr>${els.map(k => `<tr><td><b>${k}</b></td><td>${L[k] || 0}</td><td>${R[k] || 0}</td></tr>`).join('')}</table>` : '<div style="text-align:center;font-size:.85em;color:#8a6a22">這份條約比較機密：兩邊的原子數要自己數喔！</div>'}
+      ${fb}<div class="actions" style="justify-content:space-between"><button class="btn dark" id="x">放棄這件委託</button><button class="btn" id="ok">簽署條約</button></div>`);
+    m.querySelectorAll('[data-b]').forEach(b => b.onclick = () => { const [i, op] = b.dataset.b.split('|'); t.co[+i] = Math.max(1, Math.min(9, t.co[+i] + (op === '+' ? 1 : -1))); draw(fb); });
+    m.querySelector('#x').onclick = () => giveUp(c);
+    m.querySelector('#ok').onclick = () => {
+      const res = GAME.checkPuzzle({ kind: 'balance', data: { l: t.l, r: t.r, ans: t.ans } }, t.co); addPick(c, t.co.join(','));
+      if (res.ok) return finishTask(c, true, `條約平衡了！${res.msg}`);
+      const w = wrong(c, res.msg.startsWith('原子數相等') ? '原子數相等了，但係數要化成最簡整數比。' : '兩邊的原子數還沒有相等。');
+      if (w === null) return finishTask(c, false, res.msg);
+      draw(w);
+    };
+  };
+  draw();
+}
+/* 🌡️ 分子間作用力：比沸點＋說理由 */
+function imfUI(c, head) {
+  const t = c.task; let pk = null, why = null;
+  const draw = (fb = '') => {
+    const m = modal(`${head}<h2>🌡️ 分子間作用力</h2><div class="story">「${esc(c.text)}」</div>
+      <div class="ask">哪一個的沸點比較高？</div>
+      <div class="suspects">${t.pair.map(x => `<button class="${pk === x ? 'on' : ''}" data-p="${esc(x)}" style="font-size:1.15em">${esc(x)}</button>`).join('')}</div>
+      <div style="font-weight:700">為什麼？</div><div class="names" style="grid-template-columns:1fr">${t.reasons.map(x => `<button style="text-align:left;${why === x ? 'border-color:var(--red);background:#fde3df' : ''}" data-w="${esc(x)}">${esc(x)}</button>`).join('')}</div>
+      ${fb}<div class="actions" style="justify-content:space-between"><button class="btn dark" id="x">放棄這件委託</button><button class="btn" id="ok" ${pk && why ? '' : 'disabled'}>確定</button></div>`);
+    m.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { pk = b.dataset.p; draw(fb); });
+    m.querySelectorAll('[data-w]').forEach(b => b.onclick = () => { why = b.dataset.w; draw(fb); });
+    m.querySelector('#x').onclick = () => giveUp(c);
+    m.querySelector('#ok').onclick = () => {
+      addPick(c, `${pk}／${why}`);
+      const ans = `沸點比較高的是 <b>${esc(t.right)}</b>：${esc(t.reason)}。`;
+      if (pk === t.right && why === t.reason) return finishTask(c, true, ans);
+      const w = wrong(c, pk !== t.right ? '沸點比較高的不是它。' : '選對了，但理由不對。');
+      if (w === null) return finishTask(c, false, ans);
+      pk = null; why = null; draw(w);
+    };
   };
   draw();
 }
@@ -876,6 +1124,7 @@ function showEnding() {
   if (S.step !== 'end') { S.step = 'end'; }
   const e = S.ended, E = ENDINGS[e.id], sc = WORLD.score(S), fail = WORLD.FAIL_ENDS.includes(e.id);
   save();
+  if (P && !S.reported) { BSC.finishGame(P, S, sc); G0 = null; }
   refresh();
   $('panel').innerHTML = `<div class="step-h"><h2>${E.t}</h2><span class="kicker">${roundName(S.round)}</span></div>
     <div class="ev-card"><p>${e.f ? `<b style="color:${F[e.f].color}">${F[e.f].full}</b>` : ''}${E.d}</p>
@@ -889,10 +1138,13 @@ function showEnding() {
       <tr><td>🏁 結局分</td><td>${sc.ending}</td></tr>
       <tr class="total"><td>總分</td><td>${sc.total}</td></tr>
     </table>
-    <h3 class="serif" style="margin-top:10px">🧠 知識點圖鑑</h3>${pracView()}
+    <h3 class="serif" style="margin-top:10px">📈 本局分析</h3>${gameAnalysis(S)}
+    <div class="actions"><button class="btn dark" id="my2">📊 我的累積紀錄</button><button class="btn dark" id="rank2">🏆 排行榜</button></div>
+
     ${chart()}
     <div class="actions"><button class="btn" id="again">🔁 同一張地圖再挑戰</button><button class="btn dark" id="new">🗺️ 換一張新地圖</button></div></div>`;
-  $('again').onclick = () => { const lv = S.level, code = S.code, tm = S.timed; S = WORLD.newGame({ level: lv, code }); S.timed = tm; enterGame(true); };
+  $('my2').onclick = () => myRecord(S); $('rank2').onclick = () => rankBoard();
+  $('again').onclick = () => { const lv = S.level, code = S.code, tm = S.timed; S = WORLD.newGame({ level: lv, code }); S.timed = tm; if (P) BSC.log(P.sid, 'start', { level: lv, code: S.code, timed: tm }); enterGame(true); };
   $('new').onclick = () => { try { localStorage.removeItem(SAVE); } catch (e) {} showTitle(); };
 }
 // 各國相對國力的走勢圖
@@ -932,12 +1184,12 @@ function codex() {
   m.querySelector('#ok').onclick = closeModal;
 }
 $('btn-codex').onclick = codex; $('btn-codex2').onclick = codex;
-$('btn-prac').onclick = () => { const m = modal(`<h2>📚 知識點圖鑑</h2>${pracView()}<div class="actions" style="justify-content:flex-end"><button class="btn" id="cl">關閉</button></div>`); m.querySelector('#cl').onclick = () => { closeModal(); if (CUR) openTask(CUR); }; };
+$('btn-prac').onclick = () => myRecord(S);
 $('btn-menu').onclick = () => {
   const m = modal(`<h2>☰ 選單</h2><p style="margin:8px 0">地圖代碼 <b>${S.code}</b>（${S.level === 'g11' ? '高二高三版' : '高一版'}）。戰局每一步都會自動存檔。</p>
     <div class="actions"><button class="btn" id="ok">繼續遊戲</button><button class="btn dark" id="title">回到開始畫面</button></div>`);
   m.querySelector('#ok').onclick = closeModal;
-  m.querySelector('#title').onclick = () => { closeModal(); showTitle(); };
+  m.querySelector('#title').onclick = () => { closeModal(); if (P) { G0 = S.ended ? null : S; BSC.flushGame(P); } showTitle(); };
 };
 showTitle();
 </script>
