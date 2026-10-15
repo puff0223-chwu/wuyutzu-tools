@@ -31,11 +31,12 @@ const ROLES = {
 function rng(seed) { let s = seed >>> 0 || 1; return () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
 
 function play(P, r) {
-  const g11 = P.level === 'g11';
+  // 鍵結社人數：≥20 人每 10 人 1 名（2～3 名）；10～19 人 1 名；<10 人沒有
+  const nb = P.N >= 20 ? Math.max(2, Math.min(3, Math.round(P.N / 10))) : P.N >= 10 ? 1 : 0, rest = P.N - nb;
+  const g11 = P.level === 'g11' && rest >= 10;   // 人太少（每國不到 2 人）自動改用高一版
   const facs = g11 ? ['co', 'io', 'me', 'hb', 'vw'] : ['co', 'io', 'me'];
-  const nb = Math.max(2, Math.min(3, Math.round(P.N / 10))), rest = P.N - nb;
   const size = {};
-  if (g11) { const b = Math.floor((rest - 2) / 5); facs.forEach(f => size[f] = b + (f === 'hb' || f === 'vw' ? 1 : 0)); let left = rest - facs.reduce((a, f) => a + size[f], 0); for (const f of ['hb', 'vw', 'co', 'io', 'me']) { if (left <= 0) break; size[f]++; left--; } }
+  if (g11) { const b = rest >= 17 ? Math.floor((rest - 2) / 5) : Math.floor(rest / 5); facs.forEach(f => size[f] = b + (rest >= 17 && (f === 'hb' || f === 'vw') ? 1 : 0)); let left = rest - facs.reduce((a, f) => a + size[f], 0); for (const f of ['hb', 'vw', 'co', 'io', 'me']) { if (left <= 0) break; size[f]++; left--; } }
   else { const b = Math.floor(rest / 3); facs.forEach(f => size[f] = b); let left = rest - 3 * b; for (const f of facs) { if (left <= 0) break; size[f]++; left--; } }
   const gauss = () => { let u = 0; for (let i = 0; i < 6; i++) u += r(); return (u - 3) / Math.sqrt(0.5); };
   const acc = () => Math.max(0.35, Math.min(0.97, P.ACC + P.ACC_SD * gauss()));
@@ -50,14 +51,14 @@ function play(P, r) {
   // 玩家
   const players = [];
   facs.forEach(f => {
-    const base = (P.SMALL && size[f] <= 5 ? ['leader'] : ['leader', 'knight', 'sage']).concat(ROLES[f].filter(x => g11 || x !== 'mystic'));
+    const base = size[f] <= 3 ? ROLES[f].map(() => 'flex') : (P.SMALL !== 0 && size[f] <= 5 ? ['leader'] : ['leader', 'knight', 'sage']).concat(ROLES[f].filter(x => g11 || x !== 'mystic'));
     for (let i = 0; i < size[f]; i++) {
-      const p = { fac: f, origin: f, role: base[i] || ROLES[f][i % ROLES[f].length], acc: acc(), wallet: P.START_COIN + Math.max(0, 100 - F[f].rel) * 1.5, inv: {}, correct: 0, roleOut: 0, spy: false, sec: null, secN: 0, lastStrong: -9, sent: 0 };
+      const p = { fac: f, origin: f, role: base[i] || ROLES[f].filter(x => g11 || x !== 'mystic')[i % ROLES[f].filter(x => g11 || x !== 'mystic').length], acc: acc(), wallet: P.START_COIN + Math.max(0, 100 - F[f].rel) * 1.5, inv: {}, correct: 0, roleOut: 0, spy: false, sec: null, secN: 0, lastStrong: -9, sent: 0 };
       players.push(p); F[f].mem.push(p);
     }
   });
   // 雙面人：每個勢力藏進來的數量依人數表，來源輪流
-  const spyN = n => n <= 6 ? 1 : n <= 8 ? 2 : n <= 10 ? 3 : 4;
+  const spyN = n => n <= 3 ? 0 : n <= 6 ? 1 : n <= 8 ? 2 : n <= 10 ? 3 : 4;
   if (P.spies) {
     const k = Math.min(...facs.map(f => spyN(size[f])));
     facs.forEach((f, i) => {
@@ -112,7 +113,8 @@ function play(P, r) {
         const honest = !p.spy || r() < P.SPY_HONEST;
         if (!honest) { if (p.role === 'miner') add(p.inv, ALL[Math.floor(r() * ALL.length)]); continue; }
         p.roleOut++;
-        switch (p.role) {
+        let role = p.role; if (role === 'flex') { const RL = ROLES[p.fac].filter(x => g11 || x !== 'mystic'); role = (p.cyc = (p.cyc || 0) + 1) % 3 === 0 ? 'leader' : RL[p.cyc % RL.length]; }
+        switch (role) {
           case 'leader': x.push += 2; break;
           case 'knight': x.push += 1; break;
           case 'sage': x.push += 0.5; break;
@@ -250,7 +252,7 @@ function play(P, r) {
   const rels = facs.map(f => F[f].rel);
   let bsWin = false;
   if (!winner && round === 8) {
-    bsWin = rels.every(v => v >= P.BS_LO && v <= P.BS_HI) && Math.max(...rels) - Math.min(...rels) <= P.BS_SPREAD;
+    bsWin = bs.length > 0 && rels.every(v => v >= P.BS_LO && v <= P.BS_HI) && Math.max(...rels) - Math.min(...rels) <= P.BS_SPREAD;
     if (bsWin) winner = 'bs';
   }
   // 計分
@@ -273,7 +275,7 @@ function play(P, r) {
     fscore[f] = Math.round((F[f].rel - 100) * P.PW + avg + (winner === f ? P.V : 0));
   });
   const topF = facs.slice().sort((a, b) => fscore[b] - fscore[a])[0];
-  return { winner, round, rels, fscore, topF, players, F, facs, hist, sabLog, size, bsWin, bs };
+  return { winner, round, rels, fscore, topF, players, F, facs, hist, sabLog, size, bsWin, bs, g11, thr: { CO_N: P.CO_N, IO_N: P.IO_N, ME_X: P.ME_X, HB_N: P.HB_N, VW_X: P.VW_X } };
 }
 
 function run(over = {}) {
