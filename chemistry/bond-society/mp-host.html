@@ -6,7 +6,7 @@
 <title>隱秘的鍵結社：全班連線控制台</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<link rel="stylesheet" href="mp.css?v=20261015e">
+<link rel="stylesheet" href="mp.css?v=20261015f">
 <style>
   /* 老師控制台（投影用）：開房 → 大廳 → 分配 → 回合（行動、結算、市場、事件）→ 揭曉 */
   header { display: flex; align-items: center; gap: 12px; padding: 10px 18px; background: #0d0b12cc; border-bottom: 1px solid var(--night-3); position: sticky; top: 0; z-index: 20; flex-wrap: wrap; }
@@ -18,7 +18,7 @@
   .lobby { display: grid; grid-template-columns: 340px 1fr; gap: 16px; align-items: start; }
   #qr { background: #fff; padding: 12px; border-radius: 14px; width: 300px; height: 300px; } #qr img, #qr canvas { width: 100% !important; height: 100% !important; }
   .names { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; } .names span { background: var(--night-3); border-radius: 8px; padding: 4px 10px; font-weight: 700; }
-  .game { display: grid; grid-template-columns: 1.25fr 1fr; gap: 14px; align-items: start; }
+  .game { display: grid; grid-template-columns: 1.1fr 1fr; gap: 14px; align-items: start; }
   .facs { display: grid; gap: 8px; }
   .fac { border-left: 8px solid; border-radius: 12px; background: var(--night-2); padding: 10px 12px; }
   .fac h3 { display: flex; justify-content: space-between; align-items: baseline; font-size: 1.15em; }
@@ -26,7 +26,7 @@
   .fac .meta { color: var(--soft); font-size: .88em; display: flex; gap: 12px; flex-wrap: wrap; }
   .parts { margin-top: 6px; display: grid; gap: 3px; font-size: .85em; }
   .parts > div { display: grid; grid-template-columns: 1fr 90px; gap: 8px; align-items: center; }
-  .feed { max-height: 220px; overflow: auto; font-size: .9em; color: var(--soft); } .feed div { padding: 3px 0; border-bottom: 1px dashed #ffffff14; }
+  .feed { max-height: 170px; overflow: auto; font-size: .9em; color: var(--soft); } .feed div { padding: 3px 0; border-bottom: 1px dashed #ffffff14; }
   .ctrl { position: sticky; bottom: 0; background: #0d0b12ee; border-top: 1px solid var(--night-3); padding: 10px 18px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; z-index: 20; }
   .stage { margin-top: 14px; }
   .news-g { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
@@ -38,6 +38,9 @@
   .evo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; } .evo div { background: var(--night-2); border-radius: 12px; padding: 12px 16px; font-size: 1.25em; font-weight: 700; } .evo div.right { background: #1d4a2e; }
   .end-h { text-align: center; font-family: 'Noto Serif TC', serif; font-size: 2.2em; color: var(--candle); margin: 10px 0; }
   table.t { width: 100%; border-collapse: collapse; } table.t th, table.t td { padding: 6px 8px; border-bottom: 1px dashed #ffffff1f; text-align: left; } table.t th { color: var(--soft); font-weight: 700; }
+  .fstrip { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; margin-bottom: 12px; }
+  .fstrip .fac { padding: 8px 10px; } .fh { display: flex; justify-content: space-between; align-items: baseline; font-size: 1.08em; } .fh .pct { font-size: 1.45em; font-weight: 900; }
+  .stage { margin-top: 0 !important; } .stage > .card + .card { margin-top: 12px; }
   @media (max-width: 1000px) { .game, .lobby { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -48,16 +51,16 @@
 <div class="modal hidden" id="modal"><div class="mcard" id="mcard"></div></div>
 <div class="toast" id="toast"></div>
 
-<script src="data.js?v=20261015e"></script>
-<script src="facts.js?v=20261015e"></script>
-<script src="bank.js?v=20261015e"></script>
-<script src="quiz.js?v=20261015e"></script>
-<script src="world.js?v=20261015e"></script>
-<script src="cloud.js?v=20261015e"></script>
-<script src="mp-data.js?v=20261015e"></script>
-<script src="mp-engine.js?v=20261015e"></script>
-<script src="mp-cloud.js?v=20261015e"></script>
-<script src="mp-map.js?v=20261015e"></script>
+<script src="data.js?v=20261015f"></script>
+<script src="facts.js?v=20261015f"></script>
+<script src="bank.js?v=20261015f"></script>
+<script src="quiz.js?v=20261015f"></script>
+<script src="world.js?v=20261015f"></script>
+<script src="cloud.js?v=20261015f"></script>
+<script src="mp-data.js?v=20261015f"></script>
+<script src="mp-engine.js?v=20261015f"></script>
+<script src="mp-cloud.js?v=20261015f"></script>
+<script src="mp-map.js?v=20261015f"></script>
 <script>
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -69,7 +72,7 @@ const toast = t => { const el = $('toast'); el.textContent = t; el.classList.add
 const modal = h => { $('mcard').innerHTML = h; $('modal').classList.remove('hidden'); return $('mcard'); };
 const closeModal = () => $('modal').classList.add('hidden');
 const fx = f => `<b style="color:${F[f].color}">${F[f].icon} ${F[f].name}</b>`;
-const studentUrl = () => location.href.replace(/mp-host\.html.*$/, 'mp.html') + '?room=' + ROOM;
+const studentUrl = () => location.href.replace(/mp-host\.html.*$/, 'mp.html') + '?room=' + ROOM + (QS.get('fb') ? '&fb=' + encodeURIComponent(QS.get('fb')) : '');
 
 /* ---------- 開房 ---------- */
 function setup() {
@@ -119,33 +122,65 @@ async function resume(room) {
 }
 
 /* ---------- 連線：大廳與學生動作 ---------- */
-const DONE = new Set();
-function attach() {
-  MPC.listen(ROOM + '/lobby', d => { let n = 0; Object.values(d || {}).forEach(l => { if (l && l.sid && !R.lobby[l.sid]) { MPE.join(R, l); n++; } }); if (n) changed(); });
-  MPC.listen(ROOM + '/act', d => {
-    if (!d) return; const ks = Object.keys(d).sort(), del = {};
-    ks.forEach(k => { del['act/' + k] = null; if (DONE.has(k)) return; DONE.add(k); try { const res = MPE.act(R, d[k]); if (res && res.cell != null) flash.push(res.cell); } catch (e) { console.warn(e); } });
-    if (ks.length) { changed(); MPC.patch(ROOM, del).catch(() => {}); }
-  });
-  setInterval(tick, 1000); setInterval(() => { if (dirty) flush(); }, 500);
-  flush(true); render();
+// 穩定性設計（2026-10-15 崩潰測試後）：
+// ・學生動作一到就處理、處理完立刻同步（不靠計時器，分頁在背景也不會卡住）
+// ・同步一次只送一批，送完才送下一批（避免舊資料蓋過新資料）；失敗自動重試，成功才記錄「已送出」
+// ・每位學生只寫「有變的欄位」：v/<sid>/g|f|p/<欄位>
+// ・處理過的動作和畫面資料一起刪掉，少一次連線
+const DONE = new Set(); let DEL = {}, flushing = false, again = false, saving = false, failN = 0, listeners = [];
+async function attach() {
+  try { MPE.setOffset(await MPC.serverOffset(ROOM)); } catch (e) {}
+  listeners.push(MPC.listen(ROOM + '/lobby', d => { let n = 0; Object.values(d || {}).forEach(l => { if (l && typeof l.sid === 'string' && !R.lobby[l.sid]) { MPE.join(R, l); n++; } }); if (n) changed(); }));
+  listeners.push(MPC.listen(ROOM + '/act', d => {
+    if (!d || typeof d !== 'object') return; const ks = Object.keys(d).sort(); let n = 0;
+    ks.forEach(k => { DEL['act/' + k] = null; if (DONE.has(k)) return; DONE.add(k); n++; try { const res = MPE.act(R, d[k]); if (res && res.cell != null) flash.push(res.cell); } catch (e) { console.warn('act error', e, d[k]); } });
+    if (ks.length) changed(n > 0);
+  }));
+  setInterval(tick, 1000);
+  setInterval(() => { if (!flushing && (dirty || Object.keys(DEL).length)) kick(); }, 2000);   // 保險：漏掉的同步補送
+  setInterval(saveHost, 5000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) listeners.forEach(l => l.refresh()); });
+  window.addEventListener('beforeunload', e => { if (R && R.phase !== 'lobby' && R.phase !== 'end') { e.preventDefault(); e.returnValue = ''; } });
+  dirty = true; kick(); saveHost(true); render();
 }
-function changed() { dirty = true; render(); }
-async function flush(force) {
+function changed(redraw = true) { dirty = true; kick(); if (redraw) scheduleRender(); }
+let rq = false;
+function scheduleRender() { if (rq) return; rq = true; setTimeout(() => { rq = false; render(); }, 60); }
+async function kick() {
+  if (flushing) { again = true; return; }
+  flushing = true;
+  try { do { again = false; await flushOnce(); } while (again); failN = 0; }
+  catch (e) { failN++; if (failN === 3) toast('⚠️ 網路不穩，正在重試同步……'); setTimeout(kick, Math.min(5000, 500 * failN)); }
+  finally { flushing = false; }
+}
+async function flushOnce() {
   dirty = false;
-  const v = MPE.views(R), up = {};
-  const put = (k, val) => { const s = JSON.stringify(val); if (force || LV[k] !== s) { LV[k] = s; up[k] = val; } };
-  put('pub', v.pub); Object.entries(v.fac).forEach(([f, x]) => put('fac/' + f, x)); Object.entries(v.priv).forEach(([s, x]) => put('priv/' + s, x));
-  try { if (Object.keys(up).length) await MPC.patch(ROOM, up); if (force || Date.now() - lastHost > 5000) { lastHost = Date.now(); await MPC.put(ROOM + '/host', R); } }
-  catch (e) { dirty = true; toast('同步失敗，稍後重試'); }
+  const { out } = MPE.studentViews(R), up = { ...DEL }, sent = {};
+  Object.entries(out).forEach(([sid, v]) => ['g', 'f', 'p'].forEach(sec => {
+    const val = v[sec];
+    if (val == null) return;
+    Object.entries(val).forEach(([k, x]) => { const key = `v/${sid}/${sec}/${k}`, str = JSON.stringify(x === undefined ? null : x); if (LV[key] !== str) { up[key] = x === undefined ? null : x; sent[key] = str; } });
+    // 這一節少掉的欄位要刪掉
+    Object.keys(LV).forEach(key => { if (key.startsWith(`v/${sid}/${sec}/`) && !(key.slice(`v/${sid}/${sec}/`.length) in val)) { up[key] = null; sent[key] = 'null'; } });
+  }));
+  const dels = Object.keys(DEL);
+  if (!Object.keys(up).length) return;
+  await MPC.patch(ROOM, up);
+  Object.assign(LV, sent); dels.forEach(k => delete DEL[k]);
 }
+async function saveHost(force) {
+  if (!R || saving || (!force && !hostDirty())) return; saving = true;
+  try { await MPC.put(ROOM + '/host', R); lastHost = JSON.stringify(R).length; } catch (e) {} finally { saving = false; }
+}
+let hostSig = '';
+function hostDirty() { const s = String(R.round) + R.phase + Object.keys(R.players || {}).length + DONE.size + (R.feed[0] ? R.feed[0].at : 0); if (s === hostSig) return false; hostSig = s; return true; }
 function tick() {
-  const el = $('h-clock');
+  const el = $('h-clock'), now = MPE.now();
   if (R && R.phase === 'act') {
-    const left = R.paused ? R.pauseLeft : Math.max(0, R.tEnd - Date.now()), s = Math.ceil(left / 1000);
+    const left = R.paused ? R.pauseLeft : Math.max(0, R.tEnd - now), s = Math.ceil(left / 1000);
     el.textContent = R.paused ? '⏸ ' + fmt(s) : fmt(s); el.classList.toggle('low', !R.paused && s <= 30);
     if (!R.paused && s === 0 && !tick.warned) { tick.warned = true; toast('⏰ 時間到！可以按「結束本回合並結算」'); renderCtrl(); }
-  } else if (R && R.phase === 'event' && R.event && !R.event.reveal) { const s = Math.max(0, Math.ceil((R.event.endAt - Date.now()) / 1000)); el.textContent = fmt(s); }
+  } else if (R && R.phase === 'event' && R.event && !R.event.reveal) { const s = Math.max(0, Math.ceil((R.event.endAt - now) / 1000)); el.textContent = fmt(s); }
   else el.textContent = '';
 }
 const fmt = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
@@ -171,23 +206,25 @@ function renderLobby() {
     <div class="names">${L.map(l => `<span>${esc(l.cls)}-${l.seat} ${esc(l.name)}</span>`).join('') || '<span class="soft">等學生掃 QR 進來……</span>'}</div>`;
   $('ctrl').classList.remove('hidden');
   $('ctrl').innerHTML = `<button class="btn big" id="go" ${N >= 3 ? '' : 'disabled'}>🎲 開始分配（${N} 人）</button><span class="soft">至少 3 人；開始後才進來的同學會加入人數最少的勢力。</span>`;
-  $('go').onclick = () => { if (!confirm(`用目前 ${N} 人開始分配？`)) return; MPE.start(R); changed(); flush(true); };
+  $('go').onclick = () => { if (!confirm(`用目前 ${N} 人開始分配？`)) return; MPE.start(R); changed(); saveHost(true); };
 }
 function facCard(f) {
   const x = R.F[f], terr = MPMAP.territory(R.owner, f), pr = MPE.progress(R, f);
-  return `<div class="fac" style="border-color:${F[f].color}"><h3><span>${fx(f)} <span class="soft small">${x.mem.length} 人</span></span><span class="pct" style="color:${F[f].light}">${Math.round(x.rel)}%</span></h3>
+  return `<div class="fac" style="border-color:${F[f].color}"><div class="fh"><span>${fx(f)} <span class="soft small">${x.mem.length}人</span></span><span class="pct" style="color:${F[f].light}">${Math.round(x.rel)}%</span></div>
     <div class="bar" style="margin:4px 0"><i style="width:${Math.min(100, x.rel / 1.6)}%;background:${F[f].color}"></i></div>
-    <div class="meta"><span>🗺️ ${terr} 格</span><span>🎯 團隊任務 ${x.teamOk}/${x.teamN}${R.phase === 'act' ? (x.team.done ? '（本回合✅）' : '') : ''}</span>${x.walls ? `<span>🧱×${x.walls}</span>` : ''}${peek ? `<span>💰${x.tre}</span>` : ''}</div>
+    <div class="meta"><span>🗺️${terr}</span><span>🎯${x.teamOk}/${x.teamN}${R.phase === 'act' && x.team.done ? '✅' : ''}</span>${x.walls ? `<span>🧱${x.walls}</span>` : ''}${peek ? `<span>💰${x.tre}</span>` : ''}</div>
     ${peek ? `<div class="parts">${pr.parts.map(q => `<div><span>${esc(q.l)} ${q.have}/${q.need}</span><div class="bar"><i style="width:${Math.min(100, q.have / q.need * 100)}%;background:${q.have >= q.need ? '#4cd383' : F[f].color}"></i></div></div>`).join('')}</div>` : ''}</div>`;
 }
+let mapSig = '';
 function renderGame() {
   if (!$('map') || renderGame.room !== ROOM) {
-    $('main').innerHTML = `<div class="game"><div><div class="mapbox"><svg id="map"></svg></div><div class="card" style="margin-top:12px"><div class="row" style="justify-content:space-between"><b>📜 戰報</b><button class="btn ghost sm" id="peek">👁 勝利進度（只給老師看）</button></div><div class="feed" id="feed"></div></div></div><div><div class="facs" id="facs"></div><div class="stage" id="stage"></div></div></div>`;
-    renderGame.room = ROOM;
+    $('main').innerHTML = `<div class="fstrip" id="facs"></div><div class="game"><div><div class="mapbox"><svg id="map"></svg></div><div class="card" style="margin-top:12px"><div class="row" style="justify-content:space-between"><b>📜 戰報</b><button class="btn ghost sm" id="peek">👁 勝利進度（只給老師看）</button></div><div class="feed" id="feed"></div></div></div><div class="stage" id="stage"></div></div>`;
+    renderGame.room = ROOM; mapSig = '';
     $('peek').onclick = () => { peek = !peek; $('peek').textContent = peek ? '🙈 收起勝利進度' : '👁 勝利進度（只給老師看）'; render(); };
   }
-  MPMAP.draw($('map'), { seed: R.seed, facs: R.facs, owner: R.owner, rel: Object.fromEntries(R.facs.map(f => [f, R.F[f].rel])) }, flash); flash = [];
-  $('facs').innerHTML = R.facs.map(facCard).join('') + (R.bs.length ? `<div class="fac" style="border-color:#c9a24a"><h3><span>🕯️ 鍵結社 <span class="soft small">${R.bs.length} 人</span></span><span class="soft small">均勢：每國 ${R.T.BS.lo}～${R.T.BS.hi}%，差距 ≤ ${R.T.BS.spread}%</span></h3>${R.board ? `<div class="meta"><span>委託 ${R.board.filter(b => b.done).length}/${R.board.length} 件完成</span></div>` : ''}</div>` : '');
+  const rel = Object.fromEntries(R.facs.map(f => [f, R.F[f].rel])), sig = JSON.stringify([R.owner, rel, flash]);
+  if (sig !== mapSig) { mapSig = sig; MPMAP.draw($('map'), { seed: R.seed, facs: R.facs, owner: R.owner, rel }, flash); } flash = [];
+  $('facs').innerHTML = R.facs.map(facCard).join('') + (R.bs.length ? `<div class="fac" style="border-color:#c9a24a"><div class="fh"><span>🕯️ 鍵結社 <span class="soft small">${R.bs.length}人</span></span></div><div class="meta" style="margin-top:6px"><span>均勢 ${R.T.BS.lo}～${R.T.BS.hi}%・差 ≤${R.T.BS.spread}%</span>${R.board ? `<span>委託 ${R.board.filter(b => b.done).length}/${R.board.length}</span>` : ''}</div></div>` : '');
   $('feed').innerHTML = R.feed.slice(0, 30).map(e => `<div>${esc(e.t)}</div>`).join('');
   const st = $('stage');
   if (R.phase === 'intro') st.innerHTML = `<div class="card"><h3 class="serif" style="color:var(--candle)">📜 分配完成</h3><p class="soft" style="margin:6px 0">請同學看自己的手機：勢力、角色、任務都在上面。<b>雙面人的身分只有自己和母國的大煉金師知道，請保密！</b></p>
@@ -214,9 +251,9 @@ function renderMarket() {
 }
 function renderEvent() {
   const E = R.event; if (!E) return '';
-  const n = Object.keys(E.ans).length, tot = Object.values(R.players).filter(p => p.fac !== 'bs').length;
+  const n = Object.keys(E.ans).length, tot = Object.keys(R.players).length, cnt = o => Object.values(E.ans).filter(a => a === o).length;
   return `<div class="card"><h3 class="serif" style="color:var(--candle)">🎲 隨機事件：全班一起答</h3><div class="evq" style="margin-top:8px">${E.q}</div>
-    <div class="evo">${E.opts.map((o, i) => `<div class="${E.reveal && o === E.right ? 'right' : ''}">${'ABCD'[i]}. ${o}</div>`).join('')}</div>
+    <div class="evo">${E.opts.map((o, i) => `<div class="${E.reveal && o === E.right ? 'right' : ''}">${'ABCD'[i]}. ${o}${E.reveal ? `<span style="float:right;opacity:.8">${cnt(o)} 人</span>` : ''}</div>`).join('')}</div>
     <p style="margin-top:10px">已作答 <b>${n}</b>／${tot} 人${E.reveal ? '' : '（勢力答對率 ≥ 70%，下回合國力推進 +2）'}</p>
     ${E.reveal && E.res ? `<div class="row" style="margin-top:6px">${R.facs.map(f => `<span class="chip" style="border:2px solid ${F[f].color}">${F[f].name} ${E.res[f]}%${E.res[f] >= 70 ? ' 🎉+2' : ''}</span>`).join('')}</div>` : ''}</div>`;
 }
@@ -230,21 +267,21 @@ function renderCtrl() {
   h += `<span style="flex:1"></span><button class="btn ghost sm" id="b-menu">☰</button>`;
   c.innerHTML = h;
   const on = (id, fn) => { const b = $(id); if (b) b.onclick = fn; };
-  on('b-round', () => { MPE.beginRound(R); tick.warned = false; changed(); flush(true); });
-  on('b-pause', () => { if (R.paused) { R.tEnd = Date.now() + R.pauseLeft; R.paused = false; } else { R.pauseLeft = Math.max(0, R.tEnd - Date.now()); R.paused = true; } changed(); });
-  on('b-add', () => { if (R.paused) R.pauseLeft += 60000; else R.tEnd = Math.max(R.tEnd, Date.now()) + 60000; tick.warned = false; changed(); });
-  on('b-settle', () => { if (!confirm('結束本回合並結算？')) return; R.phase = 'act'; const n = MPE.settle(R); flash = n.cells || []; changed(); flush(true); });
+  on('b-round', () => { MPE.beginRound(R); tick.warned = false; changed(); saveHost(true); });
+  on('b-pause', () => { if (R.paused) { R.tEnd = MPE.now() + R.pauseLeft; R.paused = false; } else { R.pauseLeft = Math.max(0, R.tEnd - MPE.now()); R.paused = true; } changed(); });
+  on('b-add', () => { if (R.paused) R.pauseLeft += 60000; else R.tEnd = Math.max(R.tEnd, MPE.now()) + 60000; tick.warned = false; changed(); });
+  on('b-settle', () => { if (!confirm('結束本回合並結算？')) return; R.phase = 'act'; const n = MPE.settle(R); flash = n.cells || []; changed(); saveHost(true); });
   on('b-market', () => { R.phase = 'market'; changed(); });
-  on('b-event', () => { const q = QUIZ.make(Math.random, R.level); MPE.setEvent(R, q); changed(); flush(true); });
-  on('b-skip', () => { MPE.beginRound(R); tick.warned = false; changed(); flush(true); });
+  on('b-event', () => { const q = QUIZ.make(Math.random, R.level); MPE.setEvent(R, q); changed(); saveHost(true); });
+  on('b-skip', () => { MPE.beginRound(R); tick.warned = false; changed(); saveHost(true); });
   on('b-reveal', () => { MPE.revealEvent(R); changed(); });
-  on('b-end', () => { MPE.finish(R); changed(); flush(true); });
+  on('b-end', () => { MPE.finish(R); changed(); saveHost(true); });
   on('b-menu', () => {
     const m = modal(`<h2>☰ 選單</h2><p>房間 <b>${ROOM}</b>・學生連結：<br><small style="word-break:break-all">${esc(studentUrl())}</small></p>
       <div class="row" style="margin-top:10px"><button class="btn" id="m-qr">🔳 再顯示 QR（晚到的同學）</button><button class="btn red" id="m-stop">🏁 提前結束並揭曉</button><button class="btn ghost" id="m-x" style="color:var(--ink);border-color:#ccc">關閉</button></div>`);
     m.querySelector('#m-x').onclick = closeModal;
     m.querySelector('#m-qr').onclick = () => { const mm = modal(`<div id="qr2" style="width:min(70vh,90%);margin:0 auto"></div><p style="text-align:center;font-size:1.6em;font-weight:900">房間 ${ROOM}</p><div style="text-align:center"><button class="btn" id="q-x">關閉</button></div>`); try { new QRCode(mm.querySelector('#qr2'), { text: studentUrl(), width: 600, height: 600 }); mm.querySelectorAll('#qr2 img,#qr2 canvas').forEach(x => { x.style.width = '100%'; x.style.height = 'auto'; }); } catch (e) {} mm.querySelector('#q-x').onclick = closeModal; };
-    m.querySelector('#m-stop').onclick = () => { if (!confirm('提前結束這一局並揭曉結果？')) return; R.winner = R.winner || 'none'; MPE.finish(R); closeModal(); changed(); flush(true); };
+    m.querySelector('#m-stop').onclick = () => { if (!confirm('提前結束這一局並揭曉結果？')) return; R.winner = R.winner || 'none'; MPE.finish(R); closeModal(); changed(); saveHost(true); };
   });
 }
 function renderEnd() {
@@ -265,7 +302,9 @@ function renderEnd() {
   renderGame.room = null;
 }
 $('modal').onclick = e => { if (e.target.id === 'modal') closeModal(); };
-const qRoom = new URLSearchParams(location.search).get('room');
+const QS = new URLSearchParams(location.search);
+if (QS.get('fb')) { MPC.setBase(QS.get('fb') + '/bond-mp'); BSC.CONFIG.FIREBASE_URL = QS.get('fb'); }   // 只給測試用：連到本機模擬的 Firebase
+const qRoom = QS.get('room');
 if (qRoom) resume(qRoom.toUpperCase()); else setup();
 </script>
 </body>

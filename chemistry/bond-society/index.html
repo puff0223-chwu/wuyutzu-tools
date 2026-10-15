@@ -331,16 +331,16 @@
 <div class="ov hidden" id="ov"><div class="ovc" id="ovc"></div></div>
 <div class="toast" id="toast"></div>
 
-<script src="data.js?v=20261015e"></script>
-<script src="world.js?v=20261015e"></script>
-<script src="facts.js?v=20261015e"></script>
-<script src="bank.js?v=20261015e"></script>
-<script src="mats.js?v=20261015e"></script>
-<script src="quiz.js?v=20261015e"></script>
-<script src="tasks.js?v=20261015e"></script>
-<script src="events.js?v=20261015e"></script>
-<script src="game.js?v=20261015e"></script>
-<script src="cloud.js?v=20261015e"></script>
+<script src="data.js?v=20261015f"></script>
+<script src="world.js?v=20261015f"></script>
+<script src="facts.js?v=20261015f"></script>
+<script src="bank.js?v=20261015f"></script>
+<script src="mats.js?v=20261015f"></script>
+<script src="quiz.js?v=20261015f"></script>
+<script src="tasks.js?v=20261015f"></script>
+<script src="events.js?v=20261015f"></script>
+<script src="game.js?v=20261015f"></script>
+<script src="cloud.js?v=20261015f"></script>
 <script>
 const $ = id => document.getElementById(id);
 const F = WORLD.FACTIONS, C = CHEM, RU = WORLD.RULE;
@@ -836,6 +836,19 @@ function nameUI(c, head) {
   draw();
 }
 /* 🧱 結構工坊：點鍵切換單／雙／參鍵，點原子下方的 ± 調整孤對電子 */
+// 孤對電子與原子編號的位置：在 0～360° 每 15° 找候選角度，離鍵、離畫面邊緣、彼此越遠越好
+function lpLayout(m, i, n, W = 300, H = 180) {
+  const [, x, y] = m.atoms[i], bonds = [];
+  m.bonds.forEach(([a, b]) => { if (a === i || b === i) { const [, x2, y2] = m.atoms[a === i ? b : a]; bonds.push(Math.atan2(y2 - y, x2 - x)); } });
+  const dist = (a, b) => { const d = Math.abs(((a - b) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI); return d; };
+  const inside = a => { const px = x + Math.cos(a) * 30, py = y + Math.sin(a) * 30; return px > 8 && px < W - 8 && py > 8 && py < H - 8; };
+  const cand = Array.from({ length: 24 }, (_, k) => k * Math.PI / 12);
+  const pick = used => cand.map(a => ({ a, s: Math.min(Math.PI, ...used.map(u => dist(a, u)) ) - (inside(a) ? 0 : 3) })).sort((p, q) => q.s - p.s)[0].a;
+  const pairs = [];
+  for (let k = 0; k < n; k++) pairs.push(pick([...bonds, ...pairs]));
+  const label = pick([...bonds, ...pairs]);
+  return { pairs, label };
+}
 function structUI(c, head) {
   const t = c.task, m = BANK.STRUCT[t.mi];
   t.bo = t.bo || m.bonds.map(() => 1); t.lp = t.lp || m.atoms.map(() => 0);
@@ -850,10 +863,11 @@ function structUI(c, head) {
       svg += `<line class="bhit" data-b="${k}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="transparent" stroke-width="22" style="cursor:pointer"/>`;
     });
     m.atoms.forEach(([sym, x, y], i) => {
-      const ok = e[i] === (sym === 'H' ? 2 : 8);
-      if (sym !== 'H') svg += `<text x="${x + 15}" y="${y - 14}" font-size="10" fill="#8a6a22">${'①②③④⑤⑥'[i]}</text>`;
+      const ok = e[i] === (sym === 'H' ? 2 : 8), L = lpLayout(m, i, t.lp[i]);
       svg += `<circle cx="${x}" cy="${y}" r="17" fill="${sym === 'H' ? '#fff' : '#f5e6b8'}" stroke="${ok ? '#2f9e5a' : '#c9b48a'}" stroke-width="3"/><text x="${x}" y="${y + 6}" text-anchor="middle" font-weight="900" font-size="16">${sym}</text>`;
-      for (let q = 0; q < t.lp[i]; q++) { const a = (q * 90 + 45) * Math.PI / 180; svg += `<circle cx="${x + Math.cos(a) * 25 - 3}" cy="${y + Math.sin(a) * 25}" r="2.6" fill="#c0392b"/><circle cx="${x + Math.cos(a) * 25 + 3}" cy="${y + Math.sin(a) * 25}" r="2.6" fill="#c0392b"/>`; }
+      // 孤對電子：放在離鍵最遠的空位，兩顆點沿切線並排（2026-10-15 修正：不再和鍵或編號重疊）
+      L.pairs.forEach(a => { const cx = x + Math.cos(a) * 27, cy = y + Math.sin(a) * 27, tx = -Math.sin(a) * 3.6, ty = Math.cos(a) * 3.6; svg += `<circle cx="${(cx + tx).toFixed(1)}" cy="${(cy + ty).toFixed(1)}" r="2.7" fill="#c0392b"/><circle cx="${(cx - tx).toFixed(1)}" cy="${(cy - ty).toFixed(1)}" r="2.7" fill="#c0392b"/>`; });
+      if (sym !== 'H') svg += `<text x="${(x + Math.cos(L.label) * 28).toFixed(1)}" y="${(y + Math.sin(L.label) * 28 + 4).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="700" fill="#8a6a22">${'①②③④⑤⑥'[i]}</text>`;
     });
     const md2 = modal(`${head}<h2>🧱 結構工坊</h2><div class="story">「${esc(c.text)}」</div>
       <div class="ask">畫出 <b>${t.f}（${t.zh}）</b> 的路易斯結構<small>點兩個原子之間的線，切換單鍵／雙鍵／參鍵；用每個原子的 ± 調整孤對電子（紅點）</small></div>

@@ -79,6 +79,8 @@ const MPE = (() => {
   };
 
   /* ---------- 小工具 ---------- */
+  // 時間一律用「伺服器時間」：老師端與學生端各自量出和 Firebase 伺服器的時差，避免手機時鐘不準
+  let OFF = 0; const now = () => Date.now() + OFF; const setOffset = o => { OFF = Number(o) || 0; };
   const rng = R => Wd.rngFrom(R);
   const pick = (r, a) => a[Math.floor(r() * a.length)];
   const add = (inv, el, n = 1) => { inv[el] = (inv[el] || 0) + n; if (inv[el] <= 0) delete inv[el]; };
@@ -87,17 +89,17 @@ const MPE = (() => {
   const mean = a => a.reduce((x, y) => x + y, 0) / (a.length || 1);
   const kinds = inv => METALS.filter(m => has(inv, m)).length;
   const log = (R, f, t) => { const L = R.F[f].log; L.unshift({ r: R.round, t }); if (L.length > 30) L.length = 30; };
-  const feed = (R, t) => { R.feed.unshift({ at: Date.now(), t }); if (R.feed.length > 40) R.feed.length = 40; };
-  const msg = (p, t) => { p.msgs = p.msgs || []; p.msgs.unshift({ at: Date.now(), t }); if (p.msgs.length > 12) p.msgs.length = 12; };
+  const feed = (R, t) => { R.feed.unshift({ at: now(), t }); if (R.feed.length > 40) R.feed.length = 40; };
+  const msg = (p, t) => { p.msgs = p.msgs || []; p.msgs.unshift({ at: now(), t }); if (p.msgs.length > 12) p.msgs.length = 12; };
 
   /* ---------- 開房 ---------- */
   function newRoom({ room, level = 'g11', diff = 'normal', code } = {}) {
     const seed = code ? Wd.seedOf(code) : Math.floor(Math.random() * 36 ** 6);
-    return { v: 1, room, level, diff, seed, code: Wd.codeOf(seed), rs: (seed * 2654435761) >>> 0, phase: 'lobby', round: 0, created: Date.now(), lobby: {}, players: {}, feed: [] };
+    return { v: 1, room, level, diff, seed, code: Wd.codeOf(seed), rs: (seed * 2654435761) >>> 0, phase: 'lobby', round: 0, created: now(), lobby: {}, players: {}, feed: [] };
   }
   function join(R, { sid, name, cls, seat }) {
     if (!sid) return null;
-    R.lobby[sid] = { sid, name: String(name || '').slice(0, 12), cls: String(cls || ''), seat: +seat || 0, at: Date.now() };
+    R.lobby[sid] = { sid, name: String(name || '').slice(0, 12), cls: String(cls || '').slice(0, 10), seat: Math.max(0, Math.min(99, +seat || 0)), at: now() };
     if (R.phase !== 'lobby' && !R.players[sid]) lateJoin(R, sid);
     return R.lobby[sid];
   }
@@ -185,7 +187,7 @@ const MPE = (() => {
   function lateJoin(R, sid) {
     if (!R.F) return;
     const f = R.facs.slice().sort((a, b) => R.F[a].mem.length - R.F[b].mem.length)[0], l = R.lobby[sid];
-    const rot = ROT[f].filter(x => R.g11 || x !== 'mystic'), role = rot[R.F[f].mem.length % rot.length];
+    const rot = ROT[f].filter(x => R.g11 || x !== 'mystic'), role = R.F[f].mem.some(id => R.players[id] && R.players[id].role === 'flex') ? 'flex' : rot[R.F[f].mem.length % rot.length];   // 小勢力的晚到同學也當萬能學徒
     R.players[sid] = { sid, name: l.name, cls: l.cls, seat: l.seat, fac: f, origin: f, role, wallet: K.START_COIN, correct: 0, rc: 0, permits: 0, trades: 0, stash: {}, sent: 0, cnt: { mined: {}, comp: 0, mol: 0, walls: 0, intel: 0, intelTok: 0, attacks: 0, issued: 0, repairs: 0, friend: 0, bsDone: 0, quick: 0, quickOk: 0, roleOk: 0 }, msgs: [], ack: {}, late: true };
     R.F[f].mem.push(sid);
     feed(R, `${l.name} 加入了${FN[f].name}`);
@@ -195,7 +197,7 @@ const MPE = (() => {
   /* ---------- 回合 ---------- */
   function beginRound(R) {
     const r = rng(R);
-    R.round++; R.phase = 'act'; R.tEnd = Date.now() + K.ROUND_SEC * 1000; R.paused = false; R.pauseLeft = 0;
+    R.round++; R.phase = 'act'; R.tEnd = now() + K.ROUND_SEC * 1000; R.paused = false; R.pauseLeft = 0;
     Object.values(R.players).forEach(p => { p.rc = 0; p.permits = 0; p.trades = 0; p.abilUsed = false; p.bsCovert = false; p.bsTook = 0; });
     R.facs.forEach(f => {
       const x = R.F[f], m = x.mem.length;
@@ -213,6 +215,7 @@ const MPE = (() => {
   }
   // 學生的動作 → 回傳給學生看的結果文字
   function act(R, a) {
+    if (!a || typeof a !== 'object' || typeof a.type !== 'string' || typeof a.sid !== 'string') return { ok: false };
     const p = R.players[a.sid];
     if (a.type === 'join') { join(R, a); return { ok: true }; }
     if (!p) return { ok: false, t: '你還沒有被分配到勢力，請等老師開始。' };
@@ -221,7 +224,7 @@ const MPE = (() => {
     if (a.id) { p.ack[a.id] = res; const ks = Object.keys(p.ack); if (ks.length > 12) delete p.ack[ks[0]]; }
     return res;
   }
-  const inAct = R => R.phase === 'act' && !R.paused && (!R.tEnd || Date.now() <= R.tEnd + 3000);
+  const inAct = R => R.phase === 'act' && !R.paused && (!R.tEnd || now() <= R.tEnd + 3000);
   function handle(R, p, a) {
     const r = rng(R);
     if (a.type === 'quick') {
@@ -231,7 +234,7 @@ const MPE = (() => {
       if (a.timeout) { x.push -= 1; return { ok: false, t: '⚡ 沒作答，勢力國力推進 −1' }; }
       return { ok: false, t: '⚡ 答錯了' };
     }
-    if (a.type === 'evans') { if (R.phase === 'event' && R.event && !R.event.reveal) { R.event.ans[p.sid] = String(a.pick); } return { ok: true }; }
+    if (a.type === 'evans') { if (R.phase === 'event' && R.event && !R.event.reveal) { R.event.ans[p.sid] = String(a.pick).slice(0, 200); } return { ok: true }; }
     if (!inAct(R)) return { ok: false, t: '現在不是行動時間。' };
     if (p.fac === 'bs' && !['bsdo', 'bscovert'].includes(a.type)) return { ok: false, t: '鍵結社不能做這件事。' };
     const x = R.F[p.fac];
@@ -253,7 +256,7 @@ const MPE = (() => {
         return { ok: true, t: `${a.kind === 'sub' ? '暗中資助' : '散播謠言'}：結算時${FN[a.f].name}相對國力 ${a.kind === 'sub' ? '+' : '−'}${K.BS_SHIFT}%` };
       }
       case 'buy': {
-        const n = Math.max(1, Math.min(3, +a.n || 1)), m = R.market[a.el]; if (!m) return { ok: false };
+        const n = Math.max(1, Math.min(3, Math.floor(+a.n) || 1)), m = ALL.includes(a.el) && R.market[a.el]; if (!m) return { ok: false, t: '沒有這種元素。' };
         if (p.trades + n > Math.min(3, p.permits)) return { ok: false, t: `交易許可不夠（答對 1 題換 1 張，本回合最多 3 筆；你還剩 ${Math.max(0, Math.min(3, p.permits) - p.trades)} 張）。` };
         const cost = (m.p + K.BUY_ADD) * n; if (p.wallet < cost) return { ok: false, t: '金幣不夠。' };
         p.wallet -= cost; p.trades += n; m.b += n;
@@ -264,6 +267,7 @@ const MPE = (() => {
       }
       case 'sell': {
         const to = a.to, src = p.spy && a.from === 'stash' ? p.stash : x.inv;
+        if (!ALL.includes(a.el)) return { ok: false, t: '沒有這種元素。' };
         if (!R.F[to] || to === p.fac) return { ok: false };
         if (!has(src, a.el)) return { ok: false, t: '倉庫沒有這個元素。' };
         if (p.trades + 1 > Math.min(3, p.permits)) return { ok: false, t: '交易許可不夠（答對 1 題換 1 張）。' };
@@ -276,7 +280,7 @@ const MPE = (() => {
         return { ok: true, t: `賣出 ${a.el} 給${FN[to].name}，得到 💰${price}` };
       }
       case 'send': {   // 雙面人把私藏的元素送回母國（搬運）
-        if (!p.spy || !has(p.stash, a.el)) return { ok: false, t: '私藏裡沒有這個元素。' };
+        if (!p.spy || !ALL.includes(a.el) || !has(p.stash, a.el)) return { ok: false, t: '私藏裡沒有這個元素。' };
         if (p.trades + 1 > Math.min(3, p.permits)) return { ok: false, t: '交易許可不夠。' };
         add(p.stash, a.el, -1); add(R.F[p.origin].inv, a.el, 1); p.trades++; p.sent++;
         log(R, p.origin, `神秘商人送來 ${a.el}`);
@@ -488,7 +492,7 @@ const MPE = (() => {
   // 結算後：市場微調（老師 ▲▼）
   function nudge(R, el, d) { const m = R.market[el]; if (m) m.p = Math.max(5, Math.min(30, m.p + d)); }
   // 隨機事件：全班一起答一題，勢力答對率 ≥70% 下回合國力推進 +2
-  function setEvent(R, q) { R.phase = 'event'; R.event = { q: q.q, opts: q.opts, ans: {}, right: q.ans, tag: q.tag, id: q.id, reveal: false, endAt: Date.now() + 30000 }; }
+  function setEvent(R, q) { R.phase = 'event'; R.event = { q: q.q, opts: q.opts, ans: {}, right: q.ans, tag: q.tag, id: q.id, reveal: false, endAt: now() + 30000 }; }
   function revealEvent(R) {
     const E = R.event; if (!E) return null; E.reveal = true; const res = {};
     R.facs.forEach(f => { const mem = R.F[f].mem, n = mem.filter(s => E.ans[s] != null).length, ok = mem.filter(s => E.ans[s] === E.right).length; const rate = n ? ok / mem.length : 0; res[f] = Math.round(rate * 100); if (rate >= 0.7) R.F[f].evBonus = 2; });
@@ -521,7 +525,7 @@ const MPE = (() => {
         }
       }
       const n1 = p.fac === 'bs' ? c.bsDone : p.correct, need1 = p.fac === 'bs' ? Math.max(1, Math.round(8 * rounds / K.ROUNDS)) : need;
-      p.personal = { ok: n1 >= need1 && ok2, t1: p.fac === 'bs' ? `完成委託 ${n1}/${need1} 件` : `答對 ${n1}/${need1} 題`, t2, ok1: n1 >= need1, ok2 };
+      p.personal = { ok: n1 >= need1 && ok2, t1: p.fac === 'bs' ? `完成委託 ${n1} 件（目標 ${need1}）` : `答對 ${n1} 題（目標 ${need1}）`, t2, ok1: n1 >= need1, ok2 };
       let pts = (p.personal.ok ? K.PT_OK : -K.PT_NO) + p.correct;
       if (p.fac !== 'bs') { const x = R.F[p.fac], rate = x.teamN ? x.teamOk / x.teamN : 0; pts += Math.round(rate * K.TW - (1 - rate) * K.TL); }
       if (p.spy) {
@@ -577,6 +581,18 @@ const MPE = (() => {
     return { pub, fac, priv };
   }
 
-  return { K, ROLE, ROT, VEINS, MOLS, METALS, ALL, SECRET, ABIL, TEAM, newRoom, join, layout, thresholds, start, beginRound, act, settle, nudge, setEvent, revealEvent, finish, progress, views, pseudo, takeCell };
+  // 每位學生一份畫面資料（一條連線就夠）：g＝公開、f＝自己勢力、p＝個人
+  function studentViews(R) {
+    const V = views(R), out = {};
+    const g = { ...V.pub }; delete g.feed; delete g.board;
+    Object.keys(R.lobby || {}).forEach(sid => {
+      const p = V.priv[sid];
+      if (!p) { out[sid] = { g: { phase: R.phase, lobbyN: g.lobbyN, round: R.round, level: R.level, waiting: true } }; return; }
+      const gg = p.fac === 'bs' ? { ...g, board: V.pub.board } : g;
+      out[sid] = { g: gg, f: p.fac !== 'bs' ? V.fac[p.fac] : null, p };
+    });
+    return { out, V };
+  }
+  return { now, setOffset, studentViews, K, ROLE, ROT, VEINS, MOLS, METALS, ALL, SECRET, ABIL, TEAM, newRoom, join, layout, thresholds, start, beginRound, act, settle, nudge, setEvent, revealEvent, finish, progress, views, pseudo, takeCell };
 })();
 if (typeof module !== 'undefined') module.exports = MPE;
