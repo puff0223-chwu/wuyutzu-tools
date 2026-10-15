@@ -433,12 +433,15 @@ function myRecord(G) {
   let tab = G && !G.ended ? 'now' : 'sum';
   const draw = () => {
     const tags = QUIZ.LEVEL_TAGS.g11, T = P.tot || {};
-    const qs = Object.values(P.qs || {}).filter(x => x.w > 0).sort((a, b) => b.w - a.w || b.w / b.n - a.w / a.n).slice(0, 15);
+    // 累積錯題＋還沒結束的這一局（一局結束才會正式併進累積紀錄）
+    const QM = {}; Object.entries(P.qs || {}).forEach(([k, x]) => { QM[k] = { ...x }; });
+    if (G && !G.reported) (G.ansLog || []).forEach(a => { const k = BSC.qkey(a.id), x = QM[k] || (QM[k] = { id: a.id, q: a.q, a: a.ans, n: 0, w: 0 }); x.n++; if (!a.ok) { x.w++; x.now = 1; } });
+    const qs = Object.values(QM).filter(x => x.w > 0).sort((a, b) => b.w - a.w || b.w / b.n - a.w / a.n).slice(0, 15);
     const body = tab === 'now' ? gameAnalysis(G)
       : tab === 'sum' ? `<div class="stat-g"><div><b>${P.games || 0}</b>完成局數</div><div><b>${(P.best.g10 || {}).score ?? '—'}</b>高一版最佳</div><div><b>${(P.best.g11 || {}).score ?? '—'}</b>高二高三版最佳</div><div><b>${pct(T.firstOk, T.tasks)}%</b>委託一次答對</div><div><b>${pct(T.quickOk, T.quick)}%</b>快問答對</div></div>
           ${(P.hist || []).length ? `<table class="mini-t"><tr><th>時間</th><th>版本</th><th>結局</th><th>回合</th><th>總分</th><th>一次答對</th></tr>${P.hist.map(h => `<tr><td>${new Date(h.at).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })} ${new Date(h.at).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}</td><td>${h.level === 'g11' ? '高二高三' : '高一'}</td><td>${END_ZH[h.end] || h.end}</td><td>${h.rounds}</td><td><b>${h.score}</b></td><td>${h.rate}%</td></tr>`).join('')}</table>` : '<p>還沒有完成過任何一局。</p>'}`
       : tab === 'prac' ? `<p style="margin:6px 0">所有局數累積起來，各知識點的答對率：</p>${tagBars(P.prac || {}, tags)}`
-      : `<p style="margin:6px 0">你累積最常答錯的題目（複習用）：</p>${qs.length ? `<ul class="wrong-l">${qs.map(x => `<li>${esc(x.q)}<br><small>錯 ${x.w}／${x.n} 次${x.a ? `｜正確：<b>${esc(x.a)}</b>` : ''}</small></li>`).join('')}</ul>` : '<p>目前沒有答錯的紀錄。</p>'}`;
+      : `<p style="margin:6px 0">你累積最常答錯的題目（複習用，含還沒結束的這一局）：</p>${qs.length ? `<ul class="wrong-l">${qs.map(x => `<li>${esc(x.q)}<br><small>錯 ${x.w}／${x.n} 次${x.a ? `｜正確：<b>${esc(x.a)}</b>` : ''}${x.now ? '・<b style="color:#b5481e">這一局</b>' : ''}</small></li>`).join('')}</ul>` : '<p>目前沒有答錯的紀錄。</p>'}`;
     const m = modal(`<h2>📊 我的紀錄</h2><div style="color:#6b5a3a;font-size:.9em">${P.term}・${esc(P.cls)} 班 ${P.seat} 號 ${esc(P.name)}</div>
       <div class="tabs2">${G && G.ansLog ? `<button data-t="now" class="${tab === 'now' ? 'on' : ''}">📈 ${G.ended ? '剛剛這局' : '這一局'}</button>` : ''}<button data-t="sum" class="${tab === 'sum' ? 'on' : ''}">🏅 累積成績</button><button data-t="prac" class="${tab === 'prac' ? 'on' : ''}">🧠 累積知識點</button><button data-t="wrong" class="${tab === 'wrong' ? 'on' : ''}">📝 常錯題目</button></div>
       ${body}<div class="actions" style="justify-content:flex-end"><button class="btn" id="cl">關閉</button></div>`);
