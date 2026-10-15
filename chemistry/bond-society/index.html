@@ -62,6 +62,7 @@
   .mini-t tr.me td { background: #fff3cd; font-weight: 900; }
   .stat-g { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; margin: 8px 0; } .stat-g div { background: #fff; border-radius: 10px; padding: 8px; text-align: center; } .stat-g b { display: block; font-size: 1.4em; color: #8a3a12; }
   .wrong-l { list-style: none; } .wrong-l li { background: #fff; border-left: 4px solid var(--red); border-radius: 8px; padding: 6px 10px; margin-bottom: 6px; font-size: .9em; } .wrong-l small { color: #6b5a3a; }
+  .tagc { display: inline-block; font-size: .78em; background: #efe3c4; color: #6b4a12; border-radius: 6px; padding: 0 6px; margin-right: 6px; vertical-align: 1px; font-weight: 700; }
   .bar2 { height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin-top: 3px; } .bar2 i { display: block; height: 100%; background: var(--green); }
 
   /* ---- 遊戲畫面 ---- */
@@ -331,16 +332,16 @@
 <div class="ov hidden" id="ov"><div class="ovc" id="ovc"></div></div>
 <div class="toast" id="toast"></div>
 
-<script src="data.js?v=20261015f"></script>
-<script src="world.js?v=20261015f"></script>
-<script src="facts.js?v=20261015f"></script>
-<script src="bank.js?v=20261015f"></script>
-<script src="mats.js?v=20261015f"></script>
-<script src="quiz.js?v=20261015f"></script>
-<script src="tasks.js?v=20261015f"></script>
-<script src="events.js?v=20261015f"></script>
-<script src="game.js?v=20261015f"></script>
-<script src="cloud.js?v=20261015f"></script>
+<script src="data.js?v=20261016a"></script>
+<script src="world.js?v=20261016a"></script>
+<script src="facts.js?v=20261016a"></script>
+<script src="bank.js?v=20261016a"></script>
+<script src="mats.js?v=20261016a"></script>
+<script src="quiz.js?v=20261016a"></script>
+<script src="tasks.js?v=20261016a"></script>
+<script src="events.js?v=20261016a"></script>
+<script src="game.js?v=20261016a"></script>
+<script src="cloud.js?v=20261016a"></script>
 <script>
 const $ = id => document.getElementById(id);
 const F = WORLD.FACTIONS, C = CHEM, RU = WORLD.RULE;
@@ -415,7 +416,8 @@ function endQuick(ans) {
 const SRC = { task: '委託', set: '題組', quick: '快問', event: '事件' };
 const pct = (a, b) => (b ? Math.round(a / b * 100) : 0);
 function tagBars(prac, tags) {
-  return `<div class="codex-g">${tags.map(t => { const p = prac[t]; return `<div class="${p && p.ok ? 'ok' : p ? 'try' : ''}">${QUIZ.TAGS[t]}<br><small>${p ? `答對 ${p.ok}／${p.n}（${pct(p.ok, p.n)}%）` : '還沒練過'}</small>${p ? `<div class="bar2"><i style="width:${pct(p.ok, p.n)}%"></i></div>` : ''}</div>`; }).join('')}</div>`;
+  const done = tags.filter(t => (prac[t] || {}).ok > 0).length, tried = tags.filter(t => prac[t] && !prac[t].ok).length;
+  return `<p style="margin:4px 0 6px">✅ 已練成 <b>${done}</b>／${tags.length} 個知識點（至少答對 1 題）${tried ? `・<span style="color:#b5481e">還沒答對 ${tried} 個</span>` : ''}</p><div class="codex-g">${tags.map(t => { const p = prac[t]; return `<div class="${p && p.ok ? 'ok' : p ? 'try' : ''}">${p && p.ok ? '✅ ' : p ? '❌ ' : ''}${QUIZ.TAGS[t]}<br><small>${p ? `答對 ${p.ok}／${p.n}（${pct(p.ok, p.n)}%）${p.ok ? '' : '・還沒答對'}` : '還沒練過'}</small>${p ? `<div class="bar2"><i style="width:${pct(p.ok, p.n)}%"></i></div>` : ''}</div>`; }).join('')}</div>`;
 }
 function gameAnalysis(G) {
   const L = G.ansLog || [], okN = L.filter(a => a.ok).length, wrong = L.filter(a => !a.ok);
@@ -425,7 +427,7 @@ function gameAnalysis(G) {
     ${weak.length ? `<div class="note" style="background:#fff;color:#6b5a3a">💪 這局比較弱的知識點：<b style="color:#8a3a12">${weak.map(t => QUIZ.TAGS[t]).join('、')}</b></div>` : ''}
     ${none.length ? `<div class="note" style="background:#fff;color:#6b5a3a">🔍 這局還沒練到：${none.map(t => QUIZ.TAGS[t]).join('、')}</div>` : ''}
     ${tagBars(G.prac || {}, tags)}
-    ${wrong.length ? `<h4 style="margin:10px 0 6px">❌ 這局答錯的題目（${wrong.length}）</h4><ul class="wrong-l">${wrong.slice(0, 30).map(a => `<li>${esc(a.q)}<br><small>你的答案：${esc(a.pick || '—')}${a.ans ? `｜正確：<b>${esc(a.ans)}</b>` : ''}・${SRC[a.src] || ''}・第 ${a.rd} 回合</small></li>`).join('')}</ul>` : '<p style="margin:8px 0">🎉 這局沒有答錯的題目！</p>'}`;
+    ${wrong.length ? `<h4 style="margin:10px 0 6px">❌ 這局答錯的題目（${wrong.length}）</h4><ul class="wrong-l">${wrong.slice(0, 30).map(a => `<li>${a.tag && QUIZ.TAGS[a.tag] ? `<span class="tagc">${QUIZ.TAGS[a.tag]}</span>` : ''}${esc(a.q)}<br><small>你的答案：${esc(a.pick || '—')}${a.ans ? `｜正確：<b>${esc(a.ans)}</b>` : ''}・${SRC[a.src] || ''}・第 ${a.rd} 回合</small></li>`).join('')}</ul>` : '<p style="margin:8px 0">🎉 這局沒有答錯的題目！</p>'}`;
 }
 const END_ZH = { harmony: '🌀 大和解', peace: '⚖️ 均勢和平', shaky: '⚠️ 危險的平衡', unify: '❌ 天下一統', destroy: '❌ 一國滅亡', exposed: '❌ 組織曝光', mp: '👥 連線對戰', mpwin: '👥 連線勝利' };
 function myRecord(G) {
@@ -435,13 +437,13 @@ function myRecord(G) {
     const tags = QUIZ.LEVEL_TAGS.g11, T = P.tot || {};
     // 累積錯題＋還沒結束的這一局（一局結束才會正式併進累積紀錄）
     const QM = {}; Object.entries(P.qs || {}).forEach(([k, x]) => { QM[k] = { ...x }; });
-    if (G && !G.reported) (G.ansLog || []).forEach(a => { const k = BSC.qkey(a.id), x = QM[k] || (QM[k] = { id: a.id, q: a.q, a: a.ans, n: 0, w: 0 }); x.n++; if (!a.ok) { x.w++; x.now = 1; } });
+    if (G && !G.reported) (G.ansLog || []).forEach(a => { const k = BSC.qkey(a.id), x = QM[k] || (QM[k] = { id: a.id, q: a.q, a: a.ans, tag: a.tag, n: 0, w: 0 }); if (!x.a && a.ans) x.a = a.ans; x.n++; if (!a.ok) { x.w++; x.now = 1; } });
     const qs = Object.values(QM).filter(x => x.w > 0).sort((a, b) => b.w - a.w || b.w / b.n - a.w / a.n).slice(0, 15);
     const body = tab === 'now' ? gameAnalysis(G)
       : tab === 'sum' ? `<div class="stat-g"><div><b>${P.games || 0}</b>完成局數</div><div><b>${(P.best.g10 || {}).score ?? '—'}</b>高一版最佳</div><div><b>${(P.best.g11 || {}).score ?? '—'}</b>高二高三版最佳</div><div><b>${pct(T.firstOk, T.tasks)}%</b>委託一次答對</div><div><b>${pct(T.quickOk, T.quick)}%</b>快問答對</div></div>
           ${(P.hist || []).length ? `<table class="mini-t"><tr><th>時間</th><th>版本</th><th>結局</th><th>回合</th><th>總分</th><th>一次答對</th></tr>${P.hist.map(h => `<tr><td>${new Date(h.at).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })} ${new Date(h.at).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}</td><td>${h.level === 'g11' ? '高二高三' : '高一'}</td><td>${END_ZH[h.end] || h.end}</td><td>${h.rounds}</td><td><b>${h.score}</b></td><td>${h.rate}%</td></tr>`).join('')}</table>` : '<p>還沒有完成過任何一局。</p>'}`
       : tab === 'prac' ? `<p style="margin:6px 0">所有局數累積起來，各知識點的答對率：</p>${tagBars(P.prac || {}, tags)}`
-      : `<p style="margin:6px 0">你累積最常答錯的題目（複習用，含還沒結束的這一局）：</p>${qs.length ? `<ul class="wrong-l">${qs.map(x => `<li>${esc(x.q)}<br><small>錯 ${x.w}／${x.n} 次${x.a ? `｜正確：<b>${esc(x.a)}</b>` : ''}${x.now ? '・<b style="color:#b5481e">這一局</b>' : ''}</small></li>`).join('')}</ul>` : '<p>目前沒有答錯的紀錄。</p>'}`;
+      : `<p style="margin:6px 0">你累積最常答錯的題目（複習用，含還沒結束的這一局）：</p>${qs.length ? `<ul class="wrong-l">${qs.map(x => `<li>${x.tag && QUIZ.TAGS[x.tag] ? `<span class="tagc">${QUIZ.TAGS[x.tag]}</span>` : ''}${esc(x.q)}<br><small>錯 ${x.w}／${x.n} 次${x.a ? `｜正確：<b>${esc(x.a)}</b>` : ''}${x.now ? '・<b style="color:#b5481e">這一局</b>' : ''}</small></li>`).join('')}</ul>` : '<p>目前沒有答錯的紀錄。</p>'}`;
     const m = modal(`<h2>📊 我的紀錄</h2><div style="color:#6b5a3a;font-size:.9em">${P.term}・${esc(P.cls)} 班 ${P.seat} 號 ${esc(P.name)}</div>
       <div class="tabs2">${G && G.ansLog ? `<button data-t="now" class="${tab === 'now' ? 'on' : ''}">📈 ${G.ended ? '剛剛這局' : '這一局'}</button>` : ''}<button data-t="sum" class="${tab === 'sum' ? 'on' : ''}">🏅 累積成績</button><button data-t="prac" class="${tab === 'prac' ? 'on' : ''}">🧠 累積知識點</button><button data-t="wrong" class="${tab === 'wrong' ? 'on' : ''}">📝 常錯題目</button></div>
       ${body}<div class="actions" style="justify-content:flex-end"><button class="btn" id="cl">關閉</button></div>`);

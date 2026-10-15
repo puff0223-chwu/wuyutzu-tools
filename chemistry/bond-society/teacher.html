@@ -122,11 +122,11 @@
 </main>
 <div class="modal hidden" id="modal"><div class="mcard" id="mcard"></div></div>
 
-<script src="data.js?v=20261015f"></script>
-<script src="facts.js?v=20261015f"></script>
-<script src="bank.js?v=20261015f"></script>
-<script src="quiz.js?v=20261015f"></script>
-<script src="cloud.js?v=20261015f"></script>
+<script src="data.js?v=20261016a"></script>
+<script src="facts.js?v=20261016a"></script>
+<script src="bank.js?v=20261016a"></script>
+<script src="quiz.js?v=20261016a"></script>
+<script src="cloud.js?v=20261016a"></script>
 <script>
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -268,7 +268,7 @@ async function student(p) {
     <p class="hint">${p.term}・學號 ${esc(p.stuNo)}・${esc(p.purpose)}・完成 ${p.games || 0} 局・委託一次答對 ${pct(T.firstOk || 0, T.tasks || 0) ?? '—'}%・快問答對 ${pct(T.quickOk || 0, T.quick || 0) ?? '—'}%</p>
     <h3>🏅 每局成績（最近 30 局）</h3>
     <div class="tw" style="max-height:240px"><table><tr><th>時間</th><th>版本</th><th>計時</th><th>地圖</th><th>結局</th><th>回合</th><th>總分</th><th>一次答對</th><th>知識點</th></tr>${p.hist.map(h => `<tr><td>${fmtD(h.at)}</td><td>${h.level === 'g11' ? '高二高三' : '高一'}</td><td>${h.timed ? '⏱️' : ''}</td><td>${esc(h.code)}</td><td>${END_ZH[h.end] || h.end}</td><td>${h.rounds}</td><td><b>${h.score}</b></td><td>${h.rate}%</td><td>${h.prac}</td></tr>`).join('') || '<tr><td colspan="9">還沒完成任何一局</td></tr>'}</table></div>
-    <h3>🧠 知識點（累積）</h3><div class="bars">${tags.map(t => { const x = p.prac[t], r = x && x.n ? pct(x.ok, x.n) : null; return `<div>${TZ[t]}<br><small>${x ? `答對 ${x.ok}／${x.n}（${r}%）` : '還沒練過'}</small><i style="width:${r || 0}%;background:${heatColor(r)}"></i></div>`; }).join('')}</div>
+    <h3>🧠 知識點（累積）<small style="font-weight:400;font-size:.7em;margin-left:8px">已練成 ${tags.filter(t => (p.prac[t] || {}).ok > 0).length}／${tags.length}（至少答對 1 題；答對 0 題的不算）</small></h3><div class="bars">${tags.map(t => { const x = p.prac[t], r = x && x.n ? pct(x.ok, x.n) : null; return `<div>${TZ[t]}<br><small>${x ? `答對 ${x.ok}／${x.n}（${r}%）` : '還沒練過'}</small><i style="width:${r || 0}%;background:${heatColor(r)}"></i></div>`; }).join('')}</div>
     <h3>❌ 最常答錯</h3><div class="tw" style="max-height:240px"><table><tr><th>題目</th><th>正確答案</th><th>錯／答</th><th>他選的</th></tr>${Object.values(p.qs).filter(x => x.w).sort((a, b) => b.w - a.w).slice(0, 20).map(x => `<tr><td class="l">${esc(x.q)}</td><td class="l">${esc(x.a)}</td><td>${x.w}／${x.n}</td><td class="l picks">${Object.keys(x.p || {}).slice(0, 3).map(esc).join('<br>')}</td></tr>`).join('') || '<tr><td colspan="4">沒有</td></tr>'}</table></div>
     <h3>📜 遊戲歷程</h3><div id="logs" class="hint">讀取中……</div>`);
   m.querySelector('#cl').onclick = closeModal;

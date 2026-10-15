@@ -193,11 +193,11 @@ const GAME = (() => {
   }
   // 作答紀錄（給學生的本局分析、老師頁的錯題統計）：{ src 來源, tag 知識點, id 題目代號, q 題目文字, pick 學生的答案, ans 正確答案, ok }
   const SUPD = { '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹', '+': '⁺', '-': '⁻', '−': '⁻' };
-  const strip = x => String(x ?? '').replace(/<sub>(\d+)<\/sub>/g, (m, d) => d.split('').map(c => '₀₁₂₃₄₅₆₇₈₉'[c]).join('')).replace(/<sup>([^<]*)<\/sup>/g, (m, d) => d.split('').map(c => SUPD[c] || c).join('')).replace(/<[^>]+>/g, '').slice(0, 80);
+  const strip = (x, n = 80) => String(x ?? '').replace(/<sub>(\d+)<\/sub>/g, (m, d) => d.split('').map(c => '₀₁₂₃₄₅₆₇₈₉'[c]).join('')).replace(/<sup>([^<]*)<\/sup>/g, (m, d) => d.split('').map(c => SUPD[c] || c).join('')).replace(/<br\s*\/?>/g, '；').replace(/<[^>]+>/g, '').slice(0, n);
   function record(s, r) {
     s.ansLog = s.ansLog || [];
     if (s.ansLog.length >= 250) return;
-    s.ansLog.push({ src: r.src, tag: [].concat(r.tag)[0] || '', id: String(r.id || '').slice(0, 90), q: strip(r.q), pick: strip(r.pick), ans: strip(r.ans), ok: !!r.ok, rd: s.round });
+    s.ansLog.push({ src: r.src, tag: [].concat(r.tag)[0] || '', id: String(r.id || '').slice(0, 90), q: strip(r.q), pick: strip(r.pick), ans: strip(r.ans, 160), ok: !!r.ok, rd: s.round });
   }
   // 委託的題目代號與文字
   function taskKey(t) {
@@ -292,7 +292,19 @@ const GAME = (() => {
     return EV[0];
   }
   // 檢查互動題；回傳 { ok, near, msg }
-  function checkPuzzle(ev, ans) {
+  // 學生的作答寫成文字（錯題紀錄用）
+  function pickOf(ev, ans) {
+    const d = ev.data;
+    try {
+      if (ev.kind === 'sort') return (ans || []).join(' → ');
+      if (ev.kind === 'classify') return d.items.map((it, i) => `${it[0]}→${(ans[i] || []).map(x => d.cats[x]).join('＋') || '?'}`).join('、');
+      if (ev.kind === 'balance') return `${d.l.map((f, i) => `${ans[i] > 1 ? ans[i] : ''}${f}`).join(' + ')} → ${d.r.map((f, i) => `${ans[d.l.length + i] > 1 ? ans[d.l.length + i] : ''}${f}`).join(' + ')}`;
+      if (ev.kind === 'lewis') return `共用 ${ans.bp} 對、孤對 ${ans.lp} 對`;
+    } catch (e) {}
+    return '';
+  }
+  function checkPuzzle(ev, ans) { const r = checkPuzzle0(ev, ans); r.pickText = pickOf(ev, ans); return r; }
+  function checkPuzzle0(ev, ans) {
     const d = ev.data;
     if (ev.kind === 'sort') {
       const right = [...d.items].sort((a, b) => (d.dir === 'asc' ? a[1] - b[1] : b[1] - a[1])).map(i => i[0]);
@@ -324,7 +336,7 @@ const GAME = (() => {
   function solvePuzzle(s, ev, res) {
     let applied = {};
     practice(s, PUZ_TAG(ev), res.ok);
-    record(s, { src: 'event', tag: PUZ_TAG(ev), id: 'ev:' + ev.id, q: `${ev.title}：${ev.data.title || ev.data.f || (ev.data.l ? ev.data.l.join(' + ') + ' → ' + ev.data.r.join(' + ') : '')}`, pick: res.pickText || '', ans: '', ok: res.ok });
+    record(s, { src: 'event', tag: PUZ_TAG(ev), id: 'ev:' + ev.id, q: `${ev.title}：${ev.data.title || ev.data.f || (ev.data.l ? ev.data.l.join(' + ') + ' → ' + ev.data.r.join(' + ') : '')}`, pick: res.pickText || '', ans: String(res.msg || '').replace(/^正確答案：/, ''), ok: res.ok });   // 互動題的正確答案＝判題說明
     s.stats.evChem = (s.stats.evChem || 0) + 1;
     if (res.ok) { s.stats.evChemOk = (s.stats.evChemOk || 0) + 1; s.money += 12; applied = Wd.apply(s, { [ev.who]: 4 }); befriend(s, ev.who, 5); }
     else if (res.near) s.money += 5;

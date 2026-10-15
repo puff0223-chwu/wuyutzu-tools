@@ -6,7 +6,7 @@
 <title>隱秘的鍵結社：全班連線控制台</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<link rel="stylesheet" href="mp.css?v=20261015f">
+<link rel="stylesheet" href="mp.css?v=20261016a">
 <style>
   /* 老師控制台（投影用）：開房 → 大廳 → 分配 → 回合（行動、結算、市場、事件）→ 揭曉 */
   header { display: flex; align-items: center; gap: 12px; padding: 10px 18px; background: #0d0b12cc; border-bottom: 1px solid var(--night-3); position: sticky; top: 0; z-index: 20; flex-wrap: wrap; }
@@ -51,16 +51,16 @@
 <div class="modal hidden" id="modal"><div class="mcard" id="mcard"></div></div>
 <div class="toast" id="toast"></div>
 
-<script src="data.js?v=20261015f"></script>
-<script src="facts.js?v=20261015f"></script>
-<script src="bank.js?v=20261015f"></script>
-<script src="quiz.js?v=20261015f"></script>
-<script src="world.js?v=20261015f"></script>
-<script src="cloud.js?v=20261015f"></script>
-<script src="mp-data.js?v=20261015f"></script>
-<script src="mp-engine.js?v=20261015f"></script>
-<script src="mp-cloud.js?v=20261015f"></script>
-<script src="mp-map.js?v=20261015f"></script>
+<script src="data.js?v=20261016a"></script>
+<script src="facts.js?v=20261016a"></script>
+<script src="bank.js?v=20261016a"></script>
+<script src="quiz.js?v=20261016a"></script>
+<script src="world.js?v=20261016a"></script>
+<script src="cloud.js?v=20261016a"></script>
+<script src="mp-data.js?v=20261016a"></script>
+<script src="mp-engine.js?v=20261016a"></script>
+<script src="mp-cloud.js?v=20261016a"></script>
+<script src="mp-map.js?v=20261016a"></script>
 <script>
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
