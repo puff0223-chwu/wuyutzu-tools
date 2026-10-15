@@ -207,7 +207,11 @@ const GAME = (() => {
       case 'forge': return { id: `forge:${t.mode}:${t.c}-${t.a}`, q: t.mode === 'f2name' ? `命名：${C.html(t.formula)}` : t.mode === 'name2f' ? `鑄造：${t.name}` : `鑄造：${C.CAT[t.c].f} 與 ${C.AN[t.a].f}`, ans: t.mode === 'f2name' ? t.name : C.html(t.formula) };
       case 'detect': { const x = T.subst(t.answer); return { id: `detect:${t.mode}:${t.answer}`, q: t.mode === 'type' ? `鑑定鍵結類型：${x.zh}` : `鑑定樣本：${t.opts.map(id => C.html(T.subst(id).f)).join('／')}`, ans: t.mode === 'type' ? FXX.BOND[t.bond] : C.html(x.f) }; }
       case 'struct': return { id: 'struct:' + t.f, q: `結構工坊：${t.f}`, ans: '標準路易斯結構' };
-      case 'eng': return { id: 'eng:' + t.ei, q: `工程應用：${t.need}`, ans: `${t.right}／${t.reason}` };
+      case 'eng': {
+        if (!t.mode) return { id: 'eng:' + t.ei, q: `工程應用：${t.need}`, ans: `${t.right}／${t.reason}` };
+        const MT = typeof MATS !== 'undefined' ? MATS : require('./mats.js');
+        return t.mode === 'pick' ? { id: 'eng2:' + t.key, q: `工程選材：${t.need}`, ans: `${MT.BY[t.right].n}／${t.rok}` } : { id: 'eng2:' + t.key, q: `失敗分析：${t.story}`, ans: `${t.right}／${t.rok}` };
+      }
       case 'treaty': return { id: 'treaty:' + t.qi, q: `條約配係數：${t.l.map(C.html).join(' + ')} → ${t.r.map(C.html).join(' + ')}`, ans: t.ans.join('、') };
       case 'imf': return { id: 'imf:' + t.pair.slice().sort().join('|'), q: `沸點比較：${t.pair.join(' vs ')}`, ans: `${t.right}／${t.reason}` };
       default: return { id: t.kind, q: t.kind, ans: '' };

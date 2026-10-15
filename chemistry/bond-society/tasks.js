@@ -143,7 +143,21 @@ const TASKS = (() => {
     return same ? { ok: true } : { ok: false, msg: '每個原子都符合八隅體了，但這不是最常見的結構：對稱的分子，兩邊的鍵通常一樣。' };
   }
   // 🏗️ 工程應用：依需求挑材料，再選理由
-  function engTask(rnd) { const L = BKK().ENG, i = Math.floor(rnd() * L.length), e = L[i]; return { kind: 'eng', ei: i, need: e[0], mats: shf([e[1], ...e[2]], rnd), right: e[1], reasons: shf([e[3], ...e[4]], rnd), reason: e[3], needs: [] }; }
+  // 🏗️ 工程應用（2026-10-15 改版）：多條件選材／失敗分析 → 原因追問，兩步都對才算對；材料性質要查 📚 材料圖鑑
+  const MTT = () => (typeof MATS !== 'undefined' ? MATS : require('./mats.js'));
+  function engTask(rnd, s) {
+    const MT = MTT(), all = [...MT.PICK.map(x => ['pick', x]), ...MT.FAIL.map(x => ['fail', x])];
+    const used = (s && s.engUsed) || [], fresh = all.filter(([, x]) => !used.includes(x.id));
+    const pool = fresh.length ? fresh : all;
+    // 選材題約 6 成、失敗分析約 4 成
+    const want = rnd() < 0.6 ? 'pick' : 'fail', sub = pool.filter(p => p[0] === want);
+    const [mode, x] = (sub.length ? sub : pool)[Math.floor(rnd() * (sub.length ? sub : pool).length)];
+    if (s) s.engUsed = [...used.filter(id => id !== x.id), x.id].slice(-16);
+    const r = { rq: x.r[0], ropts: shf([x.r[1], ...x.r[2]], rnd), rok: x.r[1] };
+    if (mode === 'pick') return { kind: 'eng', mode, key: x.id, need: x.need, cands: shf(x.cands.slice(), rnd), right: MT.answerOf(x), step: 0, ...r, needs: [] };
+    return { kind: 'eng', mode, key: x.id, story: x.story, q: x.q, opts: shf([x.ok, ...x.no], rnd), right: x.ok, step: 0, ...r, needs: [] };
+  }
+  const engData = t => { const MT = MTT(); return t.mode === 'pick' ? MT.PICK.find(x => x.id === t.key) : MT.FAIL.find(x => x.id === t.key); };
   // ⚖️ 條約委託：配係數（第一階會即時顯示兩邊原子數，之後要自己數）
   function treatyTask(tier, rnd) { const L = (typeof FACTS !== 'undefined' ? FACTS : require('./facts.js')).EQUATIONS, q = byTier(L, tier, rnd); return { kind: 'treaty', qi: L.indexOf(q), l: q.l, r: q.r, ans: q.ans, show: tier === 1, needs: [] }; }
   // 🌡️ 分子間作用力：哪一個沸點比較高？為什麼？
@@ -195,7 +209,9 @@ const TASKS = (() => {
   // 提示（第一次答錯後顯示）
   function hint(t) {
     if (t.kind === 'struct') return '先算出所有原子的價電子總數；H 周圍只要 2 個電子，其他原子要 8 個。電子不夠時，把單鍵改成雙鍵或參鍵。';
-    if (t.kind === 'eng') return '先想這個需求要的是哪一種性質（導電、硬度、熔點、延展性……），再想哪一種鍵結會有這種性質。';
+    if (t.kind === 'eng') return !t.mode ? '先想這個需求要的是哪一種性質（導電、硬度、熔點、延展性……），再想哪一種鍵結會有這種性質。'
+      : t.step ? '想想看：這是哪一種鍵結？粒子（電子、離子、分子）能不能移動？要打斷的是化學鍵還是分子之間的作用力？'
+      : t.mode === 'pick' ? '打開 📚 材料圖鑑，把候選材料一個一個和條件比對，只要有一條不符合就刪掉。' : '先想這個物質屬於哪一類（金屬、離子、網狀、分子），再到 📚 材料圖鑑查它的性質。';
     if (t.kind === 'treaty') return '先配平只出現在一個化學式裡的元素，最後再處理 O 和 H；係數只能改前面的數字，不能改下標。';
     if (t.kind === 'imf') return '先判斷兩者沸騰時要克服的是什麼：化學鍵、氫鍵（H 接在 F、O、N 上），還是凡得瓦力（分子越大越強）。';
     if (t.kind === 'mine') return '一條一條縮小範圍：先用「位置」或「類別」圈出一區，再用性質、反應、用途的線索刪去不符合的元素。橫列是週期、直行是族。';
@@ -262,7 +278,7 @@ const TASKS = (() => {
       else { const cand = facs.filter(f => !used.has(f)); from = pick(cand.length ? cand : facs); }
       used.add(from);
       const task = kind === 'mine' ? mineTask(pick(rnd() < 0.6 ? (POOL[from] || POOL.mine) : POOL.mine), tier, rnd)
-        : kind === 'detect' ? detectTask(tier, rnd) : kind === 'set' ? setTask(s, rnd) : kind === 'struct' ? structTask(tier, rnd) : kind === 'eng' ? engTask(rnd)
+        : kind === 'detect' ? detectTask(tier, rnd) : kind === 'set' ? setTask(s, rnd) : kind === 'struct' ? structTask(tier, rnd) : kind === 'eng' ? engTask(rnd, s)
         : kind === 'treaty' ? treatyTask(tier, rnd) : kind === 'imf' ? imfTask(rnd) : forgeTask(tier, from, rnd, kind === 'name' ? 'f2name' : null);
       let effects = {}, shady = null, reward;
       if (from === 'mine') { reward = 12; task.qty = 3; }
@@ -284,6 +300,6 @@ const TASKS = (() => {
     });
     return board;
   }
-  return { REWARD, structTask, checkStruct, engTask, treatyTask, imfTask, tierOf, setTask, mineTask, forgeTask, detectTask, bestTest, subst, checkForge, hint, makeBoard, ionsOf, FAMLBL };
+  return { REWARD, structTask, checkStruct, engTask, engData, treatyTask, imfTask, tierOf, setTask, mineTask, forgeTask, detectTask, bestTest, subst, checkForge, hint, makeBoard, ionsOf, FAMLBL };
 })();
 if (typeof module !== 'undefined') module.exports = TASKS;

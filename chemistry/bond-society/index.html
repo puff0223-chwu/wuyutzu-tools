@@ -184,6 +184,32 @@
   .ask { color: var(--ink); margin: 8px 0 4px; font-weight: 700; }
   .ask small { display: block; font-weight: 400; color: #8a7a62; font-size: .85em; }
   .tmr { float: right; font-weight: 900; color: #8a6a22; } .tmr.over { color: #999; font-weight: 400; }
+  /* 📚 材料圖鑑、新版工程題 */
+  .cons { background: #fff; border-radius: 10px; padding: 8px 12px; margin: 6px 0; } .cons ul { margin: 2px 0 0 20px; }
+  .row-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .btn.book { background: #2f6f5e; color: #fff; border: 0; }
+  .lock { margin-top: 10px; padding: 8px 12px; border: 2px dashed var(--paper-2); border-radius: 10px; color: #8a7a5a; font-size: .92em; }
+  .ch-l { display: grid; gap: 8px; margin: 8px 0; } .ch-l button { text-align: left; border: 2px solid var(--paper-2); background: #fff; border-radius: 10px; padding: 9px 12px; font-weight: 700; color: var(--ink); }
+  .ch-l button.on { border-color: var(--red); background: #fde3df; } .ch-l button:disabled { opacity: .55; }
+  .mbk-wrap { overflow: auto; max-height: 58vh; border-radius: 10px; background: #fff; border: 1px solid var(--paper-2); }
+  .mbk-t { border-collapse: separate; border-spacing: 0; font-size: .86em; min-width: 760px; width: 100%; }
+  .mbk-t th, .mbk-t td { padding: 6px 8px; border-bottom: 1px dashed var(--paper-2); text-align: left; white-space: nowrap; }
+  .mbk-t th { position: sticky; top: 0; background: #efe3c4; z-index: 2; font-size: .92em; }
+  .mbk-t td:first-child, .mbk-t th:first-child { position: sticky; left: 0; background: #fff; z-index: 1; font-weight: 700; } .mbk-t th:first-child { background: #efe3c4; z-index: 3; }
+  .mbk-t tr.hl td { background: #fff6d8; } .mbk-t tr.hl td:first-child { background: #ffefb8; }
+  .mbk-t tr.row { cursor: pointer; } .mbk-t tr.row:hover td { background: #f6f0e2; }
+  .mbk-t td.y { color: #1d7a45; font-weight: 700; } .mbk-t td.n { color: #a33; }
+  .mbk-t tr.det td { position: static; font-weight: 400; white-space: normal; background: #fbf7ec; font-size: .95em; line-height: 1.7; }
+  .mbk-cards { display: none; max-height: 60vh; overflow: auto; }
+  .mc { background: #fff; border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; border-left: 5px solid var(--paper-2); } .mc.hl { border-color: var(--gold); background: #fffaea; }
+  .mc-h { font-weight: 900; } .mc-h small { font-weight: 400; color: #6b5a3a; }
+  .mc dl { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 2px 8px; margin: 6px 0 4px; font-size: .86em; } .mc dt { color: #8a7a5a; } .mc dd { margin: 0; } .mc dd.w { grid-column: 2 / -1; }
+  .mc dd b.y { color: #1d7a45; } .mc dd b.n { color: #a33; }
+  .mc-b { border: 1px dashed var(--paper-2); background: none; border-radius: 8px; padding: 2px 10px; font-size: .85em; color: #6b5a3a; }
+  .mc-d { font-size: .88em; background: #fbf7ec; border-radius: 8px; padding: 6px 8px; line-height: 1.7; }
+  @media (max-width: 640px) { .mbk-wrap { display: none; } .mbk-cards { display: block; } }
+  .cls-tag { display: inline-block; font-size: .78em; padding: 0 6px; border-radius: 6px; margin-left: 4px; font-weight: 700; color: #fff; }
+  .cls-metal { background: #b8860b; } .cls-ionic { background: #c0392b; } .cls-network { background: #2c6fb0; } .cls-molecular { background: #6b4fa0; }
   .ov { position: fixed; inset: 0; background: #000c; display: flex; align-items: center; justify-content: center; padding: 14px; z-index: 70; }
   .ovc { background: #fff8e6; color: var(--ink); border: 4px solid var(--candle); border-radius: 16px; width: min(560px, 100%); padding: 16px; box-shadow: 0 0 40px #ffcf6b88; }
   .ovc h3 { font-family: 'Noto Serif TC', serif; }
@@ -301,18 +327,20 @@
 </section>
 
 <div class="modal hidden" id="modal"><div class="mcard" id="mcard"></div></div>
+<div class="modal hidden" id="mbk" style="z-index:60"><div class="mcard" id="mbkc" style="width:min(980px,100%)"></div></div>
 <div class="ov hidden" id="ov"><div class="ovc" id="ovc"></div></div>
 <div class="toast" id="toast"></div>
 
-<script src="data.js?v=20261015c"></script>
-<script src="world.js?v=20261015c"></script>
-<script src="facts.js?v=20261015c"></script>
-<script src="bank.js?v=20261015c"></script>
-<script src="quiz.js?v=20261015c"></script>
-<script src="tasks.js?v=20261015c"></script>
-<script src="events.js?v=20261015c"></script>
-<script src="game.js?v=20261015c"></script>
-<script src="cloud.js?v=20261015c"></script>
+<script src="data.js?v=20261015d"></script>
+<script src="world.js?v=20261015d"></script>
+<script src="facts.js?v=20261015d"></script>
+<script src="bank.js?v=20261015d"></script>
+<script src="mats.js?v=20261015d"></script>
+<script src="quiz.js?v=20261015d"></script>
+<script src="tasks.js?v=20261015d"></script>
+<script src="events.js?v=20261015d"></script>
+<script src="game.js?v=20261015d"></script>
+<script src="cloud.js?v=20261015d"></script>
 <script>
 const $ = id => document.getElementById(id);
 const F = WORLD.FACTIONS, C = CHEM, RU = WORLD.RULE;
@@ -847,8 +875,92 @@ function structUI(c, head) {
   };
   draw();
 }
-/* 🏗️ 工程應用：挑材料＋選理由 */
+/* 📚 材料圖鑑：focus＝這題的候選材料（會排在最前面並標亮） */
+function matBook(focus) {
+  const MT = MATS, f = focus || [];
+  let tab = f.length ? 'focus' : 'all', open = null;
+  const yn = v => `<td class="${v === 'y' ? 'y' : v === 'n' ? 'n' : ''}">${v === 'y' ? '✔' : v === 'n' ? '✘' : v === 'semi' ? '△半導體' : v === 'weak' ? '△微弱' : '—'}</td>`;
+  const draw = () => {
+    const seen = (S && S.matSeen) || {};
+    let list = MT.LIST;
+    if (tab === 'focus') list = f.map(id => MT.BY[id]);
+    else if (tab !== 'all') list = list.filter(m => m.cls === tab);
+    const row = m => `<tr class="row ${f.includes(m.id) ? 'hl' : ''}" data-id="${m.id}"><td>${open === m.id ? '▾' : '▸'} ${esc(m.n)} <small style="font-weight:400;color:#6b5a3a">${esc(m.f)}</small>${seen[m.id] ? '' : ' <small style="color:#c08a00">●</small>'}</td>
+      <td><span class="cls-tag cls-${m.cls}">${MT.CLS[m.cls].replace('固體', '')}</span></td><td>${MT.ST[m.st]}</td><td>${esc(MT.mpTxt(m))}</td><td>${MT.deg(m.bp)}</td>${yn(m.sc)}${yn(m.lc)}${yn(m.aq)}
+      <td>${MT.SOL[m.sol]}</td><td>${m.hard == null ? '—' : m.hard}</td><td>${MT.MECH_S[m.mech]}</td><td>${m.dens}</td><td>${m.cond ? m.cond : '—'}</td><td>${MT.PRICE[m.price]}</td><td>${MT.AIR[m.air]}</td></tr>`
+      + (open === m.id ? `<tr class="det"><td colspan="15">🔬 <b>結構：</b>${esc(m.s)}<br>📝 ${esc(m.note || '')}${m.clear ? '<br>💎 透明' : ''}</td></tr>` : '');
+    const yc = v => `<b class="${v === 'y' ? 'y' : v === 'n' ? 'n' : ''}">${v === 'y' ? '✔' : v === 'n' ? '✘' : v === 'semi' ? '△' : v === 'weak' ? '△' : '—'}</b>`;
+    const card = m => `<div class="mc ${f.includes(m.id) ? 'hl' : ''}"><div class="mc-h">${esc(m.n)} <small>${esc(m.f)}</small><span class="cls-tag cls-${m.cls}">${MT.CLS[m.cls].replace('固體', '')}</span>${seen[m.id] ? '' : ' <small style="color:#c08a00">●</small>'}</div>
+      <dl><dt>室溫</dt><dd>${MT.ST[m.st]}</dd><dt>熔點</dt><dd>${esc(MT.mpTxt(m))}</dd><dt>沸點</dt><dd>${MT.deg(m.bp)}</dd><dt>在水中</dt><dd>${MT.SOL[m.sol]}</dd>
+      <dt>導電</dt><dd class="w">固態 ${yc(m.sc)}　熔融 ${yc(m.lc)}　水溶液 ${yc(m.aq)}</dd><dt>莫氏硬度</dt><dd>${m.hard == null ? '—' : m.hard}</dd>
+      <dt>延展性</dt><dd>${MT.MECH_S[m.mech]}</dd><dt>密度</dt><dd>${m.dens} g/cm³</dd><dt>導電度</dt><dd>${m.cond ? m.cond + '（銅＝100）' : '—'}</dd><dt>價格</dt><dd>${MT.PRICE[m.price]}</dd><dt>在空氣中</dt><dd>${MT.AIR[m.air]}</dd></dl>
+      ${open === m.id ? `<div class="mc-d">🔬 ${esc(m.s)}<br>📝 ${esc(m.note || '')}</div>` : `<button class="mc-b" data-id="${m.id}">🔬 看結構說明</button>`}</div>`;
+    const n = Object.keys(seen).length;
+    $('mbkc').innerHTML = `<div class="row-h" style="margin-top:0"><h2 style="margin:0">📚 材料圖鑑</h2><span style="font-size:.85em;color:#6b5a3a">已翻閱 ${n}／${MT.LIST.length} 種・點一下看結構說明（● 還沒翻過）</span></div>
+      <div class="tabs2">${f.length ? `<button data-tab="focus" class="${tab === 'focus' ? 'on' : ''}">⭐ 這題的候選</button>` : ''}${[['all', '全部'], ['metal', '金屬'], ['ionic', '離子化合物'], ['network', '共價網狀'], ['molecular', '分子物質']].map(([k, v]) => `<button data-tab="${k}" class="${tab === k ? 'on' : ''}">${v}</button>`).join('')}</div>
+      <div class="mbk-wrap"><table class="mbk-t"><tr><th>材料</th><th>類別</th><th>室溫</th><th>熔點</th><th>沸點</th><th>固態<br>導電</th><th>熔融<br>導電</th><th>水溶液<br>導電</th><th>在水中</th><th>莫氏<br>硬度</th><th>延展性</th><th>密度<br><small>g/cm³</small></th><th>導電度<br><small>銅＝100</small></th><th>價格</th><th>在空氣中</th></tr>${list.map(row).join('')}</table></div><div class="mbk-cards">${list.map(card).join('')}</div>
+      <div style="font-size:.8em;color:#6b5a3a;margin-top:6px">數值是常見的近似值。莫氏硬度：鑽石 10 最硬、滑石 1 最軟，數字大的能刮傷數字小的。表格可以左右滑動。</div>
+      <div class="actions" style="justify-content:flex-end"><button class="btn" id="mbk-x">關閉圖鑑</button></div>`;
+    $('mbkc').querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { tab = b.dataset.tab; draw(); });
+    $('mbkc').querySelectorAll('tr.row, .mc-b').forEach(r => r.onclick = () => {
+      const id = r.dataset.id; open = open === id ? null : id;
+      if (S && open) { S.matSeen = S.matSeen || {}; if (!S.matSeen[id]) { S.matSeen[id] = 1; save(); } }
+      const w = $('mbkc').querySelector('.mbk-wrap'), sc = w.scrollTop, sl = w.scrollLeft, cs = $('mbkc').querySelector('.mbk-cards').scrollTop; draw();
+      const w2 = $('mbkc').querySelector('.mbk-wrap'); w2.scrollTop = sc; w2.scrollLeft = sl; $('mbkc').querySelector('.mbk-cards').scrollTop = cs;
+    });
+    $('mbk-x').onclick = () => $('mbk').classList.add('hidden');
+  };
+  draw(); $('mbk').classList.remove('hidden');
+}
+/* 🏗️ 工程應用（新版）：① 選材／失敗分析 → ② 原因追問，兩步都對才算對 */
 function engUI(c, head) {
+  const t = c.task; if (!t.mode) return engUIOld(c, head);
+  const D = TASKS.engData(t); let sel = null;
+  const nm = id => MATS.BY[id].n;
+  const draw = (fb = '') => {
+    const st = t.step || 0;
+    const s1 = t.mode === 'pick'
+      ? `<div class="ask">需求：${esc(t.need)}</div><div class="cons"><b>📋 必須同時符合</b><ul>${D.cons.map(x => `<li>${esc(MATS.conTxt(x))}</li>`).join('')}</ul></div>
+        <div class="row-h"><b>① 選出唯一符合全部條件的材料</b><button class="btn sm book" id="mb">📚 查材料圖鑑</button></div>
+        <div class="suspects">${t.cands.map(id => `<button data-s="${id}" class="${(st ? id === t.right : sel === id) ? 'on' : ''}" ${st ? 'disabled' : ''}>${esc(nm(id))}<small>${esc(MATS.BY[id].f)}</small></button>`).join('')}</div>`
+      : `<div class="ask">💥 ${esc(t.story)}</div>
+        <div class="row-h"><b>① ${esc(t.q)}</b><button class="btn sm book" id="mb">📚 查材料圖鑑</button></div>
+        <div class="ch-l">${t.opts.map((x, i) => `<button data-s="${i}" class="${(st ? x === t.right : sel === String(i)) ? 'on' : ''}" ${st ? 'disabled' : ''}>${esc(x)}</button>`).join('')}</div>`;
+    const s2 = st
+      ? `<div class="fb ok">✅ 第一步答對了！${t.mode === 'pick' ? `是 <b>${esc(nm(t.right))}</b>。` : ''}再回答原因，兩步都對才算完成。</div>
+        <div style="font-weight:700;margin-top:10px">② 原因追問：${esc(t.rq)}</div>
+        <div class="ch-l">${t.ropts.map((x, i) => `<button data-r="${i}" class="${sel === String(i) ? 'on' : ''}">${esc(x)}</button>`).join('')}</div>`
+      : `<div class="lock">🔒 ② 原因追問：第一步答對後才會出現（兩步都對才算完成）</div>`;
+    const m = modal(`${head}<h2>🏗️ 工程應用 <small style="font-size:.6em;color:#8a6a22">${t.mode === 'pick' ? '多條件選材' : '失敗分析'}・第 ${st + 1}／2 步</small></h2><div class="story">「${esc(c.text)}」</div>
+      ${s1}${s2}${fb}
+      <div class="actions" style="justify-content:space-between"><button class="btn dark" id="x">放棄這件委託</button><button class="btn" id="ok" ${sel != null ? '' : 'disabled'}>${st ? '回答原因' : '就是它！'}</button></div>`);
+    m.querySelector('#mb').onclick = () => matBook(t.mode === 'pick' ? t.cands : []);
+    m.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { sel = b.dataset.s; draw(fb); });
+    m.querySelectorAll('[data-r]').forEach(b => b.onclick = () => { sel = b.dataset.r; draw(fb); });
+    m.querySelector('#x').onclick = () => giveUp(c);
+    const full = () => (t.mode === 'pick'
+      ? `最適合的是 <b>${esc(nm(t.right))}</b>。<ul style="margin:4px 0 4px 20px">${t.cands.filter(id => id !== t.right).map(id => `<li>${esc(MATS.whyNot(MATS.BY[id], D.cons))}</li>`).join('')}</ul>`
+      : `原因：<b>${esc(t.right)}</b>。<br>`) + `🔍 ${esc(t.rq)}<br>→ <b>${esc(t.rok)}</b>`;
+    m.querySelector('#ok').onclick = () => {
+      if (!st) {
+        const pick = t.mode === 'pick' ? sel : t.opts[+sel];
+        addPick(c, t.mode === 'pick' ? nm(sel) : pick);
+        if (pick === t.right) { t.step = 1; sel = null; save(); return draw(); }
+        const w = wrong(c, t.mode === 'pick' ? MATS.whyNot(MATS.BY[sel], D.cons) + '。' : '這個解釋不對，再想想看。');
+        if (w === null) return finishTask(c, false, full());
+        sel = null; return draw(w);
+      }
+      const r = t.ropts[+sel]; addPick(c, r);
+      if (r === t.rok) return finishTask(c, true, full());
+      const w = wrong(c, '第一步對了，但原因不對。');
+      if (w === null) return finishTask(c, false, full());
+      sel = null; draw(w);
+    };
+  };
+  draw();
+}
+/* 舊版工程題（只給更新前就開好的委託用） */
+function engUIOld(c, head) {
   const t = c.task; let mat = null, why = null;
   const draw = (fb = '') => {
     const m = modal(`${head}<h2>🏗️ 工程應用</h2><div class="story">「${esc(c.text)}」</div>
@@ -1172,8 +1284,9 @@ function codex() {
     ${list.map(f => `<div class="codex-f" style="border-color:${F[f].color}"><b style="color:${F[f].color}">${F[f].icon} ${F[f].full}</b>（${F[f].bond}）${F[f].base ? `<span style="font-size:.85em;color:#6b5a3a">・標準國力 ${F[f].base[0]}～${F[f].base[1]}</span>` : ''}<div style="font-size:.92em;margin-top:4px">${TXT[f]}</div></div>`).join('')}
     <h3 style="margin-top:10px">📏 規則摘要</h3>
     <ul style="margin:6px 0 0 20px;font-size:.92em"><li>相對國力＝目前國力 ÷ 標準國力（開局時各國有強有弱，不一定是 100%）。安全範圍 75%～130%。</li><li>任一國 ≥170%（或連續 2 回合 ≥150%）＝天下一統；任一國 ≤45%＝一國滅亡；隱密度 ≤25＝組織曝光。三種都會讓鍵結社被消滅。</li><li>每回合結算：先算各國自然消長＝國運趨勢＋0.18×（相對國力−各國平均）＋運氣 ±5%，再扣掉各國的平均值（零和：有人漲就有人跌）。接著領土跟著國力走：每國應得面積＝總面積×自己的相對國力÷各國相對國力總和，領土不足的國家向領土過多的鄰國奪地（每回合最多 3 格，首都不會被攻下）。</li><li>交易所：每回合 1 次暗中行動（資助或謠言，只能選一國）；買賣元素每回合選「買」或「賣」，最多 3 筆，只能賣倉庫裡有的。買賣不改變國力，只改變<b>友好度</b>（🤝）：友好度越高賣價越好，採礦國友好度越高買越便宜。礦價會隨買賣量和需求浮動。</li><li>總分＝資金＋均勢回合分（每回合結算時天下均勢、而且本回合至少完成 1 件委託 +20）＋學習分（第一次就答對的比例）＋知識點分（每練成一種知識點 +10）＋隱密分＋結局分；組織被消滅時資金只留 3 成。</li><li>🕵️ 隱密度：暗中削弱委託 −4、暗中資助 −3、散播謠言 −4、委託失敗 −10；最近兩回合幫同一國完成第 3 件以上 −5；結算時資金超過 120，每多 40 −3；整回合沒做暗中的事 +3；交易所「掩護行動」花錢 +10。隱密度 <50 委託報酬打 85 折、<40 公告板少一件委託。</li><li>各國最強與最弱的差距小於 15% 時，太平靜反而會爆發「大陸危機」，某一國突然大漲或大跌 12%。</li><li>計時模式：每回合 4 分鐘，時間到還沒結束回合會爆發危機（最強國 +6%、最弱國 −6%、隱密度 −5，不能再接委託）；干擾快問從進入遊戲就獨立計時，每 90 秒跳出一題（20 秒，答對 💰+5；答錯隱密度 −2；沒作答隱密度 −4、最強國趁亂 +2%）；委託在 60／75／90 秒內（依難度）完成，報酬 ×1.2。</li></ul>
-    <div class="actions" style="justify-content:flex-end"><button class="btn" id="ok">關閉</button></div>`);
+    <div class="actions" style="justify-content:space-between"><button class="btn book" id="mbk-open">📚 材料圖鑑</button><button class="btn" id="ok">關閉</button></div>`);
   m.querySelector('#ok').onclick = closeModal;
+  m.querySelector('#mbk-open').onclick = () => matBook();
 }
 $('btn-codex').onclick = codex; $('btn-codex2').onclick = codex;
 $('btn-prac').onclick = () => myRecord(S);

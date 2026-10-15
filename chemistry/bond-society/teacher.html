@@ -13,15 +13,37 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Noto Sans TC', sans-serif; background: #f3efe6; color: var(--ink); }
   .hidden { display: none !important; }
-  header { background: #15121d; color: #fff; padding: 12px 20px; }
-  header h1 { font-family: 'Noto Serif TC', serif; font-size: 1.3em; } header h1 span { color: var(--gold); }
+  header { background: #15121d; color: #fff; padding: 10px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  header h1 { font-family: 'Noto Serif TC', serif; font-size: 1.3em; flex: 1; } header h1 span { color: var(--gold); }
+  .chip-b { border: 1px solid #4a4266; background: #221d30; color: #fff; border-radius: 999px; padding: 6px 14px; font: inherit; font-size: .9em; font-weight: 700; cursor: pointer; }
+  .chip-b:hover { border-color: var(--gold); } .chip-b .warn { color: #ffb36b; }
+  /* 開始上課 */
+  .start h2 { font-size: 1.15em; margin-bottom: 10px; }
+  .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .mode { border: 2px solid var(--line); border-radius: 14px; padding: 12px 14px; background: #fff; text-align: left; font: inherit; color: var(--ink); cursor: pointer; display: flex; gap: 12px; align-items: center; }
+  .mode .ic { font-size: 1.9em; } .mode b { display: block; font-size: 1.05em; } .mode small { color: var(--soft); }
+  .mode.on { border-color: var(--ink); background: var(--paper); box-shadow: inset 0 0 0 1px var(--ink); }
+  .mode.soon { cursor: default; opacity: .75; } .mode .tag { margin-left: auto; font-size: .75em; background: #eee5cf; border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
+  .entry { display: grid; grid-template-columns: 1fr 300px; gap: 18px; align-items: start; }
+  .field { margin-bottom: 12px; } .field > label { display: block; font-weight: 900; font-size: .92em; margin-bottom: 5px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #fff; flex-wrap: wrap; }
+  .seg button { border: 0; background: #fff; padding: 8px 16px; font: inherit; font-weight: 700; color: var(--ink); cursor: pointer; border-right: 1px solid var(--line); }
+  .seg button:last-child { border-right: 0; } .seg button.on { background: var(--ink); color: #fff; }
+  .seg button small { font-weight: 400; opacity: .75; margin-left: 4px; }
+  .code-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+  .code-row input { font-family: monospace; font-size: 1.15em; letter-spacing: .15em; width: 130px; text-transform: uppercase; }
+  .sum { background: var(--paper); border-radius: 10px; padding: 9px 12px; font-size: .92em; line-height: 1.7; }
+  .qrbox { border: 1px solid var(--line); border-radius: 14px; padding: 12px; text-align: center; background: #fffdf7; }
+  #qr { width: 168px; height: 168px; margin: 0 auto 8px; } #qr img, #qr canvas { width: 100% !important; height: 100% !important; }
+  .qrbox .btn { width: 100%; margin-top: 6px; padding: 9px; } .qrbox .two { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; } .qrbox .two .btn { margin-top: 0; }
+  .url { font-family: monospace; font-size: .72em; word-break: break-all; color: #8a7f6a; margin-top: 8px; }
+  .soon-box { border: 2px dashed var(--line); border-radius: 14px; padding: 16px; color: var(--soft); line-height: 1.8; }
+  @media (max-width: 760px) { .modes, .entry { grid-template-columns: 1fr; } }
+  .sec-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; } .sec-h h2 { font-size: 1.15em; }
   main { max-width: 1240px; margin: 0 auto; padding: 14px; display: grid; gap: 12px; }
+  main > * { min-width: 0; }
   .box { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
   .box h2 { font-size: 1.08em; margin-bottom: 6px; }
-  .top { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } @media (max-width: 800px) { .top { grid-template-columns: 1fr; } }
-  .link { display: flex; gap: 14px; align-items: center; }
-  #qr { width: 92px; height: 92px; flex: none; } #qr img, #qr canvas { width: 100% !important; height: 100% !important; }
-  .url { font-family: monospace; font-size: .8em; word-break: break-all; color: #555; margin: 4px 0 6px; }
   .btn { border: none; border-radius: 8px; padding: 7px 12px; font: inherit; font-size: .92em; font-weight: 700; background: var(--gold); color: var(--ink); cursor: pointer; }
   .btn.dark { background: var(--ink); color: #fff; } .btn.ghost { background: #fff; border: 1px solid var(--line); } .btn.red { background: var(--red); color: #fff; }
   .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
@@ -50,31 +72,44 @@
 </style>
 </head>
 <body>
-<header><h1>🕯️ 隱秘的鍵結社：<span>老師頁</span></h1></header>
+<header><h1>🕯️ 隱秘的鍵結社：<span>老師頁</span></h1><button class="chip-b" id="term-chip">📅 學期 …</button></header>
 <main>
-  <div class="top">
-    <div class="box">
-      <h2>📱 學生入口</h2>
-      <p class="hint">先選好這次上課的設定，再把連結或 QR 給學生；學生只能用這組設定開始戰局。不同班可以各產生一個連結。</p>
-      <div class="row" style="margin:8px 0">
-        <select id="e-lv"><option value="g10">高一版（三大國）</option><option value="g11">高二高三版（五大勢力）</option></select>
-        <select id="e-tm"><option value="1">⏱️ 計時模式</option><option value="0">🐢 不計時</option></select>
-        <input class="in" id="e-code" maxlength="6" placeholder="地圖代碼（留空＝每人隨機）" style="width:190px;text-transform:uppercase">
-        <button class="btn ghost" id="e-rand">🎲 產生全班同一張</button>
+  <section class="box start">
+    <h2>🎬 開始上課</h2>
+    <div class="modes">
+      <button class="mode on" data-mode="solo"><span class="ic">🕯️</span><span><b>單人戰局</b><small>每位學生用自己的裝置玩一局，紀錄自動回傳</small></span></button>
+      <button class="mode soon" data-mode="mp"><span class="ic">👥</span><span><b>全班連線</b><small>分組、角色、雙面人，老師控制回合</small></span><span class="tag">🚧 開發中</span></button>
+    </div>
+    <div id="m-solo" class="entry">
+      <div>
+        <div class="field"><label>① 版本</label><div class="seg" id="s-lv"><button data-v="g10">高一版<small>三大國</small></button><button data-v="g11">高二高三版<small>五大勢力</small></button></div></div>
+        <div class="field"><label>② 模式</label><div class="seg" id="s-tm"><button data-v="1">⏱️ 計時<small>每回合 4 分鐘＋快問</small></button><button data-v="0">🐢 不計時</button></div></div>
+        <div class="field"><label>③ 地圖</label><div class="seg" id="s-map"><button data-v="rand">🎲 每人不同</button><button data-v="same">🗺️ 全班同一張</button></div>
+          <div class="code-row" id="code-row"><span class="hint">地圖代碼</span><input class="in" id="e-code" maxlength="6"><button class="btn ghost" id="e-rand">🔄 換一張</button><span class="hint">同一張地圖方便全班比較分數、一起討論</span></div></div>
+        <div class="sum" id="sum"></div>
       </div>
-      <div class="link"><div id="qr"></div><div><div class="url" id="url"></div><div class="row"><button class="btn ghost" id="copy">📋 複製連結</button><button class="btn ghost" id="big-qr">🔳 投影 QR</button><a class="btn ghost" id="open" target="_blank" style="text-decoration:none">↗ 開啟</a></div></div></div>
+      <div class="qrbox">
+        <div id="qr"></div>
+        <button class="btn" id="big-qr">🔳 投影 QR 給學生掃</button>
+        <div class="two" style="margin-top:6px"><button class="btn ghost" id="copy">📋 複製連結</button><a class="btn ghost" id="open" target="_blank" style="text-decoration:none">▶ 先試玩</a></div>
+        <div class="url" id="url"></div>
+      </div>
     </div>
-    <div class="box">
-      <h2>📅 學期設定</h2>
-      <p class="hint">學生登入時會自動用「目前學期」。換學期時新增一個，學生資料會分開存。</p>
-      <div class="row" style="margin-top:8px"><span>目前學期：</span><select id="term-cur"></select><input class="in" id="term-new" placeholder="例：115-2" style="width:110px"><button class="btn ghost" id="term-add">＋ 新增</button><button class="btn ghost" id="term-del">移出清單</button></div>
-      <div class="hint" id="term-msg" style="margin-top:6px"></div>
-    </div>
-  </div>
+    <div id="m-mp" class="soon-box hidden">👥 <b>全班連線版</b>正在開發中：學生依人數自動分進各勢力、扮演不同角色，勢力裡還藏著雙面人；老師用這一頁控制回合、調整市場、最後揭曉身分與排名。<br>完成後會出現在這裡，按一下就能開房間。</div>
+  </section>
+
+  <div class="modal hidden" id="term-box"><div class="mcard" style="width:min(520px,100%)">
+    <div class="row" style="justify-content:space-between"><h2>📅 學期設定</h2><button class="btn ghost" id="term-x">關閉</button></div>
+    <p class="hint" style="margin:6px 0 10px">學生登入時會自動進入「目前學期」。換學期時新增一個，學生資料會分開存（舊資料不會刪除）。</p>
+    <div class="row"><span>目前學期：</span><select id="term-cur"></select><button class="btn ghost" id="term-del">移出清單</button></div>
+    <div class="row" style="margin-top:8px"><span>新增學期：</span><input class="in" id="term-new" placeholder="例：115-2" style="width:110px"><button class="btn ghost" id="term-add">＋ 新增並切換</button></div>
+    <div class="hint" id="term-msg" style="margin-top:8px"></div>
+  </div></div>
+
   <div class="box">
+    <div class="sec-h"><h2>📊 學生學習紀錄</h2><div class="row"><button class="btn dark" id="xlsx">📥 匯出 Excel</button><button class="btn ghost" id="sel-mode">🧹 清除資料</button></div></div>
     <div class="row" style="justify-content:space-between">
       <div class="row"><select id="f-term"></select><select id="f-cls"><option value="">全部班級</option></select><select id="f-pur"><option value="">全部用途</option></select><input class="in" id="f-q" placeholder="搜尋姓名、學號、座號"><button class="btn ghost" id="reload">🔄 重新整理</button></div>
-      <div class="row"><button class="btn dark" id="xlsx">📥 Excel</button><button class="btn ghost" id="sel-mode">🧹 清除資料</button></div>
     </div>
     <div class="strip" id="strip"></div>
     <div class="tabs" id="tabs"><button data-v="stu" class="on">👩‍🎓 學生成績</button><button data-v="heat">🧠 知識點熱點圖</button><button data-v="wrong">❌ 常錯題目</button></div>
@@ -84,11 +119,11 @@
 </main>
 <div class="modal hidden" id="modal"><div class="mcard" id="mcard"></div></div>
 
-<script src="data.js?v=20261015c"></script>
-<script src="facts.js?v=20261015c"></script>
-<script src="bank.js?v=20261015c"></script>
-<script src="quiz.js?v=20261015c"></script>
-<script src="cloud.js?v=20261015c"></script>
+<script src="data.js?v=20261015d"></script>
+<script src="facts.js?v=20261015d"></script>
+<script src="bank.js?v=20261015d"></script>
+<script src="quiz.js?v=20261015d"></script>
+<script src="cloud.js?v=20261015d"></script>
 <script>
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -98,23 +133,36 @@ const END_ZH = { harmony: '大和解', peace: '均勢和平', shaky: '危險的�
 const fmtD = t => t ? new Date(t).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
 let ALL = [], CFG = null, VIEW = 'stu', SORT = { k: 'cls', d: 1 }, SEL = null, TAGF = '';
 
-/* 學生入口 */
+/* 開始上課：單人戰局的學生入口（版本、模式、地圖 → 連結＋QR） */
 const BASE = location.href.replace(/teacher\.html.*$/, 'index.html');
 let stuUrl = BASE;
 const EKEY = 'bond-society-entry';
-function makeEntry() {
-  const code = $('e-code').value.trim().toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 6); $('e-code').value = code;
-  stuUrl = `${BASE}?lv=${$('e-lv').value}&tm=${$('e-tm').value}${code ? '&code=' + code : ''}`;
-  $('url').textContent = stuUrl; $('open').href = stuUrl;
-  $('qr').innerHTML = ''; try { new QRCode($('qr'), { text: stuUrl, width: 184, height: 184 }); } catch (e) {}
-  try { localStorage.setItem(EKEY, JSON.stringify({ lv: $('e-lv').value, tm: $('e-tm').value, code })); } catch (e) {}
+const randCode = () => Math.floor(Math.random() * 36 ** 6).toString(36).toUpperCase().padStart(6, '0');
+let EN = { lv: 'g10', tm: '1', map: 'rand', code: '' };
+try { const e = JSON.parse(localStorage.getItem(EKEY)); if (e) EN = { lv: e.lv || 'g10', tm: e.tm || '1', map: e.map || (e.code ? 'same' : 'rand'), code: e.code || '' }; } catch (e) {}
+function seg(id, key) {
+  $(id).querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.v === EN[key]); b.onclick = () => { EN[key] = b.dataset.v; if (key === 'map' && EN.map === 'same' && !EN.code) EN.code = randCode(); makeEntry(); }; });
 }
-try { const e = JSON.parse(localStorage.getItem(EKEY)); if (e) { $('e-lv').value = e.lv; $('e-tm').value = e.tm; $('e-code').value = e.code || ''; } } catch (e) {}
-['e-lv', 'e-tm'].forEach(id => $(id).onchange = makeEntry); $('e-code').oninput = makeEntry;
-$('e-rand').onclick = () => { $('e-code').value = Math.floor(Math.random() * 36 ** 6).toString(36).toUpperCase().padStart(6, '0'); makeEntry(); };
+function makeEntry() {
+  seg('s-lv', 'lv'); seg('s-tm', 'tm'); seg('s-map', 'map');
+  EN.code = $('e-code').value = (EN.code || '').toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 6);
+  $('code-row').classList.toggle('hidden', EN.map !== 'same');
+  const code = EN.map === 'same' ? EN.code : '';
+  stuUrl = `${BASE}?lv=${EN.lv}&tm=${EN.tm}${code ? '&code=' + code : ''}`;
+  $('url').textContent = stuUrl; $('open').href = stuUrl;
+  $('sum').innerHTML = `📱 學生掃描後會進入：<b>${EN.lv === 'g11' ? '高二高三版（五大勢力）' : '高一版（三大國）'}</b>・<b>${EN.tm === '1' ? '計時模式' : '不計時'}</b>・<b>${code ? '全班同一張地圖 ' + code : '每人不同地圖'}</b><br><span class="hint">學生不能自己改設定；不同班可以用不同設定，各投影一次即可。</span>`;
+  $('qr').innerHTML = ''; try { new QRCode($('qr'), { text: stuUrl, width: 336, height: 336 }); } catch (e) {}
+  try { localStorage.setItem(EKEY, JSON.stringify(EN)); } catch (e) {}
+}
+$('e-code').oninput = () => { EN.code = $('e-code').value; makeEntry(); };
+$('e-rand').onclick = () => { EN.code = randCode(); makeEntry(); };
+document.querySelectorAll('.mode').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.mode').forEach(x => x.classList.toggle('on', x === b));
+  $('m-solo').classList.toggle('hidden', b.dataset.mode !== 'solo'); $('m-mp').classList.toggle('hidden', b.dataset.mode !== 'mp');
+});
 makeEntry();
-$('copy').onclick = () => navigator.clipboard.writeText(stuUrl).then(() => alert('已複製學生連結'));
-$('big-qr').onclick = () => { const m = modal(`<h2>掃描進入「隱秘的鍵結社」</h2><p style="text-align:center">${$('e-lv').value === 'g11' ? '高二高三版' : '高一版'}・${$('e-tm').value === '1' ? '計時' : '不計時'}${$('e-code').value ? '・地圖 ' + $('e-code').value : ''}</p><div id="qr2" style="width:min(70vh,90%);margin:12px auto"></div><div style="text-align:center"><button class="btn" id="cl">關閉</button></div>`); try { new QRCode(m.querySelector('#qr2'), { text: stuUrl, width: 600, height: 600 }); m.querySelectorAll('#qr2 img,#qr2 canvas').forEach(x => { x.style.width = '100%'; x.style.height = 'auto'; }); } catch (e) {} m.querySelector('#cl').onclick = closeModal; };
+$('copy').onclick = () => navigator.clipboard.writeText(stuUrl).then(() => { $('copy').textContent = '✅ 已複製'; setTimeout(() => { $('copy').textContent = '📋 複製連結'; }, 1500); });
+$('big-qr').onclick = () => { const code = EN.map === 'same' ? EN.code : ''; const m = modal(`<h2 style="text-align:center">掃描進入「隱秘的鍵結社」</h2><p style="text-align:center;font-size:1.1em">${EN.lv === 'g11' ? '高二高三版' : '高一版'}・${EN.tm === '1' ? '計時' : '不計時'}${code ? '・地圖 ' + code : ''}</p><div id="qr2" style="width:min(68vh,90%);margin:12px auto"></div><div style="text-align:center"><button class="btn" id="cl">關閉</button></div>`); try { new QRCode(m.querySelector('#qr2'), { text: stuUrl, width: 600, height: 600 }); m.querySelectorAll('#qr2 img,#qr2 canvas').forEach(x => { x.style.width = '100%'; x.style.height = 'auto'; }); } catch (e) {} m.querySelector('#cl').onclick = closeModal; };
 function modal(h) { $('mcard').innerHTML = h; $('modal').classList.remove('hidden'); $('mcard').scrollTop = 0; return $('mcard'); }
 function closeModal() { $('modal').classList.add('hidden'); }
 $('modal').onclick = e => { if (e.target.id === 'modal') closeModal(); };
@@ -125,12 +173,18 @@ function drawTerms() {
   const ts = [...new Set([...CFG.terms, ...ALL.map(p => p.term)])].sort().reverse();
   const keep = $('f-term').value || CFG.current;
   $('f-term').innerHTML = `<option value="*">全部學期</option>` + ts.map(t => `<option ${t === keep ? 'selected' : ''}>${t}</option>`).join('');
-  $('term-msg').textContent = CFG.fallback ? '（還沒設定過，現在用日期推算的學期）' : '';
+  $('term-msg').innerHTML = CFG.fallback ? `還沒設定過，現在用日期推算的學期。<button class="btn" id="term-ok" style="margin-left:6px">✅ 確認使用 ${CFG.current}</button>` : '';
+  if (CFG.fallback) $('term-ok').onclick = () => saveTerms(`已儲存：學生登入會進入 ${CFG.current}`);
+  $('term-chip').innerHTML = `📅 學期 ${CFG.current}${CFG.fallback ? ' <span class="warn">・未設定</span>' : ''}`;
 }
 async function saveTerms(msg) { try { await BSC.saveConfig(CFG); CFG.fallback = false; drawTerms(); $('term-msg').textContent = msg; } catch (e) { alert('儲存失敗：' + e.message); } }
 $('term-cur').onchange = () => { CFG.current = $('term-cur').value; saveTerms(`已切換：學生現在登入會進入 ${CFG.current}`); };
 $('term-add').onclick = () => { const t = $('term-new').value.trim(); if (!BSC.validTerm(t)) return alert('學期格式：學年-1 或 學年-2，例如 115-2'); if (!CFG.terms.includes(t)) CFG.terms.push(t); CFG.terms.sort(); CFG.current = t; $('term-new').value = ''; saveTerms(`已新增並切換到 ${t}`); };
 $('term-del').onclick = () => { const t = $('term-cur').value; if (CFG.terms.length <= 1) return alert('至少要留一個學期'); if (!confirm(`把 ${t} 移出清單？（學生資料不會被刪除）`)) return; CFG.terms = CFG.terms.filter(x => x !== t); if (CFG.current === t) CFG.current = CFG.terms[CFG.terms.length - 1]; saveTerms(`已移出 ${t}`); };
+
+$('term-chip').onclick = () => $('term-box').classList.remove('hidden');
+$('term-x').onclick = () => $('term-box').classList.add('hidden');
+$('term-box').onclick = e => { if (e.target.id === 'term-box') $('term-box').classList.add('hidden'); };
 
 /* 讀資料 */
 async function loadAll() {
