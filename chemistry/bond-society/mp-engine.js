@@ -13,7 +13,7 @@ const MPE = (() => {
   /* ---------- 常數 ---------- */
   const K = {
     ROUND_SEC: 240, ROUNDS: 8, COIN: 8, START_COIN: 30, BUY_ADD: 2, ATK_COST: 30, ATK: 3, C: 0.6, MOM: 0.10, NOISE: 4,
-    SP_C1: 10, SP_C2: 20, SP_UNLOCK: 6, SP_STEAL: 15, SP_DRAG: 4, SP_RUMOR: 10, BS_COST: 12, BS_SHIFT: 4, BS_PAY: 10,
+    SP_C1: 10, SP_C2: 20, SP_UNLOCK: 6, SP_STEAL: 15, SP_DRAG: 4, SP_RUMOR: 10, BS_COST: 12, BS_SHIFT: 4, BS_PAY: 10, BS_MAX: 2, BS_TRY: 2, SPY_HOME: 1.5,
     PT_OK: 40, PT_NO: 10, TW: 25, TL: 15, ST: 40, PERSONAL_N: 15, QUICK_OK: 5,
     DIFF: { easy: 0.88, normal: 1, hard: 1.12 }
   };
@@ -34,19 +34,21 @@ const MPE = (() => {
   };
   const PRICE0 = el => METALS.includes(el) ? 12 : ['H', 'N', 'O', 'F'].includes(el) ? 10 : el === 'Br' ? 16 : VWE.includes(el) ? 12 : 6;
   // 角色
+  // 角色（2026-10-16 改回王國朝廷風格；how＝[怎麼做, 會得到什麼]，學生頁的入門卡與「我可以做什麼」用）
+  const Q1 = ['🧪 工作分頁按「接一題」', '答對：💰+8、🎫 交易許可 +1'];
   const ROLE = {
-    leader: { name: '大煉金師', icon: '👑', tags: ['concept', 'bond', 'app'], does: '答對觀念題提升國力；決定勢力行動' },
-    knight: { name: '守護騎士', icon: '🛡️', tags: ['concept', 'mp', 'trend'], does: '答對提升國力；可花國庫 30 攻占敵國 1 格' },
-    sage: { name: '智者', icon: '🦉', tags: ['concept', 'app', 'bond'], does: '本回合完成團隊任務後，可以多發委託給鍵結社' },
-    miner: { name: '尋礦者', icon: '⛏️', tags: ['pos', 'val', 'prop', 'trend'], does: '選礦脈 → 答對得到 1 份元素' },
-    forger: { name: '鑄晶師', icon: '⚒️', tags: ['formula', 'name', 'ion', 'poly'], does: '答對把倉庫的 1 份元素鑄成化合物，提升國力' },
-    assayer: { name: '試金師', icon: '🔍', tags: ['detect', 'app', 'bond'], does: '答對提升國力，並得到 1 次情報偵察（看任一勢力的勝利進度）' },
-    builder: { name: '結構師', icon: '🧱', tags: ['lewis', 'struct', 'imf'], does: '選分子 → 答對用倉庫的元素做出分子；也可以建城牆' },
-    envoy: { name: '盟約使', icon: '📜', tags: ['balance'], does: '選勢力 → 答對友好度 +5' },
-    mechanic: { name: '機巧師', icon: '⚙️', tags: ['eng'], does: '答對工程題得到 1 面盾牌，擋下本回合 1 次破壞（每回合最多 1 面）' },
-    mystic: { name: '秘學者', icon: '📖', tags: ['imf', 'mp'], does: '選兩國 → 答對讓兩國友好度 +5（要有聯邦）' },
-    flex: { name: '萬能學徒', icon: '🌀', tags: [], does: '人很少的勢力：每題自己選要做哪個角色的工作' },
-    bs: { name: '燭影使', icon: '🕯️', tags: [], does: '接各國的委託、暗中資助或散播謠言，讓天下保持均勢' }
+    leader: { name: '君王', icon: '👑', tags: ['concept', 'bond', 'app'], does: '答觀念題推進國力，帶領大家討論勢力該怎麼走', how: [Q1, ['答對觀念題', '國力推進 +2'], ['看「🏰 勢力」的勝利條件', '分配隊友該做什麼']] },
+    knight: { name: '將軍', icon: '⚔️', tags: ['concept', 'mp', 'trend'], does: '答題推進國力，用國庫的錢出兵搶領土', how: [Q1, ['答對', '國力推進 +1'], ['角色能力「出兵」（國庫 💰30，每回合 1 次）', '搶下相鄰敵國 1 格領土（對方有城牆會被擋下）']] },
+    sage: { name: '謀士', icon: '🦉', tags: ['concept', 'app', 'bond'], does: '團隊任務完成後，向鍵結社多發委託', how: [Q1, ['答對', '國力推進 +0.5'], ['團隊任務完成後按「發一件委託」（每回合 2 件）', '鍵結社完成 → 我國國力推進 +3']] },
+    miner: { name: '礦工', icon: '⛏️', tags: ['pos', 'val', 'prop', 'trend'], does: '選礦脈挖元素，放進勢力倉庫', how: [['先選礦脈，再按「接一題」', '答對：得到 1 份元素（進勢力倉庫）'], ['元素給誰用？', '工匠拿去鑄化合物、建築師拿去做分子']] },
+    forger: { name: '工匠', icon: '⚒️', tags: ['formula', 'name', 'ion', 'poly'], does: '用倉庫的元素鑄成化合物，推進國力', how: [['選一個倉庫裡的元素，再按「接一題」', '答對：用掉 1 份元素，鑄成化合物，國力推進 +2'], ['倉庫沒元素時答對', '國力推進 +0.5（請礦工挖或到交易所買）']] },
+    assayer: { name: '斥候', icon: '🔍', tags: ['detect', 'app', 'bond'], does: '答鑑定題推進國力，還能偵察別國', how: [Q1, ['答對', '國力推進 +1，得到 1 次偵察'], ['角色能力「看某國」', '看到那一國的勝利條件進度']] },
+    builder: { name: '建築師', icon: '🧱', tags: ['lewis', 'struct', 'imf'], does: '用倉庫的元素做出分子，或建城牆', how: [['選要做的分子（或城牆），再按「接一題」', '答對：用掉元素做出分子（勝利條件常需要）'], ['選「建城牆」', '答對：多一道城牆，擋下 1 次敵國出兵']] },
+    envoy: { name: '使節', icon: '📜', tags: ['balance'], does: '和別國增進友好', how: [['選一個國家，再按「接一題」', '答對：兩國友好度 +5'], ['友好度高', '賣東西給對方更好賺，有些勝利條件也要看友好度']] },
+    mechanic: { name: '技師', icon: '⚙️', tags: ['eng'], does: '答性質與鍵結題，做出盾牌保護國家', how: [Q1, ['答對（兩步都要對）', '得到 1 面盾牌，擋下本回合 1 次臥底破壞'], ['已經有盾牌時答對', '國力推進 +1']] },
+    mystic: { name: '學士', icon: '📖', tags: ['imf', 'mp'], does: '讓兩個國家更友好（要有聯邦）', how: [['選兩個國家，再按「接一題」', '答對：那兩國友好度 +5']] },
+    flex: { name: '全能臣子', icon: '🌀', tags: [], does: '人很少的勢力：每題自己選要做哪個角色的工作', how: [['先選「這題要做哪個角色的工作」', '答對就得到那個角色的成果'], Q1] },
+    bs: { name: '密使', icon: '🕯️', tags: [], does: '接各國的委託、暗中資助或散播謠言，讓天下保持均勢', how: [['公告板按「接下」答題（每回合最多 2 件）', '答對：💰+10，委託國國力推進 +3'], ['同一件答錯 2 次', '這件委託失敗，換一件'], ['暗中行動：資助或謠言（每回合 1 次，💰12）', '結算時那一國相對國力 ±4%']] }
   };
   const ROT = {
     co: ['builder', 'envoy', 'builder', 'mystic', 'miner', 'forger', 'mechanic', 'assayer', 'envoy'],
@@ -56,7 +58,7 @@ const MPE = (() => {
     vw: ['builder', 'miner', 'forger', 'builder', 'mechanic', 'envoy', 'miner', 'assayer', 'forger']
   };
   const SECRET = {
-    haul: { name: '📦 搬運', text: n => `把元素送回母國（交易所「送回母國」）至少 ${n} 份` },
+    haul: { name: '📦 搬運', text: n => `把元素送回母國（秘密分頁的「送回」）至少 ${n} 份` },
     weaken: { name: '📉 削弱', text: n => `遊戲結束時，潛伏國的相對國力低於 ${n}%` },
     block: { name: '🚧 阻撓', text: n => `潛伏國沒有達成勝利條件，而且進度低於 ${n}%` },
     drain: { name: '💸 散財', text: n => `遊戲結束時，潛伏國國庫低於 ${n} 金幣` },
@@ -65,7 +67,7 @@ const MPE = (() => {
   };
   const ABIL = {
     swap: { name: '🔄 掉包', cost: K.SP_C1, strong: false, text: '把潛伏國倉庫最有用的 1 份東西換成沒用的元素' },
-    leak: { name: '📣 走漏', cost: K.SP_C1, strong: false, text: '把潛伏國的國庫與勝利進度傳給母國的大煉金師' },
+    leak: { name: '📣 走漏', cost: K.SP_C1, strong: false, text: '把潛伏國的國庫與勝利進度傳給母國的君王' },
     steal: { name: '🪙 挪用', cost: K.SP_C1, strong: false, text: `從潛伏國國庫拿走 ${K.SP_STEAL} 金幣，暗中轉進母國國庫` },
     rumor: { name: '🗯️ 造謠', cost: K.SP_C2, strong: true, text: `潛伏國和指定勢力的友好度 −${K.SP_RUMOR}` },
     drag: { name: '🪢 扯後腿', cost: K.SP_C2, strong: true, text: `潛伏國本回合國力推進 −${K.SP_DRAG}` }
@@ -163,7 +165,7 @@ const MPE = (() => {
       }
       const weak = Math.max(0, 100 - R.F[f].rel); R.F[f].mem.forEach(sid => { R.players[sid].wallet += Math.round(weak * 1.5); });
     });
-    // 雙面人：每國藏一樣多，來源輪流
+    // 臥底：每國藏一樣多，來源輪流
     const ks = Math.min(...L.facs.map(f => spyN(L.size[f])));
     const SKEYS = Object.keys(SECRET);
     L.facs.forEach((f, i) => {
@@ -187,7 +189,7 @@ const MPE = (() => {
   function lateJoin(R, sid) {
     if (!R.F) return;
     const f = R.facs.slice().sort((a, b) => R.F[a].mem.length - R.F[b].mem.length)[0], l = R.lobby[sid];
-    const rot = ROT[f].filter(x => R.g11 || x !== 'mystic'), role = R.F[f].mem.some(id => R.players[id] && R.players[id].role === 'flex') ? 'flex' : rot[R.F[f].mem.length % rot.length];   // 小勢力的晚到同學也當萬能學徒
+    const rot = ROT[f].filter(x => R.g11 || x !== 'mystic'), role = R.F[f].mem.some(id => R.players[id] && R.players[id].role === 'flex') ? 'flex' : rot[R.F[f].mem.length % rot.length];   // 小勢力的晚到同學也當全能臣子
     R.players[sid] = { sid, name: l.name, cls: l.cls, seat: l.seat, fac: f, origin: f, role, wallet: K.START_COIN, correct: 0, rc: 0, permits: 0, trades: 0, stash: {}, sent: 0, cnt: { mined: {}, comp: 0, mol: 0, walls: 0, intel: 0, intelTok: 0, attacks: 0, issued: 0, repairs: 0, friend: 0, bsDone: 0, quick: 0, quickOk: 0, roleOk: 0 }, msgs: [], ack: {}, late: true };
     R.F[f].mem.push(sid);
     feed(R, `${l.name} 加入了${FN[f].name}`);
@@ -198,7 +200,7 @@ const MPE = (() => {
   function beginRound(R) {
     const r = rng(R);
     R.round++; R.phase = 'act'; R.tEnd = now() + K.ROUND_SEC * 1000; R.paused = false; R.pauseLeft = 0;
-    Object.values(R.players).forEach(p => { p.rc = 0; p.permits = 0; p.trades = 0; p.abilUsed = false; p.bsCovert = false; p.bsTook = 0; });
+    Object.values(R.players).forEach(p => { p.rc = 0; p.permits = 0; p.trades = 0; p.abilUsed = false; p.bsCovert = false; p.bsTook = 0; p.bsTry = {}; p.rActs = 0; p.rDone = false; p.lastAt = 0; });
     R.facs.forEach(f => {
       const x = R.F[f], m = x.mem.length;
       Object.assign(x, { push: 0, rc: 0, rDon: 0, rMake: 0, rQ: 0, rQok: 0, shield: 0, sabs: [], issued: 0, attacked: false, frStart: { ...x.fr } });
@@ -227,6 +229,8 @@ const MPE = (() => {
   const inAct = R => R.phase === 'act' && !R.paused && (!R.tEnd || now() <= R.tEnd + 3000);
   function handle(R, p, a) {
     const r = rng(R);
+    if (a.type === 'done') { if (R.phase !== 'act') return { ok: false }; p.rDone = !!a.on; return { ok: true, t: p.rDone ? '✋ 已告訴老師你這回合做完了' : '好，繼續加油！' }; }
+    if (a.type !== 'evans' && a.type !== 'quick') { p.rActs = (p.rActs || 0) + 1; p.lastAt = now(); }
     if (a.type === 'quick') {
       if (p.fac === 'bs') return { ok: true };
       const x = R.F[p.fac]; p.cnt.quick++; x.rQ = (x.rQ || 0) + 1;
@@ -243,7 +247,11 @@ const MPE = (() => {
       case 'bsdo': {
         if (p.fac !== 'bs') return { ok: false };
         const c = (R.board || []).find(b => b.id === a.cid); if (!c || c.done) return { ok: false, t: '這件委託已經有人完成了。' };
-        if (!a.ok) return { ok: false, t: '答錯了，委託還在，可以再試。' };
+        // 和單機版一樣：每人每回合最多完成 2 件；同一件答錯 2 次就不能再接
+        if ((p.bsTook || 0) >= K.BS_MAX) return { ok: false, t: `每回合最多完成 ${K.BS_MAX} 件委託。` };
+        p.bsTry = p.bsTry || {}; if ((p.bsTry[c.id] || 0) >= K.BS_TRY) return { ok: false, t: '這件委託你已經失敗 2 次，換一件吧。' };
+        if (!a.ok) { p.bsTry[c.id] = (p.bsTry[c.id] || 0) + 1; const left = K.BS_TRY - p.bsTry[c.id]; return { ok: false, t: left ? `答錯了，這件委託還能再試 ${left} 次。` : '答錯 2 次，這件委託失敗了。' }; }
+        p.bsTook = (p.bsTook || 0) + 1;
         c.done = true; c.by = p.sid; p.cnt.bsDone++; p.correct++; p.wallet += K.BS_PAY; R.F[c.from].push += 3;
         log(R, c.from, `鍵結社完成了我們的委託（國力推進 +3）`); feed(R, `🕯️ 鍵結社替${FN[c.from].name}完成一件委託`);
         return { ok: true, t: `委託完成！💰+${K.BS_PAY}，${FN[c.from].name}國力推進 +3` };
@@ -279,7 +287,7 @@ const MPE = (() => {
         if (p.spy && to === p.origin) p.sent++;
         return { ok: true, t: `賣出 ${a.el} 給${FN[to].name}，得到 💰${price}` };
       }
-      case 'send': {   // 雙面人把私藏的元素送回母國（搬運）
+      case 'send': {   // 臥底把私藏的元素送回母國（搬運）
         if (!p.spy || !ALL.includes(a.el) || !has(p.stash, a.el)) return { ok: false, t: '私藏裡沒有這個元素。' };
         if (p.trades + 1 > Math.min(3, p.permits)) return { ok: false, t: '交易許可不夠。' };
         add(p.stash, a.el, -1); add(R.F[p.origin].inv, a.el, 1); p.trades++; p.sent++;
@@ -294,7 +302,7 @@ const MPE = (() => {
         return { ok: true, t: `捐進國庫 💰${n}` };
       }
       case 'attack': {
-        if (!(p.role === 'knight' || p.merged || (p.leader && p.role === 'flex'))) return { ok: false, t: '只有守護騎士（或兼任的大煉金師）可以出兵。' };
+        if (!(p.role === 'knight' || p.merged || (p.leader && p.role === 'flex'))) return { ok: false, t: '只有將軍（或兼任的君王）可以出兵。' };
         if (x.attacked) return { ok: false, t: '本回合已經出兵過了。' };
         const t = a.to; if (!R.F[t] || t === p.fac) return { ok: false };
         if (x.tre < K.ATK_COST) return { ok: false, t: `國庫要有 💰${K.ATK_COST}。` };
@@ -306,13 +314,13 @@ const MPE = (() => {
         return { ok: true, t: `出兵成功：國力 +${K.ATK}%，${FN[t].name} −${K.ATK}%`, cell };
       }
       case 'issue': {
-        if (!(p.role === 'sage' || p.merged || (p.leader && p.role === 'flex'))) return { ok: false, t: '只有智者（或兼任的大煉金師）可以發委託。' };
+        if (!(p.role === 'sage' || p.merged || (p.leader && p.role === 'flex'))) return { ok: false, t: '只有謀士（或兼任的君王）可以發委託。' };
         if (!x.team.done) return { ok: false, t: '本回合完成團隊任務後才能多發委託。' };
         if (x.issued >= 2) return { ok: false, t: '本回合最多多發 2 件。' };
         if (!R.bs.length) return { ok: false, t: '這一局沒有鍵結社。' };
         x.issued++; p.cnt.issued++;
         R.board.push({ id: `${R.round}-x${R.board.length}`, from: p.fac, tag: pick(r, ['concept', 'app', 'formula', 'name', 'balance', 'detect']), by: null, done: false, extra: true });
-        feed(R, `🦉 ${FN[p.fac].name}的智者向鍵結社多發了一件委託`);
+        feed(R, `🦉 ${FN[p.fac].name}的謀士向鍵結社多發了一件委託`);
         return { ok: true, t: '委託已送到鍵結社的公告板。' };
       }
       case 'intel': {
@@ -338,11 +346,19 @@ const MPE = (() => {
     const x = R.F[p.fac];
     if (p.fac === 'bs') return { ok: false };
     if (!a.ok) return { ok: false, t: '答錯了，這題沒有成果。再接一題吧！' };
+    // 🎭 臥底（臥底）預設把成果暗中送回母國；選「做給潛伏國看」才照一般角色幫潛伏國（掩護身分）
+    if (p.spy && R.F[p.origin] && a.home !== false && a.home !== 0) {
+      p.correct++; p.rc++; p.permits++; p.wallet += K.COIN; p.cnt.roleOk++;
+      const role0 = p.role === 'flex' ? (a.as || 'miner') : p.role;
+      if (role0 === 'miner') { const v = VEINS[a.vein] || VEINS.any, el = pick(r, v.els); add(p.stash, el); p.cnt.mined[el] = 1; return { ok: true, t: `答對！💰+${K.COIN}，交易許可 +1；挖到 ${el}，偷偷藏進私藏（到秘密分頁送回${FN[p.origin].name}）` }; }
+      R.F[p.origin].push += K.SPY_HOME; log(R, p.origin, `🎭 潛伏在外的臥底暗中送回成果（國力推進 +${K.SPY_HOME}）`);
+      return { ok: true, t: `答對！💰+${K.COIN}，交易許可 +1；成果暗中送回${FN[p.origin].name}（母國國力推進 +${K.SPY_HOME}）` };
+    }
     p.correct++; p.rc++; p.permits++; p.wallet += K.COIN; x.rc++; p.cnt.roleOk++;
     if (x.team.type === 'correct') x.team.prog++;
     let role = p.role === 'flex' ? (a.as || 'miner') : p.role;
     if (p.role === 'flex' && !['miner', 'forger', 'builder', 'envoy', 'assayer', 'mechanic', 'mystic', 'leader'].includes(role)) role = 'miner';
-    const hide = p.spy && a.hide;   // 雙面人可以把成果偷偷藏起來（只有元素）
+    const hide = p.spy && a.hide;   // 臥底可以把成果偷偷藏起來（只有元素）
     let t = `答對！💰+${K.COIN}，交易許可 +1`;
     switch (role) {
       case 'leader': x.push += 2; t += '；國力推進 +2'; break;
@@ -397,7 +413,7 @@ const MPE = (() => {
     if (VWE.includes(el)) return (f === 'vw' || f === 'co') ? 2.5 : 0.3;
     return JUNK.includes(el) ? 0 : 0.5;
   }
-  // 雙面人的秘密能力
+  // 臥底的秘密能力
   function spyAct(R, p, a) {
     if (!p.spy) return { ok: false };
     const ab = ABIL[a.ab]; if (!ab) return { ok: false };
@@ -407,12 +423,12 @@ const MPE = (() => {
     p.wallet -= ab.cost; p.abilUsed = true; if (ab.strong) p.lastStrong = R.round;
     const h = R.F[p.fac];
     if (a.ab === 'leak') {
-      const pr = progress(R, p.fac), text = `📣 雙面人 ${p.name} 回報：${FN[p.fac].name}國庫 💰${h.tre}，勝利進度 ${Math.round(pr.v * 100)}%（${pr.parts.map(q => `${q.l} ${q.have}/${q.need}`).join('；')}）`;
+      const pr = progress(R, p.fac), text = `📣 臥底 ${p.name} 回報：${FN[p.fac].name}國庫 💰${h.tre}，勝利進度 ${Math.round(pr.v * 100)}%（${pr.parts.map(q => `${q.l} ${q.have}/${q.need}`).join('；')}）`;
       R.F[p.origin].mem.filter(s => R.players[s].leader).forEach(s => msg(R.players[s], text));
-      return { ok: true, t: '情報已送給母國的大煉金師。' };
+      return { ok: true, t: '情報已送給母國的君王。' };
     }
     h.sabs.push({ sid: p.sid, ab: a.ab, target: a.ab === 'rumor' ? (R.F[a.to] && a.to !== p.fac ? a.to : p.target) : null });
-    return { ok: true, t: `${ab.name} 已安排，結算時生效（如果對方的機巧師有盾牌就會被擋下）。` };
+    return { ok: true, t: `${ab.name} 已安排，結算時生效（如果對方的技師有盾牌就會被擋下）。` };
   }
 
   /* ---------- 勝利進度 ---------- */
@@ -444,7 +460,7 @@ const MPE = (() => {
       const h = R.F[f]; news.sab[f] = { blocked: 0, hit: [] };
       h.sabs.forEach(s => {
         const sp = R.players[s.sid];
-        if (h.shield > 0) { h.shield--; news.sab[f].blocked++; h.mem.filter(id => R.players[id].role === 'mechanic' || R.players[id].role === 'flex').forEach(id => R.players[id].cnt.repairs++); msg(sp, `${ABIL[s.ab].name} 被機巧師的盾牌擋下了`); return; }
+        if (h.shield > 0) { h.shield--; news.sab[f].blocked++; h.mem.filter(id => R.players[id].role === 'mechanic' || R.players[id].role === 'flex').forEach(id => R.players[id].cnt.repairs++); msg(sp, `${ABIL[s.ab].name} 被技師的盾牌擋下了`); return; }
         if (s.ab === 'swap') {
           const els = Object.keys(h.inv).filter(e => has(h.inv, e) && !JUNK.includes(e)).sort((a, b) => wantScore(R, f, b) - wantScore(R, f, a));
           if (els.length) { add(h.inv, els[0], -1); add(h.inv, 'He'); news.sab[f].hit.push(`倉庫的 ${els[0]} 被掉包成 He`); }
@@ -572,7 +588,7 @@ const MPE = (() => {
     });
     const priv = {};
     Object.values(R.players || {}).forEach(p => {
-      const o = { sid: p.sid, name: p.name, fac: p.fac, role: p.role, leader: !!p.leader, merged: !!p.merged, wallet: p.wallet, correct: p.correct, rc: p.rc, permits: Math.min(3, p.permits), trades: p.trades, cnt: p.cnt, msgs: p.msgs || [], ack: p.ack || {}, abilUsed: !!p.abilUsed, bsCovert: !!p.bsCovert };
+      const o = { sid: p.sid, name: p.name, fac: p.fac, role: p.role, leader: !!p.leader, merged: !!p.merged, wallet: p.wallet, correct: p.correct, rc: p.rc, permits: Math.min(3, p.permits), trades: p.trades, cnt: p.cnt, msgs: p.msgs || [], ack: p.ack || {}, abilUsed: !!p.abilUsed, bsCovert: !!p.bsCovert, bsTook: p.bsTook || 0, bsTry: p.bsTry || {}, rDone: !!p.rDone };
       if (p.spy) Object.assign(o, { spy: { origin: p.origin, sec: p.sec, secName: SECRET[p.sec].name, secText: secText(R, p), target: p.target, stash: p.stash, sent: p.sent, lastStrong: p.lastStrong, leader: R.F[p.origin].mem.filter(s => R.players[s].leader).map(s => R.players[s].name) } });
       if (p.leader && p.fac !== 'bs') o.mySpies = R.F[p.fac].spiesOut.map(s => ({ name: R.players[s].name, host: R.players[s].fac }));
       if (R.phase === 'end') o.personal = p.personal, o.pts = p.pts, o.secOk = p.secOk;

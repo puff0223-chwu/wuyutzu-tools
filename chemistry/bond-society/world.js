@@ -149,11 +149,12 @@ const WORLD = (() => {
   function rawGrowth(s, f, noise = 0) { return (s.trend ? s.trend[f] : 0) + (MOMENTUM[s.level] || 0.2) * (rel(s, f) - avgRel(s)) + noise; }
   function drift(s) {
     const rnd = rngFrom(s), raw = {}, out = {};
-    s.facs.forEach(f => { raw[f] = rawGrowth(s, f, rnd() * 16 - 8); });
+    s.facs.forEach(f => { raw[f] = rawGrowth(s, f, rnd() * 2 * DRIFT.NOISE - DRIFT.NOISE); });
     const mean = s.facs.reduce((a, f) => a + raw[f], 0) / s.facs.length;
     s.facs.forEach(f => {
       let g = raw[f] - mean;
       if (s.rumor[f] && g > 0) g /= 2;   // 謠言：成長減半
+      g = Math.max(-DRIFT.CAP, Math.min(DRIFT.CAP, g));   // 單回合最多 ±8%：努力不會一次被抵銷
       g = Math.round(g * 10) / 10;
       s.power[f] = Math.max(0, s.power[f] + s.base[f] * g / 100); out[f] = g;
     });
@@ -161,7 +162,9 @@ const WORLD = (() => {
     if (s.round % 3 === 0) s.trend = rollTrend(s.facs, rnd);
     return out;
   }
-  const MOMENTUM = { g10: 0.26, g11: 0.16 };   // 強者越強係數（依模擬：認真玩約 8 成撐過）
+  // 2026-10-16 依學生回饋改版：運氣 ±8→±4、強者越強 ×1.2、單回合上限 ±8%（模擬：高手撐過率 95/89% → 97/93%，最大單回合變動 30% → 8%）
+  const DRIFT = { NOISE: 4, CAP: 8 };
+  const MOMENTUM = { g10: 0.31, g11: 0.19 };   // 強者越強係數
   // 各國應得的省分數（採礦國不算）
   function shares(s) {
     const land = s.owner.filter(o => o && o !== 'mine').length, tot = s.facs.reduce((a, f) => a + rel(s, f), 0);
@@ -234,6 +237,6 @@ const WORLD = (() => {
     return { ...parts, total: Object.values(parts).reduce((a, b) => a + b, 0), rate };
   }
 
-  return { FAIL_ENDS, CONFISCATE, FACTIONS, RIVAL, RULE, factionsOf, rngFrom, seeded, codeOf, seedOf, makeMap, hexPath, newGame, rel, fmtPower, territory, apply, drift, annex, redraw, shares, rawGrowth, avgRel, MOMENTUM, inSafe, checkFail, closeRound, finalEnding, score, snapshot };
+  return { FAIL_ENDS, CONFISCATE, FACTIONS, RIVAL, RULE, factionsOf, rngFrom, seeded, codeOf, seedOf, makeMap, hexPath, newGame, rel, fmtPower, territory, apply, drift, annex, redraw, shares, rawGrowth, avgRel, MOMENTUM, DRIFT, inSafe, checkFail, closeRound, finalEnding, score, snapshot };
 })();
 if (typeof module !== 'undefined') module.exports = WORLD;

@@ -454,6 +454,13 @@ wuyutzu-tools/
   - 老師頁 `teacher.html`：學生入口 QR、學期設定、篩選（學期、班級、用途、搜尋）；三個分頁：學生成績表（可排序，點學生看每局成績、累積知識點、最常答錯、遊戲歷程）、知識點熱點圖（全班平均列＋每位學生，標出全班最弱 3 個知識點）、常錯題目（依答錯人數排序，列出學生常選的錯誤答案＝迷思）；Excel 四張表（學生成績、知識點答對率、常錯題目、每局紀錄）；清除模式勾選刪除（會記 deleted 時間）
   - Firebase 規則：新增 `bond-society` 抽屜（players／saves／logs／config／deleted），規則測試新增 10 項（共 68 項全過）；**要到 Firebase 後台貼上新規則才會生效**，在那之前學生進度只存在本機
   - 測試：假 Firebase（會模擬拿掉 null 與空物件）跑三種畫面整局、重新整理後重新登入接著玩、12 位假學生各玩 1～3 局後檢查老師頁三個分頁與個人卡片
+- **連線版 v0.7（2026-10-16，第一次上課後）**
+  - 角色資料 `MPE.ROLE[k] = { name, icon, tags, does, how: [[怎麼做, 會得到], …] }`；學生頁 `guideCards()`／`showGuide()`／`autoGuide()`（localStorage `bsmp-guide:<房間>:<sid>` 記住看過）、角色卡 `howList()`
+  - 臥底：`ans` 動作多帶 `home`（預設 true）；`answer()` 開頭若 `p.spy && home` → 只加個人答對與錢、母國 `push += K.SPY_HOME(1.5)`，礦工元素進 `p.stash`；`home:false` 走一般角色流程（舊的 `hide` 仍可把礦藏進私藏）
+  - 鍵結社：`K.BS_MAX=2`（每人每回合完成件數 `p.bsTook`）、`K.BS_TRY=2`（`p.bsTry[cid]` 答錯次數）；priv 多 `bsTook`、`bsTry`
+  - 成員狀態：`handle()` 對 quick／evans 以外的動作記 `p.rActs`、`p.lastAt`；`done` 動作設 `p.rDone`；`beginRound` 重設；控制台 `memberBoard()`（每 10 秒重畫一次更新 💤）
+  - 控制台：`cancelRoom()`（刪 `bond-mp/<房間>`、清 `bond-mp-host`、重新載入）；`keepAwake()` 用 `navigator.wakeLock`，切回分頁重新要求；學生頁同樣
+- **單機版自然消長（2026-10-16）**：`WORLD.DRIFT = { NOISE: 4, CAP: 8 }`、`MOMENTUM = { g10: 0.31, g11: 0.19 }`；`drift()` 與 `GAME.forecast()` 都套上 ±CAP；介紹 `intro()` 4 張卡、`guide(step)` 前兩回合提示（`S.noGuide` 關閉）；交易所 `.acard／.abtn`
 - **👥 全班連線版 v1（2026-10-15 下午）**
   - 入口：老師頁「🎬 開始上課 → 👥 全班連線 → 開連線控制台」開新分頁 `mp-host.html`（投影用）；學生掃控制台的 QR 進 `mp.html?room=代碼`（登入同單機版，sid 相同）
   - **權威主機**：整局狀態 R 只在老師端（`mp-engine.js` 的 MPE），學生只送「動作」；老師端處理後把 `MPE.views(R)` 的三種畫面資料寫回雲端，每 5 秒另存完整狀態到 `host`（重新整理控制台可「繼續主持」）

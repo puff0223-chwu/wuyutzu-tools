@@ -78,7 +78,7 @@
     <h2>🎬 開始上課</h2>
     <div class="modes">
       <button class="mode on" data-mode="solo"><span class="ic">🕯️</span><span><b>單人戰局</b><small>每位學生用自己的裝置玩一局，紀錄自動回傳</small></span></button>
-      <button class="mode" data-mode="mp"><span class="ic">👥</span><span><b>全班連線</b><small>分組、角色、雙面人，老師控制回合</small></span><span class="tag">🆕 試玩版</span></button>
+      <button class="mode" data-mode="mp"><span class="ic">👥</span><span><b>全班連線</b><small>分組、角色、臥底，老師控制回合</small></span><span class="tag">🆕 試玩版</span></button>
     </div>
     <div id="m-solo" class="entry">
       <div>
@@ -96,7 +96,7 @@
       </div>
     </div>
     <div id="m-mp" class="hidden"><div class="entry"><div>
-      <p style="line-height:1.8">👥 <b>全班連線</b>：學生掃 QR 進大廳，你按「開始分配」後，系統依人數自動分進各勢力、扮演不同角色，勢力裡還藏著其他國派來的雙面人。<br>控制台建議<b>投影</b>：大地圖、各國國力、回合倒數、市場、隨機事件，最後揭曉雙面人與排名。</p>
+      <p style="line-height:1.8">👥 <b>全班連線</b>：學生掃 QR 進大廳，你按「開始分配」後，系統依人數自動分進各勢力、扮演不同角色，勢力裡還藏著其他國派來的臥底。<br>控制台建議<b>投影</b>：大地圖、各國國力、回合倒數、市場、隨機事件，最後揭曉臥底與排名。</p>
       <ul style="margin:8px 0 0 20px;line-height:1.8"><li>3～50 人都可以玩（勝利條件依人數自動查表）</li><li>開房時選版本與難度（全班答對率約 6／7／8 成 → 簡單／標準／困難）</li><li>學生的答題會併進單機版的紀錄，下方的熱點圖、常錯題目一起統計</li></ul></div>
       <div class="qrbox"><div style="font-size:3em">🕯️</div><a class="btn" href="mp-host.html" target="_blank" style="display:block;text-decoration:none;padding:12px">▶ 開連線控制台</a><p class="hint" style="margin-top:8px">會開新分頁；房間 QR 在控制台上</p></div></div></div>
   </section>
@@ -122,11 +122,11 @@
 </main>
 <div class="modal hidden" id="modal"><div class="mcard" id="mcard"></div></div>
 
-<script src="data.js?v=20261016a"></script>
-<script src="facts.js?v=20261016a"></script>
-<script src="bank.js?v=20261016a"></script>
-<script src="quiz.js?v=20261016a"></script>
-<script src="cloud.js?v=20261016a"></script>
+<script src="data.js?v=20261016b"></script>
+<script src="facts.js?v=20261016b"></script>
+<script src="bank.js?v=20261016b"></script>
+<script src="quiz.js?v=20261016b"></script>
+<script src="cloud.js?v=20261016b"></script>
 <script>
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -260,7 +260,7 @@ function drawWrong(L) {
 }
 
 /* 個人紀錄 */
-const MPE_ROLE = { leader: '大煉金師', knight: '守護騎士', sage: '智者', miner: '尋礦者', forger: '鑄晶師', assayer: '試金師', builder: '結構師', envoy: '盟約使', mechanic: '機巧師', mystic: '秘學者', flex: '萬能學徒', bs: '燭影使' };
+const MPE_ROLE = { leader: '君王', knight: '將軍', sage: '謀士', miner: '礦工', forger: '工匠', assayer: '斥候', builder: '建築師', envoy: '使節', mechanic: '技師', mystic: '學士', flex: '全能臣子', bs: '密使' };
 const LOGZH = { login: '🔑 登入', start: '▶ 開始新的一局', end: '🏁 一局結束', 'mp-end': '👥 連線對戰' };
 async function student(p) {
   const T = p.tot, tags = TAGS;
@@ -274,7 +274,7 @@ async function student(p) {
   m.querySelector('#cl').onclick = closeModal;
   try {
     const L = await BSC.loadLogs(p.sid);
-    m.querySelector('#logs').outerHTML = `<div class="tw" style="max-height:260px"><table><tr><th>時間</th><th>事件</th><th>內容</th></tr>${L.slice().reverse().map(e => `<tr><td>${fmtD(e.t)}</td><td>${LOGZH[e.type] || e.type}</td><td class="l">${e.type === 'mp-end' ? `房間 ${esc(e.room)}・${e.spy ? '🎭 雙面人・' : ''}${esc((MPE_ROLE[e.role] || e.role || ''))}・${e.score} 分・答錯 ${(e.wrong || []).length} 題` : e.type === 'end' ? `${e.level === 'g11' ? '高二高三' : '高一'}・${END_ZH[e.end] || ''}・${e.score} 分・答錯 ${(e.wrong || []).length} 題` : e.type === 'start' ? `${e.level === 'g11' ? '高二高三' : '高一'}・地圖 ${esc(e.code)}${e.timed ? '・計時' : ''}` : esc(e.purpose || '')}</td></tr>`).join('')}</table></div>`;
+    m.querySelector('#logs').outerHTML = `<div class="tw" style="max-height:260px"><table><tr><th>時間</th><th>事件</th><th>內容</th></tr>${L.slice().reverse().map(e => `<tr><td>${fmtD(e.t)}</td><td>${LOGZH[e.type] || e.type}</td><td class="l">${e.type === 'mp-end' ? `房間 ${esc(e.room)}・${e.spy ? '🎭 臥底・' : ''}${esc((MPE_ROLE[e.role] || e.role || ''))}・${e.score} 分・答錯 ${(e.wrong || []).length} 題` : e.type === 'end' ? `${e.level === 'g11' ? '高二高三' : '高一'}・${END_ZH[e.end] || ''}・${e.score} 分・答錯 ${(e.wrong || []).length} 題` : e.type === 'start' ? `${e.level === 'g11' ? '高二高三' : '高一'}・地圖 ${esc(e.code)}${e.timed ? '・計時' : ''}` : esc(e.purpose || '')}</td></tr>`).join('')}</table></div>`;
   } catch (e) { m.querySelector('#logs').textContent = '讀取失敗'; }
 }
 

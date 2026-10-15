@@ -6,7 +6,7 @@
 <title>隱秘的鍵結社：全班連線控制台</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<link rel="stylesheet" href="mp.css?v=20261016a">
+<link rel="stylesheet" href="mp.css?v=20261016b">
 <style>
   /* 老師控制台（投影用）：開房 → 大廳 → 分配 → 回合（行動、結算、市場、事件）→ 揭曉 */
   header { display: flex; align-items: center; gap: 12px; padding: 10px 18px; background: #0d0b12cc; border-bottom: 1px solid var(--night-3); position: sticky; top: 0; z-index: 20; flex-wrap: wrap; }
@@ -42,6 +42,13 @@
   .fstrip .fac { padding: 8px 10px; } .fh { display: flex; justify-content: space-between; align-items: baseline; font-size: 1.08em; } .fh .pct { font-size: 1.45em; font-weight: 900; }
   .stage { margin-top: 0 !important; } .stage > .card + .card { margin-top: 12px; }
   @media (max-width: 1000px) { .game, .lobby { grid-template-columns: 1fr; } }
+  .mrow { border-left: 6px solid; background: #1a1624; border-radius: 10px; padding: 8px 10px; margin: 8px 0; }
+  .mh { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; align-items: baseline; }
+  .mchips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .mchip { border-radius: 999px; padding: 3px 10px; font-size: .9em; font-weight: 700; display: inline-flex; gap: 6px; align-items: center; }
+  .mchip b { background: #0004; border-radius: 999px; padding: 0 7px; font-size: .85em; }
+  .mchip.busy { background: #24324a; color: #cfe2ff; } .mchip.idle { background: #2a2630; color: #8f88a3; } .mchip.done { background: #1f5a37; color: #d9ffe6; }
+  .donesum { font-size: 1.1em; background: #1f5a37; color: #d9ffe6; border-radius: 999px; padding: 2px 12px; }
 </style>
 </head>
 <body>
@@ -51,16 +58,16 @@
 <div class="modal hidden" id="modal"><div class="mcard" id="mcard"></div></div>
 <div class="toast" id="toast"></div>
 
-<script src="data.js?v=20261016a"></script>
-<script src="facts.js?v=20261016a"></script>
-<script src="bank.js?v=20261016a"></script>
-<script src="quiz.js?v=20261016a"></script>
-<script src="world.js?v=20261016a"></script>
-<script src="cloud.js?v=20261016a"></script>
-<script src="mp-data.js?v=20261016a"></script>
-<script src="mp-engine.js?v=20261016a"></script>
-<script src="mp-cloud.js?v=20261016a"></script>
-<script src="mp-map.js?v=20261016a"></script>
+<script src="data.js?v=20261016b"></script>
+<script src="facts.js?v=20261016b"></script>
+<script src="bank.js?v=20261016b"></script>
+<script src="quiz.js?v=20261016b"></script>
+<script src="world.js?v=20261016b"></script>
+<script src="cloud.js?v=20261016b"></script>
+<script src="mp-data.js?v=20261016b"></script>
+<script src="mp-engine.js?v=20261016b"></script>
+<script src="mp-cloud.js?v=20261016b"></script>
+<script src="mp-map.js?v=20261016b"></script>
 <script>
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -80,11 +87,11 @@ function setup() {
   const last = localStorage.getItem(HKEY);
   $('main').innerHTML = `<div class="setup">
     <div class="card"><h2 class="serif" style="color:var(--candle)">👥 開一個連線房間</h2>
-      <p class="soft" style="margin:6px 0 12px">學生用手機或平板掃 QR 進大廳，人到齊後按「開始分配」，系統會依人數自動分勢力、角色、雙面人，並查表決定勝利條件。</p>
+      <p class="soft" style="margin:6px 0 12px">學生用手機或平板掃 QR 進大廳，人到齊後按「開始分配」，系統會依人數自動分勢力、角色、臥底，並查表決定勝利條件。</p>
       <div class="row" style="margin-bottom:10px"><b style="width:56px">版本</b><div class="seg" id="s-lv"><button data-v="g10">高一版</button><button data-v="g11" class="on">高二高三版</button></div></div>
       <div class="row" style="margin-bottom:10px"><b style="width:56px">難度</b><div class="seg" id="s-df"><button data-v="easy">簡單</button><button data-v="normal" class="on">標準</button><button data-v="hard">困難</button></div><span class="soft small">全班答對率約 6 成選簡單、7 成標準、8 成困難</span></div>
       <p class="soft small">高二高三版要 22 人以上才會開五勢力，人少時自動改三大國（題庫不變）。</p>
-      <div class="row" style="margin-top:12px"><button class="btn big" id="create">🕯️ 建立房間</button>${last ? `<button class="btn ghost" id="resume">↩ 繼續主持房間 ${esc(last)}</button>` : ''}</div>
+      <div class="row" style="margin-top:12px"><button class="btn big" id="create">🕯️ 建立房間</button>${last ? `<button class="btn ghost" id="resume">↩ 繼續主持房間 ${esc(last)}</button><button class="btn ghost" id="drop">🗑️ 刪除房間 ${esc(last)}</button>` : ''}</div>
     </div></div>`;
   const seg = (id, set) => $(id).querySelectorAll('button').forEach(b => b.onclick = () => { $(id).querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); set(b.dataset.v); });
   seg('s-lv', v => lv = v); seg('s-df', v => df = v);
@@ -94,7 +101,7 @@ function setup() {
     try { await MPC.put(ROOM, { host: R }); } catch (e) { return toast('連不上雲端：' + e.message); }
     localStorage.setItem(HKEY, ROOM); attach();
   };
-  if (last) $('resume').onclick = () => resume(last);
+  if (last) { $('resume').onclick = () => resume(last); $('drop').onclick = async () => { if (!confirm(`刪除房間 ${last}？`)) return; try { await MPC.del(last); } catch (e) {} localStorage.removeItem(HKEY); setup(); }; }
 }
 // Firebase 會拿掉空物件、把有洞的陣列變物件：讀回來補齊
 function fixR(R) {
@@ -128,7 +135,18 @@ async function resume(room) {
 // ・每位學生只寫「有變的欄位」：v/<sid>/g|f|p/<欄位>
 // ・處理過的動作和畫面資料一起刪掉，少一次連線
 const DONE = new Set(); let DEL = {}, flushing = false, again = false, saving = false, failN = 0, listeners = [];
+// 螢幕不要自動變暗（平板投影時）：支援的瀏覽器用 Wake Lock，切回分頁時重新要求
+let wakeLock = null;
+async function keepAwake() { try { if ('wakeLock' in navigator && !document.hidden) { wakeLock = await navigator.wakeLock.request('screen'); } } catch (e) {} }
+document.addEventListener('visibilitychange', () => { if (!document.hidden && ROOM) keepAwake(); });
+// 取消房間：刪掉雲端資料、忘記這個房間，回到開房畫面
+async function cancelRoom() {
+  if (!confirm(`確定要取消房間 ${ROOM} 嗎？\n大廳和遊戲資料都會刪除，學生需要重新掃新的 QR。`)) return;
+  try { await MPC.del(ROOM); } catch (e) {}
+  localStorage.removeItem(HKEY); location.href = location.pathname + (QS.get('fb') ? '?fb=' + encodeURIComponent(QS.get('fb')) : '');
+}
 async function attach() {
+  keepAwake();
   try { MPE.setOffset(await MPC.serverOffset(ROOM)); } catch (e) {}
   listeners.push(MPC.listen(ROOM + '/lobby', d => { let n = 0; Object.values(d || {}).forEach(l => { if (l && typeof l.sid === 'string' && !R.lobby[l.sid]) { MPE.join(R, l); n++; } }); if (n) changed(); }));
   listeners.push(MPC.listen(ROOM + '/act', d => {
@@ -176,6 +194,7 @@ let hostSig = '';
 function hostDirty() { const s = String(R.round) + R.phase + Object.keys(R.players || {}).length + DONE.size + (R.feed[0] ? R.feed[0].at : 0); if (s === hostSig) return false; hostSig = s; return true; }
 function tick() {
   const el = $('h-clock'), now = MPE.now();
+  if (R && R.phase === 'act' && (tick.n = (tick.n || 0) + 1) % 10 === 0) scheduleRender();   // 每 10 秒更新「💤 沒動作」狀態
   if (R && R.phase === 'act') {
     const left = R.paused ? R.pauseLeft : Math.max(0, R.tEnd - now), s = Math.ceil(left / 1000);
     el.textContent = R.paused ? '⏸ ' + fmt(s) : fmt(s); el.classList.toggle('low', !R.paused && s <= 30);
@@ -203,9 +222,11 @@ function renderLobby() {
   }
   $('lb').innerHTML = `<h2 class="serif" style="color:var(--candle)">👥 大廳：${N} 人</h2>
     <p class="soft">${R.level === 'g11' ? '高二高三版' : '高一版'}・難度${{ easy: '簡單', normal: '標準', hard: '困難' }[R.diff]}${lay ? `・預計：${lay.facs.map(f => `${F[f].name} ${lay.size[f]}`).join('、')}${lay.nb ? `、鍵結社 ${lay.nb}` : ''}${R.level === 'g11' && !lay.g11 ? '（人數不到 22，改三大國）' : ''}` : ''}</p>
-    <div class="names">${L.map(l => `<span>${esc(l.cls)}-${l.seat} ${esc(l.name)}</span>`).join('') || '<span class="soft">等學生掃 QR 進來……</span>'}</div>`;
+    <div class="names">${L.map(l => `<span>${esc(l.cls)}-${l.seat} ${esc(l.name)}</span>`).join('') || '<span class="soft">等學生掃 QR 進來……</span>'}</div>
+    ${'wakeLock' in navigator ? '<p class="soft small" style="margin-top:10px">💡 這個頁面開著時，螢幕不會自動變暗。</p>' : '<p class="small" style="margin-top:10px;color:#ffd27a">💡 這台裝置不支援「防止螢幕變暗」：投影前請到裝置設定把「自動鎖定／螢幕逾時」改成「永不」或 30 分鐘。</p>'}`;
   $('ctrl').classList.remove('hidden');
-  $('ctrl').innerHTML = `<button class="btn big" id="go" ${N >= 3 ? '' : 'disabled'}>🎲 開始分配（${N} 人）</button><span class="soft">至少 3 人；開始後才進來的同學會加入人數最少的勢力。</span>`;
+  $('ctrl').innerHTML = `<button class="btn big" id="go" ${N >= 3 ? '' : 'disabled'}>🎲 開始分配（${N} 人）</button><span class="soft">至少 3 人；開始後才進來的同學會加入人數最少的勢力。</span><span style="flex:1"></span><button class="btn ghost" id="cancel">✖ 取消這個房間</button>`;
+  $('cancel').onclick = cancelRoom;
   $('go').onclick = () => { if (!confirm(`用目前 ${N} 人開始分配？`)) return; MPE.start(R); changed(); saveHost(true); };
 }
 function facCard(f) {
@@ -227,13 +248,25 @@ function renderGame() {
   $('facs').innerHTML = R.facs.map(facCard).join('') + (R.bs.length ? `<div class="fac" style="border-color:#c9a24a"><div class="fh"><span>🕯️ 鍵結社 <span class="soft small">${R.bs.length}人</span></span></div><div class="meta" style="margin-top:6px"><span>均勢 ${R.T.BS.lo}～${R.T.BS.hi}%・差 ≤${R.T.BS.spread}%</span>${R.board ? `<span>委託 ${R.board.filter(b => b.done).length}/${R.board.length}</span>` : ''}</div></div>` : '');
   $('feed').innerHTML = R.feed.slice(0, 30).map(e => `<div>${esc(e.t)}</div>`).join('');
   const st = $('stage');
-  if (R.phase === 'intro') st.innerHTML = `<div class="card"><h3 class="serif" style="color:var(--candle)">📜 分配完成</h3><p class="soft" style="margin:6px 0">請同學看自己的手機：勢力、角色、任務都在上面。<b>雙面人的身分只有自己和母國的大煉金師知道，請保密！</b></p>
+  if (R.phase === 'intro') st.innerHTML = `<div class="card"><h3 class="serif" style="color:var(--candle)">📜 分配完成</h3><p class="soft" style="margin:6px 0">請同學看自己的手機：勢力、角色、任務都在上面。<b>臥底的身分只有自己和母國的君王知道，請保密！</b></p>
     <table class="t">${R.facs.map(f => `<tr><td>${fx(f)}</td><td>${R.F[f].mem.map(s => { const p = R.players[s]; return `${esc(p.name)}<span class="soft small">（${RL[p.role].icon}${p.leader && p.role !== 'leader' ? '👑' : ''}）</span>`; }).join('、')}</td></tr>`).join('')}${R.bs.length ? `<tr><td>🕯️ 鍵結社</td><td>${R.bs.map(s => esc(R.players[s].name)).join('、')}</td></tr>` : ''}</table>
     <p class="soft small" style="margin-top:6px">勝利條件（${R.N} 人、難度${{ easy: '簡單', normal: '標準', hard: '困難' }[R.diff]}）已依人數查表設定；每個勢力的手機上都看得到自己的條件。</p></div>`;
   else if (R.phase === 'settle' || R.phase === 'market') st.innerHTML = renderNews() + (R.phase === 'market' ? renderMarket() : '');
   else if (R.phase === 'event') st.innerHTML = renderEvent();
-  else st.innerHTML = R.phase === 'act' ? `<div class="card"><b>🎯 本回合各勢力的團隊任務</b><table class="t" style="margin-top:6px">${R.facs.map(f => { const t = R.F[f].team; return `<tr><td>${fx(f)}</td><td>${esc(t.text)}</td><td>${t.type === 'quick' ? '' : `${Math.min(t.prog, t.thr)}/${t.thr}`} ${t.done ? '✅' : ''}</td></tr>`; }).join('')}</table></div>` : '';
+  else st.innerHTML = R.phase === 'act' ? memberBoard() : '';
   if (R.phase === 'market') st.querySelectorAll('[data-mk]').forEach(b => b.onclick = () => { const [el, d] = b.dataset.mk.split('|'); MPE.nudge(R, el, +d); changed(); });
+}
+// 行動中：每個勢力每位成員的狀態（✋ 做完了／答對幾題／最近有沒有在動）
+function memberBoard() {
+  const t0 = MPE.now(), all = Object.values(R.players), done = all.filter(p => p.rDone).length;
+  const chip = p => { const idle = !p.lastAt || t0 - p.lastAt > 90000, st = p.rDone ? 'done' : idle ? 'idle' : 'busy';
+    return `<span class="mchip ${st}" title="${p.rDone ? '說他做完了' : idle ? '超過 90 秒沒有動作' : '正在作答／交易'}">${p.rDone ? '✋' : idle ? '💤' : '✏️'} ${esc(p.name)}<b>${p.fac === 'bs' ? (p.bsTook || 0) + '件' : (p.rc || 0) + '題'}</b></span>`; };
+  const fac = f => { const x = R.F[f], t = x.team, mem = x.mem.map(s => R.players[s]).filter(Boolean), d = mem.filter(p => p.rDone).length;
+    return `<div class="mrow" style="border-color:${F[f].color}"><div class="mh"><span>${fx(f)} <span class="soft small">✋ ${d}／${mem.length}</span></span><span class="small">🎯 ${esc(t.text)} ${t.type === 'quick' ? '' : `${Math.min(t.prog, t.thr)}/${t.thr}`} ${t.done ? '✅' : ''}</span></div><div class="mchips">${mem.map(chip).join('')}</div></div>`; };
+  const bs = R.bs.map(s => R.players[s]).filter(Boolean);
+  return `<div class="card"><div class="row" style="justify-content:space-between"><b>👥 大家的狀態</b><span class="donesum">✋ 做完 <b>${done}</b>／${all.length} 人</span></div>
+    <div class="soft small" style="margin:4px 0 8px">✏️ 正在作答（90 秒內有動作）・💤 超過 90 秒沒動作・✋ 說他做完了｜數字＝本回合答對題數（鍵結社是完成委託件數）</div>
+    ${R.facs.map(fac).join('')}${bs.length ? `<div class="mrow" style="border-color:#c9a24a"><div class="mh"><span>🕯️ 鍵結社 <span class="soft small">✋ ${bs.filter(p => p.rDone).length}／${bs.length}</span></span></div><div class="mchips">${bs.map(chip).join('')}</div></div>` : ''}</div>`;
 }
 function renderNews() {
   const n = R.news; if (!n) return '';
@@ -241,7 +274,7 @@ function renderNews() {
     const d = n.delta[f], s = n.sab[f] || { hit: [], blocked: 0 };
     return `<div class="fac" style="border-color:${F[f].color}"><b>${fx(f)}</b> <span class="eff ${d >= 0 ? 'up' : 'dn'}">${d >= 0 ? '+' : ''}${d}%</span>
       <div class="small" style="margin-top:4px">${n.team[f] ? '🎯 團隊任務完成 ✅' : '🎯 團隊任務沒完成'}</div>
-      ${s.hit.length ? `<div class="small" style="color:#ffb3a3">⚠️ 有內鬼！${s.hit.map(esc).join('；')}</div>` : ''}${s.blocked ? `<div class="small" style="color:#9ff0bb">⚙️ 機巧師擋下 ${s.blocked} 次破壞</div>` : ''}</div>`; }).join('')}</div>
+      ${s.hit.length ? `<div class="small" style="color:#ffb3a3">⚠️ 有內鬼！${s.hit.map(esc).join('；')}</div>` : ''}${s.blocked ? `<div class="small" style="color:#9ff0bb">⚙️ 技師擋下 ${s.blocked} 次破壞</div>` : ''}</div>`; }).join('')}</div>
     ${n.moves && n.moves.length ? `<p class="small" style="margin-top:8px">🏴 領土變化：${n.moves.map(m => `${F[m.to].name}從${F[m.from].name}奪得 ${m.n} 格`).join('；')}</p>` : ''}
     ${R.winner ? `<div class="end-h" style="font-size:1.6em">${R.winner === 'none' ? '8 回合結束，沒有勢力達成勝利條件' : R.winner === 'bs' ? '🕯️ 天下均勢！鍵結社勝利' : `🏆 ${F[R.winner].name}達成勝利條件！`}</div>` : ''}</div>`;
 }
@@ -278,8 +311,8 @@ function renderCtrl() {
   on('b-end', () => { MPE.finish(R); changed(); saveHost(true); });
   on('b-menu', () => {
     const m = modal(`<h2>☰ 選單</h2><p>房間 <b>${ROOM}</b>・學生連結：<br><small style="word-break:break-all">${esc(studentUrl())}</small></p>
-      <div class="row" style="margin-top:10px"><button class="btn" id="m-qr">🔳 再顯示 QR（晚到的同學）</button><button class="btn red" id="m-stop">🏁 提前結束並揭曉</button><button class="btn ghost" id="m-x" style="color:var(--ink);border-color:#ccc">關閉</button></div>`);
-    m.querySelector('#m-x').onclick = closeModal;
+      <div class="row" style="margin-top:10px"><button class="btn" id="m-qr">🔳 再顯示 QR（晚到的同學）</button><button class="btn red" id="m-stop">🏁 提前結束並揭曉</button><button class="btn ghost" id="m-cancel" style="color:var(--ink);border-color:#ccc">🗑️ 取消這一局（不計分）</button><button class="btn ghost" id="m-x" style="color:var(--ink);border-color:#ccc">關閉</button></div>`);
+    m.querySelector('#m-x').onclick = closeModal; m.querySelector('#m-cancel').onclick = () => { closeModal(); cancelRoom(); };
     m.querySelector('#m-qr').onclick = () => { const mm = modal(`<div id="qr2" style="width:min(70vh,90%);margin:0 auto"></div><p style="text-align:center;font-size:1.6em;font-weight:900">房間 ${ROOM}</p><div style="text-align:center"><button class="btn" id="q-x">關閉</button></div>`); try { new QRCode(mm.querySelector('#qr2'), { text: studentUrl(), width: 600, height: 600 }); mm.querySelectorAll('#qr2 img,#qr2 canvas').forEach(x => { x.style.width = '100%'; x.style.height = 'auto'; }); } catch (e) {} mm.querySelector('#q-x').onclick = closeModal; };
     m.querySelector('#m-stop').onclick = () => { if (!confirm('提前結束這一局並揭曉結果？')) return; R.winner = R.winner || 'none'; MPE.finish(R); closeModal(); changed(); saveHost(true); };
   });
@@ -291,7 +324,7 @@ function renderEnd() {
     <div class="game"><div>
       <div class="card"><h3 class="serif" style="color:var(--candle)">🏰 勢力排名</h3><table class="t">${fin.rank.map((f, i) => `<tr><td>${i + 1}</td><td>${fx(f)}${fin.winner === f ? ' 🏆' : ''}</td><td>國力 ${Math.round(R.F[f].rel)}%</td><td><b>${fin.fscore[f]}</b> 分</td></tr>`).join('')}${fin.bsScore != null ? `<tr><td>—</td><td>🕯️ 鍵結社${fin.winner === 'bs' ? ' 🏆' : ''}</td><td></td><td><b>${fin.bsScore}</b> 分</td></tr>` : ''}</table>
         <p class="soft small" style="margin-top:6px">勢力分＝（相對國力−100）×${R.T.PW}＋成員平均（個人任務、團隊任務、答對題數、秘密任務）＋勝利分 ${R.T.V}</p></div>
-      <div class="card" style="margin-top:12px"><h3 class="serif" style="color:var(--candle)">🎭 雙面人揭曉</h3>${fin.spies.length ? `<table class="t">${fin.spies.map(s => `<tr><td><b>${esc(s.name)}</b></td><td>潛伏在 ${fx(s.host)}</td><td>其實是 ${fx(s.origin)} 的人</td><td>${SC[s.sec].name}：${esc(s.secText)}</td><td>${s.ok ? '✅ 成功' : '❌ 失敗'}</td></tr>`).join('')}</table>` : '<p class="soft">這一局沒有雙面人（每國人數太少）。</p>'}</div>
+      <div class="card" style="margin-top:12px"><h3 class="serif" style="color:var(--candle)">🎭 臥底揭曉</h3>${fin.spies.length ? `<table class="t">${fin.spies.map(s => `<tr><td><b>${esc(s.name)}</b></td><td>潛伏在 ${fx(s.host)}</td><td>其實是 ${fx(s.origin)} 的人</td><td>${SC[s.sec].name}：${esc(s.secText)}</td><td>${s.ok ? '✅ 成功' : '❌ 失敗'}</td></tr>`).join('')}</table>` : '<p class="soft">這一局沒有臥底（每國人數太少）。</p>'}</div>
     </div><div>
       <div class="card"><h3 class="serif" style="color:var(--candle)">⭐ 個人 MVP</h3><table class="t">${fin.mvp.map((p, i) => `<tr><td>${i + 1}</td><td>${esc(p.name)}</td><td>${p.fac === 'bs' ? '🕯️ 鍵結社' : fx(p.origin)}${p.spy ? ' 🎭' : ''}</td><td>${RL[p.role].icon} ${RL[p.role].name}</td><td><b>${p.pts}</b></td></tr>`).join('')}</table></div>
       <div class="mapbox" style="margin-top:12px"><svg id="map"></svg></div>

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>隱秘的鍵結社：全班連線</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="mp.css?v=20261016a">
+<link rel="stylesheet" href="mp.css?v=20261016b">
 <style>
   /* 學生連線頁（手機優先）：登入 → 大廳 → 角色卡 → 工作、勢力、交易所、秘密、我的任務 → 揭曉 */
   .top { position: sticky; top: 0; z-index: 30; background: #0d0b12f2; border-bottom: 1px solid var(--night-3); padding: 8px 12px; }
@@ -67,17 +67,17 @@
 <div class="modal hidden" id="modal"><div class="mcard" id="mcard"></div></div>
 <div class="toast" id="toast"></div>
 
-<script src="data.js?v=20261016a"></script>
-<script src="facts.js?v=20261016a"></script>
-<script src="bank.js?v=20261016a"></script>
-<script src="mats.js?v=20261016a"></script>
-<script src="quiz.js?v=20261016a"></script>
-<script src="world.js?v=20261016a"></script>
-<script src="cloud.js?v=20261016a"></script>
-<script src="mp-data.js?v=20261016a"></script>
-<script src="mp-engine.js?v=20261016a"></script>
-<script src="mp-cloud.js?v=20261016a"></script>
-<script src="mp-map.js?v=20261016a"></script>
+<script src="data.js?v=20261016b"></script>
+<script src="facts.js?v=20261016b"></script>
+<script src="bank.js?v=20261016b"></script>
+<script src="mats.js?v=20261016b"></script>
+<script src="quiz.js?v=20261016b"></script>
+<script src="world.js?v=20261016b"></script>
+<script src="cloud.js?v=20261016b"></script>
+<script src="mp-data.js?v=20261016b"></script>
+<script src="mp-engine.js?v=20261016b"></script>
+<script src="mp-cloud.js?v=20261016b"></script>
+<script src="mp-map.js?v=20261016b"></script>
 <script>
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -202,7 +202,7 @@ function genQ(tags) {
   }
   return QUIZ.make(rnd, PUB.level);
 }
-// 機巧師：材料圖鑑版工程題（兩步都對才算對）
+// 技師：材料圖鑑版性質與鍵結題（兩步都對才算對）
 function engQ() {
   const all = [...MATS.PICK.map(x => ['pick', x]), ...MATS.FAIL.map(x => ['fail', x])], [mode, x] = pick(all);
   const r = { rq: x.r[0], ropts: shuf([x.r[1], ...x.r[2]]), rok: x.r[1] };
@@ -223,6 +223,7 @@ function render() {
   if (PUB.phase === 'lobby' || !PRIV) { lastHTML = ''; $('tabs').classList.add('hidden'); $('app').innerHTML = `<div class="card" style="text-align:center;margin-top:30px"><div style="font-size:3em">🕯️</div><h2 class="serif" style="color:var(--candle)">已進入大廳</h2><p>${esc(PROF ? PROF.name : '')}，請等老師開始分配。</p><p class="soft">大廳目前 ${PUB.lobbyN || 0} 人</p>${PUB.phase !== 'lobby' ? '<p class="soft small">遊戲已經開始，老師那邊會把你加入人數最少的勢力，請稍等……</p>' : ''}</div>`; return; }
   // 資料還沒同步完整（串流一個欄位一個欄位到）就先等一下
   if (!PRIV.fac || !PRIV.role || !RL[PRIV.role] || !Array.isArray(PUB.facs) || !PUB.facs.length || (PRIV.fac !== 'bs' && !F[PRIV.fac])) { $('app').innerHTML = '<p class="soft" style="text-align:center;margin-top:40px">⏳ 同步中……</p>'; lastHTML = ''; return; }
+  if (PUB.phase !== 'end') autoGuide();
   if (PUB.phase === 'end') { lastHTML = ''; return renderEnd(); }
   if (PUB.phase === 'event') { lastHTML = ''; return renderEvent(); }
   renderTabs();
@@ -241,23 +242,53 @@ function headerOnly() {
 function renderTabs() {
   const T = [['work', '🧪', PRIV.fac === 'bs' ? '委託' : '工作'], ['fac', '🏰', PRIV.fac === 'bs' ? '天下' : '勢力']];
   if (PRIV.fac !== 'bs') T.push(['trade', '💱', '交易所']);
-  if (PRIV.fac !== 'bs') T.push(['secret', '🎭', '秘密']);   // 每個人都有這個分頁，旁人看不出誰是雙面人
+  if (PRIV.fac !== 'bs') T.push(['secret', '🎭', '秘密']);   // 每個人都有這個分頁，旁人看不出誰是臥底
   T.push(['me', '📋', '我的任務']);
   $('tabs').classList.remove('hidden');
   $('tabs').innerHTML = T.map(([k, i, n]) => `<button data-tab="${k}" class="${tab === k ? 'on' : ''}"><b>${i}</b>${n}</button>`).join('');
   $('tabs').querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { tab = b.dataset.tab; render(); window.scrollTo(0, 0); });
 }
+// 入門卡：分配完成後自動打開一次（之後可按「❓ 怎麼玩」再看），一次只講一件事
+const howList = r => `<div class="howl">${(RL[r].how || []).map(([a, b]) => `<div><span>${a}</span><b>→ ${b}</b></div>`).join('')}</div>`;
+function guideCards() {
+  const f = PRIV.fac, r = RL[PRIV.role], x = FAC || {}, bs = f === 'bs';
+  const mates = (x.mem || []).map(m => `${RL[m.role] ? RL[m.role].icon : ''} ${esc(m.name)}`).join('、');
+  const C = [];
+  C.push({ t: bs ? '🕯️ 你在鍵結社' : `🌍 你在${F[f].full}`, b: bs
+    ? `<p>你不屬於任何國家，是祕密組織<b>鍵結社</b>的密使。</p><div class="glist"><div>🎯 鍵結社的勝利：第 8 回合結束時，各國國力都差不多（天下均勢）</div><div>⚠️ 任何國家提早達成勝利條件，鍵結社就輸了</div></div>`
+    : `<div class="glist"><div>${F[f].icon} 國家：<b>${F[f].full}</b>（${F[f].bond}）</div><div>👥 隊友：${mates || '—'}</div><div>🏆 勝利條件：${(x.parts || []).map(q => `${esc(q.l)} ${q.need}`).join('；') || '看「🏰 勢力」分頁'}</div></div><p class="small soft">全隊一起努力達成勝利條件，最先達成的國家獲勝。</p>` });
+  C.push({ t: `${r.icon} 你的角色：${r.name}${PRIV.merged ? '（兼任將軍與謀士）' : ''}`, b: `<p>${esc(r.does)}</p><div class="sub-h">你可以這樣做 → 會得到</div>${howList(PRIV.role)}${PRIV.merged ? howList('knight') + howList('sage') : ''}` });
+  C.push({ t: '🔁 每回合（約 4 分鐘）可以做的事', b: bs
+    ? `<div class="gsteps"><div><b>① 🧪 委託</b><span>公告板接各國委託答題，每回合最多 2 件</span></div><div><b>② 🌑 暗中行動</b><span>資助太弱的國家、對太強的國家散播謠言（每回合 1 次）</span></div><div><b>③ 🏰 天下</b><span>看各國國力，決定下一步要幫誰</span></div><div><b>⚡ 快問快答</b><span>每 90 秒跳出一題，20 秒內作答</span></div></div>`
+    : `<div class="gsteps"><div><b>① 🧪 工作</b><span>接題答題。答對有角色成果，還有 💰 和 🎫 交易許可</span></div><div><b>② 💱 交易所</b><span>用 🎫 買元素或賣給別國；把 💰 捐進國庫</span></div><div><b>③ 🏰 勢力</b><span>看勝利條件、本回合團隊任務，和隊友討論分工</span></div><div><b>⚡ 快問快答</b><span>每 90 秒跳出一題，20 秒內作答</span></div></div><p class="small soft">時間到老師會結算，看看各國的國力和領土怎麼變。</p>` });
+  C.push({ t: '🏆 你的分數從哪裡來', b: `<div class="glist"><div>📋 <b>個人任務</b>：在「我的任務」分頁，最後結算</div>${bs ? '' : '<div>🎯 <b>團隊任務</b>：每回合一個，全隊一起完成</div><div>🏰 <b>勢力勝利</b>：國家贏了，全隊加分</div>'}<div>🧪 每答對一題都算</div></div>` });
+  if (!bs) C.push({ t: '🎭 最後一件事：秘密分頁', b: `<p>每個人都有一個「🎭 秘密」分頁。有些人會在裡面發現自己的<b>秘密身分</b>，有些人沒有。</p><div class="glist"><div>👀 現在就點開看看（記得用手遮住螢幕）</div><div>🤫 不管有沒有，都不要告訴別人</div></div>` });
+  return C;
+}
+function showGuide(i = 0) {
+  const C = guideCards(); i = Math.max(0, Math.min(C.length - 1, i));
+  const c = C[i], m = modal(`<div class="gdots">${C.map((x, k) => `<i class="${k === i ? 'on' : ''}"></i>`).join('')}<span>${i + 1}／${C.length}</span></div><h2>${c.t}</h2><div class="gbody">${c.b}</div>
+    <div class="row keep" style="justify-content:space-between;margin-top:12px">${i ? '<button class="btn ghost" id="g-pv" style="color:var(--ink);border-color:#c9b98f">◀ 上一張</button>' : '<span></span>'}<button class="btn" id="g-nx">${i < C.length - 1 ? '下一張 ▶' : '我知道了！'}</button></div>`);
+  const pv = m.querySelector('#g-pv'); if (pv) pv.onclick = () => showGuide(i - 1);
+  m.querySelector('#g-nx').onclick = () => { if (i < C.length - 1) showGuide(i + 1); else { closeModal(); if (PRIV.fac !== 'bs' && tab === 'work') { tab = 'secret'; render(); } } };
+}
+function autoGuide() {
+  const k = `bsmp-guide:${ROOM}:${SID}`;
+  try { if (localStorage.getItem(k)) return; localStorage.setItem(k, '1'); } catch (e) {}
+  setTimeout(() => showGuide(0), 300);
+}
 function roleCard() {
   const f = PRIV.fac, r = RL[PRIV.role], col = f === 'bs' ? '#c9a24a' : F[f].color;
-  const extra = PRIV.merged ? '（人少，兼任守護騎士與智者）' : PRIV.leader && PRIV.role !== 'leader' ? '（也是大煉金師）' : '';
-  return `<div class="rolecard" style="border-color:${col}"><div class="small">${esc(PRIV.name)}・${f === 'bs' ? '🕯️ 鍵結社' : `${F[f].icon} ${F[f].full}`}</div><h2>${r.icon} ${r.name}${extra}</h2><div class="small">${esc(r.does)}</div>${PRIV.merged ? `<div class="small">${RL.knight.icon} ${RL.knight.does}<br>${RL.sage.icon} ${RL.sage.does}</div>` : ''}</div>`;
+  const extra = PRIV.merged ? '（人少，兼任將軍與謀士）' : PRIV.leader && PRIV.role !== 'leader' ? '（也是君王）' : '';
+  return `<div class="rolecard" style="border-color:${col}"><div class="row keep" style="justify-content:space-between;gap:6px"><div class="small">${esc(PRIV.name)}・${f === 'bs' ? '🕯️ 鍵結社' : `${F[f].icon} ${F[f].full}`}</div><button class="helpbtn" id="g-open">❓ 怎麼玩</button></div><h2>${r.icon} ${r.name}${extra}</h2><div class="small">${esc(r.does)}</div>
+    <details class="howd"><summary>💡 我可以做什麼？</summary>${howList(PRIV.role)}${PRIV.merged ? howList('knight') + howList('sage') : ''}</details></div>`;
 }
 function introBanner() { return `<div class="card" style="margin-bottom:10px;border-color:var(--candle)"><b style="color:var(--candle)">📜 分配完成！</b> 看看你的角色${PRIV.spy ? '，還有 🎭 秘密分頁（只有你看得到）' : ''}。老師按開始後，第 1 回合就開始計時。</div>`; }
 function newsView() {
   const n = PUB.news; if (!n) return '';
   const my = PRIV.fac, s = n.sab && n.sab[my];
   return `<div class="card" style="margin-bottom:10px"><b style="color:var(--candle)">📰 第 ${n.round} 回合結算</b><div class="row small" style="margin-top:6px">${PUB.facs.map(f => `<span class="chip">${F[f].name} ${n.delta[f] >= 0 ? '+' : ''}${n.delta[f]}%${n.team[f] ? ' 🎯' : ''}</span>`).join('')}</div>
-    ${s && s.hit && s.hit.length ? `<div class="fb bad">⚠️ 我們之中有內鬼！${s.hit.map(esc).join('；')}</div>` : ''}${s && s.blocked ? `<div class="fb ok">⚙️ 機巧師擋下了 ${s.blocked} 次破壞</div>` : ''}
+    ${s && s.hit && s.hit.length ? `<div class="fb bad">⚠️ 我們之中有內鬼！${s.hit.map(esc).join('；')}</div>` : ''}${s && s.blocked ? `<div class="fb ok">⚙️ 技師擋下了 ${s.blocked} 次破壞</div>` : ''}
     ${PUB.winner ? `<div class="fb hint">🏁 遊戲結束！等老師揭曉結果……</div>` : `<p class="soft small" style="margin-top:6px">等老師進入下一步……</p>`}</div>`;
 }
 /* 工作 */
@@ -285,14 +316,16 @@ function workView() {
   }
   if (asRole === 'envoy') body += st('要和哪一國增進友好？') + `<div class="choice">${facs.map(f => `<button data-to="${f}" class="${(CH.to || facs[0]) === f ? 'on' : ''}">${F[f].name}<small>友好 ${(x.fr || {})[f] ?? '—'}</small></button>`).join('')}</div>`;
   if (asRole === 'mystic') { const pairs = []; PUB.facs.forEach((a, i) => PUB.facs.slice(i + 1).forEach(b => { if (['hb', 'vw'].includes(a) || ['hb', 'vw'].includes(b)) pairs.push(a + '|' + b); })); body += st('要讓哪兩國更友好？') + `<div class="choice">${pairs.map(pr => `<button data-pair="${pr}" class="${(CH.pair || pairs[0]) === pr ? 'on' : ''}">${pr.split('|').map(f => F[f].name).join('－')}</button>`).join('')}</div>`; }
-  if (asRole === 'forger') { const els = Object.keys(x.inv || {}); body += st('用哪個元素鑄造？') + `<div class="choice">${els.length ? els.map(e => `<button data-el="${e}" class="${CH.el === e ? 'on' : ''}">${e}<small>×${x.inv[e]}</small></button>`).join('') : '<span class="soft small">倉庫沒有元素（答對只會國力推進 +0.5）。請尋礦者挖礦，或到交易所買。</span>'}</div>`; }
+  if (asRole === 'forger') { const els = Object.keys(x.inv || {}); body += st('用哪個元素鑄造？') + `<div class="choice">${els.length ? els.map(e => `<button data-el="${e}" class="${CH.el === e ? 'on' : ''}">${e}<small>×${x.inv[e]}</small></button>`).join('') : '<span class="soft small">倉庫沒有元素（答對只會國力推進 +0.5）。請礦工挖礦，或到交易所買。</span>'}</div>`; }
   body += st('答題') + `<button class="btn big" id="takeQ" style="width:100%">🧪 接一題（${RL[asRole].name}）</button>`;
   h += sec('🧪 工作台', body, '', '答對才有成果，還會得到 💰 和 🎫');
-  return h + abilityCards(role, me, x, facs) + msgCard(me);
+  return h + abilityCards(role, me, x, facs) + msgCard(me) + doneCard();
 }
+// 告訴老師「我這回合做完了」（老師控制台會顯示 ✋）
+const doneCard = () => PUB.phase === 'act' ? `<div class="donebox"><button class="btn ${PRIV.rDone ? 'ghost' : 'green'} act" id="rdone" style="width:100%">${PRIV.rDone ? '↩ 我還要再做（取消完成）' : '✋ 我這回合做完了'}</button><div class="soft small">按了之後還是可以繼續作答；老師會看到誰做完了</div></div>` : '';
 function abilityCards(role, me, x, facs) {
   const ab = [];
-  if (role === 'knight' || me.merged || (me.leader && role === 'flex')) ab.push(`<div class="abl"><b>🛡️ 出兵</b> <span class="soft small">國庫 💰${x.tre ?? 0}／需要 💰${MPE.K.ATK_COST}・${x.attacked ? '本回合已出兵' : '每回合 1 次'}</span><div class="choice">${facs.map(f => `<button class="act" data-atk="${f}" ${canAct() && !x.attacked && (x.tre || 0) >= MPE.K.ATK_COST ? '' : 'disabled'}>⚔️ ${F[f].name}</button>`).join('')}</div></div>`);
+  if (role === 'knight' || me.merged || (me.leader && role === 'flex')) ab.push(`<div class="abl"><b>⚔️ 出兵</b> <span class="soft small">國庫 💰${x.tre ?? 0}／需要 💰${MPE.K.ATK_COST}・${x.attacked ? '本回合已出兵' : '每回合 1 次'}</span><div class="choice">${facs.map(f => `<button class="act" data-atk="${f}" ${canAct() && !x.attacked && (x.tre || 0) >= MPE.K.ATK_COST ? '' : 'disabled'}>⚔️ ${F[f].name}</button>`).join('')}</div></div>`);
   if (role === 'sage' || me.merged || (me.leader && role === 'flex')) ab.push(`<div class="abl"><b>🦉 向鍵結社多發委託</b> <span class="soft small">本回合團隊任務${x.team && x.team.done ? '已完成 ✅' : '還沒完成'}</span><div class="choice"><button class="act" id="issue" ${canAct() && x.team && x.team.done && PUB.bsNames && PUB.bsNames.length ? '' : 'disabled'}>📨 發一件委託</button></div></div>`);
   if ((me.cnt || {}).intelTok > 0) ab.push(`<div class="abl"><b>🔍 情報偵察</b> <span class="soft small">還有 ${me.cnt.intelTok} 次</span><div class="choice">${facs.map(f => `<button class="act" data-intel="${f}" ${canAct() ? '' : 'disabled'}>看${F[f].name}</button>`).join('')}</div></div>`);
   return ab.length ? sec('⚡ 角色能力', ab.join(''), 'ability') : '';
@@ -304,7 +337,7 @@ function qView() {
   const q = Q;
   if (q.eng) {
     const D = q.mode === 'pick' ? MATS.PICK.find(x => x.id === q.key) : null;
-    let h = `<div class="card paper qcard"><div class="qhead"><b>⚙️ 工程應用</b><span class="chip" style="background:#e3d4b0;color:var(--ink)">第 ${q.step + 1}／2 步</span></div>`;
+    let h = `<div class="card paper qcard"><div class="qhead"><b>⚙️ 物質的性質與鍵結</b><span class="chip" style="background:#e3d4b0;color:var(--ink)">第 ${q.step + 1}／2 步</span></div>`;
     if (q.step === 0) {
       if (q.mode === 'pick') h += `<div class="q">需求：${esc(q.need)}</div><div class="cons"><b>必須同時符合：</b><ul>${D.cons.map(c => `<li>${esc(MATS.conTxt(c))}</li>`).join('')}</ul></div><button class="btn sm dark" id="mbook">📚 查材料圖鑑</button><div class="opts">${q.cands.map((id, i) => `<button data-p="${id}" class="${q.sel === id ? 'on' : ''}"><span class="ol">${'ABCD'[i]}</span><span>${esc(MATS.BY[id].n)} <small>${esc(MATS.BY[id].f)}</small></span></button>`).join('')}</div>`;
       else h += `<div class="q">💥 ${esc(q.story)}</div><div class="q" style="font-size:1em">${esc(q.q)}</div><button class="btn sm dark" id="mbook">📚 查材料圖鑑</button>${optBtns(q.opts, q.sel, esc)}`;
@@ -330,7 +363,7 @@ function submitQ() {
   const ok = q.opts[+q.sel] === q.ans;
   record({ src: q.bs ? 'bs' : 'mp', tag: q.tag, id: q.id, q: q.q, pick: q.opts[+q.sel], ans: q.ans, ok });
   if (q.bs) send({ type: 'bsdo', cid: q.cid, ok });
-  else send({ type: 'ans', ok, as: q.as, vein: CH.vein || 'metal', mol: CH.mol || 'H2O', to: CH.to || PUB.facs.find(f => f !== PRIV.fac), pair: CH.pair, el: CH.el, hide: !!CH.hide });
+  else send({ type: 'ans', ok, as: q.as, vein: CH.vein || 'metal', mol: CH.mol || 'H2O', to: CH.to || PUB.facs.find(f => f !== PRIV.fac), pair: CH.pair, el: CH.el, hide: !!CH.hide, home: PRIV.spy ? CH.home !== false : false });
   if (!ok) toast(`❌ 正確答案：${q.ans}`);
   Q = null; render();
 }
@@ -339,9 +372,10 @@ function bsView() {
   if (Q) return h + qView();
   const board = PUB.board || [], open = board.filter(c => !c.done), done = board.length - open.length;
   h += waitCard();
-  h += sec('📋 委託公告板', (open.length ? open.map(c => `<div class="bitem"><span>${F[c.from].icon} <b>${F[c.from].name}</b>${c.extra ? '<small>（智者加發）</small>' : ''}<br><small class="soft">${QUIZ.TAGS[c.tag] || c.tag}</small></span><button class="btn sm" data-cid="${c.id}" ${canAct() ? '' : 'disabled'}>接下</button></div>`).join('') : `<p class="soft">${board.length ? '這回合的委託都完成了 👍' : '回合開始後會出現各國的委託。'}</p>`) + (done ? `<div class="soft small" style="margin-top:6px">✅ 已完成 ${done} 件</div>` : ''), '', `完成：💰+${MPE.K.BS_PAY}，委託國國力推進 +3`);
+  const took = PRIV.bsTook || 0, full = took >= MPE.K.BS_MAX, tries = PRIV.bsTry || {};
+  h += sec('📋 委託公告板', `<div class="quota">本回合你已完成 <b>${took}／${MPE.K.BS_MAX}</b> 件${full ? '・<b>這回合的額度用完了</b>，可以去做暗中行動' : ''}</div>` + (open.length ? open.map(c => { const bad = (tries[c.id] || 0) >= MPE.K.BS_TRY; return `<div class="bitem"><span>${F[c.from].icon} <b>${F[c.from].name}</b>${c.extra ? '<small>（謀士加發）</small>' : ''}<br><small class="soft">${QUIZ.TAGS[c.tag] || c.tag}${tries[c.id] && !bad ? `・答錯 ${tries[c.id]} 次` : ''}</small></span><button class="btn sm" data-cid="${c.id}" ${canAct() && !full && !bad ? '' : 'disabled'}>${bad ? '已失敗' : '接下'}</button></div>`; }).join('') : `<p class="soft">${board.length ? '這回合的委託都完成了 👍' : '回合開始後會出現各國的委託。'}</p>`) + (done ? `<div class="soft small" style="margin-top:6px">✅ 全班已完成 ${done} 件</div>` : ''), '', `完成：💰+${MPE.K.BS_PAY}，委託國國力推進 +3`);
   h += sec('🌑 暗中行動', `<div class="small soft" style="margin-bottom:6px">每回合 1 次・💰${MPE.K.BS_COST}・結算時相對國力 ±${MPE.K.BS_SHIFT}%${PRIV.bsCovert ? '・<b>本回合已用</b>' : ''}</div><div class="covg">${PUB.facs.map(f => `<span class="covn">${F[f].icon} ${F[f].name} <b>${Math.round(PUB.rel[f])}%</b></span><button class="btn sm green act" data-cov="sub|${f}" ${canAct() && !PRIV.bsCovert ? '' : 'disabled'}>資助</button><button class="btn sm red act" data-cov="rumor|${f}" ${canAct() && !PRIV.bsCovert ? '' : 'disabled'}>謠言</button>`).join('')}</div>`, '', '幫弱的、壓強的，維持天下均勢');
-  return h;
+  return h + doneCard();
 }
 /* 勢力 */
 function facView() {
@@ -350,7 +384,7 @@ function facView() {
   if (PRIV.fac === 'bs') return world + sec('🕯️ 鍵結社的勝利條件', `<p>第 8 回合結束時，每國相對國力都在 <b>${PUB.g11 ? '85%～115%' : '90%～110%'}</b>，而且最強減最弱 ≤ <b>${PUB.g11 ? 18 : 10}%</b>。</p><p class="soft small">任何勢力提早達成勝利條件，鍵結社就輸了。</p>`);
   const inv = Object.entries(x.inv || {}), log = x.log || [], t = x.team || {};
   let h = sec(`🏆 我們的勝利條件`, (x.parts || []).map(q => `<div class="parts"><div><span>${esc(q.l)} <b>${q.have}</b>/${q.need}</span><div class="bar"><i style="width:${Math.min(100, q.have / q.need * 100)}%;background:${q.have >= q.need ? '#4cd383' : F[PRIV.fac].color}"></i></div></div></div>`).join(''), '', `進度 ${Math.round((x.prog || 0) * 100)}%`);
-  h += sec('🎯 本回合團隊任務', `<p><b>${esc(t.text || '')}</b>${t.type && t.type !== 'quick' ? `　${Math.min(t.prog, t.thr)}／${t.thr}` : ''} ${t.done ? '✅' : ''}</p><p class="soft small">完成後全隊加分，智者（或大煉金師）可以多發委託給鍵結社。</p>`, '', `已完成 ${x.teamOk || 0}/${x.teamN || 0} 回合`);
+  h += sec('🎯 本回合團隊任務', `<p><b>${esc(t.text || '')}</b>${t.type && t.type !== 'quick' ? `　${Math.min(t.prog, t.thr)}／${t.thr}` : ''} ${t.done ? '✅' : ''}</p><p class="soft small">完成後全隊加分，謀士（或君王）可以多發委託給鍵結社。</p>`, '', `已完成 ${x.teamOk || 0}/${x.teamN || 0} 回合`);
   h += sec('🏛️ 國庫與倉庫', `<div class="kv"><span>國庫</span><b>💰 ${x.tre || 0}</b>${x.walls ? `<span>城牆</span><b>🧱 ${x.walls}</b>` : ''}${x.shield ? `<span>盾牌</span><b>🛡️ 已就位</b>` : ''}</div>
     <div class="step-l" style="margin-top:8px">📦 倉庫</div><div class="inv">${inv.length ? inv.map(([e, n]) => `<span>${e}×${n}</span>`).join('') : '<span class="soft">空的</span>'}</div>
     <div class="step-l" style="margin-top:8px">🧪 做出的分子</div><div class="inv">${Object.entries(x.mols || {}).map(([k, n]) => `<span>${MPE.MOLS[k].f}×${n}</span>`).join('') || '<span class="soft">還沒有</span>'}<span>化合物×${(x.made || {}).comp || 0}</span></div>
@@ -379,22 +413,26 @@ function tradeView() {
 function secretView() {
   const me = PRIV; let h = '';
   const shBtn = `<button class="btn sm keep" id="sh">${hideSecret ? '👁 顯示' : '🙈 隱藏'}</button>`;
-  if (me.mySpies && me.mySpies.length) h += `<div class="card secret ${hideSecret ? 'blur' : ''}"><div class="row keep" style="justify-content:space-between"><b>🎭 秘密資訊</b>${shBtn}</div><div style="margin-top:6px"><b>👑 我方派出去的雙面人</b><div class="inv" style="margin-top:4px">${me.mySpies.map(s => `<span>${esc(s.name)}・潛伏在${F[s.host].name}</span>`).join('')}</div></div><p class="small soft" style="margin-top:6px">他們會暗中幫我們，也可能傳情報給你。請保密，別讓別人看到你的螢幕！</p></div>`;
-  if (!me.spy) return h || sec('🎭 秘密資訊', `<p class="soft">你沒有秘密任務，是${F[me.fac].name}忠心的成員。<br>不過要小心：勢力裡可能藏著其他國家派來的雙面人！倉庫突然少了東西、國庫被挪用……都可能是他們做的。</p>`);
+  if (me.mySpies && me.mySpies.length) h += `<div class="card secret ${hideSecret ? 'blur' : ''}"><div class="row keep" style="justify-content:space-between"><b>🎭 秘密資訊</b>${shBtn}</div><div style="margin-top:6px"><b>👑 我方派出去的臥底</b><div class="inv" style="margin-top:4px">${me.mySpies.map(s => `<span>${esc(s.name)}・潛伏在${F[s.host].name}</span>`).join('')}</div></div><p class="small soft" style="margin-top:6px">他們會暗中幫我們，也可能傳情報給你。請保密，別讓別人看到你的螢幕！</p></div>`;
+  if (!me.spy) return h || sec('🎭 秘密資訊', `<p class="soft">你沒有秘密任務，是${F[me.fac].name}忠心的成員。<br>不過要小心：勢力裡可能藏著其他國家派來的臥底！倉庫突然少了東西、國庫被挪用……都可能是他們做的。</p>`);
   const S = me.spy, A = MPE.ABIL, strongOK = me.correct >= MPE.K.SP_UNLOCK && (PUB.round - S.lastStrong >= 3), left = Math.max(0, (me.permits || 0) - (me.trades || 0));
   CH.rumor = CH.rumor || S.target;
   h += `<div class="card secret ${hideSecret ? 'blur' : ''}"><div class="row keep" style="justify-content:space-between"><b>🎭 秘密資訊</b>${shBtn}</div>
-    <p style="margin-top:6px"><b>你是雙面人！</b>表面上是${F[me.fac].name}的${RL[me.role].name}，其實是 ${fx(S.origin)} 派來的。母國的大煉金師：${(S.leader || []).map(esc).join('、') || '—'}。</p><p class="small soft">分數算回母國；遊戲中不會被抓，結束時才揭曉。</p>
+    <div class="spyid"><div class="small">你的真實身分</div><b>🎭 ${F[S.origin].name}派來的臥底</b><div class="small">表面上：${F[me.fac].name}的${RL[me.role].name}｜母國君王：${(S.leader || []).map(esc).join('、') || '—'}</div></div>
+    <div class="sub-h">🧭 臥底怎麼玩</div>
+    <div class="glist dark"><div>🏆 你的分數算在 <b>${F[S.origin].name}（母國）</b>，不是${F[me.fac].name}</div><div>🧪 平常一樣在「工作」分頁答題，答對的成果<b>預設暗中送回母國</b>（母國國力推進 +${MPE.K.SPY_HOME}；挖到的元素藏進私藏）</div><div>🙈 想掩護身分，也可以讓某幾題「做給${F[me.fac].name}看」</div><div>🎯 完成下面的秘密任務、用秘密能力拖累${F[me.fac].name}</div><div>🤫 遊戲中沒人會抓你，結束時才揭曉</div></div>
+    <div class="sub-h">答對的成果要給誰？</div>
+    <div class="choice"><button data-home="1" class="${CH.home !== false ? 'on' : ''}">🎭 暗中送回${F[S.origin].name}</button><button data-home="0" class="${CH.home === false ? 'on' : ''}">🙈 做給${F[me.fac].name}看（掩護）</button></div>
     <div class="fb hint"><b>秘密任務 ${S.secName}</b><br>${esc(S.secText)}</div>
     <div class="sub-h">🃏 秘密能力 <span class="soft small">花自己的錢・每回合最多 1 個${me.abilUsed ? '・本回合已用' : ''}</span></div>
     ${Object.entries(A).map(([k, a]) => { const dis = !canAct() || me.abilUsed || me.wallet < a.cost || (a.strong && !strongOK); return `<div class="abrow"><button class="btn sm act ${a.strong ? 'red' : ''}" data-ab="${k}" ${dis ? 'disabled' : ''}>${a.name}<br><small>💰${a.cost}</small></button><span class="small">${esc(a.text)}${a.strong ? `<br><span class="soft">每 3 回合 1 次・累積答對 ${MPE.K.SP_UNLOCK} 題解鎖（你答對 ${me.correct} 題）</span>` : ''}</span></div>`; }).join('')}
     <div class="small" style="margin-top:6px">造謠對象：</div><div class="choice">${PUB.facs.filter(f => f !== me.fac).map(f => `<button class="${CH.rumor === f ? 'on' : ''}" data-rt="${f}">${F[f].name}</button>`).join('')}</div>
-    <p class="small soft">如果對方的機巧師有盾牌，破壞會被擋下（錢照扣）。</p>
+    <p class="small soft">如果對方的技師有盾牌，破壞會被擋下（錢照扣）。</p>
     <div class="sub-h">📦 私藏與搬運 <span class="soft small">用交易許可・還有 ${left} 張</span></div>
     <div class="inv" style="margin:6px 0">${Object.keys(S.stash || {}).length ? Object.entries(S.stash).map(([e, n]) => `<span>${e}×${n}</span>`).join('') : '<span class="soft">私藏是空的</span>'}</div>
     <div class="frow">${elSelect('st-el', CH.stBuy || 'H', PUB.market)}<button class="btn sm act" id="st-buy" ${canAct() && left ? '' : 'disabled'}>偷偷買進私藏</button></div>
     ${Object.keys(S.stash || {}).length ? `<div class="frow" style="margin-top:6px"><select id="send-el" class="in">${Object.keys(S.stash).map(e => `<option>${e}</option>`).join('')}</select><button class="btn sm act" id="send" ${canAct() && left ? '' : 'disabled'}>送回${F[S.origin].name}</button></div>` : ''}
-    <p class="small soft">已送回 ${S.sent || 0} 份。</p><label class="small" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="hide" ${CH.hide ? 'checked' : ''}> 挖礦時，挖到的元素自動藏進私藏</label></div>`;
+    <p class="small soft">已送回 ${S.sent || 0} 份。${CH.home === false ? '' : '暗中模式下，挖到的元素會自動藏進私藏。'}</p>${CH.home === false ? `<label class="small" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="hide" ${CH.hide ? 'checked' : ''}> 掩護模式挖礦時，元素還是偷偷藏進私藏</label>` : ''}</div>`;
   return h;
 }
 /* 我的任務 */
@@ -429,7 +467,7 @@ function renderEnd() {
   $('app').innerHTML = `<div class="card" style="text-align:center"><div style="font-size:2.6em">${won ? '🏆' : fin.winner === 'none' ? '⚖️' : '🕯️'}</div><h2 class="serif" style="color:var(--candle)">${fin.winner === 'none' ? '沒有勢力達成勝利條件' : fin.winner === 'bs' ? '天下均勢・鍵結社勝利' : `${F[fin.winner].name}勝利！`}</h2>${won ? '<p>🎉 你的陣營贏了！</p>' : ''}</div>
     <div class="card" style="margin-top:10px"><b>⭐ 你的成績：${me.pts ?? '—'} 分</b><ul style="margin:6px 0 0 20px"><li>${ps.ok1 ? '✅' : '❌'} ${esc(ps.t1 || '')}</li><li>${ps.ok2 ? '✅' : '❌'} ${esc(ps.t2 || '')}</li></ul>${me.spy ? `<div class="fb ${me.secOk ? 'ok' : 'bad'}">🎭 秘密任務 ${esc(me.spy.secName)}：${me.secOk ? '成功 +40' : '失敗'}</div>` : ''}</div>
     <div class="card" style="margin-top:10px"><b>🏰 勢力排名</b>${(fin.rank || []).map((f, i) => `<div>${i + 1}. ${fx(f)} ${fin.fscore[f]} 分${fin.winner === f ? ' 🏆' : ''}</div>`).join('')}</div>
-    <div class="card" style="margin-top:10px"><b>🎭 雙面人揭曉</b>${(fin.spies || []).length ? fin.spies.map(s => `<div class="small">${esc(s.name)}：潛伏在${F[s.host].name}，其實是${F[s.origin].name}的人（${MPE.SECRET[s.sec].name} ${s.ok ? '✅' : '❌'}）</div>`).join('') : '<p class="soft">這局沒有雙面人</p>'}</div>
+    <div class="card" style="margin-top:10px"><b>🎭 臥底揭曉</b>${(fin.spies || []).length ? fin.spies.map(s => `<div class="small">${esc(s.name)}：潛伏在${F[s.host].name}，其實是${F[s.origin].name}的人（${MPE.SECRET[s.sec].name} ${s.ok ? '✅' : '❌'}）</div>`).join('') : '<p class="soft">這局沒有臥底</p>'}</div>
     <div class="card" style="margin-top:10px"><b>📝 這局答題</b> ${ansLog.filter(a => a.ok === true).length}／${ansLog.filter(a => a.ok != null).length} 題答對 <span id="saved" class="soft small"></span></div>`;
   saveRecord();
 }
@@ -452,6 +490,9 @@ async function saveRecord() {
 /* ---------- 按鈕 ---------- */
 function bind() {
   const on = (sel, fn) => $('app').querySelectorAll(sel).forEach(b => b.onclick = () => fn(b));
+  on('#g-open', () => showGuide(0));
+  on('#rdone', () => send({ type: 'done', on: !PRIV.rDone }));
+  on('[data-home]', b => { CH.home = b.dataset.home === '1'; render(); });
   on('[data-as]', b => { CH.as = b.dataset.as; render(); });
   on('[data-vein]', b => { CH.vein = b.dataset.vein; render(); });
   on('[data-mol]', b => { CH.mol = b.dataset.mol; render(); });
@@ -491,7 +532,7 @@ function bind() {
   on('[data-ab]', b => { const k = b.dataset.ab; if (confirm(`發動 ${MPE.ABIL[k].name}（💰${MPE.ABIL[k].cost}）？`)) send({ type: 'spy', ab: k, to: CH.rumor }); });
   const map = $('map'); if (map) MPMAP.draw(map, { seed: PUB.seed, facs: PUB.facs, owner: PUB.owner, rel: PUB.rel });
 }
-// 簡易材料圖鑑（機巧師用）
+// 簡易材料圖鑑（技師用）
 function matBook(focus) {
   const L = focus ? focus.map(id => MATS.BY[id]) : MATS.LIST, yn = v => v === 'y' ? '✔' : v === 'n' ? '✘' : v === 'semi' ? '△' : v === 'weak' ? '△' : '—';
   const m = modal(`<div class="row" style="justify-content:space-between"><h2>📚 材料圖鑑</h2><button class="btn sm" id="mb-x">關閉</button></div>${focus ? '<p class="small">這題的候選材料（<a href="#" id="mb-all">看全部</a>）</p>' : ''}
@@ -506,6 +547,9 @@ $('modal').onclick = e => { if (e.target.id === 'modal') closeModal(); };
   try { const s = JSON.parse(localStorage.getItem(SKEY)); const last = BSC.lastProfile(); if (s && s.room === ROOM && last) { /* 同一個房間：顯示登入表單（已填好），按一下就回到原本身分 */ } } catch (e) {}
   loginScreen();
 })();
+// 遊戲中手機螢幕不要自動變暗（支援的瀏覽器）
+async function keepAwake() { try { if ('wakeLock' in navigator && !document.hidden && PUB && PUB.phase !== 'lobby') await navigator.wakeLock.request('screen'); } catch (e) {} }
+document.addEventListener('visibilitychange', keepAwake); document.addEventListener('click', function once() { keepAwake(); document.removeEventListener('click', once); });
 </script>
 </body>
 </html>

@@ -11,7 +11,7 @@ const QUIZ = (() => {
 
   // 知識點圖鑑：tag → 名稱
   const TAGS = {
-    concept: '化學鍵觀念', app: '物質的應用與檢驗', struct: '結構工坊', eng: '工程應用', pos: '週期表位置', val: '價電子', ion: '離子電荷', poly: '多原子離子', formula: '離子化合物化學式', name: '化合物命名',
+    concept: '化學鍵觀念', app: '物質的應用與檢驗', struct: '路易斯結構繪製', eng: '物質的性質與鍵結', pos: '週期表位置', val: '價電子', ion: '離子電荷', poly: '多原子離子', formula: '離子化合物化學式', name: '化合物命名',
     prop: '元素的性質與用途', bond: '鍵結類型判斷', detect: '物質鑑定', mp: '熔沸點比較', trend: '週期趨勢', balance: '反應式平衡', lewis: '路易斯結構', imf: '分子間作用力'
   };
   const qtxt = q => `${Math.abs(q) > 1 ? Math.abs(q) : ''}${q > 0 ? '+' : '−'}`;

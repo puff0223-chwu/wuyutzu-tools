@@ -134,7 +134,7 @@ const GAME = (() => {
   // 下回合自然消長的預估（不含隨機）
   const forecast = s => {
     const raw = Object.fromEntries(s.facs.map(f => [f, Wd.rawGrowth(s, f)])), mean = s.facs.reduce((a, f) => a + raw[f], 0) / s.facs.length;
-    return Object.fromEntries(s.facs.map(f => { let g = raw[f] - mean; if (s.rumor[f] && g > 0) g /= 2; return [f, Math.round(g * 10) / 10]; }));
+    return Object.fromEntries(s.facs.map(f => { let g = raw[f] - mean; if (s.rumor[f] && g > 0) g /= 2; g = Math.max(-Wd.DRIFT.CAP, Math.min(Wd.DRIFT.CAP, g)); return [f, Math.round(g * 10) / 10]; }));
   };
   // 賣元素：只能賣倉庫裡有的；不改變國力，只提升友好度、壓低行情
   function sell(s, sym, f) {
@@ -206,9 +206,9 @@ const GAME = (() => {
       case 'mine': return { id: 'mine:' + t.answer, q: `尋礦：${t.clues.map(c => c.t).join('；')}`, ans: `${t.answer}（${C.EL[t.answer].zh}）` };
       case 'forge': return { id: `forge:${t.mode}:${t.c}-${t.a}`, q: t.mode === 'f2name' ? `命名：${C.html(t.formula)}` : t.mode === 'name2f' ? `鑄造：${t.name}` : `鑄造：${C.CAT[t.c].f} 與 ${C.AN[t.a].f}`, ans: t.mode === 'f2name' ? t.name : C.html(t.formula) };
       case 'detect': { const x = T.subst(t.answer); return { id: `detect:${t.mode}:${t.answer}`, q: t.mode === 'type' ? `鑑定鍵結類型：${x.zh}` : `鑑定樣本：${t.opts.map(id => C.html(T.subst(id).f)).join('／')}`, ans: t.mode === 'type' ? FXX.BOND[t.bond] : C.html(x.f) }; }
-      case 'struct': return { id: 'struct:' + t.f, q: `結構工坊：${t.f}`, ans: '標準路易斯結構' };
+      case 'struct': return { id: 'struct:' + t.f, q: `路易斯結構繪製：${t.f}`, ans: '標準路易斯結構' };
       case 'eng': {
-        if (!t.mode) return { id: 'eng:' + t.ei, q: `工程應用：${t.need}`, ans: `${t.right}／${t.reason}` };
+        if (!t.mode) return { id: 'eng:' + t.ei, q: `物質的性質與鍵結：${t.need}`, ans: `${t.right}／${t.reason}` };
         const MT = typeof MATS !== 'undefined' ? MATS : require('./mats.js');
         return t.mode === 'pick' ? { id: 'eng2:' + t.key, q: `工程選材：${t.need}`, ans: `${MT.BY[t.right].n}／${t.rok}` } : { id: 'eng2:' + t.key, q: `失敗分析：${t.story}`, ans: `${t.right}／${t.rok}` };
       }
