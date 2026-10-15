@@ -143,5 +143,14 @@ expect('學生新增一筆歷程', base, null, W, '/bond-society/logs/115-1_101_
 expect('不能整批覆蓋歷程', base, null, W, '/bond-society/logs/115-1_101_7', { x: { t: 1, type: 'end' } }, false);
 expect('老師頁可以刪除整份歷程', Object.assign({}, base, { 'bond-society': { logs: { '115-1_101_7': { a: { t: 1, type: 'end' } } } } }), null, W, '/bond-society/logs/115-1_101_7', null, true);
 expect('學期設定', base, null, W, '/bond-society/config', { current: '115-1', terms: ['115-1'] }, true);
+console.log('— 隱秘的鍵結社 連線版 —');
+expect('老師開房間', base, null, W, '/bond-mp/ABCD', { host: { v: 1 } }, true);
+expect('房間代碼要 4 碼', base, null, W, '/bond-mp/ABCDE', { host: { v: 1 } }, false);
+expect('學生進大廳', base, null, W, '/bond-mp/ABCD/lobby/115-1_101_7', { sid: '115-1_101_7', name: '小明', cls: '101', seat: 7 }, true);
+expect('大廳 sid 要和路徑一樣', base, null, W, '/bond-mp/ABCD/lobby/115-1_101_7', { sid: 'x', name: '小明' }, false);
+expect('學生送出動作', base, null, W, '/bond-mp/ABCD/act/-k1', { sid: '115-1_101_7', type: 'ans', ok: true }, true);
+expect('動作缺欄位不能寫', base, null, W, '/bond-mp/ABCD/act/-k1', { ok: true }, false);
+expect('任何人都能讀房間', base, null, R, '/bond-mp/ABCD/pub', null, true);
+expect('不能整個抽屜一起讀', base, null, R, '/bond-mp', null, false);
 console.log(`\n${fail ? '❌' : '✅'} 通過 ${pass} 項，失敗 ${fail} 項`);
 process.exit(fail ? 1 : 0);

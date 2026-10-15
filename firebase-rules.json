@@ -186,6 +186,22 @@
     }
    }
   },
+  "bond-mp": {
+   "$room": {
+    ".read": "$room.length === 4",
+    ".write": "$room.length === 4",
+    "lobby": {
+     "$sid": {
+      ".validate": "newData.hasChildren(['sid','name']) && newData.child('sid').val() == $sid && newData.child('name').isString() && newData.child('name').val().length <= 12"
+     }
+    },
+    "act": {
+     "$k": {
+      ".validate": "newData.hasChildren(['sid','type']) && newData.child('type').isString() && newData.child('type').val().length <= 12"
+     }
+    }
+   }
+  },
   "seating": {
    "owners": {
     "$uid": {

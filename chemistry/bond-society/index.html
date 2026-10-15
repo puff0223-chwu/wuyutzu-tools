@@ -331,16 +331,16 @@
 <div class="ov hidden" id="ov"><div class="ovc" id="ovc"></div></div>
 <div class="toast" id="toast"></div>
 
-<script src="data.js?v=20261015d"></script>
-<script src="world.js?v=20261015d"></script>
-<script src="facts.js?v=20261015d"></script>
-<script src="bank.js?v=20261015d"></script>
-<script src="mats.js?v=20261015d"></script>
-<script src="quiz.js?v=20261015d"></script>
-<script src="tasks.js?v=20261015d"></script>
-<script src="events.js?v=20261015d"></script>
-<script src="game.js?v=20261015d"></script>
-<script src="cloud.js?v=20261015d"></script>
+<script src="data.js?v=20261015e"></script>
+<script src="world.js?v=20261015e"></script>
+<script src="facts.js?v=20261015e"></script>
+<script src="bank.js?v=20261015e"></script>
+<script src="mats.js?v=20261015e"></script>
+<script src="quiz.js?v=20261015e"></script>
+<script src="tasks.js?v=20261015e"></script>
+<script src="events.js?v=20261015e"></script>
+<script src="game.js?v=20261015e"></script>
+<script src="cloud.js?v=20261015e"></script>
 <script>
 const $ = id => document.getElementById(id);
 const F = WORLD.FACTIONS, C = CHEM, RU = WORLD.RULE;
@@ -427,7 +427,7 @@ function gameAnalysis(G) {
     ${tagBars(G.prac || {}, tags)}
     ${wrong.length ? `<h4 style="margin:10px 0 6px">❌ 這局答錯的題目（${wrong.length}）</h4><ul class="wrong-l">${wrong.slice(0, 30).map(a => `<li>${esc(a.q)}<br><small>你的答案：${esc(a.pick || '—')}${a.ans ? `｜正確：<b>${esc(a.ans)}</b>` : ''}・${SRC[a.src] || ''}・第 ${a.rd} 回合</small></li>`).join('')}</ul>` : '<p style="margin:8px 0">🎉 這局沒有答錯的題目！</p>'}`;
 }
-const END_ZH = { harmony: '🌀 大和解', peace: '⚖️ 均勢和平', shaky: '⚠️ 危險的平衡', unify: '❌ 天下一統', destroy: '❌ 一國滅亡', exposed: '❌ 組織曝光' };
+const END_ZH = { harmony: '🌀 大和解', peace: '⚖️ 均勢和平', shaky: '⚠️ 危險的平衡', unify: '❌ 天下一統', destroy: '❌ 一國滅亡', exposed: '❌ 組織曝光', mp: '👥 連線對戰', mpwin: '👥 連線勝利' };
 function myRecord(G) {
   if (!P) { if (G) { const m = modal(`<h2>📊 本局分析</h2>${gameAnalysis(G)}<div class="actions" style="justify-content:flex-end"><button class="btn" id="cl">關閉</button></div>`); m.querySelector('#cl').onclick = () => { closeModal(); if (CUR) openTask(CUR); }; } return; }
   let tab = G && !G.ended ? 'now' : 'sum';
