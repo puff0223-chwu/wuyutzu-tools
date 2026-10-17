@@ -181,7 +181,8 @@ table.list th{background:#f3eee2;font-weight:700}
 /* ---------- A4 座位表 ---------- */
 .sheet-preview{background:#cfc8b8;border-radius:10px;padding:14px;overflow:hidden}
 .sheet-holder{transform-origin:top left}
-.sheet{width:1062px;height:733px;background:#fff;color:#000;position:relative;overflow:hidden;font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+.sheet{width:1123px;height:794px;padding:30px 57px;box-sizing:border-box;background:#fff;color:#000;position:relative;overflow:hidden;font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+.sheet-area{position:relative;width:1009px;height:733px;overflow:hidden}
 .sheet-inner{position:absolute;left:0;top:0;transform-origin:top left;padding:2px}
 .sh-head{display:flex;align-items:flex-end;justify-content:center;position:relative;margin-bottom:8px}
 .sh-head .t{font-size:24px;font-weight:900;letter-spacing:.06em}
@@ -216,11 +217,12 @@ table.list th{background:#f3eee2;font-weight:700}
   .secret-badge{white-space:normal}
 }
 @media print{
-  @page{size:A4 landscape;margin:8mm}
+  @page{size:A4 landscape;margin:8mm 15mm}
   html,body{background:#fff}
   body>*:not(#printRoot){display:none!important}
   #printRoot{position:static;left:auto}
-  .sheet{box-shadow:none;width:281mm;height:194mm}
+  .sheet{box-shadow:none;width:267mm;height:194mm;padding:0}
+  .sheet-area{width:267mm;height:194mm}
   .sheet *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
 </style>
@@ -239,7 +241,7 @@ try {
   window.FB = await M.openFirebase('seating');
   window.FBX = { authErr: M.authErr, googleButtonHTML: M.googleButtonHTML };
 } catch (e) { console.warn('Firebase 載入失敗，只能用本機模式', e); window.FB = null; }
-await import('./app.js?v=20261017a');
+await import('./app.js?v=20261017b');
 </script>
 </body>
 </html>

@@ -764,11 +764,13 @@ function sheetHTML(c, rd, opt = {}) {
     ${(c.settings.note || period) ? `<div class="sh-foot">${period ? `<div class="sh-period">${period}</div>` : ''}${c.settings.note ? `<div>${esc(c.settings.note)}</div>` : ''}</div>` : ''}
   </div>`;
 }
-/** 量測後縮放到 A4 可列印範圍（1062×733 px ＝ 281×194 mm） */
+/** A4 橫式 297×210 mm；邊界：左右 15 mm、上下 8 mm → 內容區 267×194 mm（1 mm ≈ 3.78 px） */
+const PAGE = { W: 1123, H: 794, MX: 57, MY: 30, CW: 1009, CH: 733 };
+/** 量測後縮放到內容區 */
 function fitSheet(sheet) {
   const inner = sheet.querySelector('.sheet-inner'); if (!inner) return 1;
   inner.style.transform = 'none';
-  const W = 1062, H = 733, w = inner.offsetWidth, h = inner.offsetHeight;
+  const W = PAGE.CW, H = PAGE.CH, w = inner.offsetWidth, h = inner.offsetHeight;
   const s = Math.min(W / w, H / h, 2.2);
   const x = Math.max(0, (W - w * s) / 2), y = Math.max(0, (H - h * s) / 2);
   inner.style.transform = `translate(${x}px,${y}px) scale(${s})`;
@@ -799,7 +801,7 @@ function renderSheet(sheet, rd) {
   measure(opt);
   let s = fitSheet(sheet);
   const inner = sheet.querySelector('.sheet-inner');
-  const room = 733 / (inner.offsetHeight * s);
+  const room = PAGE.CH / (inner.offsetHeight * s);
   if (room > 1.04) {   // 被寬度卡住：三欄一起再拉高
     const v = Math.min(1.8, room * 0.98);
     opt = { mk: opt.mk * v, ck: opt.ck * v, lk: opt.lk * v };
@@ -814,13 +816,13 @@ function printRound() {
 }
 function mountPreview(holder) {
   const box = holder.parentElement;
-  holder.innerHTML = '<div class="sheet"></div>';
+  holder.innerHTML = '<div class="sheet"><div class="sheet-area"></div></div>';
   const rd = S.tab === 'print' ? printRound() : round();
   const doFit = () => {
-    const s = renderSheet(holder.firstElementChild, rd);
-    const k = (box.clientWidth - parseFloat(getComputedStyle(box).paddingLeft) * 2) / 1062;
-    holder.style.transform = `scale(${k})`; holder.style.height = (733 * k) + 'px'; holder.style.width = '1062px';
-    box.style.height = (733 * k + parseFloat(getComputedStyle(box).paddingTop) * 2) + 'px';
+    const s = renderSheet(holder.querySelector('.sheet-area'), rd);
+    const k = (box.clientWidth - parseFloat(getComputedStyle(box).paddingLeft) * 2) / PAGE.W;
+    holder.style.transform = `scale(${k})`; holder.style.height = (PAGE.H * k) + 'px'; holder.style.width = PAGE.W + 'px';
+    box.style.height = (PAGE.H * k + parseFloat(getComputedStyle(box).paddingTop) * 2) + 'px';
     const note = $('#fitNote');
     if (note) note.innerHTML = s < 0.62 ? `⚠️ 內容很多，字已縮到 ${Math.round(s * 100)}%，建議精簡幹部或打掃項目，或取消勾選其中一欄。` : `版面縮放 ${Math.round(s * 100)}%`;
   };
@@ -829,9 +831,9 @@ function mountPreview(holder) {
 }
 async function doPrint() {
   const root = $('#printRoot');
-  root.innerHTML = '<div class="sheet"></div>';
+  root.innerHTML = '<div class="sheet"><div class="sheet-area"></div></div>';
   if (document.fonts && document.fonts.ready) await document.fonts.ready;
-  renderSheet(root.firstElementChild, printRound());
+  renderSheet(root.querySelector('.sheet-area'), printRound());
   setTimeout(() => window.print(), 60);
 }
 function exportXlsx() {
