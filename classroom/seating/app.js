@@ -720,7 +720,10 @@ const autoTitle = (c) => `${c.name || ''}班 座位表${c.settings.showCadres !=
 const SH = { cw: 70, ch: 50, gap: 6, row: 25, side: 22, mark: 26 };
 function sheetHTML(c, rd, opt = {}) {
   const view = opt.view || c.settings.printView || 'teacher';
-  const vk = opt.vk || 1, CH = Math.round(SH.ch * vk), ROW = Math.round(SH.row * vk);   // vk：直向拉高倍率（內容被寬度卡住時用來填滿 A4）
+  // 三欄（座位圖｜幹部｜打掃）永遠各自一直行；用倍率把三欄調成一樣高：
+  // mk＝座位格高度倍率、ck＝幹部列高倍率、lk＝打掃列高倍率
+  const mk = opt.mk || 1, CH = Math.round(SH.ch * mk);
+  const CROW = Math.round(SH.row * (opt.ck || 1)), LROW = Math.round(SH.row * (opt.lk || 1));
   const L = rd ? rd.layout : c.layout;
   const amap = rd ? (rd.assign || rd.locked || {}) : {};
   const V = SC.viewOf(L, view), R = L.rows, Cc = L.cols;
@@ -740,45 +743,24 @@ function sheetHTML(c, rd, opt = {}) {
   }).join('');
   const hasTop = toArr(L.marks).some((m) => V.side(m) === 'top'), hasBot = toArr(L.marks).some((m) => V.side(m) === 'bottom');
   const mapBox = `<div class="sh-map" style="grid-template-columns:${SH.side}px repeat(${Cc},${SH.cw}px) ${SH.side}px;grid-template-rows:${hasTop ? SH.mark + 'px' : '0'} repeat(${R},${CH}px) ${hasBot ? SH.mark + 'px' : '0'}">${marks}${cells}</div>`;
-  const mapH = R * (CH + SH.gap) + 2 * (SH.mark + SH.gap) + 18;
-
-  // 依高度把區塊分成幾欄（內容多就分欄，避免一欄太長）
-  const splitCols = (blocks, limit) => {
-    const total = blocks.reduce((s, b) => s + b.h, 0);
-    if (total <= limit || blocks.length < 2) return [blocks];
-    const half = total / 2, a = [], b = []; let acc = 0;
-    blocks.forEach((x) => { if (acc + x.h / 2 <= half || !a.length) { a.push(x); acc += x.h; } else b.push(x); });
-    return [a, b];
-  };
   const showCad = c.settings.showCadres !== false && c.cadres.length;
   const CLN = (rd && rd.cleaning) || c.cleaning;
   const showCln = c.settings.showCleaning !== false && CLN.some((a) => a.items.length);
-  let cadCols = '';
+  let cadCol = '';
   if (showCad) {
     const groups = [];
     c.cadres.forEach((x, i) => { if (!i || !x.join) groups.push([]); groups[groups.length - 1].push(x); });
-    const blocks = groups.map((g) => ({
-      h: g.length * ROW + 7,
-      html: `<table class="sh-group"><tbody>${g.map((x) => { const p = x.seat != null ? stu(x.seat) : null; return `<tr><td class="role">${esc(x.role)}</td><td class="who">${p ? `<span class="sn">${p.seat < 10 ? '<i>0</i>' : ''}${p.seat}</span> ${esc(p.name)}` : ''}</td></tr>`; }).join('')}</tbody></table>`
-    }));
-    cadCols = splitCols(blocks, mapH * 1.12).map((col) => `<div class="sh-col">${col.map((b) => b.html).join('')}</div>`).join('');
+    cadCol = `<div class="sh-col sh-cad">${groups.map((g) => `<table class="sh-group" style="--rh:${CROW}px"><tbody>${g.map((x) => { const p = x.seat != null ? stu(x.seat) : null; return `<tr><td class="role">${esc(x.role)}</td><td class="who">${p ? `<span class="sn">${p.seat < 10 ? '<i>0</i>' : ''}${p.seat}</span> ${esc(p.name)}` : ''}</td></tr>`; }).join('')}</tbody></table>`).join('')}</div>`;
   }
-  let clnCols = '';
+  let clnCol = '';
   if (showCln) {
-    const blocks = [];
-    CLN.filter((a) => a.items.length).forEach((a) => {
-      const itemsH = a.items.length * ROW;
-      const mk = (items, cont) => ({ h: 30 + items.length * ROW + 10, html: `<div><div class="sh-area">打掃區域(${esc(a.name)})${cont ? '（續）' : ''}</div><table class="sh-group clean" style="width:100%"><tbody>${items.map((it) => `<tr><td class="role">${esc(it.name)}</td><td class="who">${esc(seatsText(it.seats))}</td></tr>`).join('')}</tbody></table></div>` });
-      if (itemsH > mapH * 1.12 && a.items.length > 3) { const h = Math.ceil(a.items.length / 2); blocks.push(mk(a.items.slice(0, h)), mk(a.items.slice(h), true)); }
-      else blocks.push(mk(a.items));
-    });
-    clnCols = splitCols(blocks, mapH * 1.12).map((col) => `<div class="sh-col" style="gap:10px">${col.map((b) => b.html).join('')}</div>`).join('');
+    clnCol = `<div class="sh-col sh-cln" style="gap:10px">${CLN.filter((a) => a.items.length).map((a) => `<div><div class="sh-area">打掃區域(${esc(a.name)})</div><table class="sh-group clean" style="width:100%;--rh:${LROW}px"><tbody>${a.items.map((it) => `<tr><td class="role">${esc(it.name)}</td><td class="who">${esc(seatsText(it.seats))}</td></tr>`).join('')}</tbody></table></div>`).join('')}</div>`;
   }
   const title = esc(c.settings.sheetTitle || autoTitle(c));
   const period = rd && rd.period ? `適用期間：${esc(rd.period)}` : '';
-  return `<div class="sheet-inner" style="--rh:${ROW}px">
+  return `<div class="sheet-inner">
     <div class="sh-head"><div class="t">${title}</div>${c.teacherTitle ? `<div class="tc">導師：${esc(c.teacherTitle)}</div>` : ''}</div>
-    <div class="sh-body">${mapBox}${cadCols ? `<div class="sh-cols">${cadCols}</div>` : ''}${clnCols ? `<div class="sh-cols">${clnCols}</div>` : ''}</div>
+    <div class="sh-body">${mapBox}${cadCol}${clnCol}</div>
     ${(c.settings.note || period) ? `<div class="sh-foot">${period ? `<div class="sh-period">${period}</div>` : ''}${c.settings.note ? `<div>${esc(c.settings.note)}</div>` : ''}</div>` : ''}
   </div>`;
 }
@@ -787,20 +769,41 @@ function fitSheet(sheet) {
   const inner = sheet.querySelector('.sheet-inner'); if (!inner) return 1;
   inner.style.transform = 'none';
   const W = 1062, H = 733, w = inner.offsetWidth, h = inner.offsetHeight;
-  const s = Math.min(W / w, H / h, 1.35);
+  const s = Math.min(W / w, H / h, 2.2);
   const x = Math.max(0, (W - w * s) / 2), y = Math.max(0, (H - h * s) / 2);
   inner.style.transform = `translate(${x}px,${y}px) scale(${s})`;
   return s;
 }
-/** 畫出座位表並縮放；內容被寬度卡住、下方留白太多時，自動把格子拉高再量一次 */
+/** 畫出座位表並縮放：
+    ① 先用標準大小畫一次，量出座位圖、幹部欄、打掃欄的高度
+    ② 把三欄拉成一樣高（最高的那欄為準；座位格最多拉高 2 倍、幹部與打掃列高最多 1.8 倍）
+    ③ 等比例縮放到 A4；若被寬度卡住、下方還有空白，再把三欄一起拉高填滿 */
 function renderSheet(sheet, rd) {
-  sheet.innerHTML = sheetHTML(C(), rd);
+  const c = C();
+  const measure = (opt) => {
+    sheet.innerHTML = sheetHTML(c, rd, opt);
+    const q = (sel) => { const el = sheet.querySelector(sel); return el ? el.offsetHeight : 0; };
+    return { map: q('.sh-map'), cad: q('.sh-cad'), cln: q('.sh-cln') };
+  };
+  const h0 = measure({});
+  const target = Math.max(h0.map, h0.cad, h0.cln);
+  // 欄內「會隨倍率變大」的部分大約佔多少（扣掉標示、間距、區域標題等固定高度）
+  const L = rd ? rd.layout : c.layout;
+  const mapFixed = h0.map - L.rows * SH.ch, grow = (h, fixedPart, cap) => h ? Math.min(cap, Math.max(1, (target - fixedPart) / Math.max(1, h - fixedPart))) : 1;
+  const nCad = c.cadres.length, nCln = ((rd && rd.cleaning) || c.cleaning).reduce((n, a) => n + a.items.length, 0);
+  let opt = {
+    mk: grow(h0.map, mapFixed, 2),
+    ck: grow(h0.cad, h0.cad - nCad * SH.row, 1.8),
+    lk: grow(h0.cln, h0.cln - nCln * SH.row, 1.8)
+  };
+  measure(opt);
   let s = fitSheet(sheet);
   const inner = sheet.querySelector('.sheet-inner');
   const room = 733 / (inner.offsetHeight * s);
-  if (room > 1.08) {
-    const vk = Math.min(1.7, room * 0.97);
-    sheet.innerHTML = sheetHTML(C(), rd, { vk });
+  if (room > 1.04) {   // 被寬度卡住：三欄一起再拉高
+    const v = Math.min(1.8, room * 0.98);
+    opt = { mk: opt.mk * v, ck: opt.ck * v, lk: opt.lk * v };
+    measure(opt);
     s = fitSheet(sheet);
   }
   return s;
