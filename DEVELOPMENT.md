@@ -2,7 +2,7 @@
 
 > 給未來的自己（和 Claude）看的說明書：這個網站怎麼組成、資料放哪裡、要新增工具時怎麼接進來。
 > **每次開發的過程與決定記在 [CHANGELOG.md](CHANGELOG.md)（開發歷程）**，每次開發結束都要同步更新本檔與 CHANGELOG。
-> 最後更新：2026-10-12
+> 最後更新：2026-10-17
 
 ---
 
@@ -138,9 +138,12 @@ wuyutzu-tools/
 | 🎮 遊戲設計思考 | — | 巴圖玩家類型 |
 | 🔬 探究與實作 | Excel 數據處理 | 消失的實驗數據（連到老師頁） |
 | | 校園定向越野 | 遺落的地點（連到老師後台 `inquiry/orienteering/`） |
+| | 科普閱讀 | 科普閱讀測驗（**外部連結**，不在本倉庫：`https://reading-quiz-system.vercel.app/`，Vercel＋Supabase，原始碼在 `puff0223-chwu/reading-quiz-system`） |
 | 👨‍👩‍👧 親子 | 家庭與親子互動 | 集點小金庫（連到 `family-points/`，給家長與孩子用） |
 
 > 首頁是老師專用的工具箱，不會提供給學生；學生只會拿到各工具的「學生頁」連結（學生頁不連回首頁）。
+
+> **外部系統（資料庫不是 Firebase）**：首頁的 `TOOLS` 也可以放連到別的網站的卡片。目前有「科普閱讀測驗」（`readingquiz`）：只是一張連結卡，點了在新分頁開啟，**資料與登入都獨立**——資料庫是 Supabase（`reading-quiz-system` 專案，用學校信箱註冊的獨立帳號）、老師後台用 Supabase Auth 登入（不是會員中心），所以不受 `firebase-rules.json` 管，也不吃 Firebase 免費額度。Supabase 免費專案連續 7 天沒有資料庫查詢會被暫停，目前由 cron-job.org 每週一、四打 `/api/assignments` 保活，**不要刪那個排程**。
 
 ---
 
