@@ -131,6 +131,14 @@
       if (d.val === teacher) return;
       if (ansTxt.indexOf(d.val) < 0 && markIgnore(d.val)) once('dis' + d.label, function () { add('', '「' + d.label + '」不用寫進參考文獻', 'extra'); });
     });
+    // 版次寫多了：初版不用寫版次；刷次（第幾刷）從來不寫（2026-10-18 老師測試回報：原本被當成「書名不一樣」）
+    var hasEd = (answer || []).some(function (g) { return g.f === 'ed'; });
+    if (!hasEd) {
+      var mEd = sTxt.match(/初版|第一版/);  // 只抓字，前後沒對上的括號 markIgnore 會一起吃掉
+      if (mEd && markIgnore(mEd[0])) once('ed1', function () { add('ed', '初版不用寫版次，只有修訂版、第二版以後才要寫', 'extra'); });
+    }
+    var mPr = sTxt.match(/第\s*\d+\s*刷/);
+    if (mPr && ansTxt.indexOf(mPr[0]) < 0 && markIgnore(mPr[0])) once('print', function () { add('', '刷次（第幾刷）不用寫進參考文獻', 'extra'); });
     // 放錯位置的欄位：整段沒對上、但學生其實有寫 → 只說「位置不對」，那段文字不再算成「多寫」
     var misplaced = {};
     runs.forEach(function (rn, ri) { if (rn.f !== 'p' && rn.miss.length === rn.idx.length && rn.text.length >= 2 && markIgnore(rn.text)) misplaced[ri] = 1; });
@@ -141,6 +149,9 @@
       var allMiss = rn.miss.length === rn.idx.length;
       if (f === 'p') {
         if (!rn.miss.length && !ex.length) return;
+        // 整個版次都沒寫時，它前後的括號不另外報（已經說「少了版次（…）」）
+        var edGone = function (r) { return r && r.f === 'ed' && r.miss.length === r.idx.length; };
+        if (!ex.length && (edGone(runs[ri + 1]) || edGone(runs[ri - 1]))) return;
         var want = rn.miss.map(function (k) { return E[k].c; }).join('');
         var got = extraText(ex);
         var prevRun = runs[ri - 1], after = prevRun ? '「' + prevRun.text.trim().slice(-6) + '」後面' : '開頭';
