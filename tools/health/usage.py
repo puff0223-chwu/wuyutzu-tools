@@ -63,7 +63,10 @@ def human(b):
 def main():
     print(f'## 🔋 Firebase 資源報告（{NOW.astimezone(TW):%Y-%m-%d %H:%M} 台灣時間）\n')
     if not TOKEN:
-        print('⚪ 還沒設定 `FIREBASE_SA` 金鑰，所以讀不到用量。設定方法見 DEVELOPMENT.md 7-14。')
+        if os.environ.get('AUTH_OUTCOME') == 'failure':
+            print('🔴 有設定 `FIREBASE_SA` 金鑰，但換權杖失敗（金鑰貼錯或被停用？），請看 Actions 紀錄。')
+        else:
+            print('⚪ 還沒設定 `FIREBASE_SA` 金鑰，所以讀不到用量。設定方法見 DEVELOPMENT.md 7-14。')
         return
     rows, errs = [], []
 

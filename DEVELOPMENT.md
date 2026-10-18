@@ -967,6 +967,8 @@ fp/
 - **規則瘦身**：舊帳號搬完後拿掉 `{{XFER}}`、`xfer`、`sys/retired`、`LEGACY` 段落，38,584 → 34,908 字；規則越短，Firebase 每次判斷越快、貼上越不容易出錯。測試改成驗證「舊帳號、xfer、sys 都被擋」
 - **自動部署（`.github/workflows/firebase.yml`）**：推上 main 且改到規則 → 重新產生規則並確認和 repo 一致 → targaryen 測試 → 用服務帳號 PUT `/.settings/rules.json` → 產生資源報告 → 貼到 repo 的「🔋 Firebase 資源報告」議題（訂閱議題就會收到 Email）。每週一 07:47（台灣）自動再報一次用量（不部署）；Actions 分頁也能手動按「Run workflow」
   - **資源報告**（`tools/health/usage.py`）讀 Google Cloud Monitoring：同時連線（7 天最高、發生時間）、本月下載＋整月推估、儲存、資料庫負載；🟢 < 60%、🟡 60–85%、🔴 > 85%
+  - **換權杖自己來**（`tools/health/get_token.py`）：第一次用 google-github-actions/auth 的 access_token 模式，失敗訊息是「IAM Service Account Credentials API 沒開」——那個模式是「請 Google 代簽」，要多開一個 API。改成用金鑰自己簽名換權杖（google-auth 套件），什麼 API 都不用開
+  - **Python 檔名別跟內建模組撞名**：權杖程式原本叫 `token.py`，結果 Python 內建的 `token` 模組被它頂替，import 一路連鎖爆掉 → 改名 `get_token.py`
   - **金鑰只放 GitHub Secret `FIREBASE_SA`**，絕對不能進 repo（repo 是公開的）。沒設金鑰時 Action 只測試不部署、不會失敗
   - 金鑰設定（一次）：Firebase 主控台 → ⚙️ 專案設定 → 服務帳戶 → 產生新的私密金鑰（下載 JSON）→ Google Cloud 主控台 IAM 找到 `firebase-adminsdk-…` 那個帳號，加「Monitoring 檢視者」角色 → GitHub repo → Settings → Secrets and variables → Actions → New repository secret，名稱 `FIREBASE_SA`、內容貼 JSON 全文 → 電腦裡下載的 JSON 刪掉
 - **健檢週期**：① 每新增 3 個系統（或任何一個「即時連線」系統）做一次 ② 每學期開學前一週做一次 ③ 每週一的自動報告出現 🟡／🔴 時馬上做。做法：跑 `check.py` → 看 Actions 最近的資源報告 → 修 ⚠️ → 在這一節後面補一行「第 N 次健檢：日期、系統數、結果」

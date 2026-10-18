@@ -31,11 +31,11 @@ jobs:
   deploy-and-report:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
 
       - name: 🧱 重新產生規則，確認跟 repo 裡的一樣
         run: |
@@ -47,14 +47,16 @@ jobs:
           npm install --no-save --prefix /tmp/tg targaryen@3.1.0
           TARGARYEN=/tmp/tg/node_modules/targaryen node firebase/rules.test.js
 
-      - name: 🔑 用服務帳號登入 Google
+      - name: 🔑 用服務帳號金鑰換存取權杖
         id: auth
         if: env.HAS_KEY == 'true'
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.FIREBASE_SA }}
-          token_format: access_token
-          access_token_scopes: https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/firebase.database,https://www.googleapis.com/auth/userinfo.email,https://www.googleapis.com/auth/monitoring.read
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+        run: |
+          pip install --quiet google-auth requests
+          t=$(python3 tools/health/get_token.py)
+          echo "::add-mask::$t"
+          echo "access_token=$t" >> "$GITHUB_OUTPUT"
 
       - name: 🚀 部署規則
         id: deploy
@@ -73,6 +75,7 @@ jobs:
         if: always()
         env:
           GCP_TOKEN: ${{ steps.auth.outputs.access_token }}
+          AUTH_OUTCOME: ${{ steps.auth.outcome }}
         run: |
           {
             if [ "${{ github.event_name }}" = "schedule" ]; then echo "# 📅 每週資源報告"; else
