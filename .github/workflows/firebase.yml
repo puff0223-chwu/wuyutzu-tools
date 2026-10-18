@@ -76,6 +76,7 @@ jobs:
         env:
           GCP_TOKEN: ${{ steps.auth.outputs.access_token }}
           AUTH_OUTCOME: ${{ steps.auth.outcome }}
+          FULL_SCAN: ${{ github.event_name != 'push' && '1' || '0' }}
         run: |
           {
             if [ "${{ github.event_name }}" = "schedule" ]; then echo "# 📅 每週資源報告"; else
