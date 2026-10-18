@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>出處失傳的秘文｜出處鑑識</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="core.js?v=20261018a"></script>
+<script src="check.js?v=20261018a"></script>
+<style>
+:root{
+  --night:#1b1a17; --night2:#26241f; --parch:#f3e9d2; --parch2:#e8dbbb; --edge:#c9b386;
+  --ink:#2b2418; --muted:#76684e; --seal:#b3322a; --gold:#b98f35; --jade:#2f6b5a; --ok:#2f7d4f; --bad:#b3322a;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:"Noto Sans TC",system-ui,sans-serif;color:var(--ink);background:var(--night);min-height:100vh;line-height:1.7;
+  background-image:radial-gradient(ellipse at 15% -10%,rgba(185,143,53,.18),transparent 55%),radial-gradient(ellipse at 110% 110%,rgba(179,50,42,.12),transparent 50%)}
+.wrap{max-width:1040px;margin:0 auto;padding:24px 16px 70px}
+h1,h2,h3{font-family:"Noto Serif TC",serif;margin:0;line-height:1.35}
+.mono{font-family:"JetBrains Mono",monospace}
+button{font:inherit;cursor:pointer}
+.hidden{display:none!important}
+
+.parch{background:var(--parch);border-radius:10px;box-shadow:0 16px 40px rgba(0,0,0,.4),inset 0 0 0 1px var(--edge),inset 0 0 60px rgba(150,110,40,.18);position:relative}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 20px;border-radius:8px;border:2px solid var(--ink);font-weight:700;background:var(--ink);color:var(--parch);transition:transform .1s}
+.btn:active{transform:translateY(1px)}
+.btn.gold{background:var(--gold);color:#1b1a17;border-color:#1b1a17}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.wide{width:100%}
+.btn:disabled{opacity:.5;cursor:default}
+
+/* 登入 */
+.login{max-width:500px;margin:5vh auto 0;padding:36px 30px 30px;text-align:center}
+.seal{display:inline-grid;place-items:center;width:64px;height:64px;border-radius:12px;background:var(--seal);color:#fbe9d0;font-family:"Noto Serif TC",serif;font-weight:900;font-size:1.25rem;line-height:1.1;transform:rotate(-6deg);box-shadow:0 0 0 3px var(--parch),0 0 0 5px var(--seal)}
+.login h1{font-size:2.1rem;margin:16px 0 4px}
+.login .sub{color:var(--muted);margin:0 0 20px}
+.field{text-align:left;margin-bottom:14px}
+.field label{display:block;font-weight:700;margin-bottom:5px}
+.field input{width:100%;padding:11px 13px;font-size:1.08rem;border:2px solid var(--edge);border-radius:8px;background:#fffaf0;font-family:inherit}
+.field input:focus{outline:none;border-color:var(--gold)}
+.err{color:var(--bad);font-weight:700;min-height:1.4em;margin:8px 0 0}
+.mission{display:inline-block;margin-bottom:16px;padding:3px 12px;border-radius:20px;background:var(--parch2);font-weight:700;color:var(--muted);font-size:.92rem}
+
+/* 頂部 */
+.top{padding:20px 24px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between}
+.top h1{font-size:1.5rem}
+.who{color:var(--muted);font-size:.93rem}
+.who b{color:var(--ink)}
+.cloud{font-size:.85rem;font-weight:700;min-height:1.3em}
+.cloud.ok{color:var(--ok)} .cloud.off{color:var(--bad)} .cloud.busy{color:var(--muted)}
+
+/* 進度：秘文碎片 */
+.frag{margin:16px 0;padding:16px 20px;display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.frag .lbl{font-weight:900;font-family:"Noto Serif TC",serif}
+.slots{display:flex;gap:6px;flex-wrap:wrap}
+.slot{width:40px;height:40px;border:2px dashed var(--edge);border-radius:8px;display:grid;place-items:center;font-weight:900;color:var(--muted);background:#fbf4e3;font-family:"Noto Serif TC",serif}
+.slot.got{border:2px solid var(--seal);background:var(--seal);color:#fbe9d0}
+.frag .cnt{margin-left:auto;font-weight:700;color:var(--muted)}
+
+/* 說明卷 */
+.intro{padding:18px 22px;margin-bottom:16px}
+.intro p{margin:6px 0}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-top:10px}
+.rule{background:#fbf4e3;border:1px solid var(--edge);border-radius:8px;padding:8px 12px;font-size:.92rem}
+.rule b{color:var(--seal)}
+
+/* 關卡卡片 */
+.sect-t{color:#e9dcbc;font-family:"Noto Serif TC",serif;font-size:1.1rem;margin:22px 4px 10px;display:flex;align-items:center;gap:10px}
+.sect-t span{color:#a99a78;font-size:.85rem;font-family:"Noto Sans TC",sans-serif}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.card{padding:16px 16px 14px;text-align:left;border:0;color:inherit;display:block;width:100%;transition:transform .15s;min-height:118px}
+.card:hover{transform:translateY(-3px)}
+.card .no{font-size:.78rem;color:var(--muted);letter-spacing:.12em;font-weight:700}
+.card h3{font-size:1.12rem;margin:6px 0 2px}
+.card .ico{position:absolute;right:14px;top:12px;font-size:1.6rem}
+.card .att{font-size:.82rem;color:var(--muted)}
+.stamp{position:absolute;right:12px;bottom:10px;color:var(--seal);border:3px solid var(--seal);font-weight:900;font-family:"Noto Serif TC",serif;padding:0 8px;transform:rotate(-9deg);border-radius:6px;font-size:.95rem;opacity:.92}
+.card.bonus{background:linear-gradient(160deg,#f3e9d2,#e3ecdf)}
+.card.bonus .stamp{color:var(--jade);border-color:var(--jade)}
+
+/* 面板 */
+.back{position:fixed;inset:0;background:rgba(12,11,9,.78);display:flex;align-items:flex-start;justify-content:center;padding:20px 10px;overflow-y:auto;z-index:20}
+.panel{max-width:1080px;width:100%;padding:24px 24px 22px}
+.panel .x{position:absolute;right:12px;top:8px;background:none;border:0;font-size:1.6rem;color:var(--muted);z-index:3}
+.panel h2{font-size:1.45rem;margin:2px 0 12px}
+.ptag{font-size:.8rem;letter-spacing:.14em;color:var(--muted);font-weight:700}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:20px;align-items:start}
+.sub-t{font-weight:900;color:var(--seal);letter-spacing:.12em;font-size:.85rem;margin:0 0 8px}
+.tpl{background:#fbf4e3;border:1px dashed var(--edge);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:.95rem}
+.tpl .f{font-family:"Noto Serif TC",serif;font-size:1.02rem;line-height:1.8}
+.tpl ul{margin:6px 0 0;padding-left:20px;color:var(--muted);font-size:.88rem}
+
+/* 證物卡（各種樣子） */
+.ev{border-radius:8px;overflow:hidden;font-size:.95rem;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.ev .lbl{display:inline-block;font-size:.75rem;color:#fff;background:var(--seal);padding:1px 8px;border-radius:4px;margin-bottom:6px;font-weight:700}
+.ev table{border-collapse:collapse;width:100%}
+.ev td{padding:4px 6px;vertical-align:top;border-bottom:1px dotted #d7c9a8}
+.ev td:first-child{color:#7b6d52;white-space:nowrap;width:5.5em}
+.ev-book{background:#fffdf6;border:1px solid #d9cba8;padding:18px}
+.ev-book .bt{font-family:"Noto Serif TC",serif;font-size:1.35rem;font-weight:900;text-align:center;margin:4px 0 12px}
+.ev-web{background:#fff;border:1px solid #c9ced8}
+.ev-web .bar{background:#e8ebf0;padding:7px 10px;display:flex;gap:8px;align-items:center;font-size:.82rem}
+.ev-web .dots i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;background:#e06c5c}
+.ev-web .dots i:nth-child(2){background:#e7b84b}.ev-web .dots i:nth-child(3){background:#5fb26a}
+.ev-web .url{flex:1;background:#fff;border-radius:12px;padding:2px 10px;color:#3a4050;font-family:"JetBrains Mono",monospace;word-break:break-all;user-select:all}
+.ev-web .site{background:#2f6b5a;color:#fff;padding:8px 14px;font-weight:900;letter-spacing:.06em}
+.ev-web .body{padding:14px 16px}
+.ev-web .at{font-family:"Noto Serif TC",serif;font-size:1.3rem;font-weight:900;margin-bottom:6px}
+.ev-web .meta{color:#6a6f7d;font-size:.86rem}
+.ev-web .fake{margin-top:10px;height:9px;background:#eef0f4;border-radius:5px}
+.ev-web .fake.s{width:70%}
+.ev-yt{background:#fff;border:1px solid #d6d6d6}
+.ev-yt .vid{background:#111;aspect-ratio:16/8;display:grid;place-items:center;color:#fff;font-size:2.6rem}
+.ev-yt .vid span{background:#e62117;border-radius:14px;padding:2px 22px}
+.ev-yt .body{padding:12px 14px}
+.ev-yt .vt{font-weight:900;font-size:1.15rem}
+.ev-yt .chrow{display:flex;align-items:center;gap:10px;margin:8px 0}
+.ev-yt .av{width:36px;height:36px;border-radius:50%;background:#2f6b5a;color:#fff;display:grid;place-items:center;font-weight:900}
+.ev-yt .meta{background:#f2f2f2;border-radius:8px;padding:8px 10px;font-size:.88rem}
+.ev-doc{background:#fffdf6;border:1px solid #d9cba8;padding:18px 18px 14px;text-align:center}
+.ev-doc .org{font-weight:700;color:#5b4f38}
+.ev-doc .tt{font-family:"Noto Serif TC",serif;font-size:1.3rem;font-weight:900;margin:14px 0}
+.ev-doc table{text-align:left;margin-top:10px}
+.ev-doc .award{display:inline-block;border:3px solid var(--seal);color:var(--seal);font-weight:900;padding:0 10px;transform:rotate(-6deg);border-radius:6px;margin-top:8px}
+.ev-news{background:#f7f3ea;border:1px solid #cfc4ad;padding:14px 16px;font-family:"Noto Serif TC",serif}
+.ev-news .mast{font-size:1.6rem;font-weight:900;border-bottom:3px double #333;text-align:center;letter-spacing:.2em}
+.ev-news .line{display:flex;justify-content:space-between;font-size:.82rem;font-family:"Noto Sans TC",sans-serif;border-bottom:1px solid #333;padding:2px 0;margin-bottom:10px}
+.ev-news .hl{font-size:1.35rem;font-weight:900;margin:6px 0}
+.ev-news .by{font-size:.9rem;color:#555}
+.ev-news .col{columns:2;column-gap:14px;margin-top:8px}
+.ev-news .col div{height:8px;background:#e3dccd;border-radius:4px;margin-bottom:7px}
+.ev-jn{background:#fffdf6;border:1px solid #d9cba8;padding:14px 18px}
+.ev-jn .hd{display:flex;justify-content:space-between;border-bottom:2px solid #5b4f38;padding-bottom:4px;font-size:.85rem;color:#5b4f38;font-weight:700;gap:10px;flex-wrap:wrap}
+.ev-jn .tt{font-family:"Noto Serif TC",serif;font-size:1.25rem;font-weight:900;margin:14px 0 6px;text-align:center}
+.ev-jn .au{text-align:center;margin-bottom:8px}
+.ev-jn .ft{font-size:.8rem;color:#7b6d52;border-top:1px solid #d9cba8;padding-top:6px;margin-top:10px}
+.copy{margin-left:6px;font-size:.78rem;border:1px solid #aab;border-radius:6px;background:#fff;padding:0 6px}
+.note-fake{font-size:.78rem;color:#a99a78;margin-top:8px;text-align:right}
+
+/* 輸入框 */
+.tools{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px}
+.tools button{min-width:36px;height:36px;border:1.5px solid var(--edge);background:#fffaf0;border-radius:7px;font-weight:700;font-size:1rem;padding:0 8px}
+.tools button.on{background:var(--ink);color:var(--parch);border-color:var(--ink)}
+.tools .sep{width:8px}
+.editor{min-height:110px;border:2px solid var(--edge);border-radius:8px;background:#fffdf7;padding:12px 14px;font-size:1.08rem;line-height:1.9;outline:none;font-family:"Noto Sans TC",sans-serif;font-weight:400;word-break:break-all}
+.editor:focus{border-color:var(--gold)}
+.editor:empty::before{content:attr(data-ph);color:#b5a888}
+.editor b,.editor strong{font-weight:900}
+.hint{font-size:.85rem;color:var(--muted);margin:6px 0 10px}
+.res{margin-top:12px;border-radius:8px;padding:12px 14px;display:none}
+.res.show{display:block}
+.res.bad{background:#fbeeec}
+.res.good{background:#1b1a17;color:var(--parch)}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+.chip{padding:1px 10px;border-radius:14px;font-size:.84rem;font-weight:700;background:#e3f1e7;color:var(--ok)}
+.chip.ng{background:#f6d8d4;color:var(--bad)}
+.issues{margin:0;padding-left:20px;color:var(--bad);font-weight:500}
+.issues li{margin:3px 0}
+.attempts{color:var(--muted);font-size:.85rem;margin-top:6px}
+.answer-shown{margin-top:10px;background:#fbf4e3;border-radius:8px;padding:10px 12px;color:var(--ink);font-size:1rem}
+
+/* 找錯題 */
+.spot{background:#fffdf6;border:1px solid var(--edge);border-radius:8px;padding:12px 14px;margin-bottom:10px}
+.spot .n{font-weight:900;color:var(--muted);font-size:.85rem;margin-bottom:6px}
+.chunk{display:inline;border:0;background:none;padding:2px 1px;margin:0;border-radius:4px;font-size:1.04rem;line-height:2;cursor:pointer;color:inherit;font-family:inherit;border-bottom:2px dotted transparent}
+.chunk:hover{background:#f6ecd2}
+.chunk.sel{background:#f6d8d4;border-bottom-color:var(--bad)}
+.nobug{margin-top:6px;font-size:.88rem;border:1.5px solid var(--edge);background:#fbf4e3;border-radius:16px;padding:2px 12px}
+.nobug.sel{background:#e3f1e7;border-color:var(--ok);color:var(--ok);font-weight:700}
+.spot .why{margin-top:6px;font-size:.9rem;font-weight:700}
+.spot.okk{border-color:var(--ok)} .spot.ngg{border-color:var(--bad)}
+
+/* 排序題 */
+.sort-item{display:flex;gap:10px;align-items:center;background:#fffdf6;border:1px solid var(--edge);border-radius:8px;padding:8px 10px;margin-bottom:7px}
+.sort-item .ord{font-weight:900;color:var(--muted);width:1.6em;text-align:center}
+.sort-item .txt{flex:1;font-size:.96rem;line-height:1.7;word-break:break-all}
+.sort-item .mv{display:flex;flex-direction:column;gap:3px}
+.sort-item .mv button{width:34px;height:28px;border:1.5px solid var(--edge);background:#fbf4e3;border-radius:6px;font-weight:900}
+.sort-item .stroke{font-size:.78rem;color:var(--jade);font-weight:700;white-space:nowrap}
+
+/* 結案 */
+.cert{margin:18px 0;padding:28px 24px;text-align:center;border:3px double var(--ink)}
+.cert h2{font-size:1.7rem;margin:8px 0}
+.cert .code{font-family:"JetBrains Mono",monospace;font-size:2.2rem;color:var(--seal);letter-spacing:.25em;margin:8px 0;font-weight:700}
+.cert .meta{color:var(--muted)}
+.cert .badge{display:inline-block;margin-top:12px;padding:6px 16px;border-radius:30px;background:var(--jade);color:#fff;font-weight:700}
+.bigseal{position:absolute;right:22px;top:16px}
+.foot{color:#8f8670;text-align:center;font-size:.85rem;margin-top:26px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--parch);padding:10px 18px;border-radius:10px;font-weight:700;z-index:50;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+
+@media (max-width:820px){ .cols{grid-template-columns:minmax(0,1fr)} }
+.ev,.ev *{overflow-wrap:anywhere}
+.panel{min-width:0}
+@media (max-width:560px){
+  .login{padding:28px 18px} .login h1{font-size:1.7rem}
+  .top{padding:16px} .panel{padding:22px 14px} .slot{width:34px;height:34px}
+  .cert .code{font-size:1.7rem} .bigseal{position:static;margin-bottom:6px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 讀取／錯誤 -->
+  <section id="vBoot" class="parch login"><div class="seal">秘<br>文</div><h1>出處失傳的秘文</h1><p class="sub" id="bootMsg">讀取任務中……</p></section>
+
+  <!-- 登入 -->
+  <section id="vLogin" class="parch login hidden">
+    <div class="seal">秘<br>文</div>
+    <h1>出處失傳的秘文</h1>
+    <p class="sub">古老的研究手稿出土了，但每一段的出處都失傳了。<br>沒有出處的秘文，就是抄襲——把出處找回來吧！</p>
+    <div class="mission" id="mName"></div>
+    <div class="field"><label for="inId">學號</label><input id="inId" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="例如 110123"></div>
+    <div class="field"><label for="inName">姓名</label><input id="inName" autocomplete="off" maxlength="12" placeholder="結案證明上會顯示"></div>
+    <button class="btn wide" id="btnStart">📜 展開秘文</button>
+    <p class="err" id="loginErr"></p>
+  </section>
+
+  <!-- 主畫面 -->
+  <section id="vMain" class="hidden">
+    <div class="parch top">
+      <div>
+        <h1>📜 出處失傳的秘文</h1>
+        <div class="who">調查員 <b id="whoName"></b>｜學號 <b class="mono" id="whoId"></b>｜<span id="whoMission"></span></div>
+        <div class="cloud" id="cloud"></div>
+      </div>
+      <button class="btn ghost" id="btnOut">換人</button>
+    </div>
+
+    <div class="parch frag">
+      <span class="lbl">🧩 秘文碎片</span>
+      <div class="slots" id="slots"></div>
+      <span class="cnt" id="fragCnt"></span>
+    </div>
+
+    <div id="certBox"></div>
+
+    <div class="parch intro">
+      <h2>第 3 關｜出處鑑識</h2>
+      <p>每一張<b>證物卡</b>都是一份文獻的原始資料（版權頁、網頁、影片、作品封面……）。從裡面挑出需要的資訊，寫成小論文規定的參考文獻格式。卡片上有些資訊是<b>不用寫</b>的，小心陷阱！</p>
+      <div class="rules">
+        <div class="rule">中文用<b>全形標點</b>：（）、，。：［］</div>
+        <div class="rule">年份寫<b>西元年</b>，民國年＋1911</div>
+        <div class="rule">作者之間用<b>頓號「、」</b></div>
+        <div class="rule"><b>粗體</b>：書名、期刊名＋卷數、論文題目、報紙名、小論文篇名、科展作品名稱</div>
+      </div>
+    </div>
+
+    <div class="sect-t">📂 必修關卡 <span>全部完成就能結案</span></div>
+    <div class="grid" id="gridReq"></div>
+    <div id="bonusWrap">
+      <div class="sect-t">🌍 進階關卡 <span>英文文獻，挑戰成功拿進階徽章</span></div>
+      <div class="grid" id="gridBonus"></div>
+    </div>
+    <p class="foot">證物卡上的作者、書名、網址都是練習用的虛構資料。每位調查員的證物都不一樣。</p>
+  </section>
+</div>
+
+<div class="back hidden" id="back"><div class="parch panel" id="panel"></div></div>
+
+<script>
+(function () {
+  'use strict';
+  var X = window.SecretSource, C = window.SecretSourceCheck;
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = X.escapeHtml;
+  var CODE = '', META = null, LEVELS = [], data = null, state = null;
+
+  /* ---------- 格式卷軸（每種文獻的格式＋提醒） ---------- */
+  var TPL = {
+    book: { f: '作者（出版年）。<b>書名</b>（版次）。出版者。', tips: ['初版不用寫版次；修訂版、第二版才要寫', '多位作者用頓號「、」隔開', 'ISBN、定價、刷次都不用寫'] },
+    web: { f: '作者（登載年月日）。文章名稱。網址', tips: ['沒有作者時，用「網站名稱」放在作者的位置', '日期寫成：2023年5月1日', '網址後面不用加句號'] },
+    yt: { f: '頻道名稱（登載年月日）。影片標題［影片］。YouTube。網址', tips: ['［影片］用全形方括號', '觀看次數、訂閱數、按讚數都不用寫', '網址後面不用加句號'] },
+    essay: { f: '作者（年）。<b>篇名</b>。全國高級中等學校小論文寫作比賽（第○梯次），○○類。中學生網站。網址', tips: ['年份用梯次的年份（民國年＋1911）', '學校、指導老師、得獎等第都不用寫'] },
+    fair: { f: '作者（年）。<b>作品名稱</b>。中華民國第○屆中小學科學展覽會作品說明書（組別 科別）。國立臺灣科學教育館。網址', tips: ['作者只寫學生，指導老師不列入', '組別和科別中間空一格'] },
+    journal: { f: '作者（年）。篇名。<b>期刊名，卷</b>（期），起訖頁碼。', tips: ['期刊名和卷數粗體，期數放括號不粗體', '只有期數沒有卷數時：<b>期刊名，期數</b>，頁碼。', '頁碼用「-」連接，例如 33-46'] },
+    thesis: { f: '作者（年）。<b>論文題目</b>。系所名稱：碩士論文。', tips: ['封面上通常是民國年，要換成西元年', '指導教授不用寫'] },
+    news: { f: '作者（年月日）。新聞標題。<b>報紙名稱</b>，版次。', tips: ['作者是撰稿記者', '日期寫成：2023年5月1日'] },
+    gov: { f: '機構全名（年）。<b>報告名稱</b>。出版機構。', tips: ['政府機關就是作者', '封面上是民國年，要換成西元年'] },
+    ejournal: { f: 'Author, A. A., &amp; Author, B. B. (Year). Title of article. <i>Journal Name, volume</i>(issue), pages. https://doi.org/…', tips: ['英文用半形標點，標點後面空一格', '姓在前，名字只寫縮寫，例如 Smith, J. R.', '最後一位作者前面加「, &amp;」；期刊名和卷數斜體'] },
+    ebook: { f: 'Author, A. A. (Year). <i>Title of book</i> (2nd ed.). Publisher.', tips: ['書名斜體', '第一版不用寫版次', '價格、ISBN 不用寫'] }
+  };
+
+  /* ---------- 讀取任務 ---------- */
+  function boot() {
+    var q = null; try { q = new URLSearchParams(location.search).get('m'); } catch (e) { }
+    CODE = String(q || '').toUpperCase();
+    if (!X.validCode(CODE)) { $('bootMsg').innerHTML = '這個連結少了任務代碼。<br>請重新掃老師給的 QR Code。'; return; }
+    X.getMeta(CODE).then(function (m) {
+      if (!m) { $('bootMsg').innerHTML = '找不到這個任務（代碼 ' + CODE + '）。<br>請確認連結，或問老師。'; return; }
+      if (m.closed) { $('bootMsg').innerHTML = '這個任務已經關閉了。'; return; }
+      META = m; LEVELS = X.levels(m);
+      $('mName').textContent = '📌 ' + (m.name || '任務 ' + CODE);
+      $('vBoot').classList.add('hidden'); $('vLogin').classList.remove('hidden');
+      try { var last = JSON.parse(localStorage.getItem('secretSource:last') || 'null'); if (last) { $('inId').value = last.id || ''; $('inName').value = last.name || ''; } } catch (e) { }
+    }, function () {
+      $('bootMsg').innerHTML = '連不上伺服器，請確認網路後<button class="btn ghost" style="margin-top:10px" onclick="location.reload()">重新整理</button>';
+    });
+  }
+
+  /* ---------- 進度（本機＋雲端） ---------- */
+  function key(id) { return 'secretSource:' + CODE + ':' + id; }
+  function load(id) { try { var s = localStorage.getItem(key(id)); if (s) return JSON.parse(s); } catch (e) { } return { passed: {}, att: {}, drafts: {}, name: '' }; }
+  function save() { try { localStorage.setItem(key(data.id), JSON.stringify(state)); } catch (e) { } }
+  var syncing = false, again = false, okOnce = null;
+  function setCloud(k, t) { var el = $('cloud'); el.className = 'cloud ' + k; el.textContent = t; }
+  function prog() { return { passed: state.passed, att: state.att, closedAt: state.closedAt }; }
+  function sync() {
+    if (!data) return;
+    if (syncing) { again = true; return; }
+    syncing = true; var id = data.id;
+    X.putRec(CODE, id, X.toRecord(state.name, prog()))
+      .then(function () { setCloud('ok', okOnce || '☁️ 進度已同步，老師看得到'); okOnce = null; },
+        function () { setCloud('off', '📴 暫時連不上雲端，進度先存在這台裝置，之後會自動補傳'); })
+      .then(function () { syncing = false; if (again && data && data.id === id) { again = false; sync(); } });
+  }
+  function pull(id) {
+    setCloud('busy', '⏳ 連線到雲端…');
+    X.getRec(CODE, id).then(function (remote) {
+      if (!data || data.id !== id) return;
+      var before = Object.keys(state.passed).length, m = X.mergeProgress(prog(), remote || {});
+      state.passed = m.passed; state.att = m.att; state.closedAt = m.closedAt;
+      var gained = Object.keys(m.passed).length - before;
+      if (gained > 0) okOnce = '☁️ 已從雲端接回 ' + gained + ' 關進度';
+      save(); render(); sync();
+    }, function () { setCloud('off', '📴 暫時連不上雲端，進度先存在這台裝置，之後會自動補傳'); });
+  }
+  window.addEventListener('online', function () { if (data) sync(); });
+
+  /* ---------- 登入 ---------- */
+  $('btnStart').onclick = function () {
+    var id = X.normId($('inId').value), name = $('inName').value.trim().slice(0, 12);
+    if (!/^[A-Z0-9]{3,12}$/.test(id)) { $('loginErr').textContent = '學號格式怪怪的，再檢查一次（只能有英文和數字）'; return; }
+    if (!name) { $('loginErr').textContent = '請填姓名，結案證明需要喔'; return; }
+    data = { id: id }; state = load(id); state.name = name; state.drafts = state.drafts || {}; save();
+    try { localStorage.setItem('secretSource:last', JSON.stringify({ id: id, name: name })); } catch (e) { }
+    $('vLogin').classList.add('hidden'); $('vMain').classList.remove('hidden');
+    $('whoName').textContent = name; $('whoId').textContent = id; $('whoMission').textContent = META.name || ('任務 ' + CODE);
+    render(); pull(id);
+  };
+  [$('inId'), $('inName')].forEach(function (el) { el.addEventListener('keydown', function (e) { if (e.key === 'Enter') $('btnStart').click(); }); });
+  $('btnOut').onclick = function () { data = null; $('vMain').classList.add('hidden'); $('vLogin').classList.remove('hidden'); };
+
+  /* ---------- 主畫面 ---------- */
+  function render() {
+    var req = LEVELS.filter(function (L) { return L.required; }), bon = LEVELS.filter(function (L) { return !L.required; });
+    var got = req.filter(function (L) { return state.passed[L.key]; }).length;
+    $('slots').innerHTML = req.map(function (L, i) { var ok = state.passed[L.key]; return '<div class="slot' + (ok ? ' got' : '') + '" title="' + esc(L.name) + '">' + (ok ? L.icon : (i + 1)) + '</div>'; }).join('');
+    $('fragCnt').textContent = got + ' / ' + req.length;
+    var cardH = function (L, i, bonus) {
+      var ok = state.passed[L.key], n = state.att[L.key] || 0;
+      return '<button class="parch card' + (bonus ? ' bonus' : '') + '" data-k="' + L.key + '"><span class="ico">' + L.icon + '</span>' +
+        '<div class="no">' + (bonus ? '進階' : 'CASE ' + String(i + 1).padStart(2, '0')) + '</div><h3>' + esc(L.name) + '</h3>' +
+        '<div class="att">' + (L.kind === 'write' ? '寫出參考文獻' : L.kind === 'spot' ? '5 筆文獻，找出寫錯的地方' : '排出正確順序') + (n ? '｜試了 ' + n + ' 次' : '') + '</div>' +
+        (ok ? '<span class="stamp">已鑑定</span>' : '') + '</button>';
+    };
+    $('gridReq').innerHTML = req.map(function (L, i) { return cardH(L, i, false); }).join('');
+    $('gridBonus').innerHTML = bon.map(function (L, i) { return cardH(L, i, true); }).join('');
+    $('bonusWrap').classList.toggle('hidden', !bon.length);
+    Array.prototype.forEach.call(document.querySelectorAll('[data-k]'), function (b) { b.onclick = function () { openLevel(b.getAttribute('data-k')); }; });
+    var all = got === req.length;
+    if (all && !state.closedAt) { state.closedAt = Date.now(); save(); sync(); }
+    $('certBox').innerHTML = all ? certHtml() : '';
+  }
+  function certHtml() {
+    var d = new Date(state.closedAt || Date.now()), ds = d.getFullYear() + '/' + (d.getMonth() + 1) + '/' + d.getDate();
+    var en = LEVELS.filter(function (L) { return !L.required; }), enDone = en.length && en.every(function (L) { return state.passed[L.key]; });
+    return '<div class="parch cert"><div class="bigseal seal">結<br>案</div><h2>秘文出處鑑定書</h2>' +
+      '<div class="meta">調查員 <b>' + esc(state.name) + '</b>｜學號 <b class="mono">' + esc(data.id) + '</b>｜' + ds + '</div>' +
+      '<div class="code">' + X.closeCode(CODE, data.id) + '</div><div class="meta">鑑定代碼（請截圖這張鑑定書繳交）</div>' +
+      (enDone ? '<div class="badge">🌍 英文文獻進階徽章 <span class="mono">' + X.enBadge(CODE, data.id) + '</span></div>' : '') + '</div>';
+  }
+
+  /* ---------- 面板 ---------- */
+  function openPanel(h) { $('panel').innerHTML = '<button class="x" id="pClose" aria-label="關閉">✕</button>' + h; $('back').classList.remove('hidden'); document.body.style.overflow = 'hidden'; $('pClose').onclick = closePanel; $('back').scrollTop = 0; }
+  function closePanel() { $('back').classList.add('hidden'); document.body.style.overflow = ''; render(); }
+  $('back').addEventListener('click', function (e) { if (e.target === $('back')) closePanel(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('back').classList.contains('hidden')) closePanel(); });
+  function toast(t) { var d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.appendChild(d); setTimeout(function () { d.remove(); }, 2200); }
+  function lv(k) { return LEVELS.filter(function (L) { return L.key === k; })[0]; }
+  function bump(k) { state.att[k] = (state.att[k] || 0) + 1; }
+  function pass(k) { if (!state.passed[k]) state.passed[k] = Date.now(); }
+
+  function openLevel(k) {
+    var L = lv(k); if (!L) return;
+    if (L.kind === 'write') return openWrite(L);
+    if (L.kind === 'spot') return openSpot(L);
+    if (L.kind === 'sort') return openSort(L);
+  }
+
+  /* ---------- 證物卡 ---------- */
+  function d2(d) { return d.y + '年' + d.m + '月' + d.d + '日'; }
+  function copyBtn(t) { return '<button class="copy" data-copy="' + esc(t) + '">複製</button>'; }
+  function cardHtml(ev) {
+    var c = ev.card, t = '<span class="lbl">證物卡</span>';
+    var rows = function (arr) { return '<table>' + arr.filter(function (r) { return r[1] !== '' && r[1] != null; }).map(function (r) { return '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>'; }).join('') + '</table>'; };
+    switch (c.kind) {
+      case 'book': return '<div class="ev ev-book">' + t + '<div class="bt">' + esc(c.title) + '</div>' +
+        rows([['作者', esc(c.authors.join('、'))], ['出版者', esc(c.pub)], ['出版日期', c.year + '年' + c.month + '月'], ['版次', esc(c.print)], ['責任編輯', esc(c.editor)], ['ISBN', c.isbn], ['定價', '新臺幣 ' + c.price + ' 元']]) + '</div>';
+      case 'web': return '<div class="ev ev-web"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="url">' + esc(c.url) + '</span>' + copyBtn(c.url) + '</div>' +
+        '<div class="site">' + esc(c.site) + '</div><div class="body">' + t + '<div class="at">' + esc(c.title) + '</div>' +
+        '<div class="meta">' + (c.author ? '文／' + esc(c.author) : '（本文未署名作者）') + '｜發布日期：' + d2(c.date) + '｜最後更新：' + esc(c.updated) + '｜瀏覽 ' + c.views.toLocaleString() + ' 次</div>' +
+        '<div class="fake"></div><div class="fake"></div><div class="fake s"></div></div></div>';
+      case 'yt': return '<div class="ev ev-yt"><div class="ev-web"><div class="bar"><span class="url">' + esc(c.url) + '</span>' + copyBtn(c.url) + '</div></div>' +
+        '<div class="vid"><span>▶</span></div><div class="body">' + t + '<div class="vt">' + esc(c.title) + '</div>' +
+        '<div class="chrow"><div class="av">' + esc(c.channel[0]) + '</div><div><b>' + esc(c.channel) + '</b><div style="font-size:.82rem;color:#666">' + esc(c.subs) + ' 位訂閱者</div></div><div style="margin-left:auto;font-size:.85rem">👍 ' + c.likes.toLocaleString() + '</div></div>' +
+        '<div class="meta">觀看次數：' + c.views.toLocaleString() + '次　' + d2(c.date) + '</div></div></div>';
+      case 'essay': return '<div class="ev ev-web"><div class="bar"><span class="url">' + esc(c.url) + '</span>' + copyBtn(c.url) + '</div><div class="site" style="background:#3c5a8a">中學生網站｜小論文作品</div><div class="body">' + t +
+        rows([['競賽梯次', '第' + c.batch + '梯次（' + (+c.batch.slice(0, 3) + 1911) + '年' + (+c.batch.slice(3, 5)) + '月）'], ['類別', esc(c.cat)], ['篇名', '<b>' + esc(c.title) + '</b>'], ['作者', esc(c.authors.join('、'))], ['學校', esc(c.school)], ['指導老師', esc(c.teacher)], ['得獎等第', esc(c.award)]]) + '</div></div>';
+      case 'fair': return '<div class="ev ev-doc">' + t + '<div class="org">中華民國第' + c.th + '屆中小學科學展覽會</div><div style="font-size:1.15rem;font-weight:900;margin-top:4px">作品說明書</div>' +
+        '<div class="tt">' + esc(c.title) + '</div>' + rows([['展覽年度', c.year + '年'], ['組別', '高級中等學校組'], ['科別', esc(c.sci)], ['作品編號', c.no], ['作者', esc(c.authors.join('、'))], ['指導老師', esc(c.teacher)], ['發行', '國立臺灣科學教育館'], ['網址', '<span class="mono" style="word-break:break-all;font-size:.85rem">' + esc(c.url) + '</span>' + copyBtn(c.url)]]) +
+        '<div class="award">' + esc(c.award) + '</div></div>';
+      case 'journal': return '<div class="ev ev-jn">' + t + '<div class="hd"><span>' + esc(c.journal) + '</span><span>' + (c.hasVol ? '第' + c.vol + '卷第' + c.iss + '期' : '第' + c.num + '期') + '｜頁 ' + c.p1 + '-' + c.p2 + '｜' + c.year + '年' + c.month + '月</span></div>' +
+        '<div class="tt">' + esc(c.title) + '</div><div class="au">' + esc(c.authors.join('　')) + '</div><div class="ft">收稿日期：' + esc(c.received) + '｜通訊作者：' + esc(c.email) + '</div></div>';
+      case 'thesis': return '<div class="ev ev-doc">' + t + '<div class="org">' + esc(c.inst) + '</div><div style="font-weight:900">' + esc(c.deg) + '</div><div class="tt">' + esc(c.title) + '</div>' +
+        rows([['研究生', esc(c.author)], ['指導教授', esc(c.advisor)]]) + '<div style="margin-top:12px;font-weight:700">中華民國 ' + c.roc + ' 年 ' + c.month + ' 月</div></div>';
+      case 'news': return '<div class="ev ev-news">' + t + '<div class="mast">' + esc(c.np) + '</div><div class="line"><span>' + d2(c.date) + '</span><span>' + esc(c.sec) + '版｜生活</span></div>' +
+        '<div class="hl">' + esc(c.title) + '</div><div class="by">【記者' + esc(c.author) + '／' + esc(c.city) + '報導】（攝影：' + esc(c.photo) + '）</div><div class="col">' + '<div></div>'.repeat(10) + '</div></div>';
+      case 'gov': return '<div class="ev ev-doc">' + t + '<div class="tt">' + esc(c.title) + '</div><div class="org" style="font-size:1.05rem">' + esc(c.org) + '　編印</div>' +
+        rows([['出版機關', esc(c.org)], ['編輯者', esc(c.editor)], ['出版日期', '中華民國 ' + c.roc + ' 年 ' + c.month + ' 月'], ['GPN', c.gpn]]) + '</div>';
+      case 'ejournal': return '<div class="ev ev-jn" style="font-family:Georgia,serif">' + t + '<div class="hd"><span><i>' + esc(c.journal) + '</i></span><span>Vol. ' + c.vol + ', No. ' + c.iss + ', pp. ' + c.p1 + '-' + c.p2 + ' (' + c.year + ')</span></div>' +
+        '<div class="tt" style="font-family:Georgia,serif">' + esc(c.title) + '</div><div class="au">' + c.authors.map(function (a) { return esc(a.first + ' ' + a.mid + ' ' + a.last); }).join(', ') + '</div>' +
+        '<div class="ft">' + esc(c.received) + '｜DOI: <span class="mono">' + esc(c.doi) + '</span>' + copyBtn(c.doi) + '</div></div>';
+      case 'ebook': return '<div class="ev ev-book" style="font-family:Georgia,serif">' + t + '<div class="bt" style="font-family:Georgia,serif">' + esc(c.title) + '</div>' +
+        rows([['Authors', c.authors.map(function (a) { return esc(a.first + ' ' + a.mid + ' ' + a.last); }).join(', ')], ['Edition', c.ed ? 'Second edition' : 'First edition'], ['Publisher', esc(c.pub)], ['Copyright', '© ' + c.year], ['ISBN', c.isbn], ['Price', c.price]]) + '</div>';
+    }
+    return '';
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-copy]'); if (!b) return;
+    var t = b.getAttribute('data-copy');
+    var done = function () { b.textContent = '已複製'; setTimeout(function () { b.textContent = '複製'; }, 1200); };
+    if (navigator.clipboard) navigator.clipboard.writeText(t).then(done, function () { prompt('請手動複製：', t); }); else prompt('請手動複製：', t);
+  });
+
+  /* ---------- 輸入框（粗體、斜體、全形符號） ---------- */
+  var SYMS = { zh: ['（', '）', '、', '，', '。', '：', '［', '］'], en: ['(', ')', ',', '.', '&', ':', '-'] };
+  function editorHtml(lang) {
+    return '<div class="tools" id="tools"><button data-cmd="bold" title="粗體（Ctrl+B）"><b>B</b></button><button data-cmd="italic" title="斜體（Ctrl+I）"><i>I</i></button><span class="sep"></span>' +
+      SYMS[lang].map(function (s) { return '<button data-ins="' + esc(s) + '">' + esc(s) + '</button>'; }).join('') + '</div>' +
+      '<div class="editor" id="ed" contenteditable="true" spellcheck="false" data-ph="在這裡輸入參考文獻……"></div>' +
+      '<div class="hint">選取文字再按 <b>B</b> 設粗體' + (lang === 'en' ? '、<i>I</i> 設斜體' : '') + '；上面的符號鍵可以直接插入' + (lang === 'zh' ? '全形' : '') + '標點。網址可以從證物卡複製。</div>';
+  }
+  function bindEditor() {
+    var ed = $('ed');
+    Array.prototype.forEach.call(document.querySelectorAll('#tools button'), function (b) {
+      b.addEventListener('mousedown', function (e) { e.preventDefault(); });
+      b.addEventListener('click', function () {
+        ed.focus();
+        if (b.getAttribute('data-cmd')) document.execCommand(b.getAttribute('data-cmd'), false, null);
+        else document.execCommand('insertText', false, b.getAttribute('data-ins'));
+        refreshTools();
+      });
+    });
+    // 貼上時只貼純文字（避免把網頁的格式也貼進來）
+    ed.addEventListener('paste', function (e) { e.preventDefault(); var t = (e.clipboardData || window.clipboardData).getData('text'); document.execCommand('insertText', false, t.replace(/\s*\n\s*/g, ' ')); });
+    ed.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
+    ['keyup', 'mouseup', 'focus'].forEach(function (ev) { ed.addEventListener(ev, refreshTools); });
+    document.addEventListener('selectionchange', refreshTools);
+  }
+  function refreshTools() {
+    var bb = document.querySelector('#tools [data-cmd=bold]'), ib = document.querySelector('#tools [data-cmd=italic]');
+    if (!bb) return;
+    try { bb.classList.toggle('on', document.queryCommandState('bold')); ib.classList.toggle('on', document.queryCommandState('italic')); } catch (e) { }
+  }
+  // 讀出學生輸入：每個文字片段＋是不是粗體／斜體
+  function readEditor(ed) {
+    var segs = [];
+    (function walk(n) {
+      if (n.nodeType === 3) {
+        if (!n.nodeValue) return;
+        var p = n.parentElement, cs = getComputedStyle(p), w = cs.fontWeight;
+        var bold = w === 'bold' || w === 'bolder' || +w >= 600, ital = cs.fontStyle === 'italic' || cs.fontStyle === 'oblique';
+        segs.push({ t: n.nodeValue, b: bold, i: ital });
+      } else if (n.nodeName === 'BR') segs.push({ t: ' ' });
+      else { if (/^(DIV|P)$/.test(n.nodeName) && segs.length) segs.push({ t: ' ' }); for (var c = n.firstChild; c; c = c.nextSibling) walk(c); }
+    })(ed);
+    return segs;
+  }
+
+  /* ---------- 寫參考文獻的關卡 ---------- */
+  function openWrite(L) {
+    var ev = X.evidence(CODE, data.id, L.type, { subjects: X.settingsOf(META).subjects });
+    var lang = ev.en ? 'en' : 'zh', tp = TPL[L.type], ok = !!state.passed[L.key];
+    openPanel('<div class="ptag">' + (L.required ? 'CASE｜出處鑑識' : '進階｜英文文獻') + '</div><h2>' + L.icon + ' ' + esc(L.name) + '</h2>' +
+      '<div class="cols"><div><p class="sub-t">▍證物卡</p>' + cardHtml(ev) + '<div class="note-fake">練習用虛構資料</div></div>' +
+      '<div><p class="sub-t">▍格式卷軸</p><div class="tpl"><div class="f">' + tp.f + '</div><ul>' + tp.tips.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul></div>' +
+      '<p class="sub-t">▍寫出這份文獻的參考文獻</p>' + editorHtml(lang) +
+      '<button class="btn wide" id="btnCheck">🔍 鑑定</button><div class="res" id="res"></div><div class="attempts" id="att">' + (state.att[L.key] ? '已鑑定 ' + state.att[L.key] + ' 次' : '') + '</div></div></div>');
+    bindEditor();
+    var ed = $('ed');
+    if (state.drafts[L.key]) ed.innerHTML = state.drafts[L.key];
+    ed.addEventListener('input', function () { state.drafts[L.key] = ed.innerHTML.slice(0, 4000); save(); });
+    if (ok) showWritePass(L, ev, true);
+    $('btnCheck').onclick = function () {
+      var segs = readEditor(ed);
+      var r = C.gradeEntry(ev.segs, segs, ev);
+      if (r.issues.length && r.issues[0].kind === 'empty') { var res0 = $('res'); res0.className = 'res show bad'; res0.innerHTML = '還沒有輸入參考文獻喔！'; return; }
+      bump(L.key);
+      $('att').textContent = '已鑑定 ' + state.att[L.key] + ' 次';
+      if (r.ok) { var first = !state.passed[L.key]; pass(L.key); save(); sync(); showWritePass(L, ev, !first); if (first) toast('🧩 取得一塊秘文碎片！'); }
+      else {
+        save(); sync();
+        var res = $('res'); res.className = 'res show bad';
+        res.innerHTML = '<div class="chips">' + r.fields.map(function (f) { return '<span class="chip' + (f.ok ? '' : ' ng') + '">' + (f.ok ? '✓ ' : '✗ ') + esc(f.label) + '</span>'; }).join('') + '</div>' +
+          '<b>還有 ' + r.issues.length + ' 個地方要修正：</b><ul class="issues">' + r.issues.map(function (is) { return '<li>' + esc(is.msg) + '</li>'; }).join('') + '</ul>';
+      }
+    };
+  }
+  function showWritePass(L, ev, again) {
+    var res = $('res'); res.className = 'res show good';
+    res.innerHTML = (again ? '✅ 這份文獻已經鑑定完成。' : '🎉 鑑定成功！格式完全正確。') + '<div class="answer-shown">' + X.html(ev.segs) + '</div>';
+  }
+
+  /* ---------- 🔎 找出破綻 ---------- */
+  function segHtml(segs) { return segs.map(function (s) { var t = esc(s.t); if (s.b) t = '<b>' + t + '</b>'; if (s.i) t = '<i>' + t + '</i>'; return t; }).join(''); }
+  function openSpot(L) {
+    var sp = C.makeSpot(CODE, data.id, META), picks = sp.items.map(function () { return null; }), done = !!state.passed[L.key];
+    openPanel('<div class="ptag">CASE｜出處鑑識</div><h2>🔎 找出破綻</h2>' +
+      '<p class="tpl" style="margin-top:0">下面 5 筆參考文獻，<b>有 4 筆各藏著 1 個錯誤</b>，1 筆完全正確。點出每一筆寫錯的那一段；覺得沒有錯，就按「這筆沒有破綻」。</p>' +
+      sp.items.map(function (it, k) {
+        return '<div class="spot" id="sp' + k + '"><div class="n">第 ' + (k + 1) + ' 筆｜' + esc(X.TYPE[it.type].name) + '</div><div>' +
+          it.chunks.map(function (c) { return '<button class="chunk" data-sp="' + k + '" data-c="' + c.i + '">' + segHtml(c.segs) + '</button>'; }).join('') +
+          '</div><button class="nobug" data-sp="' + k + '" data-c="-1">✔ 這筆沒有破綻</button><div class="why" id="why' + k + '"></div></div>';
+      }).join('') + '<button class="btn wide" id="btnSpot">🔍 送出鑑定</button><div class="res" id="res"></div><div class="attempts" id="att">' + (state.att[L.key] ? '已鑑定 ' + state.att[L.key] + ' 次' : '') + '</div>');
+    Array.prototype.forEach.call(document.querySelectorAll('[data-sp]'), function (b) {
+      b.onclick = function () {
+        var k = +b.getAttribute('data-sp'), c = +b.getAttribute('data-c');
+        picks[k] = c;
+        Array.prototype.forEach.call(document.querySelectorAll('[data-sp="' + k + '"]'), function (x) { x.classList.toggle('sel', +x.getAttribute('data-c') === c); });
+      };
+    });
+    var reveal = function () { sp.items.forEach(function (it, k) { $('why' + k).innerHTML = it.why ? '<span style="color:var(--bad)">破綻：' + esc(it.why) + '</span>' : '<span style="color:var(--ok)">這筆完全正確</span>'; }); };
+    if (done) { reveal(); var r0 = $('res'); r0.className = 'res show good'; r0.textContent = '✅ 這一關已經鑑定完成。'; }
+    $('btnSpot').onclick = function () {
+      if (picks.some(function (p) { return p == null; })) { var r1 = $('res'); r1.className = 'res show bad'; r1.textContent = '每一筆都要選：點出錯的那一段，或按「這筆沒有破綻」'; return; }
+      bump(L.key);
+      var g = C.gradeSpot(sp, picks), wrong = 0;
+      g.items.forEach(function (x, k) { $('sp' + k).classList.toggle('okk', x.ok); $('sp' + k).classList.toggle('ngg', !x.ok); if (!x.ok) wrong++; $('why' + k).innerHTML = x.ok ? '<span style="color:var(--ok)">✓ 正確</span>' : '<span style="color:var(--bad)">✗ 再找找看</span>'; });
+      $('att').textContent = '已鑑定 ' + state.att[L.key] + ' 次';
+      var res = $('res');
+      if (g.ok) { var first = !state.passed[L.key]; pass(L.key); save(); sync(); reveal(); res.className = 'res show good'; res.textContent = '🎉 全部找到了！每一筆的破綻說明在上面。'; if (first) toast('🧩 取得一塊秘文碎片！'); }
+      else { save(); sync(); res.className = 'res show bad'; res.textContent = '還有 ' + wrong + ' 筆不對，紅框的再檢查一次（提示：標點全半形、粗體、年份、不該寫的資訊）'; }
+    };
+  }
+
+  /* ---------- 🗂️ 整理參考文獻清單 ---------- */
+  function openSort(L) {
+    var q = C.makeSort(CODE, data.id, META), order = q.entries.slice(), showStroke = false, done = !!state.passed[L.key];
+    if (done) order = q.entries.slice().sort(function (a, b) { return a.id - b.id; });
+    var draw = function () {
+      $('sortList').innerHTML = order.map(function (e, i) {
+        return '<div class="sort-item"><span class="ord">' + (i + 1) + '</span><div class="txt">' + segHtml(e.segs) + '</div>' +
+          (showStroke && e.lang === 'zh' ? '<span class="stroke">' + esc(e.surname) + '＝' + e.stroke + '畫</span>' : '') +
+          '<div class="mv"><button data-mv="' + i + '" data-d="-1" aria-label="往上">▲</button><button data-mv="' + i + '" data-d="1" aria-label="往下">▼</button></div></div>';
+      }).join('');
+      Array.prototype.forEach.call(document.querySelectorAll('[data-mv]'), function (b) {
+        b.onclick = function () { var i = +b.getAttribute('data-mv'), j = i + (+b.getAttribute('data-d')); if (j < 0 || j >= order.length) return; var t = order[i]; order[i] = order[j]; order[j] = t; draw(); };
+      });
+    };
+    openPanel('<div class="ptag">CASE｜出處鑑識</div><h2>🗂️ 整理參考文獻清單</h2>' +
+      '<div class="tpl" style="margin-top:0">小論文最後的「陸、參考文獻」要把所有文獻排好順序。用 ▲▼ 排出正確順序：<ul><li><b>中文在前，英文在後</b></li><li>中文：依第一位作者<b>姓氏的筆畫</b>，由少到多</li><li>英文：依第一位作者<b>姓氏的字母</b>，A → Z</li></ul></div>' +
+      '<div id="sortList"></div><button class="btn wide" id="btnSort" style="margin-top:6px">🔍 送出鑑定</button><div class="res" id="res"></div><div class="attempts" id="att">' + (state.att[L.key] ? '已鑑定 ' + state.att[L.key] + ' 次' : '') + '</div>');
+    draw();
+    if (done) { var r0 = $('res'); r0.className = 'res show good'; r0.textContent = '✅ 這一關已經鑑定完成，上面是正確順序。'; }
+    $('btnSort').onclick = function () {
+      bump(L.key);
+      var g = C.gradeSort(q, order.map(function (e) { return e.id; }));
+      $('att').textContent = '已鑑定 ' + state.att[L.key] + ' 次';
+      var res = $('res');
+      if (g.ok) { var first = !state.passed[L.key]; pass(L.key); save(); sync(); res.className = 'res show good'; res.textContent = '🎉 順序完全正確！'; if (first) toast('🧩 取得一塊秘文碎片！'); }
+      else {
+        save(); sync(); res.className = 'res show bad';
+        res.innerHTML = '有 ' + g.right + ' / ' + g.n + ' 筆的位置正確。' + (showStroke ? '' : '<br>提示：數一數中文姓氏的筆畫。<button class="btn ghost" id="btnStroke" style="padding:2px 10px;margin-left:6px">顯示筆畫</button>');
+        var bs = $('btnStroke'); if (bs) bs.onclick = function () { showStroke = true; draw(); bs.remove(); };
+      }
+    };
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>

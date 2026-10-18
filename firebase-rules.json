@@ -379,7 +379,7 @@
     ".validate": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || ((!data.exists() || data.child('status').val() === 'pending') && newData.hasChildren(['email','name','school','purpose','want','at','status']) && newData.child('status').val() === 'pending' && !newData.child('apps').exists() && newData.child('email').val() === auth.token.email && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && newData.child('purpose').isString() && newData.child('purpose').val().length >= 1 && newData.child('purpose').val().length <= 200 && newData.child('at').isNumber()) || ((!data.exists() || data.child('status').val() === 'pending') && auth.token.email_verified === true && root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')).exists() && newData.child('status').val() === 'approved' && newData.child('email').val() === auth.token.email && newData.hasChildren(['email','name','school','at','status','apps']) && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && (!newData.child('apps/excel').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/excel').val() === true) && (!newData.child('apps/gps').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/gps').val() === true) && (!newData.child('apps/seat').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/seat').val() === true)) || (data.exists() && newData.child('status').val() === data.child('status').val() && newData.child('email').val() === data.child('email').val() && newData.child('note').val() === data.child('note').val() && newData.child('apps/excel').val() === data.child('apps/excel').val() && newData.child('apps/gps').val() === data.child('apps/gps').val() && newData.child('apps/seat').val() === data.child('apps/seat').val() && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30)",
     "apps": {
      "$app": {
-      ".validate": "$app.matches(/^(excel|gps|seat)$/) && newData.val() === true"
+      ".validate": "$app.matches(/^(excel|gps|seat|src)$/) && newData.val() === true"
      }
     }
    }
@@ -392,7 +392,7 @@
     ".validate": "newData.hasChildren(['email','apps','at']) && newData.child('email').isString() && newData.child('email').val().toLowerCase().replace('.', ',') === $key",
     "apps": {
      "$app": {
-      ".validate": "$app.matches(/^(excel|gps|seat)$/) && newData.val() === true"
+      ".validate": "$app.matches(/^(excel|gps|seat|src)$/) && newData.val() === true"
      }
     }
    }
@@ -464,6 +464,54 @@
    "$uid": {
     ".read": "auth != null && auth.uid === $uid",
     ".write": "auth != null && auth.uid === $uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (auth.token.email === 'puff0223+excel@gmail.com' && root.child('sys/retired/excel').val() !== true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/excel').val() === true)))"
+   }
+  },
+  "secret-source": {
+   "owners": {
+    "$uid": {
+     ".read": "auth != null && auth.uid === $uid",
+     ".write": "auth != null && auth.uid === $uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/src').val() === true)))"
+    }
+   },
+   "m": {
+    "$code": {
+     ".read": "auth != null && data.child('meta/owner').val() === auth.uid",
+     ".write": "auth != null && !newData.exists() && data.child('meta/owner').val() === auth.uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/src').val() === true)))",
+     "meta": {
+      ".read": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/)",
+      ".write": "auth != null && $code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/src').val() === true))) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)",
+      ".validate": "newData.hasChildren(['owner','at','name']) && newData.child('name').isString() && newData.child('name').val().length <= 40 && (!newData.child('admin').exists() || (auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true))"
+     },
+     "r": {
+      "$id": {
+       ".read": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $id.matches(/^[A-Z0-9]{3,12}$/)",
+       ".write": "newData.exists() && $code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $id.matches(/^[A-Z0-9]{3,12}$/) && root.child('secret-source/m/'+$code+'/meta').exists() && root.child('secret-source/m/'+$code+'/meta/closed').val() !== true && (root.child('secret-source/m/'+$code+'/meta/admin').val() === true || (root.child('staff/'+root.child('secret-source/m/'+$code+'/meta/owner').val()+'/status').val() === 'approved' && root.child('staff/'+root.child('secret-source/m/'+$code+'/meta/owner').val()+'/apps/src').val() === true))",
+       ".validate": "newData.hasChildren(['name','ts']) && newData.child('name').isString() && newData.child('name').val().length <= 12 && newData.child('ts').isNumber()",
+       "name": {
+        ".validate": "newData.isString()"
+       },
+       "ts": {
+        ".validate": "newData.isNumber()"
+       },
+       "passed": {
+        "$lv": {
+         ".validate": "$lv.matches(/^[a-z][a-z0-9]{1,11}$/) && newData.isNumber()"
+        }
+       },
+       "att": {
+        "$lv": {
+         ".validate": "$lv.matches(/^[a-z][a-z0-9]{1,11}$/) && newData.isNumber() && newData.val() >= 0 && newData.val() <= 9999"
+        }
+       },
+       "closedAt": {
+        ".validate": "newData.isNumber()"
+       },
+       "$other": {
+        ".validate": false
+       }
+      }
+     }
+    }
    }
   },
   "xfer": {

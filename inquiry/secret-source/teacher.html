@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>出處失傳的秘文｜老師卷宗</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="../../account/staff.js?v=20261018a"></script>
+<script src="core.js?v=20261018a"></script>
+<script src="check.js?v=20261018a"></script>
+<style>
+:root{--night:#1b1a17;--parch:#f3e9d2;--parch2:#e8dbbb;--edge:#c9b386;--ink:#2b2418;--muted:#76684e;--seal:#b3322a;--gold:#b98f35;--jade:#2f6b5a;--ok:#2f7d4f;--bad:#b3322a}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:"Noto Sans TC",system-ui,sans-serif;color:var(--ink);background:var(--night);min-height:100vh;line-height:1.6;
+  background-image:radial-gradient(ellipse at 10% -10%,rgba(185,143,53,.16),transparent 55%)}
+.wrap{max-width:1200px;margin:0 auto;padding:22px 16px 60px}
+h1,h2,h3{font-family:"Noto Serif TC",serif;margin:0}
+.mono{font-family:"JetBrains Mono",monospace}
+.hidden{display:none!important}
+.parch{background:var(--parch);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.35),inset 0 0 0 1px var(--edge);padding:20px 22px;margin-bottom:16px}
+.head{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.head h1{font-size:1.55rem}
+.note{color:var(--muted);font-size:.9rem;margin:6px 0 0}
+.bad{color:var(--bad)} .good{color:var(--ok)}
+.btn{display:inline-flex;gap:6px;align-items:center;padding:9px 16px;border-radius:8px;border:2px solid var(--ink);font:inherit;font-weight:700;background:var(--ink);color:var(--parch);cursor:pointer}
+.btn.gold{background:var(--gold);color:#1b1a17;border-color:#1b1a17}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.sm{padding:4px 10px;font-size:.88rem}
+.btn.danger{background:transparent;color:var(--bad);border-color:var(--bad)}
+.btn:disabled{opacity:.5;cursor:default}
+a.btn{text-decoration:none}
+.linkbtn{border:0;background:none;color:var(--ink);text-decoration:underline;font:inherit;font-weight:700;cursor:pointer;padding:0}
+.pill{display:inline-block;color:var(--ink);font-weight:700;text-decoration:none;border:2px solid var(--ink);border-radius:20px;padding:2px 14px}
+input[type=text],input[type=email],input[type=password],textarea,select{font:inherit;padding:9px 12px;border:2px solid var(--edge);border-radius:8px;background:#fffaf0;width:100%}
+textarea{min-height:110px;font-family:"JetBrains Mono",monospace;font-size:.92rem}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+h2{font-size:1.15rem;margin-bottom:8px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
+.tabs button{font:inherit;font-weight:700;border:0;border-radius:24px;padding:8px 16px;background:#2e2b25;color:#d9cfb6;cursor:pointer}
+.tabs button.on{background:var(--gold);color:#1b1a17}
+section[data-tab]{display:none} section[data-tab].on{display:block}
+.mlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.mcard{background:#fffaf0;border:1.5px solid var(--edge);border-radius:10px;padding:14px;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.mcard:hover{border-color:var(--gold)}
+.mcard.cur{border:2px solid var(--seal)}
+.mcard b{font-size:1.05rem}
+.mcard .c{font-family:"JetBrains Mono",monospace;color:var(--seal);font-weight:700}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.opt{background:#fffaf0;border:1px solid var(--edge);border-radius:10px;padding:12px 14px}
+.opt h3{font-size:1rem;margin-bottom:6px}
+.ck{display:inline-flex;align-items:center;gap:6px;margin:4px 12px 4px 0;font-weight:500;cursor:pointer}
+.ck input{width:18px;height:18px;accent-color:var(--ink)}
+.ck small{color:var(--muted)}
+.share{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.qr{width:150px;height:150px;background:#fff;padding:8px;border-radius:8px;flex:none}
+.qr img,.qr canvas{width:100%!important;height:100%!important}
+.linkbox{font-family:"JetBrains Mono",monospace;background:#fffaf0;border:2px dashed var(--edge);border-radius:8px;padding:8px 12px;word-break:break-all;font-size:.92rem}
+.bigcode{font-family:"JetBrains Mono",monospace;font-size:2rem;color:var(--seal);letter-spacing:.2em;font-weight:700}
+.proj{position:fixed;inset:0;background:var(--night);display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:40;padding:20px;text-align:center;color:var(--parch)}
+.proj.on{display:flex}
+.proj h2{font-size:clamp(1.6rem,4vw,2.6rem);color:var(--parch)}
+.proj .qr{width:min(52vh,78vw);height:min(52vh,78vw);padding:16px;border-radius:14px}
+.proj .bigcode{font-size:clamp(2rem,6vw,3.6rem);color:var(--gold)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+.kpi{background:#fffaf0;border:1px solid var(--edge);border-radius:8px;padding:10px 14px}
+.kpi b{display:block;font-size:1.7rem;font-family:"JetBrains Mono",monospace;line-height:1.2}
+.kpi span{color:var(--muted);font-size:.86rem;font-weight:700}
+.lvstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-bottom:12px}
+.lvs{background:#fffaf0;border:1px solid var(--edge);border-radius:8px;padding:8px 10px;font-size:.88rem}
+.lvs.hard{border:2px solid var(--seal)}
+.bar{height:9px;background:var(--parch2);border-radius:6px;overflow:hidden;margin:5px 0}
+.bar i{display:block;height:100%;background:var(--ok)}
+.tablebox{overflow-x:auto}
+table{border-collapse:collapse;font-size:.88rem;white-space:nowrap;width:100%}
+th,td{border:1px solid var(--edge);padding:5px 8px;text-align:center}
+thead th{background:var(--ink);color:var(--parch);position:sticky;top:0}
+tbody tr:nth-child(even){background:var(--parch2)}
+td.p{color:var(--ok);font-weight:700} td.s{color:var(--bad);font-weight:700;background:#fbeeec} td.n{color:#b5a888}
+td.left{text-align:left;white-space:normal}
+.ans{background:#fffaf0;border:1px solid var(--edge);border-radius:8px;padding:10px 12px;margin-bottom:8px}
+.ans .t{font-weight:900;color:var(--muted);font-size:.85rem}
+.ans .a{font-size:1rem;line-height:1.8;word-break:break-all}
+.modal{position:fixed;inset:0;background:rgba(12,11,9,.75);display:flex;align-items:flex-start;justify-content:center;padding:24px 12px;overflow-y:auto;z-index:30}
+.modal .parch{max-width:860px;width:100%}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--parch);padding:10px 18px;border-radius:10px;font-weight:700;z-index:60}
+.missing{margin-top:10px;padding:10px 14px;border-radius:8px;background:#fff4dc;border:1px dashed var(--gold)}
+</style>
+</head>
+<body>
+<div id="gate"></div>
+<div class="wrap hidden" id="main">
+  <div class="parch head">
+    <div><h1>📜 出處失傳的秘文｜老師卷宗</h1><div class="note">🔒 老師專用頁，含學生答案。學生請用任務連結進入。</div></div>
+    <div style="text-align:right"><a class="pill" href="../../account/?app=src">👥 會員中心</a> <button class="btn ghost sm" id="btnOut" style="margin-left:6px">登出</button><div class="note" id="who"></div></div>
+  </div>
+
+  <div class="parch">
+    <div class="row" style="margin-top:0"><h2 style="margin:0">🗂️ 我的任務</h2><span style="flex:1"></span><button class="btn gold" id="btnNew">➕ 開設新任務</button></div>
+    <p class="note">每個學期、每個班級開一個任務。學生用任務連結進來，輸入學號就能開始；每位學生的證物卡都不一樣。</p>
+    <div class="mlist" id="mlist" style="margin-top:12px"></div>
+  </div>
+
+  <div id="mission" class="hidden">
+    <nav class="tabs" id="tabs">
+      <button data-t="share" class="on">🔗 學生連結與設定</button>
+      <button data-t="live">📡 即時進度</button>
+      <button data-t="key">🔑 答案查詢</button>
+    </nav>
+
+    <section data-tab="share" class="on">
+      <div class="parch">
+        <h2 id="mTitle"></h2>
+        <div class="share">
+          <div class="qr" id="qrSmall"></div>
+          <div style="flex:1;min-width:260px">
+            <div class="note" style="margin:0">任務代碼</div><div class="bigcode" id="mCode"></div>
+            <div class="linkbox" id="mLink"></div>
+            <div class="row"><button class="btn" id="btnCopy">📋 複製學生連結</button><button class="btn ghost" id="btnProj">🖥️ 全螢幕投影 QR</button><a class="btn ghost" id="btnPreview" target="_blank" rel="noopener">👀 以學生身分預覽</a></div>
+          </div>
+        </div>
+      </div>
+      <div class="parch">
+        <h2>⚙️ 任務設定</h2>
+        <div id="setBox"></div>
+        <div class="row"><button class="btn" id="btnSave">💾 儲存設定</button><span class="note" id="saveMsg" style="margin:0"></span><span style="flex:1"></span><button class="btn danger sm" id="btnDel">🗑 刪除這個任務</button></div>
+        <p class="note">改「文獻類型」或「英文進階」會改變學生的關卡清單；已經過關的紀錄不會消失。</p>
+      </div>
+    </section>
+
+    <section data-tab="live">
+      <div class="parch">
+        <div class="row" style="margin-top:0"><h2 style="margin:0">📡 即時闖關進度</h2><span style="flex:1"></span>
+          <button class="btn sm" id="btnLive">🔄 立即更新</button>
+          <label class="ck"><input type="checkbox" id="optAuto" checked>每 10 秒自動更新</label>
+          <select id="optSort" style="width:auto"><option value="id">依學號排序</option><option value="low">進度少的在前</option><option value="high">進度多的在前</option></select>
+          <button class="btn gold sm" id="btnXlsx">📥 匯出 Excel</button></div>
+        <div class="note" id="liveStamp"></div>
+        <div id="liveBody" style="margin-top:10px"></div>
+        <p class="note">✓2＝第 2 次才過；✗3＝試了 3 次還沒過（卡關中）；·＝還沒開始。只有打開這個分頁時才會更新，省 Firebase 流量。</p>
+      </div>
+      <div class="parch">
+        <h2>👥 全班名單（選填）</h2>
+        <p class="note" style="margin-top:0">貼上學號（可含姓名），進度表會列出還沒開始的人。名單只存在你的帳號裡。</p>
+        <textarea id="roster" placeholder="一行一位：學號 姓名"></textarea>
+        <div class="row"><button class="btn sm" id="btnRoster">💾 儲存名單</button><span class="note" id="rosterMsg" style="margin:0"></span></div>
+      </div>
+    </section>
+
+    <section data-tab="key">
+      <div class="parch">
+        <h2>🔑 答案查詢</h2>
+        <p class="note" style="margin-top:0">輸入學號，查看這位學生每一關的證物與標準答案（學生問問題時方便對照）。</p>
+        <div class="row"><input type="text" id="keyId" placeholder="學號" style="max-width:220px"><button class="btn" id="btnKey">查詢</button></div>
+        <div id="keyBody" style="margin-top:12px"></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="proj" id="proj">
+  <h2>📜 出處失傳的秘文｜掃碼開始鑑識</h2>
+  <div class="qr" id="qrBig"></div>
+  <div class="bigcode" id="projCode"></div>
+  <div class="linkbox" id="projLink" style="background:transparent;color:var(--gold);border-color:#5a5444"></div>
+  <button class="btn ghost" id="btnProjClose" style="color:var(--parch);border-color:var(--parch)">關閉（Esc）</button>
+</div>
+
+<script type="module">
+const X = window.SecretSource, C = window.SecretSourceCheck, W = window.WuStaff;
+const $ = (id) => document.getElementById(id);
+const esc = X.escapeHtml;
+const gate = $('gate');
+let FB = null, authErr = (e) => String((e && (e.code || e.message)) || e), gBtn = () => '';
+try {
+  const M = await import('../../account/fb.js?v=20261013d');
+  FB = await M.openFirebase('src'); authErr = M.authErr; gBtn = M.googleButtonHTML;
+} catch (e) { console.warn(e); }
+const box = (inner) => `<div style="max-width:460px;margin:10vh auto;background:var(--parch);border-radius:12px;padding:28px;color:var(--ink)">${inner}</div>`;
+const toast = (t) => { const d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 2200); };
+
+/* ---------- 登入 ---------- */
+function renderLogin(msg) {
+  $('main').classList.add('hidden');
+  gate.innerHTML = box(`<h1 style="font-size:1.5rem">📜 出處失傳的秘文｜老師登入</h1>
+    <p class="note">老師卷宗含學生答案，需要登入。各系統共用同一個老師帳號。</p>
+    ${msg ? `<p class="note bad">${esc(msg)}</p>` : ''}${!FB ? '<p class="note bad">雲端服務載入失敗，請確認網路後重新整理。</p>' : ''}
+    <div style="margin-top:14px">${gBtn('gG')}</div>
+    <label class="note" style="display:block;margin-top:12px;font-weight:700;color:var(--ink)">Email</label><input type="email" id="gE" autocomplete="username">
+    <label class="note" style="display:block;margin-top:10px;font-weight:700;color:var(--ink)">密碼</label><input type="password" id="gP" autocomplete="current-password">
+    <div class="row" style="margin-top:16px"><button class="btn" id="gGo">🔓 登入</button><button class="linkbtn" id="gReset" style="margin-left:auto">忘記密碼</button></div>
+    <p class="note" style="margin-top:16px">還沒有帳號？<a href="${W.centerURL('../../', 'src')}" style="font-weight:700;color:var(--ink)">👥 到會員中心申請使用</a>（巫魚子老師核准後就能用）</p>`);
+  if (!FB) return;
+  const go = async () => { const e = $('gE').value.trim(), p = $('gP').value; if (!e || !p) return; $('gGo').disabled = true; try { await FB.login(e, p); } catch (err) { renderLogin(authErr(err)); } };
+  const gg = $('gG'); if (gg) gg.onclick = async () => { gg.disabled = true; try { await FB.google(); } catch (err) { renderLogin(authErr(err)); } };
+  $('gGo').onclick = go; $('gP').onkeydown = (ev) => { if (ev.key === 'Enter') go(); };
+  $('gReset').onclick = async () => { const e = $('gE').value.trim(); if (!e) return alert('先輸入 Email'); try { await FB.reset(e); alert('重設密碼的信已寄出'); } catch (err) { alert('寄送失敗：' + (err.code || err.message)); } };
+}
+
+let ME = null, MINE = {}, CUR = null, META = null, LIVE = null, liveAt = 0, liveErr = '', pollT = null, curTab = 'share';
+const STUDENT = new URL('./', location.href).href;
+const linkOf = (code) => STUDENT + '?m=' + code;
+
+if (!FB) renderLogin();
+else FB.onUser(async (u) => {
+  if (!u) return renderLogin();
+  gate.innerHTML = box('<p class="note">檢查帳號中…</p>');
+  const res = await W.check(FB.get, u, 'src');
+  if (!res.ok) { gate.innerHTML = W.blockedHTML(res, 'src', '../../', u.email); gate.querySelector('[data-staff-logout]').onclick = () => FB.logout(); return; }
+  ME = { uid: u.uid, email: u.email, name: (res.rec && res.rec.name) || u.email, admin: W.isAdmin(u) };
+  gate.innerHTML = ''; $('main').classList.remove('hidden');
+  $('who').textContent = ME.name;
+  $('btnOut').onclick = async () => { await FB.logout(); location.reload(); };
+  try { await loadMine(); } catch (e) { console.error(e); $('mlist').innerHTML = `<p class="note bad">讀取任務失敗：${esc(e.code || e.message)}（Firebase 規則可能還沒更新）</p>`; }
+});
+
+/* ---------- 我的任務 ---------- */
+async function loadMine(open) {
+  MINE = (await FB.get('secret-source/owners/' + ME.uid)) || {};
+  const codes = Object.keys(MINE).sort((a, b) => (MINE[b].at || 0) - (MINE[a].at || 0));
+  $('mlist').innerHTML = codes.length ? codes.map((c) => `<button class="mcard${CUR === c ? ' cur' : ''}" data-m="${c}"><b>${esc(MINE[c].name || '（未命名）')}</b><div class="c">${c}</div><div class="note">${new Date(MINE[c].at || 0).toLocaleDateString()} 建立</div></button>`).join('')
+    : '<p class="note">還沒有任務。按右上角「➕ 開設新任務」開始。</p>';
+  document.querySelectorAll('[data-m]').forEach((b) => (b.onclick = () => openMission(b.dataset.m)));
+  let last = null; try { last = localStorage.getItem('secretSource-teacher:cur'); } catch (e) { }
+  const want = open || (MINE[CUR] ? CUR : (MINE[last] ? last : codes[0]));
+  if (want) openMission(want);
+}
+
+/* ---------- 設定表單 ---------- */
+const SUBJ = X.SUBJ_KEYS.map((k) => [k, X.SUBJECTS[k].name]);
+const ZH = X.TYPES.filter((t) => t.lang === 'zh');
+function settingsForm(m) {
+  m = m || {};
+  const subj = m.subj || X.DEFAULT_SETTINGS.subjects, types = m.types || X.DEFAULT_SETTINGS.types, en = m.en !== false;
+  const ck = (name, v, label, on, small) => `<label class="ck"><input type="checkbox" name="${name}" value="${v}" ${on ? 'checked' : ''}>${label}${small ? ' <small>' + small + '</small>' : ''}</label>`;
+  return `<div class="opts">
+    <div class="opt" style="grid-column:1/-1"><h3>📌 任務名稱</h3><input type="text" id="fName" maxlength="40" value="${esc(m.name || '')}" placeholder="例如：115-1 探究 301"></div>
+    <div class="opt"><h3>🔬 自然科學科目</h3>${SUBJ.map(([k, n]) => ck('subj', k, n, !!subj[k])).join('')}<p class="note">證物卡的題材只從勾選的科目產生（至少一科）。</p></div>
+    <div class="opt"><h3>📚 第 3 關中文文獻類型</h3>${ZH.map((t) => ck('type', t.key, t.icon + ' ' + t.name, !!types[t.key], t.def ? '' : '加開')).join('')}<p class="note">預設：書籍、網路資源、YouTube、小論文、科展作品（至少一種）。</p></div>
+    <div class="opt"><h3>🌍 英文進階關</h3>${ck('en', '1', '開啟英文期刊、英文書籍（不影響結案）', en)}<p class="note">第 1 關（查文獻）與第 2 關（引用）開發中，完成後會在這裡出現設定。</p></div>
+  </div>`;
+}
+function readForm() {
+  const vals = (n) => Array.from(document.querySelectorAll(`input[name=${n}]:checked`)).map((x) => x.value);
+  const subj = {}, types = {}; vals('subj').forEach((k) => (subj[k] = true)); vals('type').forEach((k) => (types[k] = true));
+  return { name: ($('fName').value || '').trim().slice(0, 40), subj, types, en: vals('en').length > 0 };
+}
+function validForm(f) { if (!f.name) return '請填任務名稱'; if (!Object.keys(f.subj).length) return '至少勾一個科目'; if (!Object.keys(f.types).length) return '至少勾一種文獻類型'; return ''; }
+
+$('btnNew').onclick = () => {
+  const md = document.createElement('div'); md.className = 'modal';
+  md.innerHTML = `<div class="parch"><h2>➕ 開設新任務</h2>${settingsForm({})}<div class="row"><button class="btn gold" id="mkGo">建立任務</button><button class="btn ghost" id="mkNo">取消</button><span class="note bad" id="mkMsg" style="margin:0"></span></div></div>`;
+  document.body.appendChild(md);
+  $('mkNo').onclick = () => md.remove();
+  $('mkGo').onclick = async () => {
+    const f = readForm(), bad = validForm(f); if (bad) return ($('mkMsg').textContent = bad);
+    $('mkGo').disabled = true;
+    try {
+      let code = X.newCode();
+      for (let i = 0; i < 8 && await FB.get('secret-source/m/' + code + '/meta'); i++) code = X.newCode();
+      const meta = Object.assign({ owner: ME.uid, at: Date.now() }, f);
+      if (ME.admin) meta.admin = true;
+      await FB.set('secret-source/m/' + code + '/meta', meta);
+      await FB.set('secret-source/owners/' + ME.uid + '/' + code, { name: f.name, at: meta.at });
+      md.remove(); toast('✅ 任務已建立：' + code); CUR = code; await loadMine(code);
+    } catch (e) { console.error(e); $('mkMsg').textContent = '建立失敗：' + (e.code || e.message); $('mkGo').disabled = false; }
+  };
+};
+
+/* ---------- 開啟任務 ---------- */
+async function openMission(code) {
+  CUR = code; try { localStorage.setItem('secretSource-teacher:cur', code); } catch (e) { }
+  document.querySelectorAll('[data-m]').forEach((b) => b.classList.toggle('cur', b.dataset.m === code));
+  META = await FB.get('secret-source/m/' + code + '/meta');
+  if (!META) { toast('找不到這個任務'); return; }
+  LIVE = null; liveErr = '';
+  $('mission').classList.remove('hidden');
+  $('mTitle').textContent = '📌 ' + (META.name || code);
+  $('mCode').textContent = code; $('mLink').textContent = linkOf(code);
+  $('btnPreview').href = linkOf(code);
+  drawQR('qrSmall', linkOf(code), 150);
+  $('setBox').innerHTML = settingsForm(META); $('saveMsg').textContent = '';
+  $('roster').value = (MINE[code] && MINE[code].roster) || '';
+  $('keyBody').innerHTML = '';
+  showTab(curTab);
+}
+function drawQR(id, text, size) {
+  const b = $(id); b.innerHTML = '';
+  if (typeof QRCode === 'undefined') { b.innerHTML = '<div class="note">（QR Code 載入失敗）</div>'; return; }
+  new QRCode(b, { text, width: size, height: size, correctLevel: QRCode.CorrectLevel.M });
+}
+$('btnCopy').onclick = () => { const t = linkOf(CUR); const done = () => toast('📋 已複製學生連結'); navigator.clipboard ? navigator.clipboard.writeText(t).then(done, () => prompt('請手動複製：', t)) : prompt('請手動複製：', t); };
+$('btnProj').onclick = () => { $('proj').classList.add('on'); $('projCode').textContent = CUR; $('projLink').textContent = linkOf(CUR); drawQR('qrBig', linkOf(CUR), 512); };
+$('btnProjClose').onclick = () => $('proj').classList.remove('on');
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { $('proj').classList.remove('on'); const m = document.querySelector('.modal'); if (m) m.remove(); } });
+
+$('btnSave').onclick = async () => {
+  const f = readForm(), bad = validForm(f); if (bad) return ($('saveMsg').textContent = '⚠️ ' + bad);
+  try {
+    await FB.update('secret-source/m/' + CUR + '/meta', f);
+    await FB.update('secret-source/owners/' + ME.uid + '/' + CUR, { name: f.name });
+    Object.assign(META, f); MINE[CUR].name = f.name;
+    $('mTitle').textContent = '📌 ' + f.name; $('saveMsg').innerHTML = '<span class="good">✅ 已儲存</span>';
+    document.querySelector(`[data-m="${CUR}"] b`).textContent = f.name;
+  } catch (e) { $('saveMsg').innerHTML = '<span class="bad">儲存失敗：' + esc(e.code || e.message) + '</span>'; }
+};
+$('btnDel').onclick = async () => {
+  if (!confirm(`確定刪除任務「${META.name}」（${CUR}）？\n\n學生的闖關紀錄會一起刪除，學生連結也會失效，無法復原。`)) return;
+  try { await FB.remove('secret-source/m/' + CUR); await FB.remove('secret-source/owners/' + ME.uid + '/' + CUR); toast('🗑 已刪除'); CUR = null; $('mission').classList.add('hidden'); await loadMine(); }
+  catch (e) { alert('刪除失敗：' + (e.code || e.message)); }
+};
+
+/* ---------- 分頁 ---------- */
+function showTab(t) {
+  curTab = t;
+  document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
+  document.querySelectorAll('section[data-tab]').forEach((s) => s.classList.toggle('on', s.dataset.tab === t));
+  if (t === 'live') refreshLive(); else stopPoll();
+}
+document.querySelectorAll('#tabs button').forEach((b) => (b.onclick = () => showTab(b.dataset.t)));
+
+/* ---------- 即時進度 ---------- */
+function stopPoll() { clearTimeout(pollT); pollT = null; }
+function schedule() { stopPoll(); if (curTab === 'live' && $('optAuto').checked) pollT = setTimeout(refreshLive, 10000); }
+async function refreshLive() {
+  stopPoll();
+  if (document.visibilityState === 'hidden' || !CUR) { schedule(); return; }
+  const code = CUR;
+  try { const r = await FB.get('secret-source/m/' + code + '/r'); if (code !== CUR) return; LIVE = r || {}; liveAt = Date.now(); liveErr = ''; }
+  catch (e) { liveErr = '讀取失敗（' + (e.code || e.message) + '）'; }
+  renderLive(); schedule();
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && curTab === 'live') refreshLive(); });
+$('btnLive').onclick = refreshLive; $('optAuto').onchange = schedule; $('optSort').onchange = () => renderLive();
+
+const rosterList = () => ($('roster').value || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean).map((l) => { const p = l.split(/[\s,，\t]+/); return { id: X.normId(p[0]), name: p.slice(1).join(' ') }; }).filter((o) => /^[A-Z0-9]{3,12}$/.test(o.id));
+$('btnRoster').onclick = async () => {
+  try { const txt = $('roster').value.slice(0, 20000); await FB.update('secret-source/owners/' + ME.uid + '/' + CUR, { roster: txt }); MINE[CUR].roster = txt; $('rosterMsg').innerHTML = '<span class="good">✅ 已儲存 ' + rosterList().length + ' 人</span>'; renderLive(); }
+  catch (e) { $('rosterMsg').innerHTML = '<span class="bad">儲存失敗：' + esc(e.code || e.message) + '</span>'; }
+};
+
+function people() {
+  const L = X.levels(META), req = L.filter((x) => x.required);
+  const recs = Object.keys(LIVE || {}).map((id) => { const r = LIVE[id] || {}; return { id, name: r.name || '', passed: r.passed || {}, att: r.att || {}, closedAt: r.closedAt || 0, ts: r.ts || 0, started: true }; });
+  const byId = {}; recs.forEach((r) => (byId[r.id] = r));
+  rosterList().forEach((o) => { if (!byId[o.id]) recs.push({ id: o.id, name: o.name, passed: {}, att: {}, closedAt: 0, ts: 0, started: false }); else if (!byId[o.id].name) byId[o.id].name = o.name; });
+  recs.forEach((r) => { r.done = req.filter((x) => r.passed[x.key]).length; });
+  return { L, req, recs };
+}
+function ago(ts) { if (!ts) return ''; const m = Math.floor((Date.now() - ts) / 60000); return m < 1 ? '剛剛' : m < 60 ? m + ' 分鐘前' : m < 1440 ? Math.floor(m / 60) + ' 小時前' : Math.floor(m / 1440) + ' 天前'; }
+function renderLive() {
+  if (curTab !== 'live') return;
+  $('liveStamp').textContent = liveErr ? '⚠️ ' + liveErr : liveAt ? '最後更新 ' + new Date(liveAt).toLocaleTimeString() : '讀取中……';
+  if (!LIVE) { $('liveBody').innerHTML = ''; return; }
+  const { L, req, recs } = people(), started = recs.filter((r) => r.started);
+  if (!recs.length) { $('liveBody').innerHTML = '<p class="note">還沒有學生開始。把「學生連結」給學生後就會出現在這裡。</p>'; return; }
+  const closed = recs.filter((r) => r.done === req.length).length;
+  const enL = L.filter((x) => !x.required), enDone = enL.length ? recs.filter((r) => enL.every((x) => r.passed[x.key])).length : 0;
+  const stuck = recs.filter((r) => L.some((x) => !r.passed[x.key] && (r.att[x.key] || 0) >= 3)).length;
+  let h = `<div class="cards"><div class="kpi"><b>${started.length}</b><span>已開始</span></div><div class="kpi"><b>${closed}</b><span>已結案（必修全過）</span></div>` +
+    (enL.length ? `<div class="kpi"><b>${enDone}</b><span>🌍 英文進階徽章</span></div>` : '') + `<div class="kpi"><b style="color:var(--bad)">${stuck}</b><span>有一關試 3 次以上還沒過</span></div></div>`;
+  const st = L.map((x) => { const pass = started.filter((r) => r.passed[x.key]).length, sk = started.filter((r) => !r.passed[x.key] && r.att[x.key]).length, tries = started.filter((r) => r.passed[x.key]).map((r) => r.att[x.key] || 1); return { x, pass, sk, avg: tries.length ? tries.reduce((a, b) => a + b, 0) / tries.length : 0 }; });
+  const tried = st.filter((s) => s.pass + s.sk >= 3), hard = tried.length ? tried.slice().sort((a, b) => a.pass / (a.pass + a.sk) - b.pass / (b.pass + b.sk) || b.avg - a.avg)[0] : null;
+  h += '<div class="lvstats">' + st.map((s) => `<div class="lvs${hard && hard.x.key === s.x.key && s.sk ? ' hard' : ''}"><b>${s.x.icon} ${esc(s.x.name)}</b>${hard && hard.x.key === s.x.key && s.sk ? ' <span class="bad">🔥 最卡</span>' : ''}<div class="bar"><i style="width:${started.length ? Math.round(s.pass / started.length * 100) : 0}%"></i></div>過關 <b>${s.pass}</b>／${started.length}　卡關 <b class="bad">${s.sk}</b>${s.pass ? '<br>平均試 ' + s.avg.toFixed(1) + ' 次' : ''}</div>`).join('') + '</div>';
+  const sort = $('optSort').value;
+  recs.sort((a, b) => sort === 'low' ? a.done - b.done || a.id.localeCompare(b.id) : sort === 'high' ? b.done - a.done || (a.closedAt || 9e15) - (b.closedAt || 9e15) : a.id.localeCompare(b.id));
+  h += '<div class="tablebox"><table><thead><tr><th>學號</th><th>姓名</th>' + L.map((x) => `<th>${x.icon} ${esc(x.name)}</th>`).join('') + '<th>必修</th><th>結案</th><th>鑑定代碼</th><th>最後活動</th></tr></thead><tbody>' +
+    recs.map((r) => `<tr><td class="mono">${esc(r.id)}</td><td>${esc(r.name)}</td>` + L.map((x) => { const n = r.att[x.key] || 0; return r.passed[x.key] ? `<td class="p">✓${n > 1 ? n : ''}</td>` : n ? `<td class="s">✗${n}</td>` : '<td class="n">·</td>'; }).join('') +
+      `<td>${r.started ? r.done + '/' + req.length : '<span class="n">未開始</span>'}</td><td class="good">${r.closedAt ? new Date(r.closedAt).toLocaleString().replace(/:\d\d$/, '') : ''}</td><td class="mono">${r.done === req.length ? X.closeCode(CUR, r.id) : ''}</td><td class="note">${ago(r.ts)}</td></tr>`).join('') + '</tbody></table></div>';
+  $('liveBody').innerHTML = h;
+}
+let xlsxP = null;
+const loadXLSX = () => xlsxP || (xlsxP = new Promise((ok, no) => { if (window.XLSX) return ok(); const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; s.onload = ok; s.onerror = () => { xlsxP = null; no(new Error('Excel 工具載入失敗')); }; document.head.appendChild(s); }));
+$('btnXlsx').onclick = async () => {
+  if (!LIVE) return toast('還沒有資料');
+  try { await loadXLSX(); } catch (e) { return toast(e.message); }
+  const { L, req, recs } = people();
+  const head = ['學號', '姓名'].concat(L.map((x) => x.name), ['必修完成', '結案時間', '鑑定代碼'].concat(L.map((x) => x.name + ' 嘗試次數')));
+  const rows = [head].concat(recs.map((r) => [r.id, r.name].concat(L.map((x) => r.passed[x.key] ? '✓' : (r.att[x.key] ? '卡關' : '')), [r.started ? r.done + '/' + req.length : '未開始', r.closedAt ? new Date(r.closedAt).toLocaleString() : '', r.done === req.length ? X.closeCode(CUR, r.id) : ''], L.map((x) => r.att[x.key] || 0))));
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), '出處鑑識進度');
+  XLSX.writeFile(wb, '出處失傳的秘文_' + (META.name || CUR) + '.xlsx');
+};
+
+/* ---------- 答案查詢 ---------- */
+$('btnKey').onclick = () => {
+  const id = X.normId($('keyId').value); if (!/^[A-Z0-9]{3,12}$/.test(id)) return ($('keyBody').innerHTML = '<p class="note bad">學號格式不對</p>');
+  const st = X.settingsOf(META), L = X.levels(META);
+  let h = `<p class="note">學號 <b class="mono">${esc(id)}</b>｜鑑定代碼 <b class="mono">${X.closeCode(CUR, id)}</b>${st.en ? '｜英文徽章 <b class="mono">' + X.enBadge(CUR, id) + '</b>' : ''}</p>`;
+  L.forEach((x) => {
+    if (x.kind === 'write') { const ev = X.evidence(CUR, id, x.type, { subjects: st.subjects }); h += `<div class="ans"><div class="t">${x.icon} ${esc(x.name)}</div><div class="a">${X.html(ev.segs)}</div></div>`; }
+    else if (x.kind === 'spot') { const sp = C.makeSpot(CUR, id, META); h += `<div class="ans"><div class="t">🔎 找出破綻</div>` + sp.items.map((it, k) => `<div class="a">第 ${k + 1} 筆：${it.why ? esc(it.why) : '完全正確'}</div>`).join('') + '</div>'; }
+    else if (x.kind === 'sort') { const q = C.makeSort(CUR, id, META); h += `<div class="ans"><div class="t">🗂️ 正確順序</div>` + q.entries.slice().sort((a, b) => a.id - b.id).map((e, i) => `<div class="a">${i + 1}. ${X.html(e.segs)}</div>`).join('') + '</div>'; }
+  });
+  $('keyBody').innerHTML = h;
+};
+$('keyId').onkeydown = (e) => { if (e.key === 'Enter') $('btnKey').click(); };
+</script>
+</body>
+</html>

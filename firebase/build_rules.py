@@ -6,7 +6,7 @@
 
 縮寫（只在 rules.src.json 裡用）：
   {{ADMIN}}          管理員：puff0223@gmail.com，而且信箱已驗證（Google 登入一定是已驗證）
-  {{STAFF:app}}      可以使用某系統的老師：管理員、該系統的舊專用帳號（還沒搬家退休）、或會員中心核准且開通該系統
+  {{STAFF:app}}      可以使用某系統的老師：管理員、該系統的舊專用帳號（還沒搬家退休；只有 seat／gps／excel 有）、或會員中心核准且開通該系統
   {{XFER:節點}}       舊帳號搬家：管理員可以接手「已登記搬家（xfer/<舊uid>）」的舊帳號資料
   {{LEGACY_ANY}}     三個舊專用帳號（+seat、+gps、+excel）之一
   {{EKEY}}           登入者 Email 當成資料位置的寫法（小寫、. 換成 ,），預先開通 staffpre/<EKEY> 用
@@ -22,8 +22,9 @@ ADMIN = f"(auth != null && auth.token.email === '{ADMIN_EMAIL}' && auth.token.em
 
 
 def staff(app):
-    return ("(auth != null && (" + ADMIN +
-            f" || (auth.token.email === '{LEGACY[app]}' && root.child('sys/retired/{app}').val() !== true)" +
+    # 有舊專用帳號的系統（seat、gps、excel）才加「舊帳號」那一段；之後新增的系統（例如 src）只看管理員與核准
+    legacy = (f" || (auth.token.email === '{LEGACY[app]}' && root.child('sys/retired/{app}').val() !== true)") if app in LEGACY else ''
+    return ("(auth != null && (" + ADMIN + legacy +
             f" || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/{app}').val() === true)))")
 
 

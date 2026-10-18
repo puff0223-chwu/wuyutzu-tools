@@ -152,5 +152,45 @@ expect('學生送出動作', base, null, W, '/bond-mp/ABCD/act/-k1', { sid: '115
 expect('動作缺欄位不能寫', base, null, W, '/bond-mp/ABCD/act/-k1', { ok: true }, false);
 expect('任何人都能讀房間', base, null, R, '/bond-mp/ABCD/pub', null, true);
 expect('不能整個抽屜一起讀', base, null, R, '/bond-mp', null, false);
+console.log('— 📜 出處失傳的秘文 —');
+const SRC_TEA = U('SRCT', 'src@school.edu.tw', true);
+const ss = Object.assign({}, base, {
+  staff: Object.assign({}, base.staff, { SRCT: { email: 'src@school.edu.tw', name: 'S', school: 'S', purpose: 'p', want: { src: true }, at: 1, status: 'approved', apps: { src: true } } }),
+  'secret-source': { m: {
+    MMMMMM: { meta: { owner: 'SRCT', at: 1, name: '301' }, r: { S001: { name: '小明', ts: 1, passed: { book: 5 }, att: { book: 1 } } } },
+    NNNNNN: { meta: { owner: 'TEA', at: 1, name: 'x' } },
+    PPPPPP: { meta: { owner: 'MAIN', at: 1, name: 'y', admin: true } },
+    QQQQQQ: { meta: { owner: 'SRCT', at: 1, name: 'z', closed: true } } },
+    owners: { SRCT: { MMMMMM: { name: '301', at: 1 } } } }
+});
+const srec = { name: '小華', ts: 2, passed: { book: 9, spot: 10 }, att: { book: 2, spot: 1 } };
+expect('開通 src 的老師建任務', ss, SRC_TEA, W, '/secret-source/m/ABCDEF/meta', { owner: 'SRCT', at: 1, name: '302', subj: { chem: true }, types: { book: true }, en: true }, true);
+expect('沒開通 src 的老師不能建任務', ss, TEA, W, '/secret-source/m/ABCDEF/meta', { owner: 'TEA', at: 1, name: '302' }, false);
+expect('任務 owner 不能寫成別人', ss, SRC_TEA, W, '/secret-source/m/ABCDEF/meta', { owner: 'TEA', at: 1, name: '302' }, false);
+expect('任務代碼格式要對', ss, SRC_TEA, W, '/secret-source/m/abc/meta', { owner: 'SRCT', at: 1, name: '302' }, false);
+expect('一般老師不能設 admin 旗標', ss, SRC_TEA, W, '/secret-source/m/ABCDEF/meta', { owner: 'SRCT', at: 1, name: '302', admin: true }, false);
+expect('主帳號建任務（含 admin）', ss, MAIN, W, '/secret-source/m/ABCDEF/meta', { owner: 'MAIN', at: 1, name: 'm', admin: true }, true);
+expect('擁有者改任務設定', ss, SRC_TEA, 'update', '/secret-source/m/MMMMMM/meta', { name: '301 改', en: false }, true);
+expect('別人不能改任務設定', ss, MAIN, 'update', '/secret-source/m/MMMMMM/meta', { name: 'hack' }, false);
+expect('擁有者刪除整個任務', ss, SRC_TEA, W, '/secret-source/m/MMMMMM', null, true);
+expect('別人不能刪任務', ss, SRC_TEA, W, '/secret-source/m/NNNNNN', null, false);
+expect('任何人讀得到任務設定（學生頁）', ss, null, R, '/secret-source/m/MMMMMM/meta', null, true);
+expect('學生讀不到全班紀錄', ss, null, R, '/secret-source/m/MMMMMM/r', null, false);
+expect('擁有者讀得到全班紀錄', ss, SRC_TEA, R, '/secret-source/m/MMMMMM/r', null, true);
+expect('別的老師讀不到全班紀錄', ss, TEA, R, '/secret-source/m/MMMMMM/r', null, false);
+expect('學生讀自己的紀錄', ss, null, R, '/secret-source/m/MMMMMM/r/S001', null, true);
+expect('學生寫自己的紀錄', ss, null, W, '/secret-source/m/MMMMMM/r/S002', srec, true);
+expect('學號格式不對不能寫', ss, null, W, '/secret-source/m/MMMMMM/r/s-2', srec, false);
+expect('紀錄多了奇怪欄位不能寫', ss, null, W, '/secret-source/m/MMMMMM/r/S002', Object.assign({ hack: 1 }, srec), false);
+expect('關卡名稱格式不對不能寫', ss, null, W, '/secret-source/m/MMMMMM/r/S002', Object.assign({}, srec, { passed: { 'Bad Key': 1 } }), false);
+expect('學生不能刪紀錄', ss, null, W, '/secret-source/m/MMMMMM/r/S001', null, false);
+expect('任務不存在不能寫', ss, null, W, '/secret-source/m/ZZZZZZ/r/S002', srec, false);
+expect('沒開通 src 的老師開的任務，學生不能寫', ss, null, W, '/secret-source/m/NNNNNN/r/S002', srec, false);
+expect('主帳號（admin 旗標）的任務，學生可以寫', ss, null, W, '/secret-source/m/PPPPPP/r/S002', srec, true);
+expect('關閉的任務不能寫', ss, null, W, '/secret-source/m/QQQQQQ/r/S002', srec, false);
+expect('老師讀自己的任務清單', ss, SRC_TEA, R, '/secret-source/owners/SRCT', null, true);
+expect('老師寫自己的任務清單', ss, SRC_TEA, W, '/secret-source/owners/SRCT/ABCDEF', { name: 'x', at: 1, roster: '110 a' }, true);
+expect('不能寫別人的任務清單', ss, SRC_TEA, W, '/secret-source/owners/TEA/ABCDEF', { name: 'x', at: 1 }, false);
+expect('會員申請可以選 src', ss, STRANGER, W, '/staff/BAD', { email: 'bad@evil.com', name: 'B', school: 'S', purpose: 'p', want: { src: true }, at: 1, status: 'pending' }, true);
 console.log(`\n${fail ? '❌' : '✅'} 通過 ${pass} 項，失敗 ${fail} 項`);
 process.exit(fail ? 1 : 0);

@@ -9,13 +9,14 @@
   var APPS = {
     excel: { name: '📊 消失的實驗數據', desc: 'Excel 作圖與函數 Ending 作業（每位學生專屬數據）', url: 'inquiry/excel-rescue-teacher.html', legacy: 'puff0223+excel@gmail.com' },
     gps: { name: '🧭 遺落的地點', desc: '校園照片定向越野（學生手機闖關）', url: 'inquiry/orienteering/', legacy: 'puff0223+gps@gmail.com' },
-    seat: { name: '🪑 座位大作戰', desc: '換座位：暗標、規則、隨機排位、A4 座位表', url: 'classroom/seating/', legacy: 'puff0223+seat@gmail.com' }
+    seat: { name: '🪑 座位大作戰', desc: '換座位：暗標、規則、隨機排位、A4 座位表', url: 'classroom/seating/', legacy: 'puff0223+seat@gmail.com' },
+    src: { name: '📜 出處失傳的秘文', desc: '文獻查詢、引用與參考文獻格式（小論文 APA）', url: 'inquiry/secret-source/teacher.html', legacy: '' }
   };
   var STATUS = { pending: '⏳ 等待核准', approved: '✅ 已核准', rejected: '❌ 未通過', disabled: '⏸ 已停用' };
   function lower(s) { return String(s || '').trim().toLowerCase(); }
   function isAdmin(user) { return !!user && lower(user.email) === ADMIN && user.emailVerified === true; }
   // 舊的系統專用帳號（不管退休了沒）；要不要放行還要看 sys/retired
-  function isOwner(user, app) { return !!user && !!APPS[app] && lower(user.email) === APPS[app].legacy; }
+  function isOwner(user, app) { return !!user && !!APPS[app] && !!APPS[app].legacy && lower(user.email) === APPS[app].legacy; }
   // Email 當成資料位置的寫法（小寫、. 換成 ,）：預先開通 staffpre/<ekey>，規則裡用同樣的算法核對
   function ekey(email) { return lower(email).replace(/\./g, ','); }
   function legacyApp(user) { for (var k in APPS) if (isOwner(user, k)) return k; return ''; }

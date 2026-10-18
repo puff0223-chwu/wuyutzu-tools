@@ -82,7 +82,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92em;min-width:720px}
 <body>
 <div class="top"><div class="brand">👥 會員中心<small>WU YU-ZI TEACHING STUDIO</small></div><span class="sp"></span><span id="who" class="small" style="opacity:.8"></span><button id="out" style="display:none">登出</button><a id="back" href="#" style="display:none"></a></div>
 <div class="wrap" id="app"><p class="muted" style="text-align:center;margin-top:20vh">載入中…</p></div>
-<script src="staff.js?v=20261013e"></script>
+<script src="staff.js?v=20261018a"></script>
 <script type="module">
 const W = window.WuStaff, $ = (s, el) => (el || document).querySelector(s), $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -446,7 +446,7 @@ function moveHTML() {
   const ret = S.retired || {};
   return `<div class="mem"><p class="small">以前每個系統有自己的專用帳號。搬家會把它的<b>班級、題庫、照片、活動紀錄、學期清單</b>都改到主帳號（${esc(S.user.email)}）名下：學生連結、活動代碼都不會變。搬完舊帳號就退休（不能再用來開系統）。</p>
     <div class="small muted" style="margin:6px 0 10px">需要舊帳號的密碼（只用來登入讀資料，不會存起來）。搬到一半斷線也沒關係，再按一次會從頭檢查、補完。</div>
-    ${Object.entries(W.APPS).map(([k, a]) => `<div class="row" style="border-top:1px dashed var(--line);padding:10px 0"><b style="min-width:150px">${a.name}</b><code class="small">${esc(a.legacy)}</code><span class="sp"></span>${ret[k] ? '<span class="chip ok">✅ 已搬家</span>' : `<input type="password" placeholder="舊帳號密碼" data-mpw="${k}" style="width:150px;padding:6px 10px"><button class="btn sm" data-mgo="${k}">🚚 搬家</button>`}</div>`).join('')}
+    ${Object.entries(W.APPS).filter(([, a]) => a.legacy).map(([k, a]) => `<div class="row" style="border-top:1px dashed var(--line);padding:10px 0"><b style="min-width:150px">${a.name}</b><code class="small">${esc(a.legacy)}</code><span class="sp"></span>${ret[k] ? '<span class="chip ok">✅ 已搬家</span>' : `<input type="password" placeholder="舊帳號密碼" data-mpw="${k}" style="width:150px;padding:6px 10px"><button class="btn sm" data-mgo="${k}">🚚 搬家</button>`}</div>`).join('')}
     <div id="mLog" class="small" style="margin-top:10px;white-space:pre-wrap;background:#f3eee2;border-radius:10px;padding:10px;${S.moveLog ? '' : 'display:none;'}max-height:320px;overflow:auto">${esc(S.moveLog || '')}</div></div>`;
 }
 function bindMove() {
