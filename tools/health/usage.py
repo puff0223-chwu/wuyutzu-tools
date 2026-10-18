@@ -74,7 +74,18 @@ def main():
         try:
             return series(*a)
         except urllib.error.HTTPError as e:
-            errs.append(f'{name}：HTTP {e.code}' + ('（服務帳號少了「Monitoring 檢視者」角色）' if e.code == 403 else ''))
+            try:
+                body = json.loads(e.read() or b'{}').get('error', {})
+            except Exception:
+                body = {}
+            msg, why = body.get('message', ''), json.dumps(body.get('details', ''))
+            if 'SERVICE_DISABLED' in why or 'has not been used' in msg:
+                hint = '（專案還沒開「Cloud Monitoring API」）'
+            elif e.code == 403:
+                hint = '（服務帳號少了「監控檢視者」角色；剛加的話等 5 分鐘再跑）'
+            else:
+                hint = ''
+            errs.append(f'{name}：HTTP {e.code}{hint}' + (f' — {msg[:160]}' if msg and not errs else ''))
         except Exception as e:
             errs.append(f'{name}：{type(e).__name__}')
         return None
