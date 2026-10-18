@@ -595,6 +595,25 @@
         ".validate": false
        }
       }
+     },
+     "g": {
+      "$id": {
+       ".read": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $id.matches(/^[A-Z0-9]{3,12}$/)",
+       ".write": "auth != null && root.child('secret-source/m/'+$code+'/meta/owner').val() === auth.uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/src').val() === true)))",
+       ".validate": "newData.hasChildren(['g','at']) && newData.child('g').isString() && newData.child('g').val().matches(/^[SABC]$/) && newData.child('at').isNumber() && (!newData.child('c').exists() || (newData.child('c').isString() && newData.child('c').val().length <= 300))",
+       "$other": {
+        ".validate": false
+       },
+       "g": {
+        ".validate": true
+       },
+       "at": {
+        ".validate": true
+       },
+       "c": {
+        ".validate": true
+       }
+      }
      }
     }
    }

@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<script src="core.js?v=20261019a"></script>
+<script src="core.js?v=20261019b"></script>
 <script src="check.js?v=20261018b"></script>
 <script src="stage1.js?v=20261019a"></script>
 <script src="stage2.js?v=20261019a"></script>
@@ -285,6 +285,20 @@ button{font:inherit;cursor:pointer}
 .mycards li{margin:3px 0}
 .editor.multi{min-height:150px}
 .refprobs{margin:6px 0 0;padding-left:20px;font-size:.88rem;color:var(--bad)}
+
+.row2{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:12px}
+.gradebig{font-weight:900;color:var(--seal);font-family:"Noto Serif TC",serif;font-size:1.1rem}
+.gradebig b{display:inline-grid;place-items:center;width:44px;height:44px;border:3px solid var(--seal);border-radius:8px;transform:rotate(-6deg);font-size:1.6rem;margin-left:6px;background:#fff8ec}
+.note2{color:var(--muted);font-weight:700}
+.paper{background:#fff;color:#222;border-radius:6px;box-shadow:0 0 0 1px #ddd;padding:34px 40px;font-family:"Noto Serif TC",serif;line-height:2;max-width:820px;margin:0 auto}
+.paper h3{text-align:center;font-size:1.35rem;margin:0 0 4px}
+.paper .by{text-align:center;color:#666;font-family:"Noto Sans TC",sans-serif;font-size:.9rem;margin-bottom:16px}
+.paper h4{margin:18px 0 6px;font-size:1.1rem}
+.paper .body{text-indent:2em;text-align:justify}
+.paper .refs div{padding-left:2em;text-indent:-2em;margin-bottom:4px}
+.remind{max-width:820px;margin:14px auto 0;background:#fff4dc;border:2px dashed var(--gold);border-radius:10px;padding:12px 16px;font-size:.95rem}
+.tgrade{max-width:820px;margin:14px auto 0;background:#1b1a17;color:var(--parch);border-radius:10px;padding:12px 16px}
+@media (max-width:560px){ .paper{padding:20px 16px} }
 /* 結案 */
 .cert{margin:18px 0;padding:28px 24px;text-align:center;border:3px double var(--ink)}
 .cert h2{font-size:1.7rem;margin:8px 0}
@@ -440,6 +454,8 @@ button{font:inherit;cursor:pointer}
   }
   function pull(id) {
     setCloud('busy', '⏳ 連線到雲端…');
+    // 老師的結案作業評等（老師另外存在 g/<學號>，學生只能讀）
+    X.getGrade(CODE, id).then(function (g) { if (!data || data.id !== id) return; state.grade = g || null; save(); render(); }, function () { });
     X.getRec(CODE, id).then(function (remote) {
       if (!data || data.id !== id) return;
       var before = Object.keys(state.passed).length, m = X.mergeProgress(prog(), remote || {});
@@ -496,7 +512,10 @@ button{font:inherit;cursor:pointer}
     $('gridS2').innerHTML = LEVELS2.map(function (L, i) { return simple(L, '2-' + (i + 1)); }).join('');
     $('dosBox').classList.toggle('hidden', !LEVELSD.length);
     $('gridDos').innerHTML = LEVELSD.map(function (L) { return simple(L, '結案｜作業'); }).join('');
-    $('dosCert').innerHTML = state.passed.dossier ? '<div class="parch cert" style="margin-top:14px"><div class="bigseal seal">結<br>案</div><h2>文獻卷宗結案證明</h2><div class="meta">調查員 <b>' + esc(state.name) + '</b>｜學號 <b class="mono">' + esc(data.id) + '</b></div><div class="code">' + S2.dossierCode(CODE, data.id) + '</div><div class="meta">卷宗代碼（老師也看得到你的文獻探討與參考文獻）</div></div>' : '';
+    var gr = state.grade && state.grade.g;
+    $('dosCert').innerHTML = (state.dos && (state.dos.p || state.dos.r) ? '<div class="row2"><button class="btn gold" id="btnView">📄 檢視我的卷宗</button>' + (gr ? '<span class="gradebig">老師評等 <b>' + esc(gr) + '</b></span>' : state.passed.dossier ? '<span class="note2">老師還沒評等，過幾天再回來看看</span>' : '') + '</div>' : '') +
+      (state.passed.dossier ? '<div class="parch cert" style="margin-top:14px"><div class="bigseal seal">結<br>案</div><h2>文獻卷宗結案證明</h2><div class="meta">調查員 <b>' + esc(state.name) + '</b>｜學號 <b class="mono">' + esc(data.id) + '</b></div><div class="code">' + S2.dossierCode(CODE, data.id) + '</div><div class="meta">卷宗代碼' + (gr ? '｜老師評等 <b style="color:var(--seal);font-size:1.3em">' + esc(gr) + '</b>' : '') + '</div></div>' : '');
+    if ($('btnView')) $('btnView').onclick = openReview;
     $('gridBonus').innerHTML = bon.map(function (L, i) { return cardH(L, i, true); }).join('');
     $('bonusWrap').classList.toggle('hidden', !bon.length);
     Array.prototype.forEach.call(document.querySelectorAll('[data-k]'), function (b) { b.onclick = function () { openLevel(b.getAttribute('data-k')); }; });
@@ -1004,7 +1023,8 @@ button{font:inherit;cursor:pointer}
       '<button class="btn wide" id="paraGo">🔍 檢查並送出</button><div class="res" id="res"></div><div class="aibox hidden" id="aiBox"></div><div class="attempts" id="att">' + (state.att[L.key] ? '已送出 ' + state.att[L.key] + ' 次' : '') + '</div>');
     var wc = function () { $('paraWc').textContent = S2.bare($('paraIn').value).length + ' 字（不含標點）'; };
     $('paraIn').addEventListener('input', function () { state.drafts[key] = $('paraIn').value.slice(0, 400); save(); wc(); }); wc();
-    if (done) { var r0 = $('res'); r0.className = 'res show good'; r0.textContent = '✅ 這一關已經完成。想再練習可以改寫後再送一次。'; if (state.drafts.paraAi) { $('aiBox').classList.remove('hidden'); $('aiBox').innerHTML = '<b>🤖 AI 老師的回饋：</b>' + esc(state.drafts.paraAi); } }
+    if (done) { var r0 = $('res'); r0.className = 'res show good'; r0.textContent = '✅ 這一關已經完成。想再練習可以改寫後再送一次。'; }
+    if (state.drafts.paraAi) { $('aiBox').classList.remove('hidden'); $('aiBox').innerHTML = '<b>🤖 上一次 AI 老師的回饋：</b>' + esc(state.drafts.paraAi); }
     $('paraGo').onclick = function () {
       var t = $('paraIn').value.trim(), res = $('res'), box = $('aiBox');
       if (!t) { res.className = 'res show bad'; res.textContent = '還沒有寫喔！'; return; }
@@ -1020,11 +1040,23 @@ button{font:inherit;cursor:pointer}
       S2.aiFeedback({ code: CODE, sid: data.id, kind: 'para', original: p.orig, source: S2.srcLabel(p), text: t }).then(function (j) {
         $('paraGo').disabled = false;
         if (j.error) { win('✅ 系統檢查通過（' + j.error + ' 這次先算過關）'); return; }
-        box.classList.remove('hidden'); box.innerHTML = '<b>🤖 AI 老師的回饋：</b>' + esc(j.feedback);
-        if (j.passed) win('🎉 過關！系統檢查和 AI 老師都說 OK。', j.feedback);
-        else { state.drafts.paraAi = j.feedback; save(); sync(); res.className = 'res show bad'; res.textContent = '系統檢查通過了，但 AI 老師覺得還可以更好，照下面的提示改一改再送一次。'; }
+        box.classList.remove('hidden'); box.innerHTML = '<b>🤖 AI 老師的判定：' + (j.passed ? '<span style="color:var(--ok)">✅ 過關</span>' : '<span style="color:var(--bad)">還差一點</span>') + '</b><br>' + esc(j.feedback);
+        if (j.passed) win('🎉 2-4 過關！系統檢查和 AI 老師都說 OK，關卡卡片已經蓋章。', j.feedback);
+        else { state.drafts.paraAi = j.feedback; save(); sync(); res.className = 'res show bad'; res.innerHTML = '<b>還沒過關</b>：系統檢查通過了，但 AI 老師判定還差一點，照下面的提示改一改再送一次（改寫練習要 AI 判定「過關」才會蓋章）。'; }
       }, function () { $('paraGo').disabled = false; win('✅ 系統檢查通過（AI 老師暫時連不上，這次先算過關）'); });
     };
+  }
+
+
+  /* ---------- 📄 檢視我的卷宗（排版好的樣子＋繳交提醒＋老師評等） ---------- */
+  function openReview() {
+    var d = state.dos || {}, g = state.grade, dt = new Date(d.at || Date.now());
+    openPanel('<div class="ptag">結案作業</div><h2>📄 我的文獻卷宗</h2>' +
+      (g && g.g ? '<div class="tgrade"><span class="gradebig" style="color:var(--gold)">老師評等 <b style="color:var(--seal)">' + esc(g.g) + '</b></span>' + (g.c ? '<div style="margin-top:6px">💬 ' + esc(g.c) + '</div>' : '') + '</div>' : '') +
+      '<div class="paper" style="margin-top:12px"><h3>文獻探討</h3><div class="by">' + esc(state.name) + '｜學號 ' + esc(data.id) + '｜' + dt.getFullYear() + '/' + (dt.getMonth() + 1) + '/' + dt.getDate() + (state.passed.dossier ? '｜卷宗代碼 ' + S2.dossierCode(CODE, data.id) : '｜⚠️ 格式還沒全部通過') + '</div>' +
+      '<div class="body">' + S2.showMark(d.p) + '</div><h4>參考文獻</h4><div class="refs">' + S2.showMark(d.r).split('<br>').map(function (x) { return '<div>' + x + '</div>'; }).join('') + '</div></div>' +
+      '<div class="remind">📌 <b>繳交提醒</b><ul style="margin:6px 0 0;padding-left:20px"><li>如果老師要你把作業交到<b>其他平台</b>（例如 Google Classroom），請<b>截圖這個畫面</b>繳交（手機可以截長圖）。</li><li>如果沒有，就不用另外交；老師會在系統裡看你的卷宗，<b>過幾天回來看老師的評等</b>。</li></ul></div>' +
+      (d.ai ? '<div class="aibox" style="max-width:820px;margin:12px auto 0"><b>🤖 AI 老師的內容建議：</b>' + esc(d.ai) + '</div>' : ''));
   }
 
   /* ---------- 📁 結案作業：我的文獻卷宗 ---------- */
@@ -1085,7 +1117,8 @@ button{font:inherit;cursor:pointer}
         return;
       }
       var first = !state.passed[L.key]; pass(L.key); save(); sync();
-      res.className = 'res show good'; res.innerHTML = '🎉 卷宗格式全部通過，結案！引用了 ' + c.cites.length + ' 處、' + c.refs.length + ' 篇參考文獻，' + c.words + ' 字。' + (c.warn.length ? '<br>提醒：' + esc(c.warn.join('；')) : '');
+      res.className = 'res show good'; res.innerHTML = '🎉 卷宗格式全部通過，結案！引用了 ' + c.cites.length + ' 處、' + c.refs.length + ' 篇參考文獻，' + c.words + ' 字。' + (c.warn.length ? '<br>提醒：' + esc(c.warn.join('；')) : '') + '<div style="margin-top:8px"><button class="btn gold" id="goView">📄 檢視排版好的卷宗（繳交用）</button></div>';
+      $('goView').onclick = openReview;
       if (first) toast('📁 結案作業完成！');
       if (!useAI) return;
       var wait = Math.ceil(((aiWaitAt.dos || 0) - Date.now()) / 1000);

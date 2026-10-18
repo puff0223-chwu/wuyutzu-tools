@@ -196,6 +196,14 @@ expect('學生寫結案作業', ss, null, W, '/secret-source/m/MMMMMM/r/S002', O
 expect('結案作業文獻探討太長不能寫', ss, null, W, '/secret-source/m/MMMMMM/r/S002', Object.assign({}, srec, { dos: Object.assign({}, dos, { p: 'x'.repeat(2501) }) }), false);
 expect('結案作業 ok 要是 true/false', ss, null, W, '/secret-source/m/MMMMMM/r/S002', Object.assign({}, srec, { dos: Object.assign({}, dos, { ok: 'yes' }) }), false);
 expect('結案作業多了奇怪欄位不能寫', ss, null, W, '/secret-source/m/MMMMMM/r/S002', Object.assign({}, srec, { dos: Object.assign({}, dos, { hack: 1 }) }), false);
+// 老師評等（2026-10-19）：g/<學號>
+expect('任務老師給評等', ss, SRC_TEA, W, '/secret-source/m/MMMMMM/g/S001', { g: 'A', at: 1, c: '引用很完整' }, true);
+expect('評等只能是 S／A／B／C', ss, SRC_TEA, W, '/secret-source/m/MMMMMM/g/S001', { g: 'D', at: 1 }, false);
+expect('學生不能自己給評等', ss, null, W, '/secret-source/m/MMMMMM/g/S001', { g: 'S', at: 1 }, false);
+expect('別的老師不能給評等', ss, TEA, W, '/secret-source/m/MMMMMM/g/S001', { g: 'S', at: 1 }, false);
+expect('學生讀得到自己的評等', ss, null, R, '/secret-source/m/MMMMMM/g/S001', null, true);
+expect('學生讀不到全班評等', ss, null, R, '/secret-source/m/MMMMMM/g', null, false);
+expect('評語太長不能寫', ss, SRC_TEA, W, '/secret-source/m/MMMMMM/g/S001', { g: 'A', at: 1, c: 'x'.repeat(301) }, false);
 expect('老師讀自己的任務清單', ss, SRC_TEA, R, '/secret-source/owners/SRCT', null, true);
 expect('老師寫自己的任務清單', ss, SRC_TEA, W, '/secret-source/owners/SRCT/ABCDEF', { name: 'x', at: 1, roster: '110 a' }, true);
 expect('不能寫別人的任務清單', ss, SRC_TEA, W, '/secret-source/owners/TEA/ABCDEF', { name: 'x', at: 1 }, false);

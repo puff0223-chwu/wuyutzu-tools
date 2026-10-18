@@ -10,7 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="../../account/staff.js?v=20261018a"></script>
-<script src="core.js?v=20261019a"></script>
+<script src="core.js?v=20261019b"></script>
 <script src="check.js?v=20261018b"></script>
 <script src="stage1.js?v=20261019a"></script>
 <script src="stage2.js?v=20261019a"></script>
@@ -98,6 +98,41 @@ td.left{text-align:left;white-space:normal}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--parch);padding:10px 18px;border-radius:10px;font-weight:700;z-index:60}
 .missing{margin-top:10px;padding:10px 14px;border-radius:8px;background:#fff4dc;border:1px dashed var(--gold)}
 
+
+/* 2026-10-19：線索卡、結案作業改成「左邊名單、右邊內容」 */
+.sumbox{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.sumbox span{background:#fffaf0;border:1px solid var(--edge);border-radius:16px;padding:2px 12px;font-size:.88rem}
+.sumbox b{font-family:"JetBrains Mono",monospace}
+.md{display:grid;grid-template-columns:270px minmax(0,1fr);gap:12px;align-items:start}
+.mdl{background:#fffaf0;border:1px solid var(--edge);border-radius:10px;padding:8px;max-height:72vh;overflow:auto;position:sticky;top:10px}
+.mdl input,.mdl select{margin-bottom:6px;padding:6px 10px}
+.mdi{display:flex;align-items:center;gap:6px;width:100%;border:0;border-radius:8px;background:none;padding:6px 8px;text-align:left;font:inherit;cursor:pointer;color:inherit}
+.mdi:hover{background:var(--parch2)}
+.mdi.on{background:var(--ink);color:var(--parch)}
+.mdi .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mdi .id{font-family:"JetBrains Mono",monospace;font-size:.8rem;opacity:.75}
+.mdi .st{font-size:.75rem;font-weight:900;border-radius:10px;padding:0 7px;background:#e3f1e7;color:var(--ok)}
+.mdi .st.no{background:#f6d8d4;color:var(--bad)}
+.mdi .gr{font-family:"Noto Serif TC",serif;font-weight:900;color:var(--seal);width:1.2em;text-align:center}
+.mdi.on .gr{color:var(--gold)}
+.mdd{min-width:0}
+.mdh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--ink);color:var(--parch);border-radius:10px;padding:10px 14px;margin-bottom:10px}
+.mdh h3{color:var(--parch);font-size:1.2rem}
+.mdh .nav{margin-left:auto;display:flex;gap:6px}
+.mdh .nav button{border:1.5px solid #6b6354;background:transparent;color:var(--parch);border-radius:8px;padding:2px 10px;font:inherit;cursor:pointer}
+.ccard{background:#fffaf0;border:1px solid var(--edge);border-left:5px solid var(--jade);border-radius:10px;padding:10px 14px;margin-bottom:8px}
+.ccard .ref{line-height:1.8}
+.ccard .why{color:var(--muted);font-size:.9rem;margin-top:4px}
+.ccard a{color:var(--jade);font-weight:700;word-break:break-all}
+.paper{background:#fff;border-radius:6px;box-shadow:0 0 0 1px #ddd;padding:26px 32px;font-family:"Noto Serif TC",serif;line-height:2}
+.paper .body{text-indent:2em;text-align:justify}
+.paper .refs div{padding-left:2em;text-indent:-2em;margin-bottom:4px}
+.gradebar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#fffaf0;border:2px solid var(--gold);border-radius:10px;padding:10px 14px;margin-top:10px}
+.gradebar .gb{width:52px;height:52px;border:2.5px solid var(--edge);border-radius:10px;background:#fff;font-family:"Noto Serif TC",serif;font-size:1.6rem;font-weight:900;cursor:pointer;color:var(--ink)}
+.gradebar .gb.on{background:var(--seal);border-color:var(--seal);color:#fff;transform:rotate(-6deg)}
+.gradebar textarea{min-height:56px;font-family:inherit;flex:1 1 260px}
+.vok{color:var(--ok);font-weight:900} .vng{color:var(--bad);font-weight:900}
+@media (max-width:900px){ .md{grid-template-columns:minmax(0,1fr)} .mdl{position:static;max-height:260px} }
 /* ===== 2026-10-19 版面改版：左邊任務清單、右邊工作區；字放大、分區上色 ===== */
 body{font-size:16.5px}
 .layout{display:grid;grid-template-columns:290px minmax(0,1fr);gap:16px;align-items:start}
@@ -223,7 +258,7 @@ body{font-size:16.5px}
       <div class="parch">
         <div class="row" style="margin-top:0"><h2 style="margin:0">🗂️ 第 1 關 B｜學生線索卡</h2><span style="flex:1"></span><button class="btn sm" id="btnClue">🔄 重新讀取</button></div>
         <p class="note">學生在真實資料庫找到的文獻。系統已檢查欄位、張數、至少 1 本書、沒有論壇；內容是否真的相關、來源是否真實，請老師抽查（網址可以直接點開）。</p>
-        <div class="row"><select id="clueF" style="width:auto"><option value="all">全部</option><option value="ok">已完成</option><option value="no">還沒完成</option></select></div>
+        <div id="clueSum" class="sumbox"></div>
         <div id="clueBody" style="margin-top:10px"></div>
       </div>
     </section>
@@ -231,8 +266,8 @@ body{font-size:16.5px}
     <section data-tab="dos">
       <div class="parch">
         <div class="row" style="margin-top:0"><h2 style="margin:0">📁 結案作業｜我的文獻卷宗</h2><span style="flex:1"></span><button class="btn sm" id="btnDos">🔄 重新讀取</button></div>
-        <p class="note">系統已檢查字數、引用 ↔ 參考文獻對應、直接引用（「」＋粗體、≤ 50 字）、至少 1 本書、參考文獻基本格式；<b>內容請老師評</b>。AI 建議僅供參考。</p>
-        <div class="row"><select id="dosF" style="width:auto"><option value="all">全部</option><option value="ok">已結案</option><option value="no">還沒通過</option></select></div>
+        <p class="note">系統已檢查字數、引用 ↔ 參考文獻對應、直接引用（「」＋粗體、≤ 50 字）、至少 1 本書、參考文獻基本格式；<b>內容請老師評</b>，評等學生重新登入就看得到。AI 建議僅供參考。</p>
+        <div id="dosSum" class="sumbox"></div>
         <div id="dosBody" style="margin-top:10px"></div>
       </div>
     </section>
@@ -241,8 +276,16 @@ body{font-size:16.5px}
       <div class="parch">
         <h2>🔑 答案查詢</h2>
         <p class="note" style="margin-top:0">輸入學號，查看這位學生每一關的證物與標準答案（學生問問題時方便對照）。</p>
-        <div class="row"><input type="text" id="keyId" placeholder="學號" style="max-width:220px"><button class="btn" id="btnKey">查詢</button></div>
+        <div class="row"><input type="text" id="keyId" placeholder="學號" style="max-width:220px"><button class="btn" id="btnKey">查詢</button><button class="btn ghost" id="btnKeyPdf" disabled>🖨️ 產生學生參考 PDF</button></div>
+        <p class="note">PDF 版是給學生訂正用的：會<b>拿掉所有代碼</b>，只留題目與標準答案。按下後在列印視窗選「另存為 PDF」。</p>
         <div id="keyBody" style="margin-top:12px"></div>
+      </div>
+      <div class="parch">
+        <h2>🔍 驗證代碼</h2>
+        <p class="note" style="margin-top:0">學生把<b>鑑定書／卷宗的截圖</b>交到 Google Classroom 等平台時，用這裡確認代碼是真的：代碼是用「任務代碼＋學號」算出來的，<b>換一個學號就對不上</b>，抄別人的截圖或自己亂編都會被抓到。可以一次貼很多行。</p>
+        <textarea id="verIn" placeholder="一行一位：學號 代碼（可以多個代碼）&#10;例如：110101 GV3HGN&#10;110102 VY32LV G43B4E"></textarea>
+        <div class="row"><button class="btn" id="btnVer">✅ 驗證</button><span class="note" style="margin:0">會辨認三種代碼：🏅 第 3 關鑑定代碼、🌍 英文徽章、📁 卷宗代碼</span></div>
+        <div id="verBody" style="margin-top:10px"></div>
       </div>
     </section>
   </div>
@@ -460,6 +503,7 @@ function showTab(t) {
   if (t === 'live') refreshLive(); else stopPoll();
   if (t === 'clue') loadClues();
   if (t === 'dos') loadDos();
+  if (t === 'key' && !LIVE) loadAll().catch(() => { });
 }
 document.querySelectorAll('#tabs button').forEach((b) => (b.onclick = () => showTab(b.dataset.t)));
 
@@ -475,44 +519,98 @@ async function refreshLive() {
   renderLive(); schedule();
 }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && curTab === 'live') refreshLive(); });
+// 線索卡、結案作業：左邊名單（搜尋、篩選、評等），右邊一次看一位（◀ ▶ 換人）——2026-10-19 老師回饋：全班列在一起太長、不知道誰是誰
+let GRADES = {}, selClue = null, selDos = null;
+async function loadAll() { LIVE = (await FB.get('secret-source/m/' + CUR + '/r')) || {}; liveAt = Date.now(); }
+const cardsOf = (r) => { const c = (r && r.clue && r.clue.c) || {}; return Object.keys(c).sort().map((k) => c[k]); };
+const nameOf = (id) => { const r = (LIVE || {})[id] || {}; if (r.name) return r.name; const o = rosterList().filter((x) => x.id === id)[0]; return o ? o.name : ''; };
+// 共用的「名單＋內容」版面
+function mdView(box, key, rows, opts, detail) {
+  const st = mdView.st[key] = mdView.st[key] || { q: '', f: 'all' };
+  const show = () => rows.filter((r) => (st.f === 'all' || opts.filter(r, st.f)) && (!st.q || (r.id + ' ' + r.name).toLowerCase().includes(st.q.toLowerCase())));
+  const draw = () => {
+    const list = show(); let cur = opts.get(); if (!list.some((r) => r.id === cur)) { cur = list[0] ? list[0].id : null; opts.set(cur); }
+    $(box).innerHTML = `<div class="md"><div class="mdl"><input type="text" data-mq placeholder="🔍 搜尋學號或姓名" value="${esc(st.q)}"><select data-mf>${opts.filters.map(([v, n]) => `<option value="${v}"${st.f === v ? ' selected' : ''}>${n}</option>`).join('')}</select>` +
+      (list.length ? list.map((r) => `<button class="mdi${r.id === cur ? ' on' : ''}" data-mi="${esc(r.id)}">${opts.badge(r)}<span class="nm">${esc(r.name || '（未填姓名）')}</span><span class="id">${esc(r.id)}</span></button>`).join('') : '<p class="note">沒有符合的學生</p>') +
+      `</div><div class="mdd">${cur ? (() => { const k = list.findIndex((r) => r.id === cur), r = list[k]; return `<div class="mdh"><h3>${esc(r.name || '')}</h3><span class="mono">${esc(r.id)}</span>${opts.head(r)}<span class="nav"><button data-mv="-1" ${k ? '' : 'disabled'}>◀ 上一位</button><button data-mv="1" ${k < list.length - 1 ? '' : 'disabled'}>下一位 ▶</button></span></div>` + detail(r); })() : '<p class="note">← 左邊選一位學生</p>'}</div></div>`;
+    const qi = document.querySelector(`#${box} [data-mq]`); qi.oninput = () => { st.q = qi.value; draw(); const n = document.querySelector(`#${box} [data-mq]`); n.focus(); n.setSelectionRange(n.value.length, n.value.length); };
+    document.querySelector(`#${box} [data-mf]`).onchange = (e) => { st.f = e.target.value; draw(); };
+    document.querySelectorAll(`#${box} [data-mi]`).forEach((b) => (b.onclick = () => { opts.set(b.dataset.mi); draw(); }));
+    document.querySelectorAll(`#${box} [data-mv]`).forEach((b) => (b.onclick = () => { const l = show(), k = l.findIndex((r) => r.id === opts.get()) + (+b.dataset.mv); if (l[k]) { opts.set(l[k].id); draw(); } }));
+    if (opts.after) opts.after(cur, draw);
+  };
+  draw();
+}
+mdView.st = {};
+
 async function loadClues() {
   if (!CUR) return;
   $('clueBody').innerHTML = '<p class="note">讀取中……</p>';
-  try { LIVE = (await FB.get('secret-source/m/' + CUR + '/r')) || {}; liveAt = Date.now(); } catch (e) { $('clueBody').innerHTML = '<p class="note bad">讀取失敗：' + esc(e.code || e.message) + '</p>'; return; }
+  try { await loadAll(); } catch (e) { $('clueBody').innerHTML = '<p class="note bad">讀取失敗：' + esc(e.code || e.message) + '</p>'; return; }
   renderClues();
 }
-const cardsOf = (r) => { const c = (r && r.clue && r.clue.c) || {}; return Object.keys(c).sort().map((k) => c[k]); };
 function renderClues() {
-  const f = $('clueF').value, names = {}; rosterList().forEach((o) => (names[o.id] = o.name));
-  const ids = Object.keys(LIVE || {}).sort().filter((id) => { const ok = !!((LIVE[id].passed || {}).clues); return f === 'all' || (f === 'ok') === ok; });
-  if (!ids.length) { $('clueBody').innerHTML = '<p class="note">還沒有資料。</p>'; return; }
-  const link = (u) => /^https?:\/\//.test(u || '') ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(u.length > 60 ? u.slice(0, 60) + '…' : u)}</a>` : esc(u || '');
-  $('clueBody').innerHTML = ids.map((id) => {
-    const r = LIVE[id], cs = cardsOf(r), ok = !!(r.passed || {}).clues, topic = (r.clue && r.clue.topic) || S1.topicFor(CUR, id, META) || '（自選，未填）';
-    return `<div class="clu"><div class="h"><b class="mono">${esc(id)}</b><b>${esc(r.name || names[id] || '')}</b><span class="tg">${esc(topic)}</span>${ok ? '<span class="good">✓ 完成</span>' : `<span class="bad">未完成（${cs.length} 張）</span>`}<span class="note" style="margin:0">${r.clue && r.clue.at ? ago(r.clue.at) : ''}</span></div>` +
-      (cs.length ? '<ol>' + cs.map((c) => `<li><span class="tg">${esc((S1.CT[c.t] || {}).n || '未選類型')}</span>${esc(c.au || '？')}（${esc(c.yr || '？')}）。<b>${esc(c.ti || '？')}</b>。${esc(c.src || '')}${c.vp ? '，' + esc(c.vp) : ''}。${link(c.url)}${c.why ? `<div class="why">↳ ${esc(c.why)}</div>` : ''}</li>`).join('') + '</ol>' : '<p class="note">還沒有填線索卡。</p>') + '</div>';
-  }).join('');
+  const rows = Object.keys(LIVE || {}).sort().map((id) => { const r = LIVE[id], cs = cardsOf(r); return { id, name: nameOf(id), cs, ok: !!(r.passed || {}).clues, topic: (r.clue && r.clue.topic) || S1.topicFor(CUR, id, META) || '' }; });
+  rosterList().forEach((o) => { if (!rows.some((r) => r.id === o.id)) rows.push({ id: o.id, name: o.name, cs: [], ok: false, topic: '' }); });
+  rows.sort((a, b) => a.id.localeCompare(b.id));
+  // 全班概況：完成人數、平均張數、類型分布
+  const done = rows.filter((r) => r.ok), all = [].concat(...rows.map((r) => r.cs)), cnt = {};
+  all.forEach((c) => { const n = (S1.CT[c.t] || {}).n || '未選'; cnt[n] = (cnt[n] || 0) + 1; });
+  $('clueSum').innerHTML = `<span>✅ 完成 <b>${done.length}</b> / ${rows.length} 人</span><span>📄 平均 <b>${rows.length ? (all.length / rows.length).toFixed(1) : 0}</b> 張</span>` + Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a]).map((k) => `<span>${esc(k)} <b>${cnt[k]}</b></span>`).join('');
+  if (!rows.length) { $('clueBody').innerHTML = '<p class="note">還沒有資料。</p>'; return; }
+  const link = (u) => /^https?:\/\//.test(u || '') ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(u.length > 70 ? u.slice(0, 70) + '…' : u)} ↗</a>` : esc(u || '');
+  mdView('clueBody', 'clue', rows, {
+    filters: [['all', '全部'], ['ok', '✅ 已完成'], ['no', '⏳ 還沒完成']],
+    filter: (r, f) => (f === 'ok') === r.ok,
+    badge: (r) => `<span class="st${r.ok ? '' : ' no'}">${r.ok ? '✓' : r.cs.length + '張'}</span>`,
+    head: (r) => `<span class="tg" style="background:#3a362e;color:var(--parch)">🎯 ${esc(r.topic || '（自選，未填）')}</span>${r.ok ? '<span style="color:#9be0b4">✓ 完成</span>' : '<span style="color:#ffb3a8">未完成</span>'}`,
+    get: () => selClue, set: (v) => (selClue = v)
+  }, (r) => r.cs.length ? r.cs.map((c, i) => `<div class="ccard"><div><span class="tg">${i + 1}｜${esc((S1.CT[c.t] || {}).n || '未選類型')}</span></div><div class="ref">${esc(c.au || '？')}（${esc(c.yr || '？')}）。<b>${esc(c.ti || '？')}</b>。${esc(c.src || '')}${c.vp ? '，' + esc(c.vp) : ''}。</div>${c.url ? '<div>' + link(c.url) + '</div>' : ''}${c.why ? `<div class="why">↳ ${esc(c.why)}</div>` : ''}</div>`).join('') : '<p class="note">還沒有填線索卡。</p>');
 }
-$('btnClue').onclick = loadClues; $('clueF').onchange = renderClues;
+$('btnClue').onclick = loadClues;
+
 async function loadDos() {
   if (!CUR) return;
   $('dosBody').innerHTML = '<p class="note">讀取中……</p>';
-  try { LIVE = (await FB.get('secret-source/m/' + CUR + '/r')) || {}; liveAt = Date.now(); } catch (e) { $('dosBody').innerHTML = '<p class="note bad">讀取失敗：' + esc(e.code || e.message) + '</p>'; return; }
+  try { await loadAll(); GRADES = (await FB.get('secret-source/m/' + CUR + '/g')) || {}; } catch (e) { $('dosBody').innerHTML = '<p class="note bad">讀取失敗：' + esc(e.code || e.message) + '</p>'; return; }
   renderDos();
 }
+const GTIP = { S: '整合多篇文獻、見解清楚，可以直接放進小論文', A: '引用正確、內容完整', B: '大致完成，還有地方要加強', C: '需要大幅修改' };
 function renderDos() {
-  const f = $('dosF').value, names = {}; rosterList().forEach((o) => (names[o.id] = o.name));
-  const ids = Object.keys(LIVE || {}).sort().filter((id) => { const r = LIVE[id]; if (!r.dos) return false; const ok = !!(r.passed || {}).dossier; return f === 'all' || (f === 'ok') === ok; });
-  if (!ids.length) { $('dosBody').innerHTML = '<p class="note">還沒有學生送出結案作業。</p>'; return; }
-  $('dosBody').innerHTML = ids.map((id) => {
-    const r = LIVE[id], d = r.dos, ok = !!(r.passed || {}).dossier, words = String(d.p || '').replace(/<[^>]+>/g, '').replace(/&[a-z#0-9]+;/g, 'x').replace(/\s/g, '').length;
-    return `<div class="clu"><div class="h"><b class="mono">${esc(id)}</b><b>${esc(r.name || names[id] || '')}</b>${ok ? `<span class="good">✓ 結案｜代碼 <span class="mono">${S2.dossierCode(CUR, id)}</span></span>` : '<span class="bad">格式還沒通過（草稿）</span>'}<span class="note" style="margin:0">${words} 字｜${ago(d.at)}</span></div>` +
-      `<div style="background:#fff;border:1px solid var(--edge);border-radius:8px;padding:8px 12px;line-height:1.9">${S2.showMark(d.p)}</div>` +
-      `<div style="margin-top:6px;font-size:.9rem;line-height:1.8"><b>參考文獻</b><div style="padding-left:2em;text-indent:-2em">${S2.showMark(d.r).split('<br>').map((x) => '<div>' + x + '</div>').join('')}</div></div>` +
-      (d.ai ? `<div class="note" style="color:#3c5a8a">🤖 AI 建議：${esc(d.ai)}</div>` : '') + '</div>';
-  }).join('');
+  const words = (h) => { const d = document.createElement('div'); d.innerHTML = S2.showMark(h); return d.textContent.replace(/\s/g, '').length; };
+  const rows = Object.keys(LIVE || {}).sort().filter((id) => LIVE[id].dos).map((id) => { const r = LIVE[id]; return { id, name: nameOf(id), d: r.dos, ok: !!(r.passed || {}).dossier, g: (GRADES[id] || {}).g || '' }; });
+  const gc = {}; rows.forEach((r) => { if (r.g) gc[r.g] = (gc[r.g] || 0) + 1; });
+  $('dosSum').innerHTML = `<span>📁 送出 <b>${rows.length}</b> 人</span><span>✅ 格式通過 <b>${rows.filter((r) => r.ok).length}</b></span><span>✍️ 已評等 <b>${rows.filter((r) => r.g).length}</b></span>` + ['S', 'A', 'B', 'C'].map((g) => `<span>${g} <b>${gc[g] || 0}</b></span>`).join('');
+  if (!rows.length) { $('dosBody').innerHTML = '<p class="note">還沒有學生送出結案作業。</p>'; return; }
+  mdView('dosBody', 'dos', rows, {
+    filters: [['all', '全部'], ['todo', '✍️ 還沒評等（已結案）'], ['ok', '✅ 格式通過'], ['no', '⏳ 草稿'], ['graded', '🏅 已評等']],
+    filter: (r, f) => f === 'todo' ? r.ok && !r.g : f === 'graded' ? !!r.g : (f === 'ok') === r.ok,
+    badge: (r) => `<span class="gr">${esc(r.g || '·')}</span><span class="st${r.ok ? '' : ' no'}">${r.ok ? '結案' : '草稿'}</span>`,
+    head: (r) => `<span>${words(r.d.p)} 字｜${ago(r.d.at)}</span>${r.ok ? `<span style="color:#9be0b4">✓ 卷宗代碼 <span class="mono">${S2.dossierCode(CUR, r.id)}</span></span>` : '<span style="color:#ffb3a8">格式還沒通過（草稿）</span>'}`,
+    get: () => selDos, set: (v) => (selDos = v),
+    after: (cur, draw) => {
+      if (!cur) return;
+      let pick = (GRADES[cur] || {}).g || '';
+      document.querySelectorAll('#dosBody [data-g]').forEach((b) => (b.onclick = () => { pick = b.dataset.g; document.querySelectorAll('#dosBody [data-g]').forEach((x) => x.classList.toggle('on', x === b)); }));
+      const saveG = async (next) => {
+        if (!pick) return toast('先選一個等級');
+        const v = { g: pick, at: Date.now() }, c = $('gCom').value.trim().slice(0, 300); if (c) v.c = c;
+        try { await FB.set('secret-source/m/' + CUR + '/g/' + cur, v); GRADES[cur] = v; toast('✅ 已評等 ' + pick + '（學生重新登入就看得到）'); }
+        catch (e) { return alert('儲存失敗：' + (e.code || e.message)); }
+        if (next) { const l = rows.filter((r) => r.ok && !(GRADES[r.id] || {}).g); if (l[0]) selDos = l[0].id; }
+        rows.forEach((r) => (r.g = (GRADES[r.id] || {}).g || '')); renderDos();
+      };
+      $('gSave').onclick = () => saveG(false); $('gNext').onclick = () => saveG(true);
+    }
+  }, (r) => {
+    const g = GRADES[r.id] || {};
+    return `<div class="paper"><div class="body">${S2.showMark(r.d.p)}</div><div style="margin-top:12px;font-weight:900">參考文獻</div><div class="refs">${S2.showMark(r.d.r).split('<br>').map((x) => '<div>' + x + '</div>').join('')}</div></div>` +
+      (r.d.ai ? `<div class="note" style="color:#3c5a8a;margin-top:8px">🤖 AI 建議（學生也看得到）：${esc(r.d.ai)}</div>` : '') +
+      `<div class="gradebar"><b>老師評等</b>${['S', 'A', 'B', 'C'].map((x) => `<button class="gb${g.g === x ? ' on' : ''}" data-g="${x}" title="${esc(GTIP[x])}">${x}</button>`).join('')}<textarea id="gCom" maxlength="300" placeholder="給學生的一句話（選填，學生看得到）">${esc(g.c || '')}</textarea>` +
+      `<button class="btn" id="gSave">💾 儲存評等</button><button class="btn gold" id="gNext">💾 儲存並看下一位還沒評的 ▶</button>${g.at ? `<span class="note" style="margin:0">上次評等：${ago(g.at)}</span>` : ''}</div>`;
+  });
 }
-$('btnDos').onclick = loadDos; $('dosF').onchange = renderDos;
+$('btnDos').onclick = loadDos;
 $('btnLive').onclick = refreshLive; $('optAuto').onchange = schedule; $('optSort').onchange = () => renderLive();
 
 const rosterList = () => ($('roster').value || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean).map((l) => { const p = l.split(/[\s,，\t]+/); return { id: X.normId(p[0]), name: p.slice(1).join(' ') }; }).filter((o) => /^[A-Z0-9]{3,12}$/.test(o.id));
@@ -578,8 +676,9 @@ $('btnXlsx').onclick = async () => {
   }
   if (L2.some((x) => x.key === 'dossier')) {
     const plain = (h) => { const d = document.createElement('div'); d.innerHTML = S2.showMark(h).replace(/<br>/g, '\n'); return d.textContent; };
-    const dr = [['學號', '姓名', '結案', '卷宗代碼', '文獻探討', '參考文獻', 'AI 建議']];
-    Object.keys(LIVE).sort().forEach((id) => { const r = LIVE[id], d = r.dos; if (!d) return; dr.push([id, r.name || '', (r.passed || {}).dossier ? '✓' : '草稿', (r.passed || {}).dossier ? S2.dossierCode(CUR, id) : '', plain(d.p), plain(d.r), d.ai || '']); });
+    try { GRADES = (await FB.get('secret-source/m/' + CUR + '/g')) || {}; } catch (e) { }
+    const dr = [['學號', '姓名', '結案', '卷宗代碼', '老師評等', '老師評語', '文獻探討', '參考文獻', 'AI 建議']];
+    Object.keys(LIVE).sort().forEach((id) => { const r = LIVE[id], d = r.dos, g = GRADES[id] || {}; if (!d) return; dr.push([id, r.name || '', (r.passed || {}).dossier ? '✓' : '草稿', (r.passed || {}).dossier ? S2.dossierCode(CUR, id) : '', g.g || '', g.c || '', plain(d.p), plain(d.r), d.ai || '']); });
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dr), '結案作業');
   }
   XLSX.writeFile(wb, '出處失傳的秘文_' + (META.name || CUR) + '.xlsx');
@@ -589,7 +688,7 @@ $('btnXlsx').onclick = async () => {
 $('btnKey').onclick = () => {
   const id = X.normId($('keyId').value); if (!/^[A-Z0-9]{3,12}$/.test(id)) return ($('keyBody').innerHTML = '<p class="note bad">學號格式不對</p>');
   const st = X.settingsOf(META), L = X.levels(META);
-  let h = `<p class="note">學號 <b class="mono">${esc(id)}</b>｜鑑定代碼 <b class="mono">${X.closeCode(CUR, id)}</b>${st.en ? '｜英文徽章 <b class="mono">' + X.enBadge(CUR, id) + '</b>' : ''}</p>`;
+  let h = `<p class="note codeonly">學號 <b class="mono">${esc(id)}</b>｜鑑定代碼 <b class="mono">${X.closeCode(CUR, id)}</b>${st.en ? '｜英文徽章 <b class="mono">' + X.enBadge(CUR, id) + '</b>' : ''}</p>`;
   if (X.levels1(META).length) {
     const Q = S1.question(CUR, id, st.subjects), db = S1.buildDB(st.subjects), good = db.filter((d) => d.q === Q.id && d.rel && d.ok);
     h += `<div class="ans"><div class="t">🗄️ 1-A 模擬檔案庫：${esc(Q.q)}</div><div class="a">相關又可靠（${good.length} 篇，收 3 篇以上且含書籍就過關）：` + good.map((d) => `<div>・${esc(S1.KIND[d.kind].name)}｜${esc(d.title)}</div>`).join('') + `</div><div class="note">搜尋建議：${esc(Q.kw.slice(0, 2).join(' AND '))}</div></div>`;
@@ -599,16 +698,37 @@ $('btnKey').onclick = () => {
     const ps = S2.passages(CUR, id), cq = S2.makeCite(CUR, id), qq = S2.makeQuote(CUR, id), pq = S2.makePlag(CUR, id);
     const lab = (arr, k) => (arr.filter((a) => a[0] === k)[0] || [])[1] || k;
     h += `<div class="ans"><div class="t">⚡ 2-1 文中引用快問快答</div>` + cq.map((q, i) => `<div class="a">${i + 1}. ${esc(q.kind)}（${esc(q.mode)}）→ ${esc(q.ans)}</div>`).join('') + '</div>';
-    h += `<div class="ans"><div class="t">🔍 2-2 直接引用？間接引用？（原文：${esc(ps.judge.au.join('、'))}，${ps.judge.yr}）</div>` + qq.items.map((it, i) => `<div class="a">${i + 1}. ${esc(lab(S2.QKIND, it.k))}</div>`).join('') + '</div>';
-    h += `<div class="ans"><div class="t">⚖️ 2-3 這算不算抄襲</div>` + pq.items.map((it, i) => `<div class="a">${i + 1}. ${esc(lab(S2.PKIND, it.k))}</div>`).join('') + '</div>';
-    h += `<div class="ans"><div class="t">✍️ 2-4 改寫練習的原文（${esc(ps.para.au.join('、'))}，${ps.para.yr}）</div><div class="a">${esc(ps.para.orig)}</div><div class="note">文中引用可寫：${esc(S2.citeForms(ps.para).slice(0, 2).join(' 或 '))}${X.levelsDos(META).length ? '｜卷宗代碼 <b class="mono">' + S2.dossierCode(CUR, id) + '</b>' : ''}</div></div>`;
+    const sh = (segs) => segs.map((x) => x.b ? '<b>' + esc(x.t) + '</b>' : esc(x.t)).join('');
+    h += `<div class="ans"><div class="t">🔍 2-2 直接引用？間接引用？（原文：${esc(ps.judge.au.join('、'))}，${ps.judge.yr}）</div>` + qq.items.map((it, i) => `<div class="a">${i + 1}. ${sh(it.segs)}<br>→ <b>${esc(lab(S2.QKIND, it.k))}</b>：${esc(it.why)}</div>`).join('') + '</div>';
+    h += `<div class="ans"><div class="t">⚖️ 2-3 這算不算抄襲</div>` + pq.items.map((it, i) => `<div class="a">${i + 1}. ${esc(it.t)}<br>→ <b>${esc(lab(S2.PKIND, it.k))}</b>：${esc(it.why)}</div>`).join('') + '</div>';
+    h += `<div class="ans"><div class="t">✍️ 2-4 改寫練習的原文（${esc(ps.para.au.join('、'))}，${ps.para.yr}）</div><div class="a">${esc(ps.para.orig)}</div><div class="note">文中引用可寫：${esc(S2.citeForms(ps.para).slice(0, 2).join(' 或 '))}${X.levelsDos(META).length ? '<span class="codeonly">｜卷宗代碼 <b class="mono">' + S2.dossierCode(CUR, id) + '</b></span>' : ''}</div></div>`;
   }
   L.forEach((x) => {
     if (x.kind === 'write') { const ev = X.evidence(CUR, id, x.type, { subjects: st.subjects }); h += `<div class="ans"><div class="t">${x.icon} ${esc(x.name)}</div><div class="a">${X.html(ev.segs)}</div></div>`; }
     else if (x.kind === 'spot') { const sp = C.makeSpot(CUR, id, META); h += `<div class="ans"><div class="t">🔎 找出破綻</div>` + sp.items.map((it, k) => `<div class="a">第 ${k + 1} 筆：${it.why ? esc(it.why) : '完全正確'}</div>`).join('') + '</div>'; }
     else if (x.kind === 'sort') { const q = C.makeSort(CUR, id, META); h += `<div class="ans"><div class="t">🗂️ 正確順序</div>` + q.entries.slice().sort((a, b) => a.id - b.id).map((e, i) => `<div class="a">${i + 1}. ${X.html(e.segs)}</div>`).join('') + '</div>'; }
   });
-  $('keyBody').innerHTML = h;
+  $('keyBody').innerHTML = h; $('btnKeyPdf').disabled = false; $('btnKeyPdf').dataset.id = id;
+};
+// 學生參考 PDF：拿掉所有代碼，開一個排版好的新視窗再叫出列印（另存為 PDF）
+$('btnKeyPdf').onclick = () => {
+  const id = $('btnKeyPdf').dataset.id, box = $('keyBody').cloneNode(true);
+  box.querySelectorAll('.codeonly').forEach((e) => e.remove());
+  const w = window.open('', '_blank'); if (!w) return alert('瀏覽器擋住了新視窗，請允許彈出視窗後再按一次');
+  w.document.write(`<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><title>出處失傳的秘文｜${esc(id)} 參考答案</title><style>body{font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;color:#222;max-width:780px;margin:24px auto;padding:0 16px;line-height:1.7}h1{font-size:1.3rem;margin:0}.sub{color:#666;margin:2px 0 16px}.ans{border:1px solid #ccc;border-radius:8px;padding:8px 12px;margin-bottom:10px;break-inside:avoid}.t{font-weight:900;color:#555;font-size:.9rem}.a{margin:3px 0}.note{color:#666;font-size:.88rem}.mono{font-family:monospace}@media print{body{margin:0}}</style></head><body><h1>📜 出處失傳的秘文｜參考答案</h1><div class="sub">${esc(META.name || '')}｜學號 ${esc(id)}｜每位同學的題目都不一樣，這份只適用於這個學號</div>${box.innerHTML}<script>setTimeout(function(){print()},400)<\/script></body></html>`);
+  w.document.close();
+};
+// 驗證代碼：學號＋代碼（可多個），比對第 3 關鑑定代碼、英文徽章、卷宗代碼
+$('btnVer').onclick = () => {
+  const lines = ($('verIn').value || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  if (!lines.length) return ($('verBody').innerHTML = '<p class="note">請先貼上「學號 代碼」</p>');
+  const rows = lines.map((l) => {
+    const p = l.toUpperCase().split(/[\s,，、\t]+/).filter(Boolean), id = X.normId(p[0]), codes = p.slice(1);
+    if (!/^[A-Z0-9]{3,12}$/.test(id) || !codes.length) return `<tr><td colspan="3" class="left">⚠️ 看不懂這一行：${esc(l)}</td></tr>`;
+    const kinds = { [X.closeCode(CUR, id)]: '🏅 第 3 關鑑定代碼', [X.enBadge(CUR, id)]: '🌍 英文徽章', [S2.dossierCode(CUR, id)]: '📁 卷宗代碼' };
+    return codes.map((c, k) => `<tr>${k ? '<td></td><td></td>' : `<td class="mono">${esc(id)}</td><td>${esc(nameOf(id))}</td>`}<td class="left"><span class="mono">${esc(c)}</span>　${kinds[c] ? `<span class="vok">✅ ${kinds[c]}</span>` : '<span class="vng">❌ 對不上（打錯字、抄別人的或不是這個任務）</span>'}</td></tr>`).join('');
+  });
+  $('verBody').innerHTML = '<div class="tablebox"><table><thead><tr><th>學號</th><th>姓名</th><th>代碼驗證</th></tr></thead><tbody>' + rows.join('') + '</tbody></table></div>';
 };
 $('keyId').onkeydown = (e) => { if (e.key === 'Enter') $('btnKey').click(); };
 </script>

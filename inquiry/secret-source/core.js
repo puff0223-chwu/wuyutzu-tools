@@ -405,6 +405,7 @@
   function base(code) { return CONFIG.FIREBASE_URL + '/' + CONFIG.DB + '/m/' + code; }
   function getMeta(code) { return cloudFetch(base(code) + '/meta.json'); }
   function getRec(code, id) { return cloudFetch(base(code) + '/r/' + encodeURIComponent(normId(id)) + '.json'); }
+  function getGrade(code, id) { return cloudFetch(base(code) + '/g/' + encodeURIComponent(normId(id)) + '.json'); } // 老師評等（2026-10-19）
   function putRec(code, id, rec) { return cloudFetch(base(code) + '/r/' + encodeURIComponent(normId(id)) + '.json', { method: 'PUT', body: rec }); }
 
   var LV_KEY = /^[a-z][a-z0-9]{1,11}$/;
@@ -448,6 +449,6 @@
     evidence: evidence, plain: plain, html: html, escapeHtml: escapeHtml,
     DEFAULT_SETTINGS: DEFAULT_SETTINGS, settingsOf: settingsOf, levels: levels, levels1: levels1, levels2: levels2, levelsDos: levelsDos,
     closeCode: closeCode, enBadge: enBadge, validCode: validCode, newCode: newCode,
-    getMeta: getMeta, getRec: getRec, putRec: putRec, mergeProgress: mergeProgress, toRecord: toRecord, LV_KEY: LV_KEY
+    getMeta: getMeta, getRec: getRec, getGrade: getGrade, putRec: putRec, mergeProgress: mergeProgress, toRecord: toRecord, LV_KEY: LV_KEY
   };
 })(typeof window !== 'undefined' ? window : globalThis);
