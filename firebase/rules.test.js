@@ -190,6 +190,12 @@ expect('學生寫線索卡', ss, null, W, '/secret-source/m/MMMMMM/r/S002', Obje
 expect('線索卡最多 6 張', ss, null, W, '/secret-source/m/MMMMMM/r/S002', Object.assign({}, srec, { clue: { at: 1, c: { 6: { t: 'book' } } } }), false);
 expect('線索卡欄位太長不能寫', ss, null, W, '/secret-source/m/MMMMMM/r/S002', Object.assign({}, srec, { clue: { at: 1, c: { 0: { why: 'x'.repeat(201) } } } }), false);
 expect('線索卡多了奇怪欄位不能寫', ss, null, W, '/secret-source/m/MMMMMM/r/S002', Object.assign({}, srec, { clue: { at: 1, c: { 0: { hack: 'x' } } } }), false);
+// 結案作業（2026-10-19）：dos
+const dos = { at: 1, ok: true, p: '王小明（2023）指出<b>…</b>', r: '王小明（2023）。<b>書名</b>。出版者。', ai: '寫得很好' };
+expect('學生寫結案作業', ss, null, W, '/secret-source/m/MMMMMM/r/S002', Object.assign({}, srec, { dos }), true);
+expect('結案作業文獻探討太長不能寫', ss, null, W, '/secret-source/m/MMMMMM/r/S002', Object.assign({}, srec, { dos: Object.assign({}, dos, { p: 'x'.repeat(2501) }) }), false);
+expect('結案作業 ok 要是 true/false', ss, null, W, '/secret-source/m/MMMMMM/r/S002', Object.assign({}, srec, { dos: Object.assign({}, dos, { ok: 'yes' }) }), false);
+expect('結案作業多了奇怪欄位不能寫', ss, null, W, '/secret-source/m/MMMMMM/r/S002', Object.assign({}, srec, { dos: Object.assign({}, dos, { hack: 1 }) }), false);
 expect('老師讀自己的任務清單', ss, SRC_TEA, R, '/secret-source/owners/SRCT', null, true);
 expect('老師寫自己的任務清單', ss, SRC_TEA, W, '/secret-source/owners/SRCT/ABCDEF', { name: 'x', at: 1, roster: '110 a' }, true);
 expect('不能寫別人的任務清單', ss, SRC_TEA, W, '/secret-source/owners/TEA/ABCDEF', { name: 'x', at: 1 }, false);

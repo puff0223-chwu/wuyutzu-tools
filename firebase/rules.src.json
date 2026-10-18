@@ -570,6 +570,27 @@
                   ".validate": false
                 }
               },
+              "dos": {
+                ".validate": "newData.hasChildren(['at','ok'])",
+                "at": {
+                  ".validate": "newData.isNumber()"
+                },
+                "ok": {
+                  ".validate": "newData.isBoolean()"
+                },
+                "p": {
+                  ".validate": "newData.isString() && newData.val().length <= 2500"
+                },
+                "r": {
+                  ".validate": "newData.isString() && newData.val().length <= 3500"
+                },
+                "ai": {
+                  ".validate": "newData.isString() && newData.val().length <= 500"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
               "$other": {
                 ".validate": false
               }

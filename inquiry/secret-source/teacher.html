@@ -10,9 +10,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="../../account/staff.js?v=20261018a"></script>
-<script src="core.js?v=20261018c"></script>
+<script src="core.js?v=20261019a"></script>
 <script src="check.js?v=20261018b"></script>
 <script src="stage1.js?v=20261019a"></script>
+<script src="stage2.js?v=20261019a"></script>
 <style>
 :root{--night:#1b1a17;--parch:#f3e9d2;--parch2:#e8dbbb;--edge:#c9b386;--ink:#2b2418;--muted:#76684e;--seal:#b3322a;--gold:#b98f35;--jade:#2f6b5a;--ok:#2f7d4f;--bad:#b3322a}
 *{box-sizing:border-box}
@@ -161,6 +162,7 @@ body{font-size:16.5px}
       <button data-t="set">⚙️ 任務設定</button>
       <button data-t="live">📡 即時進度</button>
       <button data-t="clue">🗂️ 線索卡</button>
+      <button data-t="dos">📁 結案作業</button>
       <button data-t="key">🔑 答案查詢</button>
     </nav>
 
@@ -180,7 +182,8 @@ body{font-size:16.5px}
         <h2>🧭 上課流程</h2>
         <div class="steps" style="margin-top:4px">
           <div class="step"><span class="no">1</span><b>第一節：查文獻</b>學生掃 QR 進來，做 <b>1-A 模擬檔案庫</b>；最後示範 <b>1-B 線索卡</b>，當回家作業</div>
-          <div class="step"><span class="no">2</span><b>第二節：參考文獻</b>做 <b>第 3 關出處鑑識</b>，全部過關會拿到鑑定代碼</div>
+          <div class="step"><span class="no">2</span><b>第二節：引用與參考文獻</b>先做 <b>第 2 關證詞重建</b>，再做 <b>第 3 關出處鑑識</b>，全部過關會拿到鑑定代碼</div>
+          <div class="step"><span class="no">★</span><b>課後：結案作業</b>學生用自己的線索卡寫「我的文獻卷宗」；在「📁 結案作業」分頁評內容</div>
           <div class="step"><span class="no">3</span><b>上課中</b>開「📡 即時進度」看誰卡關；「🗂️ 線索卡」抽查學生找的文獻</div>
           <div class="step"><span class="no">4</span><b>學生問答案時</b>用「🔑 答案查詢」輸入學號，看他的題目和標準答案</div>
         </div>
@@ -225,6 +228,15 @@ body{font-size:16.5px}
       </div>
     </section>
 
+    <section data-tab="dos">
+      <div class="parch">
+        <div class="row" style="margin-top:0"><h2 style="margin:0">📁 結案作業｜我的文獻卷宗</h2><span style="flex:1"></span><button class="btn sm" id="btnDos">🔄 重新讀取</button></div>
+        <p class="note">系統已檢查字數、引用 ↔ 參考文獻對應、直接引用（「」＋粗體、≤ 50 字）、至少 1 本書、參考文獻基本格式；<b>內容請老師評</b>。AI 建議僅供參考。</p>
+        <div class="row"><select id="dosF" style="width:auto"><option value="all">全部</option><option value="ok">已結案</option><option value="no">還沒通過</option></select></div>
+        <div id="dosBody" style="margin-top:10px"></div>
+      </div>
+    </section>
+
     <section data-tab="key">
       <div class="parch">
         <h2>🔑 答案查詢</h2>
@@ -247,7 +259,7 @@ body{font-size:16.5px}
 </div>
 
 <script type="module">
-const X = window.SecretSource, C = window.SecretSourceCheck, S1 = window.SecretSourceS1, W = window.WuStaff;
+const X = window.SecretSource, C = window.SecretSourceCheck, S1 = window.SecretSourceS1, S2 = window.SecretSourceS2, W = window.WuStaff;
 const $ = (id) => document.getElementById(id);
 const esc = X.escapeHtml;
 const gate = $('gate');
@@ -325,7 +337,9 @@ function summary(m) {
   const st = X.settingsOf(m), tm = S1.topicMode(m);
   const out = ['🔬 ' + st.subjects.map((k) => X.SUBJECTS[k].name).join('、')];
   out.push(m.s1 === false ? '🗄️ 第 1 關：關閉' : '🗄️ 第 1 關主題：' + (tm === 'teacher' ? '老師指定（' + S1.topicLines(m.topics).length + ' 個）' : tm === 'self' ? '學生自選' : '依科目隨機'));
+  out.push(m.s2 === false ? '✍️ 第 2 關：關閉' : '✍️ 第 2 關：開' + (m.ai === false ? '（無 AI）' : '（AI 回饋）'));
   out.push('📚 第 3 關：' + st.types.length + ' 種文獻');
+  out.push(m.dos === false ? '📁 結案作業：關閉' : '📁 結案作業：開');
   out.push(st.en ? '🌍 英文進階：開' : '🌍 英文進階：關');
   return out.map((t) => `<span>${esc(t)}</span>`).join('');
 }
@@ -351,8 +365,12 @@ function settingsForm(m) {
         <p class="note" style="margin-top:4px">💡 寫「領域」比寫很細的題目好找（例如「鑑識科學」比「魯米諾對血跡的靈敏度」好找）。系統不會替學生搜尋，下面可以先點連結看看真實資料庫找不找得到：</p>
         <div class="topicchk" id="topicChk"></div>
       </div></div>
+    <div class="opt s2" style="grid-column:1/-1;border-left:5px solid var(--gold)"><div class="stage-h">✍️ 第 2 關｜證詞重建　＋　📁 結案作業</div>
+      ${ck('s2', '1', '開放第 2 關（文中引用快問快答、直接／間接引用、這算不算抄襲、改寫練習）', m.s2 !== false)}<br>
+      ${ck('dos', '1', '開放結案作業「我的文獻卷宗」（用 1-B 線索卡的文獻寫 150～300 字文獻探討）', m.dos !== false)}<br>
+      ${ck('ai', '1', '🤖 開啟 AI 回饋（改寫練習、結案作業）', m.ai !== false)} ${tip('AI 借用科普閱讀測驗的 Gemini，用量會算在那邊的「AI 用量統計」。關掉時，改寫練習只做重複度與引用格式檢查；AI 只給提示、不幫學生改寫')}</div>
     <div class="opt s3"><div class="stage-h s3">📚 第 3 關｜中文文獻類型</div>${ZH.map((t) => ck('type', t.key, t.icon + ' ' + t.name, !!types[t.key], t.def ? '' : '加開')).join('')}<p class="note">預設：書籍、網路資源、YouTube、小論文、科展作品（至少一種）。</p></div>
-    <div class="opt en"><div class="stage-h" style="border-color:#3c5a8a">🌍 英文進階</div>${ck('en', '1', '開啟英文期刊、英文書籍', en)}<p class="note">當加分關卡，不影響結案。第 2 關（引用）開發中，完成後會在這裡出現設定。</p></div>
+    <div class="opt en"><div class="stage-h" style="border-color:#3c5a8a">🌍 英文進階</div>${ck('en', '1', '開啟英文期刊、英文書籍', en)}<p class="note">當加分關卡，不影響第 3 關鑑定書。</p></div>
   </div>`;
 }
 // 主題「找不找得到」：每個主題給中學生網站、科教館、博碩士論文的搜尋連結（用 Google 限定網站）
@@ -369,7 +387,7 @@ function readForm() {
   const vals = (n) => Array.from(document.querySelectorAll(`input[name=${n}]:checked`)).map((x) => x.value);
   const subj = {}, types = {}; vals('subj').forEach((k) => (subj[k] = true)); vals('type').forEach((k) => (types[k] = true));
   const tm = (document.querySelector('input[name=tmode]:checked') || {}).value || 'rand';
-  return { name: ($('fName').value || '').trim().slice(0, 40), subj, types, en: vals('en').length > 0, s1: vals('s1').length > 0, tmode: tm, topics: ($('fTopics').value || '').slice(0, 1200) };
+  return { name: ($('fName').value || '').trim().slice(0, 40), subj, types, en: vals('en').length > 0, s1: vals('s1').length > 0, s2: vals('s2').length > 0, dos: vals('dos').length > 0, ai: vals('ai').length > 0, tmode: tm, topics: ($('fTopics').value || '').slice(0, 1200) };
 }
 function validForm(f) { if (!f.name) return '請填任務名稱'; if (f.tmode === 'teacher' && !S1.topicLines(f.topics).length) return '選了「老師指定主題」，請至少輸入一個主題'; if (!Object.keys(f.subj).length) return '至少勾一個科目'; if (!Object.keys(f.types).length) return '至少勾一種文獻類型'; return ''; }
 
@@ -441,6 +459,7 @@ function showTab(t) {
   document.querySelectorAll('section[data-tab]').forEach((s) => s.classList.toggle('on', s.dataset.tab === t));
   if (t === 'live') refreshLive(); else stopPoll();
   if (t === 'clue') loadClues();
+  if (t === 'dos') loadDos();
 }
 document.querySelectorAll('#tabs button').forEach((b) => (b.onclick = () => showTab(b.dataset.t)));
 
@@ -475,6 +494,25 @@ function renderClues() {
   }).join('');
 }
 $('btnClue').onclick = loadClues; $('clueF').onchange = renderClues;
+async function loadDos() {
+  if (!CUR) return;
+  $('dosBody').innerHTML = '<p class="note">讀取中……</p>';
+  try { LIVE = (await FB.get('secret-source/m/' + CUR + '/r')) || {}; liveAt = Date.now(); } catch (e) { $('dosBody').innerHTML = '<p class="note bad">讀取失敗：' + esc(e.code || e.message) + '</p>'; return; }
+  renderDos();
+}
+function renderDos() {
+  const f = $('dosF').value, names = {}; rosterList().forEach((o) => (names[o.id] = o.name));
+  const ids = Object.keys(LIVE || {}).sort().filter((id) => { const r = LIVE[id]; if (!r.dos) return false; const ok = !!(r.passed || {}).dossier; return f === 'all' || (f === 'ok') === ok; });
+  if (!ids.length) { $('dosBody').innerHTML = '<p class="note">還沒有學生送出結案作業。</p>'; return; }
+  $('dosBody').innerHTML = ids.map((id) => {
+    const r = LIVE[id], d = r.dos, ok = !!(r.passed || {}).dossier, words = String(d.p || '').replace(/<[^>]+>/g, '').replace(/&[a-z#0-9]+;/g, 'x').replace(/\s/g, '').length;
+    return `<div class="clu"><div class="h"><b class="mono">${esc(id)}</b><b>${esc(r.name || names[id] || '')}</b>${ok ? `<span class="good">✓ 結案｜代碼 <span class="mono">${S2.dossierCode(CUR, id)}</span></span>` : '<span class="bad">格式還沒通過（草稿）</span>'}<span class="note" style="margin:0">${words} 字｜${ago(d.at)}</span></div>` +
+      `<div style="background:#fff;border:1px solid var(--edge);border-radius:8px;padding:8px 12px;line-height:1.9">${S2.showMark(d.p)}</div>` +
+      `<div style="margin-top:6px;font-size:.9rem;line-height:1.8"><b>參考文獻</b><div style="padding-left:2em;text-indent:-2em">${S2.showMark(d.r).split('<br>').map((x) => '<div>' + x + '</div>').join('')}</div></div>` +
+      (d.ai ? `<div class="note" style="color:#3c5a8a">🤖 AI 建議：${esc(d.ai)}</div>` : '') + '</div>';
+  }).join('');
+}
+$('btnDos').onclick = loadDos; $('dosF').onchange = renderDos;
 $('btnLive').onclick = refreshLive; $('optAuto').onchange = schedule; $('optSort').onchange = () => renderLive();
 
 const rosterList = () => ($('roster').value || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean).map((l) => { const p = l.split(/[\s,，\t]+/); return { id: X.normId(p[0]), name: p.slice(1).join(' ') }; }).filter((o) => /^[A-Z0-9]{3,12}$/.test(o.id));
@@ -489,7 +527,7 @@ function people() {
   const byId = {}; recs.forEach((r) => (byId[r.id] = r));
   rosterList().forEach((o) => { if (!byId[o.id]) recs.push({ id: o.id, name: o.name, passed: {}, att: {}, closedAt: 0, ts: 0, started: false, arc: null, nCards: 0 }); else if (!byId[o.id].name) byId[o.id].name = o.name; });
   recs.forEach((r) => { r.done = req.filter((x) => r.passed[x.key]).length; });
-  return { L, req, recs, L1: X.levels1(META) };
+  return { L, req, recs, L1: X.levels1(META), L2: X.levels2(META).concat(X.levelsDos(META)) };
 }
 // 第 1 關的格子：A 顯示評等，B 顯示線索卡張數
 function s1Cell(r, x) {
@@ -502,21 +540,22 @@ function renderLive() {
   if (curTab !== 'live') return;
   $('liveStamp').textContent = liveErr ? '⚠️ ' + liveErr : liveAt ? '最後更新 ' + new Date(liveAt).toLocaleTimeString() : '讀取中……';
   if (!LIVE) { $('liveBody').innerHTML = ''; return; }
-  const { L, req, recs, L1 } = people(), started = recs.filter((r) => r.started);
+  const { L, req, recs, L1, L2 } = people(), started = recs.filter((r) => r.started);
   if (!recs.length) { $('liveBody').innerHTML = '<p class="note">還沒有學生開始。把「學生連結」給學生後就會出現在這裡。</p>'; return; }
   const closed = recs.filter((r) => r.done === req.length).length;
   const enL = L.filter((x) => !x.required), enDone = enL.length ? recs.filter((r) => enL.every((x) => r.passed[x.key])).length : 0;
   const stuck = recs.filter((r) => L.some((x) => !r.passed[x.key] && (r.att[x.key] || 0) >= 3)).length;
   let h = `<div class="cards"><div class="kpi"><b>${started.length}</b><span>已開始</span></div><div class="kpi"><b>${closed}</b><span>已結案（必修全過）</span></div>` +
     (enL.length ? `<div class="kpi"><b>${enDone}</b><span>🌍 英文進階徽章</span></div>` : '') +
+    (L2.some((x) => x.key === 'dossier') ? `<div class="kpi"><b>${recs.filter((r) => r.passed.dossier).length}</b><span>📁 結案作業完成</span></div>` : '') +
     (L1.length ? `<div class="kpi"><b>${recs.filter((r) => r.passed.archive).length}</b><span>🗄️ 1-A 模擬檔案庫過關（S ${recs.filter((r) => r.arc && r.arc.g === 'S').length} 人）</span></div><div class="kpi"><b>${recs.filter((r) => r.passed.clues).length}</b><span>🗂️ 1-B 線索卡完成</span></div>` : '') + `<div class="kpi"><b style="color:var(--bad)">${stuck}</b><span>有一關試 3 次以上還沒過</span></div></div>`;
   const st = L.map((x) => { const pass = started.filter((r) => r.passed[x.key]).length, sk = started.filter((r) => !r.passed[x.key] && r.att[x.key]).length, tries = started.filter((r) => r.passed[x.key]).map((r) => r.att[x.key] || 1); return { x, pass, sk, avg: tries.length ? tries.reduce((a, b) => a + b, 0) / tries.length : 0 }; });
   const tried = st.filter((s) => s.pass + s.sk >= 3), hard = tried.length ? tried.slice().sort((a, b) => a.pass / (a.pass + a.sk) - b.pass / (b.pass + b.sk) || b.avg - a.avg)[0] : null;
   h += '<div class="lvstats">' + st.map((s) => `<div class="lvs${hard && hard.x.key === s.x.key && s.sk ? ' hard' : ''}"><b>${s.x.icon} ${esc(s.x.name)}</b>${hard && hard.x.key === s.x.key && s.sk ? ' <span class="bad">🔥 最卡</span>' : ''}<div class="bar"><i style="width:${started.length ? Math.round(s.pass / started.length * 100) : 0}%"></i></div>過關 <b>${s.pass}</b>／${started.length}　卡關 <b class="bad">${s.sk}</b>${s.pass ? '<br>平均試 ' + s.avg.toFixed(1) + ' 次' : ''}</div>`).join('') + '</div>';
   const sort = $('optSort').value;
   recs.sort((a, b) => sort === 'low' ? a.done - b.done || a.id.localeCompare(b.id) : sort === 'high' ? b.done - a.done || (a.closedAt || 9e15) - (b.closedAt || 9e15) : a.id.localeCompare(b.id));
-  h += '<div class="tablebox"><table><thead><tr><th>學號</th><th>姓名</th>' + L1.map((x) => `<th>${x.icon} 1-${x.key === 'archive' ? 'A' : 'B'}</th>`).join('') + L.map((x) => `<th>${x.icon} ${esc(x.name)}</th>`).join('') + '<th>必修</th><th>結案</th><th>鑑定代碼</th><th>最後活動</th></tr></thead><tbody>' +
-    recs.map((r) => `<tr><td class="mono">${esc(r.id)}</td><td>${esc(r.name)}</td>` + L1.map((x) => s1Cell(r, x)).join('') + L.map((x) => { const n = r.att[x.key] || 0; return r.passed[x.key] ? `<td class="p">✓${n > 1 ? n : ''}</td>` : n ? `<td class="s">✗${n}</td>` : '<td class="n">·</td>'; }).join('') +
+  h += '<div class="tablebox"><table><thead><tr><th>學號</th><th>姓名</th>' + L1.map((x) => `<th>${x.icon} 1-${x.key === 'archive' ? 'A' : 'B'}</th>`).join('') + L2.map((x, i) => `<th title="${esc(x.name)}">${x.icon} ${x.key === 'dossier' ? '結案' : '2-' + (i + 1)}</th>`).join('') + L.map((x) => `<th>${x.icon} ${esc(x.name)}</th>`).join('') + '<th>必修</th><th>結案</th><th>鑑定代碼</th><th>最後活動</th></tr></thead><tbody>' +
+    recs.map((r) => `<tr><td class="mono">${esc(r.id)}</td><td>${esc(r.name)}</td>` + L1.map((x) => s1Cell(r, x)).join('') + L2.map((x) => { const n = r.att[x.key] || 0; return r.passed[x.key] ? `<td class="p">✓${n > 1 ? n : ''}</td>` : n ? `<td class="s">✗${n}</td>` : '<td class="n">·</td>'; }).join('') + L.map((x) => { const n = r.att[x.key] || 0; return r.passed[x.key] ? `<td class="p">✓${n > 1 ? n : ''}</td>` : n ? `<td class="s">✗${n}</td>` : '<td class="n">·</td>'; }).join('') +
       `<td>${r.started ? r.done + '/' + req.length : '<span class="n">未開始</span>'}</td><td class="good">${r.closedAt ? new Date(r.closedAt).toLocaleString().replace(/:\d\d$/, '') : ''}</td><td class="mono">${r.done === req.length ? X.closeCode(CUR, r.id) : ''}</td><td class="note">${ago(r.ts)}</td></tr>`).join('') + '</tbody></table></div>';
   $('liveBody').innerHTML = h;
 }
@@ -525,16 +564,23 @@ const loadXLSX = () => xlsxP || (xlsxP = new Promise((ok, no) => { if (window.XL
 $('btnXlsx').onclick = async () => {
   if (!LIVE) return toast('還沒有資料');
   try { await loadXLSX(); } catch (e) { return toast(e.message); }
-  const { L, req, recs, L1 } = people();
+  const { L, req, recs, L1, L2 } = people();
+  const s2h = L2.map((x) => x.name), s2v = (r) => L2.map((x) => r.passed[x.key] ? '✓' : (r.att[x.key] ? '未過' : ''));
   const s1h = L1.length ? ['1-A 模擬檔案庫評等', '1-A 搜尋次數', '1-B 線索卡張數', '1-B 完成'] : [];
   const s1v = (r) => L1.length ? [r.passed.archive ? ((r.arc && r.arc.g) || '✓') : (r.att.archive ? '未過' : ''), r.arc ? r.arc.n : '', r.nCards || '', r.passed.clues ? '✓' : ''] : [];
-  const head = ['學號', '姓名'].concat(s1h, L.map((x) => x.name), ['必修完成', '結案時間', '鑑定代碼'].concat(L.map((x) => x.name + ' 嘗試次數')));
-  const rows = [head].concat(recs.map((r) => [r.id, r.name].concat(s1v(r), L.map((x) => r.passed[x.key] ? '✓' : (r.att[x.key] ? '卡關' : '')), [r.started ? r.done + '/' + req.length : '未開始', r.closedAt ? new Date(r.closedAt).toLocaleString() : '', r.done === req.length ? X.closeCode(CUR, r.id) : ''], L.map((x) => r.att[x.key] || 0))));
+  const head = ['學號', '姓名'].concat(s1h, s2h, L.map((x) => x.name), ['必修完成', '結案時間', '鑑定代碼'].concat(L.map((x) => x.name + ' 嘗試次數')));
+  const rows = [head].concat(recs.map((r) => [r.id, r.name].concat(s1v(r), s2v(r), L.map((x) => r.passed[x.key] ? '✓' : (r.att[x.key] ? '卡關' : '')), [r.started ? r.done + '/' + req.length : '未開始', r.closedAt ? new Date(r.closedAt).toLocaleString() : '', r.done === req.length ? X.closeCode(CUR, r.id) : ''], L.map((x) => r.att[x.key] || 0))));
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), '闖關進度');
   if (L1.length) {
     const cr = [['學號', '姓名', '研究主題', '第幾張', '類型', '作者', '年份', '篇名／書名', '出處', '卷期頁碼', '網址或DOI', '跟題目的關係']];
     Object.keys(LIVE).sort().forEach((id) => { const r = LIVE[id]; cardsOf(r).forEach((c, i) => cr.push([id, r.name || '', (r.clue && r.clue.topic) || '', i + 1, (S1.CT[c.t] || {}).n || '', c.au || '', c.yr || '', c.ti || '', c.src || '', c.vp || '', c.url || '', c.why || ''])); });
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(cr), '線索卡');
+  }
+  if (L2.some((x) => x.key === 'dossier')) {
+    const plain = (h) => { const d = document.createElement('div'); d.innerHTML = S2.showMark(h).replace(/<br>/g, '\n'); return d.textContent; };
+    const dr = [['學號', '姓名', '結案', '卷宗代碼', '文獻探討', '參考文獻', 'AI 建議']];
+    Object.keys(LIVE).sort().forEach((id) => { const r = LIVE[id], d = r.dos; if (!d) return; dr.push([id, r.name || '', (r.passed || {}).dossier ? '✓' : '草稿', (r.passed || {}).dossier ? S2.dossierCode(CUR, id) : '', plain(d.p), plain(d.r), d.ai || '']); });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dr), '結案作業');
   }
   XLSX.writeFile(wb, '出處失傳的秘文_' + (META.name || CUR) + '.xlsx');
 };
@@ -548,6 +594,14 @@ $('btnKey').onclick = () => {
     const Q = S1.question(CUR, id, st.subjects), db = S1.buildDB(st.subjects), good = db.filter((d) => d.q === Q.id && d.rel && d.ok);
     h += `<div class="ans"><div class="t">🗄️ 1-A 模擬檔案庫：${esc(Q.q)}</div><div class="a">相關又可靠（${good.length} 篇，收 3 篇以上且含書籍就過關）：` + good.map((d) => `<div>・${esc(S1.KIND[d.kind].name)}｜${esc(d.title)}</div>`).join('') + `</div><div class="note">搜尋建議：${esc(Q.kw.slice(0, 2).join(' AND '))}</div></div>`;
     h += `<div class="ans"><div class="t">🗂️ 1-B 研究主題</div><div class="a">${esc(S1.topicFor(CUR, id, META) || '學生自選')}</div></div>`;
+  }
+  if (X.levels2(META).length) {
+    const ps = S2.passages(CUR, id), cq = S2.makeCite(CUR, id), qq = S2.makeQuote(CUR, id), pq = S2.makePlag(CUR, id);
+    const lab = (arr, k) => (arr.filter((a) => a[0] === k)[0] || [])[1] || k;
+    h += `<div class="ans"><div class="t">⚡ 2-1 文中引用快問快答</div>` + cq.map((q, i) => `<div class="a">${i + 1}. ${esc(q.kind)}（${esc(q.mode)}）→ ${esc(q.ans)}</div>`).join('') + '</div>';
+    h += `<div class="ans"><div class="t">🔍 2-2 直接引用？間接引用？（原文：${esc(ps.judge.au.join('、'))}，${ps.judge.yr}）</div>` + qq.items.map((it, i) => `<div class="a">${i + 1}. ${esc(lab(S2.QKIND, it.k))}</div>`).join('') + '</div>';
+    h += `<div class="ans"><div class="t">⚖️ 2-3 這算不算抄襲</div>` + pq.items.map((it, i) => `<div class="a">${i + 1}. ${esc(lab(S2.PKIND, it.k))}</div>`).join('') + '</div>';
+    h += `<div class="ans"><div class="t">✍️ 2-4 改寫練習的原文（${esc(ps.para.au.join('、'))}，${ps.para.yr}）</div><div class="a">${esc(ps.para.orig)}</div><div class="note">文中引用可寫：${esc(S2.citeForms(ps.para).slice(0, 2).join(' 或 '))}${X.levelsDos(META).length ? '｜卷宗代碼 <b class="mono">' + S2.dossierCode(CUR, id) + '</b>' : ''}</div></div>`;
   }
   L.forEach((x) => {
     if (x.kind === 'write') { const ev = X.evidence(CUR, id, x.type, { subjects: st.subjects }); h += `<div class="ans"><div class="t">${x.icon} ${esc(x.name)}</div><div class="a">${X.html(ev.segs)}</div></div>`; }

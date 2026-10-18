@@ -368,6 +368,15 @@
     if (st.en) ['ejournal', 'ebook'].forEach(function (k) { out.push({ key: k, kind: 'write', type: k, name: TYPE[k].name, icon: TYPE[k].icon, required: false }); });
     return out;
   }
+  /* ---------- 第 2 關的關卡（meta.s2 === false 時不開）、結案作業（meta.dos === false 時不開） ---------- */
+  function levels2(meta) {
+    if (meta && meta.s2 === false) return [];
+    return [{ key: 'cite', kind: 'cite', name: '文中引用快問快答', icon: '⚡', sub: '一位、兩位、三位以上、機構、英文' },
+      { key: 'quote', kind: 'quote', name: '直接引用？間接引用？', icon: '🔍', sub: '6 句引用，判斷對錯與錯在哪' },
+      { key: 'plag', kind: 'plag', name: '這算不算抄襲', icon: '⚖️', sub: '4 種寫法，分辨合格改寫與抄襲' },
+      { key: 'para', kind: 'para', name: '改寫練習', icon: '✍️', sub: '用自己的話改寫並註明出處' + (meta && meta.ai === false ? '' : '（AI 回饋）') }];
+  }
+  function levelsDos(meta) { return meta && meta.dos === false ? [] : [{ key: 'dossier', kind: 'dossier', name: '我的文獻卷宗', icon: '📁', sub: '用自己找的文獻寫 150～300 字文獻探討＋參考文獻' }]; }
   /* ---------- 第 1 關的關卡（meta.s1 === false 時不開） ---------- */
   function levels1(meta) {
     if (meta && meta.s1 === false) return [];
@@ -423,6 +432,11 @@
       rec.clue = { at: +prog.clue.at || Date.now(), c: cc };
       if (prog.clue.topic) rec.clue.topic = String(prog.clue.topic).slice(0, 60);
     }
+    // 結案作業（2026-10-19）：p 文獻探討、r 參考文獻（只保留 <b><i><br> 的標記）、ok 系統檢查通過、ai AI 回饋
+    if (prog.dos && (prog.dos.p || prog.dos.r)) {
+      rec.dos = { at: +prog.dos.at || Date.now(), p: String(prog.dos.p || '').slice(0, 2500), r: String(prog.dos.r || '').slice(0, 3500), ok: !!prog.dos.ok };
+      if (prog.dos.ai) rec.dos.ai = String(prog.dos.ai).slice(0, 500);
+    }
     return rec;
   }
 
@@ -432,7 +446,7 @@
     hashStr: hashStr, makeRng: makeRng, rngFor: rngFor, normId: normId, int: int, pick: pick, shuffle: shuffle, pickN: pickN,
     people: people, personName: personName, givenName: givenName, enPeople: enPeople, GEN: GEN, S: S,
     evidence: evidence, plain: plain, html: html, escapeHtml: escapeHtml,
-    DEFAULT_SETTINGS: DEFAULT_SETTINGS, settingsOf: settingsOf, levels: levels, levels1: levels1,
+    DEFAULT_SETTINGS: DEFAULT_SETTINGS, settingsOf: settingsOf, levels: levels, levels1: levels1, levels2: levels2, levelsDos: levelsDos,
     closeCode: closeCode, enBadge: enBadge, validCode: validCode, newCode: newCode,
     getMeta: getMeta, getRec: getRec, putRec: putRec, mergeProgress: mergeProgress, toRecord: toRecord, LV_KEY: LV_KEY
   };

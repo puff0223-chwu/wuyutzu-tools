@@ -7,9 +7,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<script src="core.js?v=20261018c"></script>
+<script src="core.js?v=20261019a"></script>
 <script src="check.js?v=20261018b"></script>
 <script src="stage1.js?v=20261019a"></script>
+<script src="stage2.js?v=20261019a"></script>
 <style>
 :root{
   --night:#1b1a17; --night2:#26241f; --parch:#f3e9d2; --parch2:#e8dbbb; --edge:#c9b386;
@@ -263,6 +264,27 @@ button{font:inherit;cursor:pointer}
 .cc .del{border:0;background:none;color:var(--bad);font-weight:900;font-size:1.1rem}
 .doiRes{font-size:.85rem;margin-top:6px;color:var(--jade);font-weight:700}
 
+
+/* 第 2 關、結案 */
+.orig{background:#fffdf6;border:1px solid var(--edge);border-left:5px solid var(--gold);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-family:"Noto Serif TC",serif;line-height:1.9}
+.orig small{display:block;font-family:"Noto Sans TC",sans-serif;color:var(--muted);font-weight:700;margin-bottom:2px}
+.qitem{background:#fffdf6;border:1px solid var(--edge);border-radius:8px;padding:10px 12px;margin-bottom:10px}
+.qitem .qt{font-size:1.02rem;line-height:1.8;margin-bottom:6px}
+.qitem .qn{font-size:.8rem;font-weight:900;color:var(--muted)}
+.opts2{display:flex;flex-wrap:wrap;gap:6px}
+.opts2 button{border:1.5px solid var(--edge);background:#fbf4e3;border-radius:16px;padding:3px 12px;font-size:.9rem;text-align:left}
+.opts2 button.sel{background:var(--ink);color:var(--parch);border-color:var(--ink)}
+.qitem.okk{border-color:var(--ok);box-shadow:inset 4px 0 0 var(--ok)} .qitem.ngg{border-color:var(--bad);box-shadow:inset 4px 0 0 var(--bad)}
+.qitem .why{margin-top:6px;font-size:.88rem;font-weight:700}
+.ta{width:100%;min-height:120px;border:2px solid var(--edge);border-radius:8px;background:#fffdf7;padding:10px 12px;font:inherit;font-size:1.02rem;line-height:1.8;resize:vertical}
+.ta:focus{outline:none;border-color:var(--gold)}
+.wc{font-size:.85rem;color:var(--muted);text-align:right;font-weight:700}
+.aibox{margin-top:10px;background:#eef3f8;border:1px solid #b9c8da;border-radius:8px;padding:10px 12px}
+.aibox b{color:#3c5a8a}
+.mycards{font-size:.88rem;background:#fbf4e3;border:1px solid var(--edge);border-radius:8px;padding:8px 12px;margin-bottom:10px}
+.mycards li{margin:3px 0}
+.editor.multi{min-height:150px}
+.refprobs{margin:6px 0 0;padding-left:20px;font-size:.88rem;color:var(--bad)}
 /* 結案 */
 .cert{margin:18px 0;padding:28px 24px;text-align:center;border:3px double var(--ink)}
 .cert h2{font-size:1.7rem;margin:8px 0}
@@ -318,6 +340,12 @@ button{font:inherit;cursor:pointer}
       <div class="grid" id="gridS1"></div>
     </div>
 
+    <div class="parch stage" id="s2Box">
+      <h2>第 2 關｜證詞重建</h2>
+      <p style="margin:6px 0 0">找到文獻之後，要把它<b>正確地寫進報告</b>：文中引用怎麼寫、什麼時候要加「」、怎樣才不算抄襲，最後練習用自己的話改寫。</p>
+      <div class="grid" id="gridS2"></div>
+    </div>
+
     <div class="parch intro">
       <h2>第 3 關｜出處鑑識</h2>
       <p>每一張<b>證物卡</b>都是一份文獻的原始資料（版權頁、網頁、影片、作品封面……）。從裡面挑出需要的資訊，寫成小論文規定的參考文獻格式。卡片上有些資訊是<b>不用寫</b>的，小心陷阱！</p>
@@ -343,6 +371,11 @@ button{font:inherit;cursor:pointer}
 
     <div id="certBox"></div>
 
+    <div class="parch stage" id="dosBox" style="margin-top:22px">
+      <h2>結案作業｜我的文獻卷宗</h2>
+      <p style="margin:6px 0 0">用<b>線索卡裡自己找的文獻</b>，寫一段可以直接放進小論文的文獻探討，並列出參考文獻。</p>
+      <div class="grid" id="gridDos"></div><div id="dosCert"></div>
+    </div>
     <p class="foot">證物卡上的作者、書名、網址都是練習用的虛構資料。每位調查員的證物都不一樣。</p>
   </section>
 </div>
@@ -355,7 +388,7 @@ button{font:inherit;cursor:pointer}
   var X = window.SecretSource, C = window.SecretSourceCheck, S1 = window.SecretSourceS1;
   var $ = function (id) { return document.getElementById(id); };
   var esc = X.escapeHtml;
-  var CODE = '', META = null, LEVELS = [], LEVELS1 = [], data = null, state = null;
+  var CODE = '', META = null, LEVELS = [], LEVELS1 = [], LEVELS2 = [], LEVELSD = [], data = null, state = null, S2 = window.SecretSourceS2;
 
   /* ---------- 格式卷軸（每種文獻的格式＋提醒） ---------- */
   var TPL = {
@@ -380,7 +413,7 @@ button{font:inherit;cursor:pointer}
     X.getMeta(CODE).then(function (m) {
       if (!m) { $('bootMsg').innerHTML = '找不到這個任務（代碼 ' + CODE + '）。<br>請確認連結，或問老師。'; return; }
       if (m.closed) { $('bootMsg').innerHTML = '這個任務已經關閉了。'; return; }
-      META = m; LEVELS = X.levels(m); LEVELS1 = X.levels1(m);
+      META = m; LEVELS = X.levels(m); LEVELS1 = X.levels1(m); LEVELS2 = X.levels2(m); LEVELSD = X.levelsDos(m);
       $('mName').textContent = '📌 ' + (m.name || '任務 ' + CODE);
       $('vBoot').classList.add('hidden'); $('vLogin').classList.remove('hidden');
       try { var last = JSON.parse(localStorage.getItem('secretSource:last') || 'null'); if (last) { $('inId').value = last.id || ''; $('inName').value = last.name || ''; } } catch (e) { }
@@ -395,7 +428,7 @@ button{font:inherit;cursor:pointer}
   function save() { try { localStorage.setItem(key(data.id), JSON.stringify(state)); } catch (e) { } }
   var syncing = false, again = false, okOnce = null;
   function setCloud(k, t) { var el = $('cloud'); el.className = 'cloud ' + k; el.textContent = t; }
-  function prog() { return { passed: state.passed, att: state.att, closedAt: state.closedAt, arc: state.arc, clue: state.clue }; }
+  function prog() { return { passed: state.passed, att: state.att, closedAt: state.closedAt, arc: state.arc, clue: state.clue, dos: state.dos }; }
   function sync() {
     if (!data) return;
     if (syncing) { again = true; return; }
@@ -413,6 +446,7 @@ button{font:inherit;cursor:pointer}
       state.passed = m.passed; state.att = m.att; state.closedAt = m.closedAt;
       // 第 1 關：本機沒有就用雲端的（換裝置）；線索卡用比較新的那份
       if (remote && remote.arc && !state.arc) state.arc = remote.arc;
+      if (remote && remote.dos && (!state.dos || (+remote.dos.at || 0) > (+state.dos.at || 0))) state.dos = remote.dos;
       if (remote && remote.clue && (!state.clue || (+remote.clue.at || 0) > (+state.clue.at || 0))) {
         var rc = remote.clue.c || {}; state.clue = { at: remote.clue.at, topic: remote.clue.topic || '', c: Object.keys(rc).sort().map(function (k) { return rc[k]; }) };
       }
@@ -457,6 +491,12 @@ button{font:inherit;cursor:pointer}
       return '<button class="parch card" data-k="' + L.key + '"><span class="ico">' + L.icon + '</span><div class="no">' + (i ? '1-B｜作業' : '1-A｜課堂') + '</div><h3>' + esc(L.name) + '</h3>' +
         '<div class="att">' + esc(L.sub) + (n ? '｜試了 ' + n + ' 次' : '') + '</div>' + (ok ? '<span class="stamp">' + (g ? '評等 ' + g : '已完成') + '</span>' : '') + '</button>';
     }).join('');
+    var simple = function (L, tag) { var ok = state.passed[L.key], n = state.att[L.key] || 0; return '<button class="parch card" data-k="' + L.key + '"><span class="ico">' + L.icon + '</span><div class="no">' + tag + '</div><h3>' + esc(L.name) + '</h3><div class="att">' + esc(L.sub) + (n ? '｜試了 ' + n + ' 次' : '') + '</div>' + (ok ? '<span class="stamp">已完成</span>' : '') + '</button>'; };
+    $('s2Box').classList.toggle('hidden', !LEVELS2.length);
+    $('gridS2').innerHTML = LEVELS2.map(function (L, i) { return simple(L, '2-' + (i + 1)); }).join('');
+    $('dosBox').classList.toggle('hidden', !LEVELSD.length);
+    $('gridDos').innerHTML = LEVELSD.map(function (L) { return simple(L, '結案｜作業'); }).join('');
+    $('dosCert').innerHTML = state.passed.dossier ? '<div class="parch cert" style="margin-top:14px"><div class="bigseal seal">結<br>案</div><h2>文獻卷宗結案證明</h2><div class="meta">調查員 <b>' + esc(state.name) + '</b>｜學號 <b class="mono">' + esc(data.id) + '</b></div><div class="code">' + S2.dossierCode(CODE, data.id) + '</div><div class="meta">卷宗代碼（老師也看得到你的文獻探討與參考文獻）</div></div>' : '';
     $('gridBonus').innerHTML = bon.map(function (L, i) { return cardH(L, i, true); }).join('');
     $('bonusWrap').classList.toggle('hidden', !bon.length);
     Array.prototype.forEach.call(document.querySelectorAll('[data-k]'), function (b) { b.onclick = function () { openLevel(b.getAttribute('data-k')); }; });
@@ -479,7 +519,7 @@ button{font:inherit;cursor:pointer}
   $('back').addEventListener('click', function (e) { if (e.target === $('back')) closePanel(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('back').classList.contains('hidden')) closePanel(); });
   function toast(t) { var d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.appendChild(d); setTimeout(function () { d.remove(); }, 2200); }
-  function lv(k) { return LEVELS.concat(LEVELS1).filter(function (L) { return L.key === k; })[0]; }
+  function lv(k) { return LEVELS.concat(LEVELS1, LEVELS2, LEVELSD).filter(function (L) { return L.key === k; })[0]; }
   function bump(k) { state.att[k] = (state.att[k] || 0) + 1; }
   function pass(k) { if (!state.passed[k]) state.passed[k] = Date.now(); }
 
@@ -490,6 +530,11 @@ button{font:inherit;cursor:pointer}
     if (L.kind === 'sort') return openSort(L);
     if (L.kind === 'archive') return openArchive(L);
     if (L.kind === 'clues') return openClues(L);
+    if (L.kind === 'cite') return openChoice(L, 'cite');
+    if (L.kind === 'quote') return openChoice(L, 'quote');
+    if (L.kind === 'plag') return openChoice(L, 'plag');
+    if (L.kind === 'para') return openPara(L);
+    if (L.kind === 'dossier') return openDossier(L);
   }
 
   /* ---------- 證物卡 ---------- */
@@ -904,6 +949,154 @@ button{font:inherit;cursor:pointer}
     };
     draw();
     if (state.passed[L.key]) { var r1 = $('res'); r1.className = 'res show good'; r1.textContent = '✅ 線索卡已經完成。修改後再按一次「檢查並送出」就會更新給老師。'; }
+  }
+
+
+  /* ---------- ⚡🔍⚖️ 第 2 關：三個選擇題小關（同一套畫面） ---------- */
+  function segsHtml(segs) { return segs.map(function (s) { var t = esc(s.t); return s.b ? '<b>' + t + '</b>' : t; }).join(''); }
+  function origCard(p) { return '<div class="orig"><small>📄 原文（' + esc(p.au.join('、')) + '，' + p.yr + '）</small>' + esc(p.orig) + '</div>'; }
+  function openChoice(L, kind) {
+    var Q, items, labels, intro, grade;
+    if (kind === 'cite') {
+      Q = S2.makeCite(CODE, data.id);
+      intro = '<div class="tpl" style="margin-top:0">小論文的文中引用一律寫成<b>（作者，年份）</b>或<b>作者（年份）</b>，不能用註一、註二或頁下註。<ul><li>兩位作者：括號裡用「、」，寫進句子用「與」</li><li>三位以上：第一位作者＋「等」</li><li>機構就是作者，寫全名；英文用半形標點，兩位用 &amp;、三位以上 et al.</li></ul></div>';
+      items = Q.map(function (q) { return { html: '<span class="qn">' + esc(q.kind) + '｜' + esc(q.mode) + '</span><div>作者：<b>' + esc(q.au.join('、')) + '</b>　年份：<b>' + q.yr + '</b>　→ 寫成' + esc(q.mode) + '？</div>', opts: q.opts.map(function (o) { return [o, esc(o)]; }), why: q.note }; });
+      grade = function (picks) { return S2.gradeCite(Q, picks); };
+    } else if (kind === 'quote') {
+      Q = S2.makeQuote(CODE, data.id);
+      intro = origCard(Q.p) + '<div class="tpl" style="margin-top:0">下面 6 句都引用了這篇原文，判斷每一句寫得對不對；不對的話，錯在哪裡？<ul><li><b>直接引用</b>（一字不改照抄）：加「」、文字設粗體、同一處不超過 50 字、註明出處</li><li><b>間接引用</b>（用自己的話改寫）：不加「」、不用粗體，但一樣要註明出處</li></ul></div>';
+      items = Q.items.map(function (it) { return { html: '<div class="qt">' + segsHtml(it.segs) + '</div>', opts: S2.QKIND.map(function (k) { return [k[0], k[1]]; }), why: it.why }; });
+      grade = function (picks) { return S2.gradeQuote(Q, picks); };
+    } else {
+      Q = S2.makePlag(CODE, data.id);
+      intro = origCard(Q.p) + '<div class="tpl" style="margin-top:0">四位同學都用了這篇原文，誰寫得合格？誰算抄襲？<ul><li><b>換字抄襲</b>：只把幾個詞換成同義詞，句子結構和原文幾乎一樣</li><li><b>漏標出處</b>：用了別人的內容卻沒寫出處</li><li>小論文規定：引用沒有註明出處會被當成<b>疑似抄襲，不予評審</b></li></ul></div>';
+      items = Q.items.map(function (it) { return { html: '<div class="qt">' + esc(it.t) + '</div>', opts: S2.PKIND.map(function (k) { return [k[0], k[1]]; }), why: it.why }; });
+      grade = function (picks) { return S2.gradePlag(Q, picks); };
+    }
+    var picks = items.map(function () { return null; }), done = !!state.passed[L.key];
+    openPanel('<div class="ptag">第 2 關｜證詞重建</div><h2>' + L.icon + ' ' + esc(L.name) + '</h2>' + intro +
+      items.map(function (it, i) {
+        return '<div class="qitem" id="qi' + i + '"><div class="qn">第 ' + (i + 1) + ' 題</div>' + it.html + '<div class="opts2">' +
+          it.opts.map(function (o) { return '<button data-qi="' + i + '" data-v="' + esc(o[0]) + '">' + o[1] + '</button>'; }).join('') + '</div><div class="why" id="qw' + i + '"></div></div>';
+      }).join('') + '<button class="btn wide" id="chGo">🔍 送出</button><div class="res" id="res"></div><div class="attempts" id="att">' + (state.att[L.key] ? '已送出 ' + state.att[L.key] + ' 次' : '') + '</div>');
+    Array.prototype.forEach.call(document.querySelectorAll('[data-qi]'), function (b) {
+      b.onclick = function () { var i = +b.getAttribute('data-qi'); picks[i] = b.getAttribute('data-v'); Array.prototype.forEach.call(document.querySelectorAll('[data-qi="' + i + '"]'), function (x) { x.classList.toggle('sel', x === b); }); };
+    });
+    var reveal = function () { items.forEach(function (it, i) { $('qw' + i).innerHTML = '<span style="color:var(--jade)">💡 ' + esc(it.why) + '</span>'; }); };
+    if (done) { reveal(); var r0 = $('res'); r0.className = 'res show good'; r0.textContent = '✅ 這一關已經完成，每題的重點說明在上面。'; }
+    $('chGo').onclick = function () {
+      if (picks.some(function (p) { return p == null; })) { var r1 = $('res'); r1.className = 'res show bad'; r1.textContent = '每一題都要選一個答案'; return; }
+      bump(L.key); $('att').textContent = '已送出 ' + state.att[L.key] + ' 次';
+      var g = grade(picks), res = $('res');
+      g.res.forEach(function (ok, i) { $('qi' + i).classList.toggle('okk', ok); $('qi' + i).classList.toggle('ngg', !ok); $('qw' + i).innerHTML = ok ? '<span style="color:var(--ok)">✓ 正確</span>' : '<span style="color:var(--bad)">✗ 再想想看</span>'; });
+      if (g.ok) { var first = !state.passed[L.key]; pass(L.key); save(); sync(); reveal(); res.className = 'res show good'; res.textContent = '🎉 全部正確！每題的重點說明在上面。'; if (first) toast(L.icon + ' 過關！'); }
+      else { save(); sync(); res.className = 'res show bad'; res.textContent = '答對 ' + g.n + ' / ' + g.res.length + ' 題，紅框的再看一次上面的規則。'; }
+    };
+  }
+
+  /* ---------- ✍️ 2-4 改寫練習：本機先檢查，通過才請 AI 看 ---------- */
+  var aiWaitAt = {}; // 每種 AI 回饋各自冷卻 10 秒
+  function openPara(L) {
+    var p = S2.passages(CODE, data.id).para, useAI = META.ai !== false, done = !!state.passed[L.key], key = 'para';
+    openPanel('<div class="ptag">第 2 關｜證詞重建</div><h2>✍️ 改寫練習</h2>' + origCard(p) +
+      '<div class="tpl" style="margin-top:0">把這段原文<b>用自己的話</b>重新寫一次（30～200 字），並加上<b>文中引用</b>。作者：<b>' + esc(p.au.join('、')) + '</b>　年份：<b>' + p.yr + '</b><ul><li>先讀懂，再把原文蓋起來寫，比較不會不小心照抄</li><li>改寫不用加「」，也不用粗體</li>' + (useAI ? '<li>系統先檢查和原文的重複程度與引用格式，通過後 AI 老師會給你回饋（AI 只給提示，不會幫你寫）</li>' : '') + '</ul></div>' +
+      '<textarea class="ta" id="paraIn" maxlength="400" placeholder="在這裡用自己的話改寫……">' + esc(state.drafts[key] || '') + '</textarea><div class="wc" id="paraWc"></div>' +
+      '<button class="btn wide" id="paraGo">🔍 檢查並送出</button><div class="res" id="res"></div><div class="aibox hidden" id="aiBox"></div><div class="attempts" id="att">' + (state.att[L.key] ? '已送出 ' + state.att[L.key] + ' 次' : '') + '</div>');
+    var wc = function () { $('paraWc').textContent = S2.bare($('paraIn').value).length + ' 字（不含標點）'; };
+    $('paraIn').addEventListener('input', function () { state.drafts[key] = $('paraIn').value.slice(0, 400); save(); wc(); }); wc();
+    if (done) { var r0 = $('res'); r0.className = 'res show good'; r0.textContent = '✅ 這一關已經完成。想再練習可以改寫後再送一次。'; if (state.drafts.paraAi) { $('aiBox').classList.remove('hidden'); $('aiBox').innerHTML = '<b>🤖 AI 老師的回饋：</b>' + esc(state.drafts.paraAi); } }
+    $('paraGo').onclick = function () {
+      var t = $('paraIn').value.trim(), res = $('res'), box = $('aiBox');
+      if (!t) { res.className = 'res show bad'; res.textContent = '還沒有寫喔！'; return; }
+      bump(L.key); $('att').textContent = '已送出 ' + state.att[L.key] + ' 次';
+      var c = S2.checkPara(p, t);
+      box.classList.add('hidden');
+      if (!c.ok) { save(); sync(); res.className = 'res show bad'; res.innerHTML = '<b>系統檢查還沒過：</b><ul class="issues">' + c.probs.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>'; return; }
+      var win = function (msg, ai) { var first = !state.passed[L.key]; pass(L.key); if (ai) state.drafts.paraAi = ai; save(); sync(); res.className = 'res show good'; res.textContent = msg; if (first) toast('✍️ 改寫練習過關！'); };
+      if (!useAI) { win('🎉 系統檢查通過！用自己的話改寫，也註明了出處。'); return; }
+      var wait = Math.ceil(((aiWaitAt.para || 0) - Date.now()) / 1000); if (wait > 0) { res.className = 'res show bad'; res.textContent = '請等 ' + wait + ' 秒再送出（讓 AI 老師喘口氣）'; return; }
+      aiWaitAt.para = Date.now() + 10000;
+      $('paraGo').disabled = true; res.className = 'res show'; res.innerHTML = '✅ 系統檢查通過，🤖 AI 老師正在看你的改寫……';
+      S2.aiFeedback({ code: CODE, sid: data.id, kind: 'para', original: p.orig, source: S2.srcLabel(p), text: t }).then(function (j) {
+        $('paraGo').disabled = false;
+        if (j.error) { win('✅ 系統檢查通過（' + j.error + ' 這次先算過關）'); return; }
+        box.classList.remove('hidden'); box.innerHTML = '<b>🤖 AI 老師的回饋：</b>' + esc(j.feedback);
+        if (j.passed) win('🎉 過關！系統檢查和 AI 老師都說 OK。', j.feedback);
+        else { state.drafts.paraAi = j.feedback; save(); sync(); res.className = 'res show bad'; res.textContent = '系統檢查通過了，但 AI 老師覺得還可以更好，照下面的提示改一改再送一次。'; }
+      }, function () { $('paraGo').disabled = false; win('✅ 系統檢查通過（AI 老師暫時連不上，這次先算過關）'); });
+    };
+  }
+
+  /* ---------- 📁 結案作業：我的文獻卷宗 ---------- */
+  function edBox(id, syms, multi, ph) {
+    return '<div class="tools" id="' + id + 'T"><button data-cmd="bold" title="粗體"><b>B</b></button><button data-cmd="italic" title="斜體"><i>I</i></button><span class="sep"></span>' +
+      syms.map(function (x) { return '<button data-ins="' + esc(x) + '">' + esc(x) + '</button>'; }).join('') + '</div>' +
+      '<div class="editor' + (multi ? ' multi' : '') + '" id="' + id + '" contenteditable="true" spellcheck="false" data-ph="' + esc(ph) + '"></div>';
+  }
+  function bindEd(id, multi, onChange) {
+    var ed = $(id);
+    Array.prototype.forEach.call(document.querySelectorAll('#' + id + 'T button'), function (b) {
+      b.addEventListener('mousedown', function (e) { e.preventDefault(); });
+      b.addEventListener('click', function () { ed.focus(); if (b.getAttribute('data-cmd')) document.execCommand(b.getAttribute('data-cmd'), false, null); else document.execCommand('insertText', false, b.getAttribute('data-ins')); onChange(); });
+    });
+    ed.addEventListener('paste', function (e) { e.preventDefault(); var t = (e.clipboardData || window.clipboardData).getData('text'); document.execCommand('insertText', false, multi ? t : t.replace(/\s*\n\s*/g, ' ')); });
+    if (!multi) ed.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
+    ed.addEventListener('input', onChange);
+  }
+  // 多行編輯框 → 每一行一組 segs
+  function readLines(ed) {
+    var lines = [[]];
+    (function walk(n) {
+      if (n.nodeType === 3) { if (!n.nodeValue) return; var parts = n.nodeValue.split('\n'), cs = getComputedStyle(n.parentElement), w = cs.fontWeight; parts.forEach(function (pt, k) { if (k) lines.push([]); if (pt) lines[lines.length - 1].push({ t: pt, b: w === 'bold' || +w >= 600, i: cs.fontStyle === 'italic' }); }); }
+      else if (n.nodeName === 'BR') lines.push([]);
+      else { var blk = /^(DIV|P)$/.test(n.nodeName); if (blk && lines[lines.length - 1].length) lines.push([]); for (var c = n.firstChild; c; c = c.nextSibling) walk(c); if (blk) lines.push([]); }
+    })(ed);
+    return lines.filter(function (l) { return l.some(function (s) { return s.t.trim(); }); });
+  }
+  function openDossier(L) {
+    var cards = LEVELS1.length ? ((state.clue && state.clue.c) || []).filter(function (c) { return c && c.t; }) : null, useAI = META.ai !== false, done = !!state.passed[L.key];
+    var cardList = cards ? (cards.length ? '<ol>' + cards.map(function (c) { return '<li><b>' + esc(c.au || '?') + '（' + esc(c.yr || '?') + '）</b>' + esc(c.ti || '') + '｜' + esc((S1.CT[c.t] || {}).n || '') + '</li>'; }).join('') + '</ol>' : '<p style="margin:4px 0;color:var(--bad);font-weight:700">你還沒有線索卡！先完成第 1 關 B，結案作業要用自己找的文獻。</p>') : '<p style="margin:4px 0">（這個任務沒有開第 1 關，用你自己找的文獻就可以）</p>';
+    openPanel('<div class="ptag">結案作業</div><h2>📁 我的文獻卷宗</h2>' +
+      '<div class="cols"><div><p class="sub-t">▍我的線索卡</p><div class="mycards">' + cardList + '</div>' +
+      '<div class="tpl"><b>要求</b><ul><li>文獻探討 ' + S2.MIN_W + '～' + S2.MAX_W + ' 字，<b>至少引用 2 篇</b>線索卡裡的文獻</li><li>文中引用寫成（作者，年份）或 作者（年份）</li><li>可以有 1 處直接引用：「」＋粗體、不超過 50 字；其他用自己的話改寫</li><li>參考文獻：一行一筆，<b>文中引用的都要列、列的都要引用</b>（不然小論文扣 4 分）；中文在前、英文在後</li><li>至少 1 篇是書籍（或期刊等非網路資源）</li></ul></div></div>' +
+      '<div><p class="sub-t">▍文獻探討</p>' + edBox('dP', ['「', '」', '（', '）', '，', '、', '。'], false, '例：王小明（2023）指出……；也有研究發現……（李大華，2021）') + '<div class="wc" id="dWc"></div>' +
+      '<p class="sub-t" style="margin-top:10px">▍參考文獻（一行一筆，按 Enter 換行）</p>' + edBox('dR', ['（', '）', '、', '，', '。', '：', '［', '］'], true, '王小明（2023）。書名。出版者。') +
+      '<button class="btn wide" id="dGo" style="margin-top:10px">📁 檢查並送出卷宗</button><div class="res" id="res"></div><div class="aibox hidden" id="aiBox"></div><div class="attempts" id="att">' + (state.att[L.key] ? '已送出 ' + state.att[L.key] + ' 次' : '') + '</div></div></div>');
+    var dP = $('dP'), dR = $('dR');
+    var draft = state.drafts.dos || {};
+    dP.innerHTML = draft.p || (state.dos && state.dos.p ? S2.showMark(state.dos.p) : '');
+    dR.innerHTML = draft.r || (state.dos && state.dos.r ? S2.showMark(state.dos.r) : '');
+    var wc = function () { $('dWc').textContent = dP.textContent.replace(/\s/g, '').length + ' 字'; };
+    var keep = function () { state.drafts.dos = { p: dP.innerHTML.slice(0, 6000), r: dR.innerHTML.slice(0, 8000) }; save(); wc(); };
+    bindEd('dP', false, keep); bindEd('dR', true, keep); wc();
+    if (done) { var r0 = $('res'); r0.className = 'res show good'; r0.textContent = '✅ 卷宗已經結案。修改後再按一次「檢查並送出」，老師看到的版本就會更新。'; if (state.dos && state.dos.ai) { $('aiBox').classList.remove('hidden'); $('aiBox').innerHTML = '<b>🤖 AI 老師的回饋：</b>' + esc(state.dos.ai); } }
+    $('dGo').onclick = function () {
+      var pSegs = readEditor(dP), rLines = readLines(dR), res = $('res'), box = $('aiBox');
+      if (!pSegs.length) { res.className = 'res show bad'; res.textContent = '還沒有寫文獻探討喔！'; return; }
+      bump(L.key); $('att').textContent = '已送出 ' + state.att[L.key] + ' 次';
+      var c = S2.checkDossier(pSegs, rLines, cards);
+      var refMark = rLines.map(S2.toMark).join('<br>');
+      state.dos = { at: Date.now(), p: S2.toMark(pSegs), r: refMark, ok: c.ok, ai: state.dos && state.dos.ai };
+      box.classList.add('hidden');
+      if (!c.ok) {
+        save(); sync(); res.className = 'res show bad';
+        res.innerHTML = '<b>已存到雲端，還有地方要改：</b><ul class="issues">' + c.msgs.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' +
+          c.refs.filter(function (r) { return r.probs.length; }).map(function (r) { return '<div style="margin-top:6px;font-size:.9rem"><b>📄 ' + esc(r.text.slice(0, 30)) + (r.text.length > 30 ? '…' : '') + '</b><ul class="refprobs">' + r.probs.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>'; }).join('');
+        return;
+      }
+      var first = !state.passed[L.key]; pass(L.key); save(); sync();
+      res.className = 'res show good'; res.innerHTML = '🎉 卷宗格式全部通過，結案！引用了 ' + c.cites.length + ' 處、' + c.refs.length + ' 篇參考文獻，' + c.words + ' 字。' + (c.warn.length ? '<br>提醒：' + esc(c.warn.join('；')) : '');
+      if (first) toast('📁 結案作業完成！');
+      if (!useAI) return;
+      var wait = Math.ceil(((aiWaitAt.dos || 0) - Date.now()) / 1000);
+      if (wait > 0) { box.classList.remove('hidden'); box.textContent = '🤖 AI 內容建議要等 ' + wait + ' 秒後再按一次「檢查並送出」'; return; }
+      aiWaitAt.dos = Date.now() + 10000;
+      box.classList.remove('hidden'); box.innerHTML = '🤖 AI 老師正在讀你的文獻探討……（內容建議，不影響結案）';
+      S2.aiFeedback({ code: CODE, sid: data.id, kind: 'dossier', text: pSegs.map(function (s) { return s.t; }).join(''), source: rLines.map(function (l) { return l.map(function (s) { return s.t; }).join(''); }).join('\n') }).then(function (j) {
+        if (j.error) { box.innerHTML = '🤖 ' + esc(j.error); return; }
+        box.innerHTML = '<b>🤖 AI 老師的內容建議：</b>' + esc(j.feedback); state.dos.ai = j.feedback; save(); sync();
+      }, function () { box.innerHTML = '🤖 AI 老師暫時連不上，格式已經通過，內容等老師看。'; });
+    };
   }
 
   boot();
