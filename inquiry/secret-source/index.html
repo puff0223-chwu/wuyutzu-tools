@@ -191,7 +191,7 @@ button{font:inherit;cursor:pointer}
 .qbox{background:#1b1a17;color:var(--parch);border-radius:8px;padding:12px 16px;margin-bottom:12px}
 .qbox small{color:#c9b386;letter-spacing:.12em;font-weight:700}
 .qbox .qq{font-family:"Noto Serif TC",serif;font-size:1.25rem;font-weight:900;margin-top:2px}
-.kwt{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:6px}
+.kwt{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:8px;margin-bottom:6px}
 .kwt label{font-size:.82rem;font-weight:700;color:var(--muted)}
 .kwt input,.sbar input,.sbar select,.cc input,.cc select,.cc textarea,.topicIn{width:100%;padding:8px 10px;border:2px solid var(--edge);border-radius:7px;background:#fffdf7;font:inherit;font-size:.98rem}
 .kwt input:focus,.sbar input:focus,.cc input:focus,.cc textarea:focus,.topicIn:focus{outline:none;border-color:var(--gold)}
@@ -221,6 +221,20 @@ button{font:inherit;cursor:pointer}
 .folder .res.bad{color:var(--ink)}
 .fslot .note{font-size:.82rem;color:var(--bad);margin-top:4px;font-weight:700}
 .grade{display:inline-block;font-family:"Noto Serif TC",serif;font-weight:900;font-size:1.6rem;color:var(--seal);border:3px solid var(--seal);border-radius:8px;padding:0 12px;transform:rotate(-6deg);margin-right:8px;background:#fff8ec}
+
+.chipbar{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chipbar button{border:1.5px dashed var(--jade);background:#eef5f1;color:var(--jade);border-radius:14px;padding:1px 10px;font-weight:700;font-size:.88rem}
+.qrow{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.qrow .n{width:1.6em;height:1.6em;border-radius:50%;background:var(--ink);color:var(--parch);display:grid;place-items:center;font-weight:900;font-size:.85rem;flex:none}
+.qrow input{flex:1;padding:9px 11px;border:2px solid var(--edge);border-radius:8px;background:#fffdf7;font:inherit}
+.qrow input:focus{outline:none;border-color:var(--gold)}
+.qrow .qx{border:0;background:none;color:var(--bad);font-weight:900;font-size:1.1rem}
+.qjoin{margin:-2px 0 4px 2.2em;font-size:.8rem;font-weight:900;color:var(--jade);letter-spacing:.08em}
+.opbox{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.opbox button{text-align:left;border:2px solid var(--edge);background:#fffdf7;border-radius:10px;padding:8px 10px;line-height:1.45}
+.opbox button span{display:block;font-size:.82rem;color:var(--muted)}
+.opbox button.on{border-color:var(--jade);background:#e7f2ec;box-shadow:inset 0 0 0 1px var(--jade)}
+.diag{font-size:.88rem;background:#fff4dc;border:1px dashed var(--gold);border-radius:8px;padding:8px 10px}
 /* 線索卡 */
 .where{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px;margin:6px 0 12px}
 .where a{display:block;background:#fbf4e3;border:1px solid var(--edge);border-radius:8px;padding:7px 10px;color:var(--ink);text-decoration:none;font-size:.9rem}
@@ -291,14 +305,6 @@ button{font:inherit;cursor:pointer}
       <div class="grid" id="gridS1"></div>
     </div>
 
-    <div class="parch frag">
-      <span class="lbl">🧩 第 3 關秘文碎片</span>
-      <div class="slots" id="slots"></div>
-      <span class="cnt" id="fragCnt"></span>
-    </div>
-
-    <div id="certBox"></div>
-
     <div class="parch intro">
       <h2>第 3 關｜出處鑑識</h2>
       <p>每一張<b>證物卡</b>都是一份文獻的原始資料（版權頁、網頁、影片、作品封面……）。從裡面挑出需要的資訊，寫成小論文規定的參考文獻格式。卡片上有些資訊是<b>不用寫</b>的，小心陷阱！</p>
@@ -316,6 +322,14 @@ button{font:inherit;cursor:pointer}
       <div class="sect-t">🌍 進階關卡 <span>英文文獻，挑戰成功拿進階徽章</span></div>
       <div class="grid" id="gridBonus"></div>
     </div>
+    <div class="parch frag" style="margin-top:22px">
+      <span class="lbl">🧩 第 3 關秘文碎片</span>
+      <div class="slots" id="slots"></div>
+      <span class="cnt" id="fragCnt"></span>
+    </div>
+
+    <div id="certBox"></div>
+
     <p class="foot">證物卡上的作者、書名、網址都是練習用的虛構資料。每位調查員的證物都不一樣。</p>
   </section>
 </div>
@@ -661,38 +675,75 @@ button{font:inherit;cursor:pointer}
     var byId = {}; db.forEach(function (d) { byId[d.id] = d; });
     var A = state.arcWork && state.arcWork.q === Q.id ? state.arcWork : { q: Q.id, kw: {}, picks: [], n: 0, op: 'and' };
     state.arcWork = A;
-    var results = null, judged = null, done = !!state.passed[L.key];
+    var results = null, judged = null, done = !!state.passed[L.key], lastTerms = [];
     var kwOk = function () { return ['obj', 'iv', 'dv', 'syn'].filter(function (k) { return String(A.kw[k] || '').trim(); }).length >= 2; };
     var metaLine = function (d) { return (d.au.length ? esc(d.au.join('、')) : '（沒有作者）') + '｜' + (d.yr || '（沒有日期）') + '｜' + esc(d.src); };
     openPanel('<div class="ptag">第 1 關 A｜檔案庫搜查</div><h2>🗄️ 模擬檔案庫</h2>' +
       '<div class="qbox"><small>你的研究問題</small><div class="qq">' + esc(Q.q) + '</div></div>' +
       '<div class="cols"><div>' +
-      '<p class="sub-t">▍步驟一　關鍵字拆解表</p><div class="kwt">' +
-      [['obj', '研究對象', '例如：' + (Q.id === 'c1' ? '蛋殼' : '題目裡的「誰」')], ['iv', '改變什麼（自變因）', '你在實驗中改變的'], ['dv', '觀察什麼（應變因）', '你要測量的結果'], ['syn', '同義詞、上位詞', '換個說法，例如更大的概念']].map(function (f) {
+      '<p class="sub-t">▍步驟一　把研究問題拆成關鍵字</p>' +
+      '<div class="tpl" style="margin:0 0 8px">搜尋引擎看不懂一整句話，要先把題目拆成幾個<b>詞</b>。<button class="mini" id="kwEx">👀 看範例</button>' +
+      '<div class="hidden" id="kwExBox" style="margin-top:6px">範例題目：<b>「不同材質的煞車皮對腳踏車煞車距離的影響」</b><br>研究對象＝腳踏車煞車皮｜改變什麼＝煞車皮材質｜觀察什麼＝煞車距離｜換個說法＝摩擦力、制動</div></div>' +
+      '<div class="kwt">' +
+      [['obj', '🎯 研究對象', '研究「誰」？'], ['iv', '🔧 改變什麼', '實驗中你改變的東西'], ['dv', '👀 觀察什麼', '你要測量的結果'], ['syn', '🔁 換個說法', '同一件事的其他講法']].map(function (f) {
         return '<div><label>' + f[1] + '</label><input data-kw="' + f[0] + '" maxlength="30" placeholder="' + esc(f[2]) + '" value="' + esc(A.kw[f[0]] || '') + '"></div>';
-      }).join('') + '</div><div class="hint">至少填 2 格才能開始搜尋。<button class="mini" id="kwHint">💡 看提示</button> <span id="kwHintTxt"></span></div>' +
+      }).join('') + '</div><div class="hint">「換個說法」：文獻的作者不一定跟你用同一個詞，例如「醋」也叫「醋酸」、「維他命C」也叫「維生素C」。至少填 2 格才能搜尋。<button class="mini" id="kwHint">💡 看提示</button> <span id="kwHintTxt"></span></div>' +
       '<p class="sub-t">▍步驟二　搜尋檔案庫</p>' +
-      '<div class="sbar"><input class="qin" id="qIn" placeholder="輸入關鍵字，用空白隔開，例如：醋酸 蛋殼" maxlength="60">' +
-      '<span class="seg"><button data-op="and">AND</button><button data-op="or">OR</button></span>' +
+      '<div class="tpl" style="margin:0 0 8px">一格放<b>一個詞</b>。上面拆好的詞可以直接點來用：<div class="chipbar" id="kwChips"></div></div>' +
+      '<div id="qBoxes"></div>' +
+      '<div class="sbar"><button class="mini" id="qAdd">＋ 再加一個詞</button><span style="flex:1"></span>' +
       '<select id="qCat">' + S1.CATS.map(function (c) { return '<option value="' + c[0] + '">' + c[1] + '</option>'; }).join('') + '</select>' +
-      '<select id="qYr"><option value="0">不限年份</option><option value="10">近 10 年</option><option value="5">近 5 年</option></select>' +
-      '<button class="btn" id="qGo" style="padding:8px 16px">🔍 搜尋</button></div>' +
-      '<div class="hint"><b>AND</b>＝每個關鍵字都要有（範圍變小）；<b>OR</b>＝有其中一個就好（範圍變大）。<span class="scount" id="qCnt"></span></div>' +
+      '<select id="qYr"><option value="0">不限年份</option><option value="10">近 10 年</option><option value="5">近 5 年</option></select></div>' +
+      '<div class="opbox"><button data-op="and"><b>🔗 全部都要有（AND）</b><span>每個詞都出現才算，找到的<b>比較少、比較準</b></span></button>' +
+      '<button data-op="or"><b>🔀 有一個就好（OR）</b><span>出現任何一個詞就算，找到的<b>比較多</b></span></button></div>' +
+      '<button class="btn wide" id="qGo">🔍 搜尋</button><div class="hint" style="text-align:right"><span class="scount" id="qCnt"></span></div>' +
       '<div class="rlist" id="rList"></div></div>' +
       '<div><div class="folder"><h3>📁 我的卷宗（收 ' + S1.NEED + ' 篇）</h3><div id="fList"></div>' +
       '<div class="hint" style="color:#d8c79f">規則：至少 3 篇和研究問題<b>相關又可靠</b>、其中至少 1 本<b>書</b>、不能有論壇問答或內容農場。搜尋次數越少、評等越高。</div>' +
       '<button class="btn gold wide" id="fGo">🔍 鑑定卷宗</button><div class="res" id="res"></div><div class="attempts" id="att" style="color:#c9b386">' + (state.att[L.key] ? '已鑑定 ' + state.att[L.key] + ' 次' : '') + '</div></div></div></div>');
     var saveW = function () { save(); };
-    Array.prototype.forEach.call(document.querySelectorAll('[data-kw]'), function (inp) { inp.addEventListener('input', function () { A.kw[inp.getAttribute('data-kw')] = inp.value.slice(0, 30); saveW(); }); });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-kw]'), function (inp) { inp.addEventListener('input', function () { A.kw[inp.getAttribute('data-kw')] = inp.value.slice(0, 30); saveW(); drawChips(); }); });
     $('kwHint').onclick = function () { $('kwHintTxt').textContent = '對象：' + Q.obj + '｜改變：' + Q.iv + '｜觀察：' + Q.dv + '｜相關詞：' + Q.syn; };
-    var setOp = function (op) { A.op = op; Array.prototype.forEach.call(document.querySelectorAll('[data-op]'), function (b) { b.classList.toggle('on', b.getAttribute('data-op') === op); }); };
+    var setOp = function (op) { A.op = op; Array.prototype.forEach.call(document.querySelectorAll('[data-op]'), function (b) { b.classList.toggle('on', b.getAttribute('data-op') === op); }); drawBoxes(true); };
+    // 搜尋格：一格一個詞（最多 4 格），格子中間顯示「而且／或是」
+    A.qs = A.qs && A.qs.length ? A.qs : ['', ''];
+    var drawBoxes = function (keep) {
+      var join = A.op === 'or' ? '或是 OR' : '而且 AND';
+      $('qBoxes').innerHTML = A.qs.map(function (v, i) {
+        return (i ? '<div class="qjoin">' + join + '</div>' : '') + '<div class="qrow"><span class="n">' + (i + 1) + '</span><input data-q="' + i + '" maxlength="20" placeholder="' + (i ? '再一個詞，例如：觀察什麼' : '一個詞，例如：研究對象') + '" value="' + esc(v) + '">' +
+          (A.qs.length > 1 ? '<button class="qx" data-qx="' + i + '" aria-label="刪掉這格">✕</button>' : '') + '</div>';
+      }).join('');
+      $('qAdd').classList.toggle('hidden', A.qs.length >= 4);
+      Array.prototype.forEach.call(document.querySelectorAll('[data-q]'), function (inp) {
+        inp.addEventListener('input', function () { A.qs[+inp.getAttribute('data-q')] = inp.value.slice(0, 20); saveW(); });
+        inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-qx]'), function (b) { b.onclick = function () { A.qs.splice(+b.getAttribute('data-qx'), 1); saveW(); drawBoxes(); }; });
+    };
+    var drawChips = function () {
+      var words = []; ['obj', 'iv', 'dv', 'syn'].forEach(function (k) { String(A.kw[k] || '').split(/[\s,，、]+/).forEach(function (w) { w = w.trim(); if (w && words.indexOf(w) < 0) words.push(w); }); });
+      $('kwChips').innerHTML = words.length ? words.map(function (w) { return '<button data-chip="' + esc(w) + '">＋ ' + esc(w) + '</button>'; }).join('') : '<span class="hint" style="margin:0">（步驟一填好後，這裡會出現你的詞）</span>';
+      Array.prototype.forEach.call(document.querySelectorAll('[data-chip]'), function (b) {
+        b.onclick = function () {
+          var w = b.getAttribute('data-chip'), k = A.qs.indexOf('');
+          if (k < 0) { if (A.qs.length >= 4) { toast('最多 4 個詞，先刪掉一格'); return; } A.qs.push(w); } else A.qs[k] = w;
+          saveW(); drawBoxes();
+        };
+      });
+    };
+    $('qAdd').onclick = function () { if (A.qs.length < 4) { A.qs.push(''); saveW(); drawBoxes(); var l = document.querySelectorAll('[data-q]'); l[l.length - 1].focus(); } };
+    $('kwEx').onclick = function () { $('kwExBox').classList.toggle('hidden'); };
     Array.prototype.forEach.call(document.querySelectorAll('[data-op]'), function (b) { b.onclick = function () { setOp(b.getAttribute('data-op')); }; });
-    setOp(A.op || 'and');
+    var go; setOp(A.op || 'and');
     var cnt = function () { $('qCnt').textContent = '　已搜尋 ' + (A.n || 0) + ' 次'; };
     cnt();
     var drawResults = function () {
       if (!results) { $('rList').innerHTML = '<div class="hint">搜尋結果會出現在這裡。</div>'; return; }
-      if (!results.length) { $('rList').innerHTML = '<div class="hint">找不到符合的文獻。試試別的關鍵字，或改用 <b>OR</b>、拿掉篩選條件。</div>'; return; }
+      if (!results.length) {
+        // 告訴學生是哪個詞找不到：每個詞自己搜尋各有幾篇
+        var diag = lastTerms.map(function (t) { var n = S1.search(db, t, 'and').length; return '「' + esc(t) + '」' + (n ? '單獨找有 ' + n + ' 篇' : '<b style="color:var(--bad)">一篇都沒有</b>'); }).join('、');
+        $('rList').innerHTML = '<div class="diag">找不到同時符合的文獻。' + diag + '。<br>💡 一篇都沒有的詞：換短一點（例如「沉積速率」→「沉積」）或換個說法；也可以改用 <b>有一個就好（OR）</b>、拿掉類型／年份篩選。</div>'; return;
+      }
       $('rList').innerHTML = '<div class="hint">找到 ' + results.length + ' 篇' + (results.length >= 15 ? '（只顯示前 15 篇，可以加關鍵字縮小範圍）' : '') + '</div>' + results.map(function (d) {
         var inF = A.picks.indexOf(d.id) >= 0, K = S1.KIND[d.kind];
         return '<div class="doc"><div class="dt"><span class="tg">' + K.icon + ' ' + K.name + '</span>' + esc(d.title) + '</div><div class="dm">' + metaLine(d) + '</div>' +
@@ -720,14 +771,15 @@ button{font:inherit;cursor:pointer}
       else { if (A.picks.length >= S1.NEED) { toast('卷宗已經滿了，先移除一篇'); return; } A.picks.push(id); }
       judged = null; saveW(); drawFolder(); drawResults();
     };
-    var go = function () {
+    go = function () {
       if (!kwOk()) { toast('先在「關鍵字拆解表」填至少 2 格'); return; }
-      var qs = $('qIn').value.trim(); if (!S1.terms(qs).length) { toast('請輸入關鍵字'); return; }
-      results = S1.search(db, qs, A.op, $('qCat').value, +$('qYr').value);
+      lastTerms = A.qs.map(function (t) { return String(t || '').replace(/\s+/g, ''); }).filter(Boolean);
+      if (!lastTerms.length) { toast('至少在一格裡輸入一個詞'); return; }
+      results = S1.search(db, lastTerms.join(' '), A.op, $('qCat').value, +$('qYr').value);
       A.n = (A.n || 0) + 1; saveW(); cnt(); drawResults();
     };
     $('qGo').onclick = go;
-    $('qIn').addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
+    drawChips(); drawBoxes();
     $('fGo').onclick = function () {
       if (A.picks.length < S1.NEED) { var r0 = $('res'); r0.className = 'res show bad'; r0.textContent = '卷宗要收滿 ' + S1.NEED + ' 篇才能鑑定（現在 ' + A.picks.length + ' 篇）'; return; }
       bump(L.key); $('att').textContent = '已鑑定 ' + state.att[L.key] + ' 次';
@@ -762,7 +814,7 @@ button{font:inherit;cursor:pointer}
     ['學校圖書館／國家圖書館', '書籍、電子書', 'https://www.ncl.edu.tw/'],
     ['臺灣博碩士論文知識加值系統', '碩博士論文', 'https://ndltd.ncl.edu.tw/'],
     ['華藝線上圖書館', '期刊論文', 'https://www.airitilibrary.com/'],
-    ['Google 學術搜尋', '英文文獻（進階）', 'https://scholar.google.com.tw/']
+    ['Google 學術搜尋', '英文文獻（進階）｜學校網路常被 Google 擋，出現錯誤畫面就換手機網路或回家查', 'https://scholar.google.com/']
   ];
   var SRC_LABEL = { book: '出版者', essay: '比賽梯次與類別（例：第1130315梯次 化學類）', fair: '第幾屆科展、組別科別', web: '網站名稱', yt: '頻道名稱', journal: '期刊名稱', thesis: '學校系所', news: '報紙名稱', gov: '出版機關', en: '期刊名稱或出版社', forum: '網站名稱' };
   function openClues(L) {

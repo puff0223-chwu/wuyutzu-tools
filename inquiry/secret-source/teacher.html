@@ -96,6 +96,43 @@ td.left{text-align:left;white-space:normal}
 .modal .parch{max-width:860px;width:100%}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--parch);padding:10px 18px;border-radius:10px;font-weight:700;z-index:60}
 .missing{margin-top:10px;padding:10px 14px;border-radius:8px;background:#fff4dc;border:1px dashed var(--gold)}
+
+/* ===== 2026-10-19 版面改版：左邊任務清單、右邊工作區；字放大、分區上色 ===== */
+body{font-size:16.5px}
+.layout{display:grid;grid-template-columns:290px minmax(0,1fr);gap:16px;align-items:start}
+.side{position:sticky;top:12px}
+.side .parch{padding:16px}
+.mrow{display:flex;align-items:center;gap:8px;width:100%;background:#fffaf0;border:1.5px solid var(--edge);border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.mrow:hover{border-color:var(--gold)}
+.mrow.cur{border:2px solid var(--seal);background:#fff;box-shadow:0 0 0 3px rgba(179,50,42,.12)}
+.mrow .tx{flex:1;min-width:0}
+.mrow .tx b{display:block;font-size:1.02rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mrow .tx small{color:var(--muted);font-family:"JetBrains Mono",monospace}
+.mrow .on{font-size:.72rem;font-weight:900;color:#fff;background:var(--seal);border-radius:10px;padding:0 7px}
+.mrow .del{border:0;background:none;font-size:1rem;opacity:.35;cursor:pointer;padding:2px}
+.mrow:hover .del,.mrow .del:focus{opacity:1}
+.mhead{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;background:var(--ink);color:var(--parch);border-radius:12px;padding:14px 18px;margin-bottom:12px}
+.mhead h2{font-size:1.4rem;margin:0;color:var(--parch)}
+.mhead .code{font-family:"JetBrains Mono",monospace;font-weight:700;color:var(--gold);letter-spacing:.15em;font-size:1.15rem}
+.sumrow{display:flex;flex-wrap:wrap;gap:6px;width:100%}
+.sumrow span{background:#3a362e;border-radius:14px;padding:1px 10px;font-size:.84rem;color:#e7dcc2}
+.tabs{background:#2e2b25;border-radius:14px;padding:6px;gap:4px}
+.tabs button{border-radius:10px;padding:9px 14px;font-size:1rem}
+.stage-h{display:flex;align-items:center;gap:8px;font-family:"Noto Serif TC",serif;font-weight:900;font-size:1.1rem;margin:0 0 8px;padding-left:10px;border-left:6px solid var(--gold)}
+.stage-h.s1{border-color:var(--jade)} .stage-h.s3{border-color:var(--seal)}
+.opt{padding:14px 16px}
+.opt.s1{border-left:5px solid var(--jade)} .opt.s3{border-left:5px solid var(--seal)} .opt.en{border-left:5px solid #3c5a8a}
+.tip{display:inline-grid;place-items:center;width:1.25em;height:1.25em;border-radius:50%;background:var(--parch2);color:var(--muted);font-size:.78rem;font-weight:900;cursor:help;position:relative;margin-left:4px}
+.tip:hover::after,.tip:focus::after{content:attr(data-tip);position:absolute;left:50%;top:130%;transform:translateX(-50%);width:240px;background:var(--ink);color:var(--parch);padding:8px 10px;border-radius:8px;font-size:.82rem;font-weight:500;line-height:1.5;z-index:9;font-family:"Noto Sans TC",sans-serif}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:14px}
+.step{background:#fffaf0;border:1px solid var(--edge);border-radius:10px;padding:10px 12px;font-size:.92rem}
+.step b{display:block;font-size:1rem}
+.step .no{display:inline-grid;place-items:center;width:1.6em;height:1.6em;border-radius:50%;background:var(--ink);color:var(--parch);font-weight:900;margin-right:6px;font-size:.85rem}
+.topicchk{margin-top:8px;font-size:.88rem}
+.topicchk div{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:3px 0}
+.topicchk a{color:var(--jade);font-weight:700}
+.danger-zone{margin-top:18px;border-top:2px dashed #e0b8b2;padding-top:12px}
+@media (max-width:900px){ .layout{grid-template-columns:minmax(0,1fr)} .side{position:static} }
 </style>
 </head>
 <body>
@@ -106,15 +143,22 @@ td.left{text-align:left;white-space:normal}
     <div style="text-align:right"><a class="pill" href="../../account/?app=src">👥 會員中心</a> <button class="btn ghost sm" id="btnOut" style="margin-left:6px">登出</button><div class="note" id="who"></div></div>
   </div>
 
-  <div class="parch">
-    <div class="row" style="margin-top:0"><h2 style="margin:0">🗂️ 我的任務</h2><span style="flex:1"></span><button class="btn gold" id="btnNew">➕ 開設新任務</button></div>
-    <p class="note">每個學期、每個班級開一個任務。學生用任務連結進來，輸入學號就能開始；每位學生的證物卡都不一樣。</p>
-    <div class="mlist" id="mlist" style="margin-top:12px"></div>
-  </div>
-
+  <div class="layout">
+  <aside class="side">
+    <div class="parch">
+      <h2 style="margin-bottom:4px">🗂️ 我的任務</h2>
+      <p class="note" style="margin:0 0 10px">一個班級（或學期）開一個任務。<b>點一下就切換</b>。</p>
+      <div id="mlist"></div>
+      <button class="btn gold" id="btnNew" style="width:100%;justify-content:center;margin-top:4px">➕ 開設新任務</button>
+    </div>
+  </aside>
+  <main>
+  <div id="noMission" class="parch"><h2>👋 歡迎</h2><p class="note">左邊按「➕ 開設新任務」開始；每位學生的研究問題、證物卡都不一樣。</p></div>
   <div id="mission" class="hidden">
+    <div class="mhead"><h2 id="mTitle"></h2><span class="code" id="mCode2"></span><div class="sumrow" id="mSum"></div></div>
     <nav class="tabs" id="tabs">
-      <button data-t="share" class="on">🔗 學生連結與設定</button>
+      <button data-t="share" class="on">🔗 學生連結</button>
+      <button data-t="set">⚙️ 任務設定</button>
       <button data-t="live">📡 即時進度</button>
       <button data-t="clue">🗂️ 線索卡</button>
       <button data-t="key">🔑 答案查詢</button>
@@ -122,7 +166,7 @@ td.left{text-align:left;white-space:normal}
 
     <section data-tab="share" class="on">
       <div class="parch">
-        <h2 id="mTitle"></h2>
+        <h2>🔗 把連結給學生</h2>
         <div class="share">
           <div class="qr" id="qrSmall"></div>
           <div style="flex:1;min-width:260px">
@@ -133,10 +177,23 @@ td.left{text-align:left;white-space:normal}
         </div>
       </div>
       <div class="parch">
+        <h2>🧭 上課流程</h2>
+        <div class="steps" style="margin-top:4px">
+          <div class="step"><span class="no">1</span><b>第一節：查文獻</b>學生掃 QR 進來，做 <b>1-A 模擬檔案庫</b>；最後示範 <b>1-B 線索卡</b>，當回家作業</div>
+          <div class="step"><span class="no">2</span><b>第二節：參考文獻</b>做 <b>第 3 關出處鑑識</b>，全部過關會拿到鑑定代碼</div>
+          <div class="step"><span class="no">3</span><b>上課中</b>開「📡 即時進度」看誰卡關；「🗂️ 線索卡」抽查學生找的文獻</div>
+          <div class="step"><span class="no">4</span><b>學生問答案時</b>用「🔑 答案查詢」輸入學號，看他的題目和標準答案</div>
+        </div>
+      </div>
+    </section>
+
+    <section data-tab="set">
+      <div class="parch">
         <h2>⚙️ 任務設定</h2>
         <div id="setBox"></div>
-        <div class="row"><button class="btn" id="btnSave">💾 儲存設定</button><span class="note" id="saveMsg" style="margin:0"></span><span style="flex:1"></span><button class="btn danger sm" id="btnDel">🗑 刪除這個任務</button></div>
-        <p class="note">改「文獻類型」或「英文進階」會改變學生的關卡清單；已經過關的紀錄不會消失。</p>
+        <div class="row"><button class="btn" id="btnSave">💾 儲存設定</button><span class="note" id="saveMsg" style="margin:0"></span></div>
+        <p class="note">改設定會改變學生的關卡清單；已經過關的紀錄不會消失。</p>
+        <div class="danger-zone"><b class="bad">⚠️ 刪除任務</b><p class="note" style="margin:2px 0 8px">學生的紀錄會一起刪除、連結失效，無法復原。</p><button class="btn danger sm" id="btnDel">🗑 刪除這個任務</button></div>
       </div>
     </section>
 
@@ -176,6 +233,8 @@ td.left{text-align:left;white-space:normal}
         <div id="keyBody" style="margin-top:12px"></div>
       </div>
     </section>
+  </div>
+  </main>
   </div>
 </div>
 
@@ -239,12 +298,36 @@ else FB.onUser(async (u) => {
 async function loadMine(open) {
   MINE = (await FB.get('secret-source/owners/' + ME.uid)) || {};
   const codes = Object.keys(MINE).sort((a, b) => (MINE[b].at || 0) - (MINE[a].at || 0));
-  $('mlist').innerHTML = codes.length ? codes.map((c) => `<button class="mcard${CUR === c ? ' cur' : ''}" data-m="${c}"><b>${esc(MINE[c].name || '（未命名）')}</b><div class="c">${c}</div><div class="note">${new Date(MINE[c].at || 0).toLocaleDateString()} 建立</div></button>`).join('')
-    : '<p class="note">還沒有任務。按右上角「➕ 開設新任務」開始。</p>';
-  document.querySelectorAll('[data-m]').forEach((b) => (b.onclick = () => openMission(b.dataset.m)));
+  drawList(codes);
+  $('noMission').classList.toggle('hidden', !!codes.length);
+  if (!codes.length) $('mission').classList.add('hidden');
   let last = null; try { last = localStorage.getItem('secretSource-teacher:cur'); } catch (e) { }
   const want = open || (MINE[CUR] ? CUR : (MINE[last] ? last : codes[0]));
   if (want) openMission(want);
+}
+
+// 任務清單（左邊）：點整列切換、🗑 刪除（2026-10-19 改版，比照消失的實驗數據的學期管理）
+function drawList(codes) {
+  codes = codes || Object.keys(MINE).sort((a, b) => (MINE[b].at || 0) - (MINE[a].at || 0));
+  $('mlist').innerHTML = codes.length ? codes.map((c) => `<div class="mrow${CUR === c ? ' cur' : ''}" data-m="${c}" role="button" tabindex="0" title="${CUR === c ? '目前使用中' : '點一下切換到這個任務'}"><div class="tx"><b>${esc(MINE[c].name || '（未命名）')}</b><small>${c}｜${new Date(MINE[c].at || 0).toLocaleDateString()}</small></div>${CUR === c ? '<span class="on">使用中</span>' : ''}<button class="del" data-mdel="${c}" title="刪除這個任務" aria-label="刪除">🗑</button></div>`).join('')
+    : '<p class="note">還沒有任務。</p>';
+  document.querySelectorAll('[data-m]').forEach((b) => { b.onclick = (e) => { if (e.target.closest('[data-mdel]')) return; openMission(b.dataset.m); }; b.onkeydown = (e) => { if (e.key === 'Enter') openMission(b.dataset.m); }; });
+  document.querySelectorAll('[data-mdel]').forEach((b) => (b.onclick = () => delMission(b.dataset.mdel)));
+}
+async function delMission(code) {
+  const name = (MINE[code] && MINE[code].name) || code;
+  if (!confirm(`確定刪除任務「${name}」（${code}）？\n\n學生的闖關紀錄、線索卡會一起刪除，學生連結也會失效，無法復原。`)) return;
+  try { await FB.remove('secret-source/m/' + code); await FB.remove('secret-source/owners/' + ME.uid + '/' + code); toast('🗑 已刪除'); if (CUR === code) { CUR = null; $('mission').classList.add('hidden'); } await loadMine(); }
+  catch (e) { alert('刪除失敗：' + (e.code || e.message)); }
+}
+// 任務摘要（標題下面一行）：不用打開設定就知道這個任務怎麼玩
+function summary(m) {
+  const st = X.settingsOf(m), tm = S1.topicMode(m);
+  const out = ['🔬 ' + st.subjects.map((k) => X.SUBJECTS[k].name).join('、')];
+  out.push(m.s1 === false ? '🗄️ 第 1 關：關閉' : '🗄️ 第 1 關主題：' + (tm === 'teacher' ? '老師指定（' + S1.topicLines(m.topics).length + ' 個）' : tm === 'self' ? '學生自選' : '依科目隨機'));
+  out.push('📚 第 3 關：' + st.types.length + ' 種文獻');
+  out.push(st.en ? '🌍 英文進階：開' : '🌍 英文進階：關');
+  return out.map((t) => `<span>${esc(t)}</span>`).join('');
 }
 
 /* ---------- 設定表單 ---------- */
@@ -254,17 +337,33 @@ function settingsForm(m) {
   m = m || {};
   const subj = m.subj || X.DEFAULT_SETTINGS.subjects, types = m.types || X.DEFAULT_SETTINGS.types, en = m.en !== false, tmode = S1.topicMode(m);
   const ck = (name, v, label, on, small) => `<label class="ck"><input type="checkbox" name="${name}" value="${v}" ${on ? 'checked' : ''}>${label}${small ? ' <small>' + small + '</small>' : ''}</label>`;
+  const tip = (t) => `<span class="tip" tabindex="0" data-tip="${esc(t)}">?</span>`;
   return `<div class="opts">
-    <div class="opt" style="grid-column:1/-1"><h3>📌 任務名稱</h3><input type="text" id="fName" maxlength="40" value="${esc(m.name || '')}" placeholder="例如：115-1 探究 301"></div>
-    <div class="opt"><h3>🔬 自然科學科目</h3>${SUBJ.map(([k, n]) => ck('subj', k, n, !!subj[k])).join('')}<p class="note">證物卡的題材只從勾選的科目產生（至少一科）。</p></div>
-    <div class="opt"><h3>📚 第 3 關中文文獻類型</h3>${ZH.map((t) => ck('type', t.key, t.icon + ' ' + t.name, !!types[t.key], t.def ? '' : '加開')).join('')}<p class="note">預設：書籍、網路資源、YouTube、小論文、科展作品（至少一種）。</p></div>
-    <div class="opt"><h3>🌍 英文進階關</h3>${ck('en', '1', '開啟英文期刊、英文書籍（不影響結案）', en)}<p class="note">第 2 關（引用）開發中，完成後會在這裡出現設定。</p></div>
-    <div class="opt" style="grid-column:1/-1"><h3>🗄️ 第 1 關｜檔案庫搜查</h3>${ck('s1', '1', '開放第 1 關（A 模擬檔案庫＋B 線索卡作業）', m.s1 !== false)}
-      <div style="margin-top:6px;font-weight:700">第 1 關 B 研究主題怎麼分派？</div>
-      ${[['rand', '依勾選科目隨機分派', '從內建的實戰主題庫抽，題目確定查得到中文文獻'], ['teacher', '老師指定主題', '一行一個主題；多個主題時依學號分派（大致平均）'], ['self', '學生自選', '學生自己輸入題目']].map(([v, n, d]) => `<label class="ck" style="display:flex"><input type="radio" name="tmode" value="${v}" ${tmode === v ? 'checked' : ''}>${n} <small>${d}</small></label>`).join('')}
-      <textarea id="fTopics" maxlength="1200" placeholder="一行一個主題，例如：&#10;鑑識科學&#10;四驅車" style="min-height:80px;margin-top:6px;font-family:inherit">${esc(m.topics || '')}</textarea>
-      <p class="note">模擬檔案庫的研究問題只從勾選的科目抽（每科 4 題，每人一題）。</p></div>
+    <div class="opt" style="grid-column:1/-1"><div class="stage-h">📌 基本設定</div>
+      <label class="note" style="font-weight:700;color:var(--ink)">任務名稱</label><input type="text" id="fName" maxlength="40" value="${esc(m.name || '')}" placeholder="例如：115-1 探究 301">
+      <div style="margin-top:10px;font-weight:700">自然科學科目 ${tip('第 1 關的研究問題、第 3 關的證物卡題材，都只從勾選的科目產生（至少一科）')}</div>${SUBJ.map(([k, n]) => ck('subj', k, n, !!subj[k])).join('')}</div>
+    <div class="opt s1" style="grid-column:1/-1"><div class="stage-h s1">🗄️ 第 1 關｜檔案庫搜查</div>
+      ${ck('s1', '1', '開放第 1 關（1-A 模擬檔案庫＋1-B 線索卡作業）', m.s1 !== false)}
+      <div style="margin-top:8px;font-weight:700">1-B 研究主題怎麼分派？ ${tip('1-A 模擬檔案庫的研究問題由系統出題（每科 4 題，每人一題），這裡只決定 1-B 線索卡作業的主題')}</div>
+      ${[['rand', '🎲 依勾選科目隨機分派', '內建主題庫（四科各 8 個），都是中學生網站、科教館查得到中文文獻的題目'], ['teacher', '👩‍🏫 老師指定主題', '一行一個；多個主題時依學號分派（大致平均）'], ['self', '✍️ 學生自選', '學生自己輸入題目，老師在「線索卡」分頁看得到']].map(([v, n, d]) => `<label class="ck" style="display:flex"><input type="radio" name="tmode" value="${v}" ${tmode === v ? 'checked' : ''}><b>${n}</b> <small>${d}</small></label>`).join('')}
+      <div id="topicWrap" class="${tmode === 'teacher' ? '' : 'hidden'}" style="margin:6px 0 0 26px">
+        <textarea id="fTopics" maxlength="1200" placeholder="一行一個主題，例如：&#10;鑑識科學&#10;四驅車" style="min-height:80px;font-family:inherit">${esc(m.topics || '')}</textarea>
+        <p class="note" style="margin-top:4px">💡 寫「領域」比寫很細的題目好找（例如「鑑識科學」比「魯米諾對血跡的靈敏度」好找）。系統不會替學生搜尋，下面可以先點連結看看真實資料庫找不找得到：</p>
+        <div class="topicchk" id="topicChk"></div>
+      </div></div>
+    <div class="opt s3"><div class="stage-h s3">📚 第 3 關｜中文文獻類型</div>${ZH.map((t) => ck('type', t.key, t.icon + ' ' + t.name, !!types[t.key], t.def ? '' : '加開')).join('')}<p class="note">預設：書籍、網路資源、YouTube、小論文、科展作品（至少一種）。</p></div>
+    <div class="opt en"><div class="stage-h" style="border-color:#3c5a8a">🌍 英文進階</div>${ck('en', '1', '開啟英文期刊、英文書籍', en)}<p class="note">當加分關卡，不影響結案。第 2 關（引用）開發中，完成後會在這裡出現設定。</p></div>
   </div>`;
+}
+// 主題「找不找得到」：每個主題給中學生網站、科教館、博碩士論文的搜尋連結（用 Google 限定網站）
+function bindTopics() {
+  const draw = () => {
+    const list = S1.topicLines($('fTopics').value);
+    const g = (site, t) => 'https://www.google.com/search?q=' + encodeURIComponent('site:' + site + ' ' + t);
+    $('topicChk').innerHTML = list.length ? list.map((t) => `<div><b>${esc(t)}</b>｜<a href="${g('shs.edu.tw', t)}" target="_blank" rel="noopener">小論文 ↗</a><a href="${g('ntsec.edu.tw', t)}" target="_blank" rel="noopener">科展 ↗</a><a href="https://ndltd.ncl.edu.tw/" target="_blank" rel="noopener" title="到網站上搜尋「${esc(t)}」">博碩士論文 ↗</a></div>`).join('') : '<span class="note">（輸入主題後會出現檢查連結）</span>';
+  };
+  document.querySelectorAll('input[name=tmode]').forEach((r) => (r.onchange = () => { $('topicWrap').classList.toggle('hidden', r.value !== 'teacher' || !r.checked); }));
+  $('fTopics').addEventListener('input', draw); draw();
 }
 function readForm() {
   const vals = (n) => Array.from(document.querySelectorAll(`input[name=${n}]:checked`)).map((x) => x.value);
@@ -276,8 +375,8 @@ function validForm(f) { if (!f.name) return '請填任務名稱'; if (f.tmode ==
 
 $('btnNew').onclick = () => {
   const md = document.createElement('div'); md.className = 'modal';
-  md.innerHTML = `<div class="parch"><h2>➕ 開設新任務</h2>${settingsForm({})}<div class="row"><button class="btn gold" id="mkGo">建立任務</button><button class="btn ghost" id="mkNo">取消</button><span class="note bad" id="mkMsg" style="margin:0"></span></div></div>`;
-  document.body.appendChild(md);
+  md.innerHTML = `<div class="parch"><h2>➕ 開設新任務</h2>${settingsForm({})}<div class="row" style="margin-top:14px"><button class="btn gold" id="mkGo">建立任務</button><button class="btn ghost" id="mkNo">取消</button><span class="note bad" id="mkMsg" style="margin:0"></span></div></div>`;
+  document.body.appendChild(md); bindTopics();
   $('mkNo').onclick = () => md.remove();
   $('mkGo').onclick = async () => {
     const f = readForm(), bad = validForm(f); if (bad) return ($('mkMsg').textContent = bad);
@@ -297,16 +396,18 @@ $('btnNew').onclick = () => {
 /* ---------- 開啟任務 ---------- */
 async function openMission(code) {
   CUR = code; try { localStorage.setItem('secretSource-teacher:cur', code); } catch (e) { }
-  document.querySelectorAll('[data-m]').forEach((b) => b.classList.toggle('cur', b.dataset.m === code));
+  drawList();
   META = await FB.get('secret-source/m/' + code + '/meta');
   if (!META) { toast('找不到這個任務'); return; }
+  $('noMission').classList.add('hidden');
+  $('mCode2').textContent = code; $('mSum').innerHTML = summary(META);
   LIVE = null; liveErr = '';
   $('mission').classList.remove('hidden');
   $('mTitle').textContent = '📌 ' + (META.name || code);
   $('mCode').textContent = code; $('mLink').textContent = linkOf(code);
   $('btnPreview').href = linkOf(code);
   drawQR('qrSmall', linkOf(code), 150);
-  $('setBox').innerHTML = settingsForm(META); $('saveMsg').textContent = '';
+  $('setBox').innerHTML = settingsForm(META); bindTopics(); $('saveMsg').textContent = '';
   $('roster').value = (MINE[code] && MINE[code].roster) || '';
   $('keyBody').innerHTML = '';
   showTab(curTab);
@@ -328,14 +429,10 @@ $('btnSave').onclick = async () => {
     await FB.update('secret-source/owners/' + ME.uid + '/' + CUR, { name: f.name });
     Object.assign(META, f); MINE[CUR].name = f.name;
     $('mTitle').textContent = '📌 ' + f.name; $('saveMsg').innerHTML = '<span class="good">✅ 已儲存</span>';
-    document.querySelector(`[data-m="${CUR}"] b`).textContent = f.name;
+    $('mSum').innerHTML = summary(META); drawList();
   } catch (e) { $('saveMsg').innerHTML = '<span class="bad">儲存失敗：' + esc(e.code || e.message) + '</span>'; }
 };
-$('btnDel').onclick = async () => {
-  if (!confirm(`確定刪除任務「${META.name}」（${CUR}）？\n\n學生的闖關紀錄會一起刪除，學生連結也會失效，無法復原。`)) return;
-  try { await FB.remove('secret-source/m/' + CUR); await FB.remove('secret-source/owners/' + ME.uid + '/' + CUR); toast('🗑 已刪除'); CUR = null; $('mission').classList.add('hidden'); await loadMine(); }
-  catch (e) { alert('刪除失敗：' + (e.code || e.message)); }
-};
+$('btnDel').onclick = () => delMission(CUR);
 
 /* ---------- 分頁 ---------- */
 function showTab(t) {
