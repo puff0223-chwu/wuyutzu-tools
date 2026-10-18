@@ -247,6 +247,12 @@ body{font-size:16.5px}
         <p class="note">✓2＝第 2 次才過；✗3＝試了 3 次還沒過（卡關中）；·＝還沒開始。只有打開這個分頁時才會更新，省 Firebase 流量。</p>
       </div>
       <div class="parch">
+        <div class="row" style="margin-top:0"><h2 style="margin:0">🤖 AI 用量</h2><span style="flex:1"></span><button class="btn sm" id="btnAiUse">🔄 更新</button></div>
+        <p class="note" style="margin-top:4px">改寫練習、結案作業的 AI 回饋借用科普閱讀測驗的 Gemini，次數一起記在那邊；這裡只算「次數」，實際費用與餘額請到 Google AI Studio 看。</p>
+        <div id="aiUse" class="cards" style="margin-top:10px"></div>
+        <div class="row"><a class="btn gold sm" href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">💳 前往 Google AI Studio 查餘額／儲值 ↗</a><a class="btn ghost sm" href="https://reading-quiz-system.vercel.app/" target="_blank" rel="noopener">📖 科普閱讀測驗後台 ↗</a></div>
+      </div>
+      <div class="parch">
         <h2>👥 全班名單（選填）</h2>
         <p class="note" style="margin-top:0">貼上學號（可含姓名），進度表會列出還沒開始的人。名單只存在你的帳號裡。</p>
         <textarea id="roster" placeholder="一行一位：學號 姓名"></textarea>
@@ -500,7 +506,7 @@ function showTab(t) {
   curTab = t;
   document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
   document.querySelectorAll('section[data-tab]').forEach((s) => s.classList.toggle('on', s.dataset.tab === t));
-  if (t === 'live') refreshLive(); else stopPoll();
+  if (t === 'live') { refreshLive(); loadAiUse(); } else stopPoll();
   if (t === 'clue') loadClues();
   if (t === 'dos') loadDos();
   if (t === 'key' && !LIVE) loadAll().catch(() => { });
@@ -611,6 +617,18 @@ function renderDos() {
   });
 }
 $('btnDos').onclick = loadDos;
+// AI 用量（只在打開「即時進度」或按更新時讀一次，不跟著 10 秒輪詢）
+async function loadAiUse() {
+  if (!CUR) return;
+  $('aiUse').innerHTML = '<p class="note">讀取中……</p>';
+  try {
+    const j = await (await fetch(S2.API + '?usage=' + CUR)).json();
+    if (j.error || j.mission_month == null) throw new Error(j.error || '讀不到');
+    const k = (n, t) => `<div class="kpi"><b>${n}</b><span>${t}</span></div>`;
+    $('aiUse').innerHTML = k(j.mission_month, '這個任務・' + j.month_label) + k(j.mission_total, '這個任務・累計') + k(j.src_month, '所有秘文任務・本月') + k(j.all_month, '含科普閱讀測驗・本月全部');
+  } catch (e) { $('aiUse').innerHTML = '<p class="note bad">暫時讀不到 AI 用量（' + esc(e.message || e) + '），可以稍後按「更新」。</p>'; }
+}
+$('btnAiUse').onclick = loadAiUse;
 $('btnLive').onclick = refreshLive; $('optAuto').onchange = schedule; $('optSort').onchange = () => renderLive();
 
 const rosterList = () => ($('roster').value || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean).map((l) => { const p = l.split(/[\s,，\t]+/); return { id: X.normId(p[0]), name: p.slice(1).join(' ') }; }).filter((o) => /^[A-Z0-9]{3,12}$/.test(o.id));
