@@ -101,6 +101,8 @@
       off: [['book', '颱風天防災手冊'], ['fair', '溫度對海水鹽度測量的影響']] }
   ];
   var Q = {}; QS.forEach(function (q) { Q[q.id] = q; });
+  // 「換個說法」裡和題目用字不一樣的詞（書的摘要只用這些詞）
+  function alt(q) { return q.syn.split('、').filter(function (w) { return q.q.indexOf(w) < 0 && !q.kw.slice(0, 2).some(function (k) { return w.indexOf(k) >= 0 || k.indexOf(w) >= 0; }); }); }
 
   // 來源類型（篩選器用的分類 → 顯示名稱）
   var KIND = {
@@ -143,7 +145,8 @@
       var k = q.kw, add = function (d) { d.q = q.id; d.id = q.id + '-' + d.role; docs.push(d); };
       var g = q.good;
       add({ role: 'book', kind: 'book', rel: 1, ok: 1, title: g.book, au: people(int(r, 1, 2)), yr: int(r, 2014, 2024), src: pick(r, PUBS),
-        abs: '本書從生活現象出發，介紹' + k[0] + '、' + k[1] + '與' + k[3] + '的基本原理，並以「' + q.q + '」這類實驗為例，說明如何控制變因、設計對照組與記錄數據。書末附有參考文獻與延伸閱讀。' });
+        // 書用的是「比較大的概念」，不會照抄學生題目的字（真實的書也是這樣）→ 只用題目的字 AND 搜尋找不到，要用「換個說法」的詞（2026-10-19 老師問：換個說法有什麼用？）
+        abs: '本書是' + X.SUBJECTS[q.s].name + '的入門讀物，從生活現象出發介紹' + alt(q).join('、') + '等概念，每章附有可以在學校做的實驗，說明如何控制變因、設計對照組與記錄數據。書末附有參考文獻與延伸閱讀。', alt: 1 });
       var batch = int(r, 110, 114);
       add({ role: 'essay', kind: 'essay', rel: 1, ok: 1, title: g.essay, au: people(int(r, 2, 3)), yr: batch + 1911, src: '中學生網站｜第' + batch + pick(r, ['0315', '1031']) + '梯次 小論文（' + X.SUBJECTS[q.s].essay + '）',
         abs: '本研究探討' + q.iv + '對' + q.dv + '的影響。以' + q.obj + '為材料，設計不同' + q.iv + '的實驗組，測量' + q.dv + '並比較差異。結果發現' + q.iv + '與' + q.dv + '有明顯關係，文末引用了 5 篇參考文獻。' });
@@ -221,7 +224,7 @@
     if (items.length < NEED) msgs.push('卷宗要收滿 ' + NEED + ' 篇（現在 ' + items.length + ' 篇）');
     if (fatal) msgs.push('卷宗裡有論壇問答或內容農場，小論文不能用');
     if (nGood < 3) msgs.push('「跟研究問題相關又可靠」的文獻至少要 3 篇（現在 ' + nGood + ' 篇）');
-    if (!book) msgs.push('至少要有 1 篇和研究問題相關的書籍（小論文的參考文獻不能全部是網路資源）');
+    if (!book) msgs.push('至少要有 1 篇和研究問題相關的書籍（小論文的參考文獻不能全部是網路資源）。💡 書名通常用比較大的概念，不會跟你的題目一模一樣，用「換個說法」的詞搜尋看看');
     var ok = !msgs.length;
     var grade = !ok ? '' : nGood === NEED && searches <= 8 ? 'S' : (nGood === NEED || searches <= 15) ? 'A' : 'B';
     return { ok: ok, grade: grade, nGood: nGood, items: res, msgs: msgs };
@@ -299,7 +302,7 @@
   }
 
   root.SecretSourceS1 = {
-    QS: QS, Q: Q, KIND: KIND, CATS: CATS, NOTE: NOTE, NEED: NEED, NOW_Y: NOW_Y,
+    QS: QS, Q: Q, alt: alt, KIND: KIND, CATS: CATS, NOTE: NOTE, NEED: NEED, NOW_Y: NOW_Y,
     buildDB: buildDB, question: question, terms: terms, search: search, judge: judge,
     TOPICS: TOPICS, topicLines: topicLines, topicMode: topicMode, topicFor: topicFor,
     CTYPES: CTYPES, CT: CT, MIN_CARDS: MIN_CARDS, MAX_CARDS: MAX_CARDS, checkCard: checkCard, checkClues: checkClues, cleanCard: cleanCard, LIM: LIM,

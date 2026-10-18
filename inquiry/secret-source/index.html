@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <script src="core.js?v=20261018c"></script>
 <script src="check.js?v=20261018b"></script>
-<script src="stage1.js?v=20261018c"></script>
+<script src="stage1.js?v=20261019a"></script>
 <style>
 :root{
   --night:#1b1a17; --night2:#26241f; --parch:#f3e9d2; --parch2:#e8dbbb; --edge:#c9b386;
@@ -235,6 +235,19 @@ button{font:inherit;cursor:pointer}
 .opbox button span{display:block;font-size:.82rem;color:var(--muted)}
 .opbox button.on{border-color:var(--jade);background:#e7f2ec;box-shadow:inset 0 0 0 1px var(--jade)}
 .diag{font-size:.88rem;background:#fff4dc;border:1px dashed var(--gold);border-radius:8px;padding:8px 10px}
+
+.rhead{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:.9rem;color:var(--muted);margin:4px 0}
+.rhead .pg{margin-left:auto;display:flex;gap:4px}
+.rhead .pg button{width:30px;height:28px;border:1.5px solid var(--edge);background:#fffdf7;border-radius:6px;font-weight:900}
+.rhead .pg button.on{background:var(--ink);color:var(--parch);border-color:var(--ink)}
+.rlist .doc{display:flex;gap:10px;align-items:flex-start;padding:8px 10px}
+.rlist .doc .ic{font-size:1.3rem;line-height:1.4;flex:none}
+.rlist .doc .mid{flex:1;min-width:0}
+.rlist .doc .dt{font-size:.97rem;line-height:1.45}
+.rlist .doc .dm{font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rlist .doc .act{flex-direction:column;margin-top:0;flex:none}
+.rlist .doc .mini{padding:1px 9px;font-size:.8rem}
+.rlist .doc.picked{border-color:var(--jade);background:#f1f7f3}
 /* 線索卡 */
 .where{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px;margin:6px 0 12px}
 .where a{display:block;background:#fbf4e3;border:1px solid var(--edge);border-radius:8px;padding:7px 10px;color:var(--ink);text-decoration:none;font-size:.9rem}
@@ -675,7 +688,7 @@ button{font:inherit;cursor:pointer}
     var byId = {}; db.forEach(function (d) { byId[d.id] = d; });
     var A = state.arcWork && state.arcWork.q === Q.id ? state.arcWork : { q: Q.id, kw: {}, picks: [], n: 0, op: 'and' };
     state.arcWork = A;
-    var results = null, judged = null, done = !!state.passed[L.key], lastTerms = [];
+    var results = null, judged = null, done = !!state.passed[L.key], lastTerms = [], page = 0;
     var kwOk = function () { return ['obj', 'iv', 'dv', 'syn'].filter(function (k) { return String(A.kw[k] || '').trim(); }).length >= 2; };
     var metaLine = function (d) { return (d.au.length ? esc(d.au.join('、')) : '（沒有作者）') + '｜' + (d.yr || '（沒有日期）') + '｜' + esc(d.src); };
     openPanel('<div class="ptag">第 1 關 A｜檔案庫搜查</div><h2>🗄️ 模擬檔案庫</h2>' +
@@ -687,7 +700,7 @@ button{font:inherit;cursor:pointer}
       '<div class="kwt">' +
       [['obj', '🎯 研究對象', '研究「誰」？'], ['iv', '🔧 改變什麼', '實驗中你改變的東西'], ['dv', '👀 觀察什麼', '你要測量的結果'], ['syn', '🔁 換個說法', '同一件事的其他講法']].map(function (f) {
         return '<div><label>' + f[1] + '</label><input data-kw="' + f[0] + '" maxlength="30" placeholder="' + esc(f[2]) + '" value="' + esc(A.kw[f[0]] || '') + '"></div>';
-      }).join('') + '</div><div class="hint">「換個說法」：文獻的作者不一定跟你用同一個詞，例如「醋」也叫「醋酸」、「維他命C」也叫「維生素C」。至少填 2 格才能搜尋。<button class="mini" id="kwHint">💡 看提示</button> <span id="kwHintTxt"></span></div>' +
+      }).join('') + '</div><div class="hint">🔁 <b>為什麼要「換個說法」？</b>寫文獻的人不一定跟你用同一個詞，尤其是<b>書</b>，書名和內容常用比較大的概念（例如題目寫「煞車皮」，書上寫「摩擦力」）。只用題目的字，常常會漏掉好文獻。至少填 2 格才能搜尋。<button class="mini" id="kwHint">💡 看提示</button> <span id="kwHintTxt"></span></div>' +
       '<p class="sub-t">▍步驟二　搜尋檔案庫</p>' +
       '<div class="tpl" style="margin:0 0 8px">一格放<b>一個詞</b>。上面拆好的詞可以直接點來用：<div class="chipbar" id="kwChips"></div></div>' +
       '<div id="qBoxes"></div>' +
@@ -744,12 +757,15 @@ button{font:inherit;cursor:pointer}
         var diag = lastTerms.map(function (t) { var n = S1.search(db, t, 'and').length; return '「' + esc(t) + '」' + (n ? '單獨找有 ' + n + ' 篇' : '<b style="color:var(--bad)">一篇都沒有</b>'); }).join('、');
         $('rList').innerHTML = '<div class="diag">找不到同時符合的文獻。' + diag + '。<br>💡 一篇都沒有的詞：換短一點（例如「沉積速率」→「沉積」）或換個說法；也可以改用 <b>有一個就好（OR）</b>、拿掉類型／年份篩選。</div>'; return;
       }
-      $('rList').innerHTML = '<div class="hint">找到 ' + results.length + ' 篇' + (results.length >= 15 ? '（只顯示前 15 篇，可以加關鍵字縮小範圍）' : '') + '</div>' + results.map(function (d) {
+      var per = 6, pages = Math.ceil(results.length / per); if (page >= pages) page = pages - 1;
+      var shown = results.slice(page * per, page * per + per);
+      $('rList').innerHTML = '<div class="rhead"><span style="white-space:nowrap">找到 <b>' + results.length + '</b> 篇</span>' + (results.length >= 15 ? '<small>太多了，可以加一個詞縮小範圍</small>' : '') + (pages > 1 ? '<span class="pg">' + Array.from({ length: pages }, function (_, k) { return '<button data-pg="' + k + '" class="' + (k === page ? 'on' : '') + '">' + (k + 1) + '</button>'; }).join('') + '</span>' : '') + '</div>' + shown.map(function (d) {
         var inF = A.picks.indexOf(d.id) >= 0, K = S1.KIND[d.kind];
-        return '<div class="doc"><div class="dt"><span class="tg">' + K.icon + ' ' + K.name + '</span>' + esc(d.title) + '</div><div class="dm">' + metaLine(d) + '</div>' +
-          '<div class="ab hidden" id="ab-' + d.id + '">' + esc(d.abs) + '</div>' +
-          '<div class="act"><button class="mini" data-ab="' + d.id + '">📄 看摘要</button><button class="mini add' + (inF ? ' on' : '') + '" data-pick="' + d.id + '">' + (inF ? '✓ 已收進卷宗' : '＋收進卷宗') + '</button></div></div>';
+        return '<div class="doc' + (inF ? ' picked' : '') + '"><span class="ic" title="' + K.name + '">' + K.icon + '</span><div class="mid"><div class="dt">' + esc(d.title) + '</div><div class="dm">' + K.name + '｜' + metaLine(d) + '</div>' +
+          '<div class="ab hidden" id="ab-' + d.id + '">' + esc(d.abs) + '</div></div>' +
+          '<div class="act"><button class="mini" data-ab="' + d.id + '" title="看摘要">📄 摘要</button><button class="mini add' + (inF ? ' on' : '') + '" data-pick="' + d.id + '">' + (inF ? '✓ 已收' : '＋ 收') + '</button></div></div>';
       }).join('');
+      Array.prototype.forEach.call(document.querySelectorAll('[data-pg]'), function (b) { b.onclick = function () { page = +b.getAttribute('data-pg'); drawResults(); $('rList').scrollIntoView({ block: 'start', behavior: 'smooth' }); }; });
       Array.prototype.forEach.call(document.querySelectorAll('[data-ab]'), function (b) { b.onclick = function () { $('ab-' + b.getAttribute('data-ab')).classList.toggle('hidden'); }; });
       Array.prototype.forEach.call(document.querySelectorAll('[data-pick]'), function (b) { b.onclick = function () { togglePick(b.getAttribute('data-pick')); }; });
     };
@@ -776,7 +792,7 @@ button{font:inherit;cursor:pointer}
       lastTerms = A.qs.map(function (t) { return String(t || '').replace(/\s+/g, ''); }).filter(Boolean);
       if (!lastTerms.length) { toast('至少在一格裡輸入一個詞'); return; }
       results = S1.search(db, lastTerms.join(' '), A.op, $('qCat').value, +$('qYr').value);
-      A.n = (A.n || 0) + 1; saveW(); cnt(); drawResults();
+      page = 0; A.n = (A.n || 0) + 1; saveW(); cnt(); drawResults();
     };
     $('qGo').onclick = go;
     drawChips(); drawBoxes();
@@ -814,7 +830,8 @@ button{font:inherit;cursor:pointer}
     ['學校圖書館／國家圖書館', '書籍、電子書', 'https://www.ncl.edu.tw/'],
     ['臺灣博碩士論文知識加值系統', '碩博士論文', 'https://ndltd.ncl.edu.tw/'],
     ['華藝線上圖書館', '期刊論文', 'https://www.airitilibrary.com/'],
-    ['Google 學術搜尋', '英文文獻（進階）｜學校網路常被 Google 擋，出現錯誤畫面就換手機網路或回家查', 'https://scholar.google.com/']
+    ['Google 學術搜尋', '英文文獻（進階）', 'https://scholar.google.com/?hl=zh-TW'],
+    ['Semantic Scholar', '英文文獻：Google 學術出現「異常流量」錯誤畫面時改用這個', 'https://www.semanticscholar.org/']
   ];
   var SRC_LABEL = { book: '出版者', essay: '比賽梯次與類別（例：第1130315梯次 化學類）', fair: '第幾屆科展、組別科別', web: '網站名稱', yt: '頻道名稱', journal: '期刊名稱', thesis: '學校系所', news: '報紙名稱', gov: '出版機關', en: '期刊名稱或出版社', forum: '網站名稱' };
   function openClues(L) {
