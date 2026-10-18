@@ -64,7 +64,7 @@ import {
   createUserWithEmailAndPassword, sendPasswordResetEmail, updatePassword,
   reauthenticateWithCredential, EmailAuthProvider
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import { getDatabase, ref, onValue, push, set, update, get } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
+import { getDatabase, ref, onValue, push, set, update, get, goOffline, goOnline } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
 
 /* ===== Firebase 設定（請與 Firebase 專案設定頁的 firebaseConfig 核對） ===== */
 const firebaseConfig = {
@@ -80,6 +80,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
+// 背景閒置省連線（2026-10-18 全站連線健檢）：手機切到背景 60 秒就斷線，回到畫面自動接回、資料自動同步
+{ let t = null; document.addEventListener("visibilitychange", () => { clearTimeout(t); if (document.hidden) t = setTimeout(() => goOffline(db), 60000); else goOnline(db); }); }
 // 第二個 app 只用來「幫孩子建立帳號」，這樣爸爸不會被登出
 const auth2 = getAuth(initializeApp(firebaseConfig, "secondary"));
 

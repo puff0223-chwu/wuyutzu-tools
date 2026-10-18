@@ -32,11 +32,15 @@ wuyutzu-tools/
 ├── README.md                     # 專案簡介
 ├── firebase-rules.json           # ⭐ 要貼到 Firebase 的完整安全規則（由 firebase/build_rules.py 產生，不要手改）
 ├── firebase/                     # 🔐 Firebase 規則原始檔與工具（2026-10-13）
-│   ├── rules.src.json            #   規則原始檔：用縮寫 {{ADMIN}}、{{STAFF:app}}、{{XFER:…}}，改規則改這裡
+│   ├── rules.src.json            #   規則原始檔：用縮寫 {{ADMIN}}、{{STAFF:app}}、{{EKEY}}，改規則改這裡
 │   ├── build_rules.py            #   展開縮寫 → 產生 firebase-rules.json
-│   └── rules.test.js             #   規則自動測試（targaryen 模擬 Firebase，37 項）
+│   └── rules.test.js             #   規則自動測試（targaryen 模擬 Firebase，97 項）
+├── .github/workflows/firebase.yml # 🤖 推上 main 自動測試＋部署規則、每週一回報用量（2026-10-18）
+├── tools/health/                 # 🩺 全站連線健檢（2026-10-18，見 7-14）
+│   ├── check.py                  #   掃即時連線／輪詢頁有沒有背景讓位、大節點筆數、規則字數
+│   └── usage.py                  #   從 Cloud Monitoring 讀 Firebase 用量（Action 用）
 ├── account/                      # 👥 老師會員中心（2026-10-13）
-│   ├── index.html                #   申請、核准、權限、🚚 舊帳號搬家
+│   ├── index.html                #   申請、核准、權限
 │   ├── staff.js                  #   各系統共用的權限檢查（WuStaff）
 │   └── fb.js                     #   各老師頁共用的 Firebase 連線、Email／Google 登入（ES module）
 │
@@ -766,26 +770,23 @@ wuyutzu-tools/
 
 ### 👥 會員中心（account/，2026-10-13 新增）
 - **用途**：其他老師自己申請帳號 → 管理員核准並勾選可用的系統（excel／gps／seat／src），不用到 Firebase 控制台一個一個建帳號
-- **新增系統（2026-10-18 加 src）**：`account/staff.js` 的 `APPS` 加一筆（沒有舊專用帳號就 `legacy: ''`）、規則裡三處 app 名單（staff／staffpre 的 `$app`）加上代號、`build_rules.py` 的 `{{STAFF:app}}` 對沒有舊帳號的系統不產生舊帳號那段；各頁 `staff.js?v=` 版本號一起更新。會員中心的申請、核准、加開畫面都是讀 `APPS` 自動產生，不用另外改
+- **新增系統（2026-10-18 加 src）**：`account/staff.js` 的 `APPS` 加一筆、規則裡三處 app 名單（staff／staffpre 的 `$app`）加上代號；各頁 `staff.js?v=` 版本號一起更新。會員中心的申請、核准、加開畫面都是讀 `APPS` 自動產生，不用另外改
 - **管理員＝主帳號 `puff0223@gmail.com`**（規則同時要求信箱已驗證 `email_verified`；Google 登入一定是已驗證，所以別人沒辦法冒名註冊同一個 Email 拿到管理權）。主帳號可以用全部系統，不用申請
 - **登入方式**：Email＋密碼，或「使用 Google 帳號登入」（popup；被瀏覽器擋就改整頁跳轉）。Google 新使用者第一次登入沒有申請資料 → 會員中心自動顯示「補填申請資料」
 - **流程**：會員中心申請（姓名、學校、想用的系統、用途）→ Email 申請者收驗證信 → `staff/<uid>` 狀態 pending → 管理員在「待核准」分頁勾系統按核准 → 老師重新整理各系統頁面就能用
-- **資料**：`staff/<uid>` = {email, name, school, purpose, want{app}, at, status: pending|approved|rejected|disabled, apps{app:true}, note（給對方看的說明）, decidedAt}；`staffv/<uid>` 信箱已驗證旗標；`staffreq/<uid>` 加開系統申請；`staffpre/<Email 鍵>` 預先開通 {email, apps, at, name?, school?}；`staffmemo/<uid 或 Email 鍵>` 管理員私人備註；`xfer/<uid>` 舊帳號已登記搬家；`sys/retired/<app>` 舊專用帳號已退休
+- **資料**：`staff/<uid>` = {email, name, school, purpose, want{app}, at, status: pending|approved|rejected|disabled, apps{app:true}, note（給對方看的說明）, decidedAt}；`staffv/<uid>` 信箱已驗證旗標；`staffreq/<uid>` 加開系統申請；`staffpre/<Email 鍵>` 預先開通 {email, apps, at, name?, school?}；`staffmemo/<uid 或 Email 鍵>` 管理員私人備註（舊的 `xfer`、`sys/retired` 已在 2026-10-18 瘦身時拿掉）
 - **Email 鍵**：Email 小寫、`.` 換成 `,`（Firebase 的位置名稱不能有點），前端 `WuStaff.ekey()`、規則 `{{EKEY}}` 同一個算法
-- **管理員介面（2026-10-13 改版）**：分頁 ⏳ 待核准／➕ 加開申請／📋 會員名單／🚚 舊帳號搬家
+- **管理員介面（2026-10-13 改版）**：分頁 ⏳ 待核准／➕ 加開申請／📋 會員名單（🚚 舊帳號搬家分頁 2026-10-18 搬完後拿掉，程式碼要找回看 commit 47ec31c 以前）
   - 📋 會員名單：已申請＋預先開通放在同一張表；搜尋（姓名、學校、Email、備註，不重畫整頁）、狀態篩選、⬇️ 匯出 CSV（有 BOM，Excel 直接開）
   - ✏️ 管理（彈出視窗）：改姓名、學校、狀態（核准／等待／停用／未通過）、可用系統、給對方的說明、🗒 管理員備註；🗑 從名單刪除（只刪會員資料，各系統的資料和 Firebase 登入帳號都還在）
   - ➕ 手動新增：有 Firebase UID（主控台 Authentication 複製）→ 直接寫 `staff/<uid>` 立刻開通，適合以前手動建帳號的老師；沒有 UID → 寫 `staffpre`，對方第一次登入會員中心時自動「領取」：規則要求**信箱已驗證**（防止別人先用那個 Email 註冊來冒領），而且開通的系統不能比預先開通的多
   - 彈出視窗放在 `#app` 外面：名單是即時監聽，有人申請時整個 `#app` 會重畫，視窗放裡面會被洗掉
 - **老師自己改資料**：會員中心「✏️ 修改我的資料」可以改姓名、學校；規則核對狀態、Email、可用系統、給對方的說明都不能變，也不能刪掉自己的紀錄
 - **共用檔**：
-  - `account/fb.js`：Firebase 設定、SDK 版本（10.14.1）、`openFirebase(名稱)`、Email／Google 登入、中文錯誤訊息、Google 按鈕樣式。四個老師頁（會員中心、消失的實驗數據、遺落的地點、座位大作戰）都用它，**換 SDK 版本或設定只改這一個檔**
+  - `account/fb.js`：Firebase 設定、SDK 版本（10.14.1）、`openFirebase(名稱)`、Email／Google 登入、中文錯誤訊息、Google 按鈕樣式。五個老師頁（會員中心、消失的實驗數據、遺落的地點、座位大作戰、出處失傳的秘文）都用它，**換 SDK 版本或設定只改這一個檔**。`FB.idle(60000)`：分頁藏到背景 60 秒就 goOffline、回來 goOnline（定向越野老師頁是自動裁判，不開）
   - `account/staff.js`：`WuStaff.check(get, user, app)`，各系統登入後呼叫；沒權限就顯示 `blockedHTML`（連回會員中心）
-- **舊的系統專用帳號（+seat、+gps、+excel）**：搬家前照常能用；會員中心「🚚 舊帳號搬家」輸入舊密碼 → 用第二個 Firebase app 登入舊帳號，讀出它的清單、寫 `xfer/<舊uid>` → 主帳號把每筆資料的 `owner` 改成自己、合併清單 → 寫 `sys/retired/<app>` 讓舊帳號退休（規則與畫面都不再放行）
-  - 只改 owner 欄位：照片、題庫內容不重新上傳；活動代碼、暗標代碼、學生連結全部不變
-  - 消失的實驗數據：主帳號已經有老師代碼時，搬來的學期在 `sems/<學期>/t` 記住舊老師代碼（清單上顯示「🔁 代碼 XXXXXX」），學生連結沿用舊代碼
-  - 可以重做：搬到一半斷線，再按一次會從頭檢查、補完（已搬過的會讀不到，就只補清單）
-- **真正擋資料的是規則**：老師寫入的規則都用 `{{STAFF:app}}`（管理員 或 未退休的舊專用帳號 或 核准且開通），畫面檢查只是方便
+- **舊的系統專用帳號（+seat、+gps、+excel）**：2026-10-13 起用會員中心「🚚 舊帳號搬家」把資料 owner 改成主帳號；2026-10-18 三個都搬完（`sys/retired` 三個都是 true）、老師已在 Firebase 刪掉帳號，規則與程式裡的舊帳號段落全部拿掉
+- **真正擋資料的是規則**：老師寫入的規則都用 `{{STAFF:app}}`（管理員 或 核准且開通該系統），畫面檢查只是方便
 - 沒有 Email 通知：有新申請時，管理員到會員中心看「待核准」分頁的紅色數字（分頁標題也會顯示數字）
 - **消失的實驗數據是老師代碼制**：每位老師登入後自動產生 6 碼老師代碼，學生連結 `?t=代碼&s=學期`；資料在 `excel-rescue-t/<代碼>/<學期>/<學生id>`，學期清單與名單存在 `excel-rescue-owners/<uid>`。數據亂數種子＝`代碼/學期`；Excel A2 寫上老師代碼，批改時用檔案裡的代碼重算。管理員的代碼 `meta.admin = true`（管理員沒有 staff 紀錄，學生寫入靠這個旗標放行）
 - **舊連結照常能用**：沒有 `t` 的舊連結數據、雲端位置都跟以前一模一樣；學期清單標「🕰️ 舊版連結」。舊路徑整個學期的讀取只有管理員能看，單一學生紀錄仍公開讀
@@ -950,9 +951,30 @@ fp/
 - **新系統接會員中心的清單**：staff.js 的 APPS、規則三處 app 名單、build_rules 的舊帳號段落、各頁 staff.js 版本號；漏一個不是畫面看不到新系統，就是規則擋掉
 - **測試用的假 Firebase 要用真規則**：老師頁的 SDK 換成假模組、學生頁 REST 也攔下來，兩邊都寫進同一份資料，每次讀寫都丟給 targaryen 用 `firebase-rules.json` 判斷，網頁實測同時就驗證了規則
 
+### 7-14 全站連線健檢、規則瘦身、自動部署（2026-10-18）
+- **為什麼要健檢**：所有系統共用一個免費 Firebase，像一間只有 100 個座位的教室。每個「即時連線」的分頁都佔一個位子，**就算分頁已經切到背景、上一節忘了關也一樣佔著**。系統越來越多，最容易爆的就是這 100 條
+- **健檢工具**：`python3 tools/health/check.py`（`--no-net` 不連網、`--strict` 有問題就回傳錯誤碼）
+  1. 掃全站找「即時連線」（EventSource、SDK onValue、openFirebase）和「定時輪詢」（setInterval 去抓雲端），看有沒有「背景讓位」
+  2. 抓公開大節點的筆數（`?shallow=true` 只拿 key 不拿內容），超過 500 筆就該改成只抓目前學期
+  3. 規則檔字數（上限 256 KB）
+  - 刻意常駐的頁面寫在 `ALWAYS_ON`（定向越野老師頁＝自動裁判、投影排行榜、鍵結社主持機），報告標 🟦 不算問題；**新頁面如果要常駐也要登記在這裡**
+- **這次修好的（背景 60 秒讓位，回到畫面自動重連）**：
+  - 鍵結社多人連線學生手機：`mp-cloud.js` 的 listen 加 `pause()`，再用 `MPC.idle(listener, 60000)`；`refresh()` 會重開並拿到完整資料
+  - 共用 `account/fb.js` 加 `FB.idle()`：會員中心、座位大作戰、消失的實驗數據、出處失傳的秘文老師頁都開；SDK 的 goOnline 會自動補同步 onValue、補送離線時排隊的寫入
+  - 公告欄老師頁（之前只有學生頁會讓位）、集點小金庫
+  - pH／單位換算老師即時看板、座位暗標頁：分頁在背景就不輪詢
+- **先不改的（記在健檢門檻裡）**：科學史、鍵結社老師頁和器材排行榜會「整包下載」，現在各只有 24～67 筆；超過 500 筆再改成 `orderBy="$key"&startAt="學期_"`（key 開頭就是學期，不用另外建索引）
+- **規則瘦身**：舊帳號搬完後拿掉 `{{XFER}}`、`xfer`、`sys/retired`、`LEGACY` 段落，38,584 → 34,908 字；規則越短，Firebase 每次判斷越快、貼上越不容易出錯。測試改成驗證「舊帳號、xfer、sys 都被擋」
+- **自動部署（`.github/workflows/firebase.yml`）**：推上 main 且改到規則 → 重新產生規則並確認和 repo 一致 → targaryen 測試 → 用服務帳號 PUT `/.settings/rules.json` → 產生資源報告 → 貼到 repo 的「🔋 Firebase 資源報告」議題（訂閱議題就會收到 Email）。每週一 07:47（台灣）自動再報一次用量（不部署）；Actions 分頁也能手動按「Run workflow」
+  - **資源報告**（`tools/health/usage.py`）讀 Google Cloud Monitoring：同時連線（7 天最高、發生時間）、本月下載＋整月推估、儲存、資料庫負載；🟢 < 60%、🟡 60–85%、🔴 > 85%
+  - **金鑰只放 GitHub Secret `FIREBASE_SA`**，絕對不能進 repo（repo 是公開的）。沒設金鑰時 Action 只測試不部署、不會失敗
+  - 金鑰設定（一次）：Firebase 主控台 → ⚙️ 專案設定 → 服務帳戶 → 產生新的私密金鑰（下載 JSON）→ Google Cloud 主控台 IAM 找到 `firebase-adminsdk-…` 那個帳號，加「Monitoring 檢視者」角色 → GitHub repo → Settings → Secrets and variables → Actions → New repository secret，名稱 `FIREBASE_SA`、內容貼 JSON 全文 → 電腦裡下載的 JSON 刪掉
+- **健檢週期**：① 每新增 3 個系統（或任何一個「即時連線」系統）做一次 ② 每學期開學前一週做一次 ③ 每週一的自動報告出現 🟡／🔴 時馬上做。做法：跑 `check.py` → 看 Actions 最近的資源報告 → 修 ⚠️ → 在這一節後面補一行「第 N 次健檢：日期、系統數、結果」
+  - 第 1 次健檢：2026-10-18，約 20 個工具（即時連線 9 頁），修 7 處，結果全部 ✅／🟦
+
 ## 8. 已知注意事項
 
-- **Firebase 免費額度（Spark，2026-10-06 查）**：儲存 1 GB、每月下載 10 GB、同時連線 100 條。估計每月下載不到 1 GB；要留意的是同時連線。pH、單位換算、器材排行榜都是「問完就走」的一次性請求，不長期佔連線；**長期佔連線的只有公告欄（SSE 即時同步）和集點小金庫**。公告欄學生頁切到背景超過 60 秒或關閉分頁就自動斷線、回到畫面自動重連（2026-10-06）。用量看 Firebase 控制台 → Realtime Database →「用量」
+- **Firebase 免費額度（Spark，2026-10-06 查）**：儲存 1 GB、每月下載 10 GB、同時連線 100 條。估計每月下載不到 1 GB；要留意的是同時連線。pH、單位換算、器材排行榜都是「問完就走」的一次性請求，不長期佔連線；**長期佔連線的只有公告欄（SSE 即時同步）和集點小金庫**（2026-10-18 起都會背景讓位，見 7-14）。公告欄學生頁切到背景超過 60 秒或關閉分頁就自動斷線、回到畫面自動重連（2026-10-06）。用量看 Firebase 控制台 → Realtime Database →「用量」
 
 - **全站資源預算（2026-10-13 整合檢查）**：所有系統共用同一個 Firebase 專案、同一份免費額度
   - 同時連線上限 100 是最可能碰到的天花板。長期佔連線的：遺落的地點每組手機 1 條（50 組≈50 條）＋投影看板 1 條、公告欄每位學生 1 條、各老師頁開著時各 1 條。**一場 50 組定向越野＋一班公告欄≈90 條**；兩場大型即時活動不要同時開
@@ -960,16 +982,17 @@ fp/
   - 每月 10 GB 下載：大頭是遺落的地點照片（2026-10-13 起存在學生手機，第二次不再下載）
   - 1 GB 儲存：大頭也是照片（每張約 50～150 KB）。不用的題庫、活動記得刪
   - 如果以後很多老師同時用即時活動：選項一是把遺落的地點搬到另一個免費 Firebase 專案（各自 100 條，但帳號要另外處理）；選項二是升級 Blaze 方案（用量計費，額度內免費、連線上限 20 萬，需要綁信用卡，建議設預算警示）
-- **改規則的步驟**：改 `firebase/rules.src.json` → `python3 firebase/build_rules.py` → `npm i targaryen@3.1.0` 後 `node firebase/rules.test.js` 全部 ✅ → 把 `firebase-rules.json` 整份貼到 Firebase
+- **改規則的步驟**：改 `firebase/rules.src.json` → `python3 firebase/build_rules.py` → `npm i targaryen@3.1.0` 後 `node firebase/rules.test.js` 全部 ✅ → commit 推上 main，GitHub Action 自動部署並回報用量（還沒設 `FIREBASE_SA` 金鑰時，才手動把 `firebase-rules.json` 整份貼到 Firebase）
+- **用量隨時看**：repo 的「🔋 Firebase 資源報告」議題（每次部署、每週一自動留言）；細節到 Firebase 控制台 → Realtime Database →「用量」
 - 部署後看不到更新 → 多半是瀏覽器快取，用無痕視窗或 `Ctrl+Shift+R`
 - Claude Artifact 裡的網頁連不到 Firebase／外部網站；GitHub Pages 上的網頁可以
 - Google Apps Script 在學校與個人帳號都被擋，不要用來當後端
 
 ---
 
-## 附錄：Firebase 安全規則全文（2026-10-18，新增 secret-source 抽屜、會員系統加 src）
+## 附錄：Firebase 安全規則全文（2026-10-18 瘦身：拿掉舊帳號搬家段落）
 
-> 由 `firebase/build_rules.py` 從 `firebase/rules.src.json` 產生，和根目錄 `firebase-rules.json` 相同。要改規則請改原始檔再重新產生，不要直接改這裡。
+> 由 `firebase/build_rules.py` 從 `firebase/rules.src.json` 產生，和根目錄 `firebase-rules.json` 相同。要改規則請改原始檔再重新產生，不要直接改這裡。推上 main 後 GitHub Action 會自動部署。
 
 ```json
 {
@@ -1180,30 +1203,30 @@ fp/
    "owners": {
     "$uid": {
      ".read": "auth != null && auth.uid === $uid",
-     ".write": "(auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (auth.token.email === 'puff0223+seat@gmail.com' && root.child('sys/retired/seat').val() !== true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/seat').val() === true))) && (auth != null && auth.uid === $uid)"
+     ".write": "(auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/seat').val() === true))) && (auth != null && auth.uid === $uid)"
     }
    },
    "classes": {
     "$cid": {
      ".read": "auth != null && data.child('owner').val() === auth.uid",
-     ".write": "((auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (auth.token.email === 'puff0223+seat@gmail.com' && root.child('sys/retired/seat').val() !== true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/seat').val() === true))) && (auth != null && $cid.matches(/^cls[a-z0-9]{6,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid))) || ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) && data.child('owner').exists() && root.child('xfer/'+data.child('owner').val()).val() === true)",
+     ".write": "((auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/seat').val() === true))) && (auth != null && $cid.matches(/^cls[a-z0-9]{6,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)))",
      ".validate": "newData.child('owner').val() === auth.uid"
     }
    },
    "rounds": {
     "$code": {
-     ".write": "((auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (auth.token.email === 'puff0223+seat@gmail.com' && root.child('sys/retired/seat').val() !== true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/seat').val() === true))) && (auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid)))) || ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) && data.child('meta/owner').exists() && root.child('xfer/'+data.child('meta/owner').val()).val() === true)",
+     ".write": "((auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/seat').val() === true))) && (auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid))))",
      "meta": {
       ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)",
-      ".write": "(auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (auth.token.email === 'puff0223+seat@gmail.com' && root.child('sys/retired/seat').val() !== true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/seat').val() === true))) && (auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid))",
+      ".write": "(auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/seat').val() === true))) && (auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid))",
       ".validate": "newData.hasChildren(['owner','open','deadline']) && newData.child('owner').val() === auth.uid && newData.child('deadline').isNumber()"
      },
      "board": {
       ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)",
-      ".write": "(auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (auth.token.email === 'puff0223+seat@gmail.com' && root.child('sys/retired/seat').val() !== true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/seat').val() === true))) && (auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid)"
+      ".write": "(auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/seat').val() === true))) && (auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid)"
      },
      "keys": {
-      ".write": "(auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (auth.token.email === 'puff0223+seat@gmail.com' && root.child('sys/retired/seat').val() !== true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/seat').val() === true))) && (auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid)"
+      ".write": "(auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/seat').val() === true))) && (auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid)"
      },
      "checkin": {
       "$h": {
@@ -1213,7 +1236,7 @@ fp/
      },
      "bids": {
       ".read": "auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid",
-      ".write": "(auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (auth.token.email === 'puff0223+seat@gmail.com' && root.child('sys/retired/seat').val() !== true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/seat').val() === true))) && (auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid)",
+      ".write": "(auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/seat').val() === true))) && (auth != null && root.child('seating/rounds/'+$code+'/meta/owner').val() === auth.uid)",
       "$h": {
        ".write": "newData.exists() && root.child('seating/rounds/'+$code+'/keys/'+$h).val() === true && root.child('seating/rounds/'+$code+'/meta/open').val() === true && now <= root.child('seating/rounds/'+$code+'/meta/deadline').val()",
        ".validate": "newData.hasChildren(['seat','res','ts']) && newData.child('ts').val() == now && newData.child('seat').isString() && root.child('seating/rounds/'+$code+'/board/biddable/'+newData.child('seat').val()).val() === true"
@@ -1226,33 +1249,33 @@ fp/
    "owners": {
     "$uid": {
      ".read": "auth != null && auth.uid === $uid",
-     ".write": "(auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (auth.token.email === 'puff0223+gps@gmail.com' && root.child('sys/retired/gps').val() !== true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/gps').val() === true))) && (auth != null && auth.uid === $uid)"
+     ".write": "(auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/gps').val() === true))) && (auth != null && auth.uid === $uid)"
     }
    },
    "banks": {
     "$bid": {
      ".read": "auth != null && data.child('owner').val() === auth.uid",
-     ".write": "((auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (auth.token.email === 'puff0223+gps@gmail.com' && root.child('sys/retired/gps').val() !== true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/gps').val() === true))) && (auth != null && $bid.matches(/^bk[a-z0-9]{6,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid))) || ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) && data.child('owner').exists() && root.child('xfer/'+data.child('owner').val()).val() === true)",
+     ".write": "((auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/gps').val() === true))) && (auth != null && $bid.matches(/^bk[a-z0-9]{6,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)))",
      ".validate": "newData.child('owner').val() === auth.uid"
     }
    },
    "photos": {
     "$pid": {
      ".read": "$pid.matches(/^[a-z0-9]{8,24}$/)",
-     ".write": "((auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (auth.token.email === 'puff0223+gps@gmail.com' && root.child('sys/retired/gps').val() !== true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/gps').val() === true))) && (auth != null && $pid.matches(/^[a-z0-9]{8,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid))) || ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) && data.child('owner').exists() && root.child('xfer/'+data.child('owner').val()).val() === true)",
+     ".write": "((auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/gps').val() === true))) && (auth != null && $pid.matches(/^[a-z0-9]{8,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)))",
      ".validate": "newData.hasChildren(['owner','data']) && newData.child('owner').val() === auth.uid && newData.child('data').isString() && newData.child('data').val().length < 600000"
     }
    },
    "myruns": {
     "$uid": {
      ".read": "auth != null && auth.uid === $uid",
-     ".write": "(auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (auth.token.email === 'puff0223+gps@gmail.com' && root.child('sys/retired/gps').val() !== true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/gps').val() === true))) && (auth != null && auth.uid === $uid)"
+     ".write": "(auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/gps').val() === true))) && (auth != null && auth.uid === $uid)"
     }
    },
    "runs": {
     "$code": {
      ".read": "auth != null && root.child('orienteering/runs/'+$code+'/meta/owner').val() === auth.uid",
-     ".write": "((auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (auth.token.email === 'puff0223+gps@gmail.com' && root.child('sys/retired/gps').val() !== true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/gps').val() === true))) && (auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid)))) || ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) && data.child('meta/owner').exists() && root.child('xfer/'+data.child('meta/owner').val()).val() === true)",
+     ".write": "((auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/gps').val() === true))) && (auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid))))",
      "meta": {
       ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)"
      },
@@ -1304,13 +1327,13 @@ fp/
    "mycontrib": {
     "$uid": {
      ".read": "auth != null && auth.uid === $uid",
-     ".write": "(auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (auth.token.email === 'puff0223+gps@gmail.com' && root.child('sys/retired/gps').val() !== true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/gps').val() === true))) && (auth != null && auth.uid === $uid)"
+     ".write": "(auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/gps').val() === true))) && (auth != null && auth.uid === $uid)"
     }
    },
    "contrib": {
     "$code": {
      ".read": "auth != null && root.child('orienteering/contrib/'+$code+'/meta/owner').val() === auth.uid",
-     ".write": "((auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (auth.token.email === 'puff0223+gps@gmail.com' && root.child('sys/retired/gps').val() !== true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/gps').val() === true))) && (auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid)))) || ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) && data.child('meta/owner').exists() && root.child('xfer/'+data.child('meta/owner').val()).val() === true)",
+     ".write": "((auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/gps').val() === true))) && (auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid))))",
      "meta": {
       ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)"
      },
@@ -1397,7 +1420,7 @@ fp/
     ".read": "auth != null && data.child('meta/owner').val() === auth.uid",
     "meta": {
      ".read": "$t.matches(/^[A-HJ-NP-Z2-9]{6}$/)",
-     ".write": "(auth != null && $t.matches(/^[A-HJ-NP-Z2-9]{6}$/) && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (auth.token.email === 'puff0223+excel@gmail.com' && root.child('sys/retired/excel').val() !== true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/excel').val() === true))) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)) || ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) && data.child('owner').exists() && root.child('xfer/'+data.child('owner').val()).val() === true)",
+     ".write": "(auth != null && $t.matches(/^[A-HJ-NP-Z2-9]{6}$/) && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/excel').val() === true))) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid))",
      ".validate": "newData.hasChildren(['owner','at']) && (!newData.child('admin').exists() || (auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true))"
     },
     "$sem": {
@@ -1437,7 +1460,7 @@ fp/
   "excel-rescue-owners": {
    "$uid": {
     ".read": "auth != null && auth.uid === $uid",
-    ".write": "auth != null && auth.uid === $uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (auth.token.email === 'puff0223+excel@gmail.com' && root.child('sys/retired/excel').val() !== true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/excel').val() === true)))"
+    ".write": "auth != null && auth.uid === $uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/excel').val() === true)))"
    }
   },
   "secret-source": {
@@ -1485,21 +1508,6 @@ fp/
        }
       }
      }
-    }
-   }
-  },
-  "xfer": {
-   ".read": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true)",
-   "$uid": {
-    ".write": "auth != null && auth.uid === $uid && newData.val() === true && (auth.token.email === 'puff0223+seat@gmail.com' || auth.token.email === 'puff0223+gps@gmail.com' || auth.token.email === 'puff0223+excel@gmail.com')"
-   }
-  },
-  "sys": {
-   "retired": {
-    ".read": true,
-    "$app": {
-     ".write": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true)",
-     ".validate": "newData.isBoolean() && $app.matches(/^(seat|gps|excel)$/)"
     }
    }
   }

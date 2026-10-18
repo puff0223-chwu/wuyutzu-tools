@@ -879,8 +879,8 @@ const W = window.WuStaff, gate = document.getElementById('erGate');
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 let FB = null, authErr = (e) => String(e && (e.code || e.message) || e), gBtn = () => '';
 try {
-  const M = await import('../account/fb.js?v=20261013d');
-  FB = await M.openFirebase('excel'); authErr = M.authErr; gBtn = M.googleButtonHTML;
+  const M = await import('../account/fb.js?v=20261018a');
+  FB = await M.openFirebase('excel'); FB.idle(60000); authErr = M.authErr; gBtn = M.googleButtonHTML;
   window.ERFB = FB;
 } catch (e) { console.warn(e); }
 const box = (inner) => `<div style="max-width:460px;margin:10vh auto;background:var(--paper);border-radius:12px;padding:28px;color:var(--text)">${inner}</div>`;

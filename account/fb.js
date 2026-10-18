@@ -59,6 +59,14 @@ export async function openFirebase(name) {
     update: (p, v) => D.update(D.ref(db, p), v),
     remove: (p) => D.remove(D.ref(db, p)),
     listen: (p, cb, onErr) => D.onValue(D.ref(db, p), (s) => cb(s.val()), (e) => (onErr ? onErr(e) : cb(null))),
+    // 背景閒置省連線（2026-10-18 全站連線健檢）：分頁藏起來 ms 毫秒後 goOffline，回到前景 goOnline
+    // SDK 回線後會自動重新同步 onValue、補送離線時排隊的寫入；⚠ 自動評分／裁判頁（定向越野 live.js）不要開
+    idle: (ms = 60000) => {
+      let t = null;
+      const on = () => { clearTimeout(t); if (document.hidden) t = setTimeout(() => { try { D.goOffline(db); } catch (e) { } }, ms); else { try { D.goOnline(db); } catch (e) { } } };
+      document.addEventListener('visibilitychange', on);
+      return () => { clearTimeout(t); document.removeEventListener('visibilitychange', on); };
+    },
     // 用完就整個拆掉（例如搬家用的第二個登入），不佔 Firebase 同時連線數；下次 openFirebase 同名會重新建立
     // ⚠ 2026-10-13 修正：原本只 goOffline，第二次搬家拿到同一條「已關掉」的連線，寫入一直等 → 卡住
     close: async () => { try { await A.signOut(auth); } catch (e) { } try { await deleteApp(app); } catch (e) { try { D.goOffline(db); } catch (x) { } } }

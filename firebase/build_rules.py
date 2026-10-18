@@ -6,9 +6,7 @@
 
 縮寫（只在 rules.src.json 裡用）：
   {{ADMIN}}          管理員：puff0223@gmail.com，而且信箱已驗證（Google 登入一定是已驗證）
-  {{STAFF:app}}      可以使用某系統的老師：管理員、該系統的舊專用帳號（還沒搬家退休；只有 seat／gps／excel 有）、或會員中心核准且開通該系統
-  {{XFER:節點}}       舊帳號搬家：管理員可以接手「已登記搬家（xfer/<舊uid>）」的舊帳號資料
-  {{LEGACY_ANY}}     三個舊專用帳號（+seat、+gps、+excel）之一
+  {{STAFF:app}}      可以使用某系統的老師：管理員、或會員中心核准且開通該系統
   {{EKEY}}           登入者 Email 當成資料位置的寫法（小寫、. 換成 ,），預先開通 staffpre/<EKEY> 用
 
 用法：python3 firebase/build_rules.py   → 產生 repo 根目錄的 firebase-rules.json
@@ -16,30 +14,23 @@
 import json, os, re, sys
 
 ADMIN_EMAIL = 'puff0223@gmail.com'
-LEGACY = {'seat': 'puff0223+seat@gmail.com', 'gps': 'puff0223+gps@gmail.com', 'excel': 'puff0223+excel@gmail.com'}
+# 2026-10-18：三個舊的系統專用帳號（+seat、+gps、+excel）已搬家完成、從 Firebase 刪除，
+# 規則裡的「舊帳號」「搬家（xfer）」條件一併拿掉（規則瘦身）
 
 ADMIN = f"(auth != null && auth.token.email === '{ADMIN_EMAIL}' && auth.token.email_verified === true)"
 
 
 def staff(app):
-    # 有舊專用帳號的系統（seat、gps、excel）才加「舊帳號」那一段；之後新增的系統（例如 src）只看管理員與核准
-    legacy = (f" || (auth.token.email === '{LEGACY[app]}' && root.child('sys/retired/{app}').val() !== true)") if app in LEGACY else ''
-    return ("(auth != null && (" + ADMIN + legacy +
+    return ("(auth != null && (" + ADMIN +
             f" || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/{app}').val() === true)))")
 
 
-def xfer(node):
-    return f"({ADMIN} && {node}.exists() && root.child('xfer/'+{node}.val()).val() === true)"
-
-
-LEGACY_ANY = '(' + ' || '.join(f"auth.token.email === '{e}'" for e in LEGACY.values()) + ')'
 EKEY = "auth.token.email.toLowerCase().replace('.', ',')"
 
 
 def expand(s):
-    s = s.replace('{{ADMIN}}', ADMIN).replace('{{LEGACY_ANY}}', LEGACY_ANY).replace('{{EKEY}}', EKEY)
+    s = s.replace('{{ADMIN}}', ADMIN).replace('{{EKEY}}', EKEY)
     s = re.sub(r'\{\{STAFF:(\w+)\}\}', lambda m: staff(m.group(1)), s)
-    s = re.sub(r"\{\{XFER:(data\.child\('[\w/]+'\))\}\}", lambda m: xfer(m.group(1)), s)
     return s
 
 

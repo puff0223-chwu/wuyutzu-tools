@@ -94,8 +94,8 @@ const S = { user: null, rec: null, unsubs: [], tab: 'pending', all: {}, ver: {},
 let FB, authErr = (e) => String(e && (e.code || e.message) || e), gBtn = () => '';
 
 try {
-  const M = await import('./fb.js?v=20261013d');
-  FB = await M.openFirebase('account'); authErr = M.authErr; gBtn = M.googleButtonHTML;
+  const M = await import('./fb.js?v=20261018a');
+  FB = await M.openFirebase('account'); FB.idle(60000); authErr = M.authErr; gBtn = M.googleButtonHTML;
 } catch (e) { console.warn(e); FB = null; }
 
 function stop() { S.unsubs.forEach((u) => { try { u(); } catch (e) { } }); S.unsubs = []; }
@@ -260,7 +260,6 @@ async function claimPre() {
 function renderAdmin() {
   const L = (path, key, after) => S.unsubs.push(FB.listen(path, (v) => { S[key] = v || {}; if (after) after(); else drawAdmin(); }));
   L('staff', 'all'); L('staffv', 'ver'); L('staffreq', 'req'); L('staffpre', 'pres'); L('staffmemo', 'memo');
-  L('sys/retired', 'retired', () => { if (S.tab === 'move' && !S.moving) drawAdmin(); });
 }
 const STATUS_CHIP = { pending: 'wait', approved: 'ok', rejected: 'bad', disabled: 'bad', pre: 'pre' };
 const appIcons = (o) => Object.keys(o || {}).filter((k) => W.APPS[k]).map((k) => `<span title="${esc(W.APPS[k].name)}">${W.APPS[k].name.split(' ')[0]}</span>`).join('') || '<span class="muted small">—</span>';
@@ -291,10 +290,9 @@ function listHTML() {
     <p class="small muted" style="margin-top:8px">🗒 管理員備註只有你看得到。刪除名單只會移除會員資料，Firebase 的登入帳號還在（要刪請到 Firebase 主控台 → Authentication）。</p>`;
 }
 function drawAdmin() {
-  if (S.moving && S.tab === 'move') return; // 搬家中不重畫（按鈕、紀錄維持原樣），搬完會自己重畫
   const all = Object.entries(S.all || {}).map(([uid, r]) => ({ uid, ...r })).sort((a, b) => (b.at || 0) - (a.at || 0));
   const groups = { pending: all.filter((x) => x.status === 'pending'), more: Object.keys(S.req || {}).filter((uid) => (S.all || {})[uid]) };
-  const tab = ['pending', 'more', 'list', 'move'].includes(S.tab) ? S.tab : 'pending';
+  const tab = ['pending', 'more', 'list'].includes(S.tab) ? S.tab : 'pending';
   const appChips = (o) => Object.keys(o || {}).filter((k) => W.APPS[k]).map((k) => `<span class="chip">${W.APPS[k].name}</span>`).join(' ') || '<span class="muted small">（無）</span>';
   const checks = (uid, sel) => Object.entries(W.APPS).map(([k, a]) => `<label class="ck"><input type="checkbox" data-app="${uid}" value="${k}" ${sel[k] ? 'checked' : ''}>${a.name}</label>`).join('');
   const card = (x) => `<div class="mem"><div class="hd"><span class="nm">${esc(x.name)}</span><span class="small muted">${esc(x.school)}</span><span class="sp"></span><span class="chip wait">${W.STATUS[x.status]}</span></div>
@@ -306,17 +304,16 @@ function drawAdmin() {
   const moreCard = (uid) => { const x = S.all[uid], r = S.req[uid]; return `<div class="mem"><div class="hd"><span class="nm">${esc(x.name)}</span><span class="small muted">${esc(x.school)}・${esc(x.email)}</span></div>
     <div class="small" style="margin-top:6px">已開通：${appChips(x.apps)}　→　想加開：${appChips(r.want)}</div>
     <div class="row" style="margin-top:8px"><button class="btn teal sm" data-addok="${uid}">✅ 加開</button><button class="btn ghost sm" data-addno="${uid}">不加開</button></div></div>`; };
-  const body = tab === 'move' ? moveHTML() : tab === 'list' ? listHTML() : (tab === 'more' ? groups.more.map(moreCard) : groups.pending.map(card)).join('') || '<p class="muted" style="margin-top:14px">目前沒有資料</p>';
+  const body = tab === 'list' ? listHTML() : (tab === 'more' ? groups.more.map(moreCard) : groups.pending.map(card)).join('') || '<p class="muted" style="margin-top:14px">目前沒有資料</p>';
   const total = Object.keys(S.all || {}).length + Object.keys(S.pres || {}).length;
   $('#app').innerHTML = `
   <div class="card"><div class="row"><h1>👥 會員管理</h1><span class="chip ink">🔑 管理員</span><span class="sp"></span>${Object.values(W.APPS).map((a) => `<a class="btn ghost sm" href="../${a.url}">${a.name}</a>`).join('')}</div>
     <p class="small muted">老師在這個頁面自己申請帳號，你核准時勾選他能用哪些系統；也可以在「📋 會員名單」手動新增、修改、停用。各系統的安全規則會檢查這份名單。</p>
-    <div class="tabs">${[['pending', `⏳ 待核准（${groups.pending.length}）`], ['more', `➕ 加開申請（${groups.more.length}）`], ['list', `📋 會員名單（${total}）`], ['move', '🚚 舊帳號搬家']].map(([k, t]) => `<button data-tab="${k}" class="${tab === k ? 'on' : ''}">${t}</button>`).join('')}</div>
+    <div class="tabs">${[['pending', `⏳ 待核准（${groups.pending.length}）`], ['more', `➕ 加開申請（${groups.more.length}）`], ['list', `📋 會員名單（${total}）`]].map(([k, t]) => `<button data-tab="${k}" class="${tab === k ? 'on' : ''}">${t}</button>`).join('')}</div>
     ${body}
   </div>`;
   document.title = (groups.pending.length + groups.more.length ? `(${groups.pending.length + groups.more.length}) ` : '') + '👥 會員中心';
-  $$('[data-tab]').forEach((b) => { b.onclick = () => { if (S.moving) return toast('搬家進行中，請稍等', true); S.tab = b.dataset.tab; drawAdmin(); }; });
-  if (tab === 'move') bindMove();
+  $$('[data-tab]').forEach((b) => { b.onclick = () => { S.tab = b.dataset.tab; drawAdmin(); }; });
   if (tab === 'list') bindList();
   const appsOf = (uid) => Object.fromEntries($$(`input[data-app="${uid}"]:checked`).map((i) => [i.value, true]));
   const upd = async (uid, v, msg) => { try { await FB.update('staff/' + uid, { ...v, decidedAt: Date.now() }); toast(msg); } catch (e) { toast(authErr(e), true); } };
@@ -439,101 +436,7 @@ function exportCSV() {
   document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
 }
 
-// ---------- 管理員：舊帳號搬家（+seat、+gps、+excel 的資料改到主帳號名下） ----------
-// 做法：用第二個登入（舊帳號）讀出自己的資料清單、登記「我要搬家」(xfer)；主帳號再把每筆資料的 owner 改成自己。
-// 只改 owner 欄位，照片、題庫內容都不用重新上傳；活動代碼、學生連結都不變。
-function moveHTML() {
-  const ret = S.retired || {};
-  return `<div class="mem"><p class="small">以前每個系統有自己的專用帳號。搬家會把它的<b>班級、題庫、照片、活動紀錄、學期清單</b>都改到主帳號（${esc(S.user.email)}）名下：學生連結、活動代碼都不會變。搬完舊帳號就退休（不能再用來開系統）。</p>
-    <div class="small muted" style="margin:6px 0 10px">需要舊帳號的密碼（只用來登入讀資料，不會存起來）。搬到一半斷線也沒關係，再按一次會從頭檢查、補完。</div>
-    ${Object.entries(W.APPS).filter(([, a]) => a.legacy).map(([k, a]) => `<div class="row" style="border-top:1px dashed var(--line);padding:10px 0"><b style="min-width:150px">${a.name}</b><code class="small">${esc(a.legacy)}</code><span class="sp"></span>${ret[k] ? '<span class="chip ok">✅ 已搬家</span>' : `<input type="password" placeholder="舊帳號密碼" data-mpw="${k}" style="width:150px;padding:6px 10px"><button class="btn sm" data-mgo="${k}">🚚 搬家</button>`}</div>`).join('')}
-    <div id="mLog" class="small" style="margin-top:10px;white-space:pre-wrap;background:#f3eee2;border-radius:10px;padding:10px;${S.moveLog ? '' : 'display:none;'}max-height:320px;overflow:auto">${esc(S.moveLog || '')}</div></div>`;
-}
-function bindMove() {
-  $$('[data-mgo]').forEach((b) => { b.onclick = async () => {
-    const k = b.dataset.mgo, pw = $(`[data-mpw="${k}"]`).value; if (!pw) return toast('請輸入舊帳號的密碼', true);
-    S.moveLog = ''; const box = $('#mLog'); box.style.display = ''; box.textContent = '';
-    const log = (t) => { S.moveLog += t + '\n'; const b = $('#mLog'); if (b) { b.textContent = S.moveLog; b.scrollTop = b.scrollHeight; } };
-    S.moving = true; $$('[data-mgo]').forEach((x) => { x.disabled = true; });
-    try { await runMove(W.APPS[k].legacy, pw, k, log); toast('🎉 搬家完成'); }
-    catch (e) { log('❌ ' + (e.code ? authErr(e) : (e.message || e))); toast('搬家沒有完成，請看紀錄', true); }
-    // ⚠ 2026-10-13 修正：搬家中收到「已退休」的更新會先略過，所以搬完一定要自己重畫一次（紀錄保留在 S.moveLog）
-    S.moving = false; drawAdmin();
-  }; });
-}
-// 在一包資料裡找出座位大作戰的暗標代碼、遺落的地點的照片編號
-function findBidCodes(o, out) { out = out || new Set(); if (o && typeof o === 'object') { if (o.bid && typeof o.bid.code === 'string' && /^[2-9A-HJ-NP-Z]{6}$/.test(o.bid.code)) out.add(o.bid.code); Object.values(o).forEach((v) => findBidCodes(v, out)); } return out; }
-const findPhotoIds = (o) => new Set(Array.from(JSON.stringify(o || {}).matchAll(/"f:([a-z0-9]{8,24})"/g), (m) => m[1]));
-async function runMove(email, pw, appKey, log) {
-  const M = await import('./fb.js?v=20261013d');
-  const OLD = await M.openFirebase('move'), mu = S.user.uid;
-  try {
-    log('🔑 登入舊帳號 ' + email + '…');
-    const ou = (await OLD.login(email, pw)).user.uid;
-    if (ou === mu) throw new Error('這就是主帳號，不用搬');
-    await OLD.set('xfer/' + ou, true);
-    const oget = async (p) => { try { return await OLD.get(p); } catch (e) { return undefined; } }; // 已經搬過的會讀不到
-    const take = (p) => FB.set(p, mu);
-    const had = []; // 舊帳號有資料的清單，搬完清掉
-    // 🪑 座位大作戰：班級＋暗標
-    const sIdx = (await oget('seating/owners/' + ou)) || {};
-    if (Object.keys(sIdx).length) had.push('seating/owners/');
-    for (const [cid, info] of Object.entries(sIdx)) {
-      const cls = await oget('seating/classes/' + cid);
-      if (cls && cls.owner === ou) {
-        for (const code of findBidCodes(cls)) { const meta = await oget('seating/rounds/' + code + '/meta'); if (meta && meta.owner === ou) await take(`seating/rounds/${code}/meta/owner`); }
-        await take(`seating/classes/${cid}/owner`);
-      }
-      await FB.set(`seating/owners/${mu}/${cid}`, info);
-    }
-    if (Object.keys(sIdx).length) log(`🪑 座位大作戰：${Object.keys(sIdx).length} 個班級`);
-    // 🧭 遺落的地點：題庫＋照片、活動、投稿活動
-    const bIdx = (await oget('orienteering/owners/' + ou)) || {};
-    if (Object.keys(bIdx).length) had.push('orienteering/owners/');
-    let pics = 0;
-    for (const [bid, info] of Object.entries(bIdx)) {
-      const bank = await oget('orienteering/banks/' + bid);
-      if (bank && bank.owner === ou) {
-        for (const pid of findPhotoIds(bank)) { const po = await oget(`orienteering/photos/${pid}/owner`); if (po === ou) { await take(`orienteering/photos/${pid}/owner`); pics++; } }
-        await take(`orienteering/banks/${bid}/owner`);
-      }
-      await FB.set(`orienteering/owners/${mu}/${bid}`, info);
-    }
-    if (Object.keys(bIdx).length) log(`🧭 遺落的地點：${Object.keys(bIdx).length} 個題庫、${pics} 張照片`);
-    for (const [list, node, label] of [['myruns', 'runs', '場活動'], ['mycontrib', 'contrib', '個投稿活動']]) {
-      const idx = (await oget(`orienteering/${list}/${ou}`)) || {};
-      if (Object.keys(idx).length) had.push(`orienteering/${list}/`);
-      for (const [code, info] of Object.entries(idx)) {
-        const meta = await oget(`orienteering/${node}/${code}/meta`);
-        if (meta && meta.owner === ou) await take(`orienteering/${node}/${code}/meta/owner`);
-        await FB.set(`orienteering/${list}/${mu}/${code}`, info);
-      }
-      if (Object.keys(idx).length) log(`🧭 遺落的地點：${Object.keys(idx).length} ${label}`);
-    }
-    // 📊 消失的實驗數據：老師代碼＋學期清單＋名單
-    const eo = await oget('excel-rescue-owners/' + ou);
-    if (eo) {
-      had.push('excel-rescue-owners/');
-      const mine = (await FB.get('excel-rescue-owners/' + mu)) || {};
-      if (eo.tcode) {
-        const meta = await oget(`excel-rescue-t/${eo.tcode}/meta`);
-        if (meta && meta.owner === ou) await take(`excel-rescue-t/${eo.tcode}/meta/owner`);
-        if (meta && (meta.owner === ou || meta.owner === mu)) await FB.set(`excel-rescue-t/${eo.tcode}/meta/admin`, true); // 主帳號是管理員：學生寫入不看核准名單
-      }
-      const tcode = mine.tcode || eo.tcode || null, sems = Object.assign({}, mine.sems);
-      Object.entries(eo.sems || {}).forEach(([k, v]) => {
-        if (sems[k]) return log(`📊 學期 ${k} 兩個帳號都有，保留主帳號的`);
-        sems[k] = Object.assign({}, v); if (!v.legacy && eo.tcode && eo.tcode !== tcode) sems[k].t = v.t || eo.tcode; // 這學期的學生連結用舊老師代碼
-      });
-      await FB.update('excel-rescue-owners/' + mu, { tcode, sems, rosters: Object.assign({}, eo.rosters, mine.rosters), cur: mine.cur || eo.cur || null });
-      log(`📊 消失的實驗數據：${Object.keys(eo.sems || {}).length} 個學期${eo.tcode ? '、老師代碼 ' + eo.tcode : ''}`);
-    }
-    // 舊帳號的清單清掉、退休
-    for (const p of had) { try { await OLD.remove(p + ou); } catch (e) { } }
-    await FB.set('sys/retired/' + appKey, true);
-    log('✅ 搬家完成！舊帳號已退休，之後請用主帳號登入各系統。');
-  } finally { await OLD.close(); }
-}
+// （2026-10-18 移除「🚚 舊帳號搬家」：三個舊專用帳號已搬完並從 Firebase 刪除；搬家程式可從 git 歷史找回，commit 47ec31c 之前）
 
 $('#out').onclick = async () => { stop(); await FB.logout(); };
 if (!FB) renderLogin();

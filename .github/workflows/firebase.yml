@@ -1,0 +1,105 @@
+# 🔥 Firebase 規則自動部署＋資源報告（2026-10-18）
+# 什麼時候會跑：
+#   1. 推上 main 而且改到規則（firebase/ 或 firebase-rules.json）→ 測試 → 部署 → 回報用量
+#   2. 每週一早上 07:47（台灣）→ 只回報用量＋連線健檢，不部署
+#   3. 在 GitHub 的 Actions 分頁按「Run workflow」→ 測試 → 部署 → 回報
+# 需要一次性設定：Repo → Settings → Secrets and variables → Actions → 新增 FIREBASE_SA（服務帳號金鑰 JSON 全文）
+# 沒設定金鑰時：照樣會測試規則，只是不部署、也讀不到用量（不會失敗）
+name: 🔥 Firebase 規則部署與資源報告
+
+on:
+  push:
+    branches: [main]
+    paths: ['firebase/**', 'firebase-rules.json', '.github/workflows/firebase.yml', 'tools/health/**']
+  schedule:
+    - cron: '47 23 * * 0'   # UTC 週日 23:47 = 台灣週一 07:47
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: firebase-deploy
+  cancel-in-progress: false
+
+env:
+  DB: https://point-collection-stash-default-rtdb.asia-southeast1.firebasedatabase.app
+  HAS_KEY: ${{ secrets.FIREBASE_SA != '' }}
+
+jobs:
+  deploy-and-report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 🧱 重新產生規則，確認跟 repo 裡的一樣
+        run: |
+          python3 firebase/build_rules.py
+          git diff --exit-code firebase-rules.json || (echo "::error::firebase-rules.json 跟 rules.src.json 對不起來，請先跑 python3 firebase/build_rules.py 再推" && exit 1)
+
+      - name: 🧪 規則測試（targaryen）
+        run: |
+          npm install --no-save --prefix /tmp/tg targaryen@3.1.0
+          TARGARYEN=/tmp/tg/node_modules/targaryen node firebase/rules.test.js
+
+      - name: 🔑 用服務帳號登入 Google
+        id: auth
+        if: env.HAS_KEY == 'true'
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SA }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/firebase.database,https://www.googleapis.com/auth/userinfo.email,https://www.googleapis.com/auth/monitoring.read
+
+      - name: 🚀 部署規則
+        id: deploy
+        if: env.HAS_KEY == 'true' && github.event_name != 'schedule'
+        env:
+          TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          code=$(curl -sS -o /tmp/resp.txt -w '%{http_code}' -X PUT \
+            -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+            --data-binary @firebase-rules.json "$DB/.settings/rules.json")
+          cat /tmp/resp.txt; echo
+          if [ "$code" != "200" ]; then echo "::error::部署失敗 HTTP $code"; exit 1; fi
+          echo "✅ 規則已部署（$(wc -c < firebase-rules.json) bytes，commit ${GITHUB_SHA::7}）"
+
+      - name: 📊 產生資源報告
+        if: always()
+        env:
+          GCP_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          {
+            if [ "${{ github.event_name }}" = "schedule" ]; then echo "# 📅 每週資源報告"; else
+              if [ "${{ steps.deploy.outcome }}" = "success" ]; then echo "# ✅ 規則已部署（${GITHUB_SHA::7}）"
+              elif [ "$HAS_KEY" != "true" ]; then echo "# 🧪 規則測試通過（還沒設定金鑰，沒有自動部署）"
+              else echo "# ❌ 部署沒有成功，請看 Actions 紀錄"; fi
+            fi
+            echo
+            echo "> $(git log -1 --format='%s' | head -c 120)"
+            echo
+            python3 tools/health/usage.py
+            echo
+            python3 tools/health/check.py
+            echo
+            echo "[這次的執行紀錄]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)"
+          } > report.md
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 📮 貼到「🔋 Firebase 資源報告」議題
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [ -f report.md ] || exit 0
+          n=$(gh issue list --state open --search '"🔋 Firebase 資源報告" in:title' --json number --jq '.[0].number')
+          if [ -z "$n" ]; then
+            n=$(gh issue create --title '🔋 Firebase 資源報告' --body '每次自動部署、每週一早上，機器人會在這裡留言回報 Firebase 用量與連線健檢。按右邊的「Subscribe」就會收到 Email 通知。' | grep -o '[0-9]*$')
+            gh issue pin "$n" || true
+          fi
+          gh issue comment "$n" --body-file report.md

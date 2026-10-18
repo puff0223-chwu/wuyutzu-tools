@@ -100,26 +100,18 @@ expect('核准且開通的老師可以建班級', base, TEA, W, '/seating/classe
 expect('核准但沒開通座位的老師不能建班級', base, NOAPP, W, '/seating/classes/clsnew0002', newClass('NOAPP'), false);
 expect('停用的老師不能建班級', base, OFF, W, '/seating/classes/clsnew0003', newClass('OFF'), false);
 expect('主帳號可以建自己的班級', base, MAIN, W, '/seating/classes/clsnew0004', newClass('MAIN'), true);
-expect('舊 +seat 帳號搬家前照常能用', base, SEAT, W, '/seating/classes/clsseat001/name', 'A2', true);
+expect('舊 +seat 帳號已移除：不能再用（2026-10-18 規則瘦身）', base, SEAT, W, '/seating/classes/clsseat001/name', 'A2', false);
 expect('舊 +seat 帳號退休後不能用', retired, SEAT, W, '/seating/classes/clsseat001/name', 'A2', false);
 expect('老師不能改別人的班級', base, TEA, W, '/seating/classes/clsseat001/name', 'hack', false);
 
-console.log('— 舊帳號搬家 —');
-expect('舊帳號可以登記搬家', base, SEAT, W, '/xfer/OLDSEAT', true, true);
-expect('一般老師不能登記搬家', base, TEA, W, '/xfer/TEA', true, false);
-expect('沒登記搬家：主帳號不能接手舊班級', base, MAIN, W, '/seating/classes/clsseat001/owner', 'MAIN', false);
-expect('登記搬家後：主帳號可以接手舊班級', withXfer, MAIN, W, '/seating/classes/clsseat001/owner', 'MAIN', true);
-expect('接手時只能改成自己', withXfer, MAIN, W, '/seating/classes/clsseat001/owner', 'TEA', false);
-expect('主帳號不能接手一般老師的班級', withXfer, MAIN, W, '/seating/classes/clstea0001/owner', 'MAIN', false);
-expect('登記搬家後：接手暗標', withXfer, MAIN, W, '/seating/rounds/ABCDEF/meta/owner', 'MAIN', true);
-expect('登記搬家後：接手題庫', withXfer, MAIN, W, '/orienteering/banks/bkold001/owner', 'MAIN', true);
-expect('登記搬家後：接手照片', withXfer, MAIN, W, '/orienteering/photos/abcdefgh12/owner', 'MAIN', true);
-expect('登記搬家後：接手活動', withXfer, MAIN, W, '/orienteering/runs/QWERTY/meta/owner', 'MAIN', true);
-expect('登記搬家後：接手投稿活動', withXfer, MAIN, W, '/orienteering/contrib/ZXCVBN/meta/owner', 'MAIN', true);
-expect('登記搬家後：接手老師代碼', withXfer, MAIN, W, '/excel-rescue-t/AAAAAA/meta/owner', 'MAIN', true);
-expect('只有主帳號能讓舊帳號退休', base, TEA, W, '/sys/retired/seat', true, false);
-expect('主帳號讓舊帳號退休', base, MAIN, W, '/sys/retired/seat', true, true);
-
+console.log('— 舊帳號搬家（2026-10-18 已移除）—');
+expect('不能再登記搬家（xfer 已移除）', base, SEAT, W, '/xfer/OLDSEAT', true, false);
+expect('就算資料庫還有 xfer 紀錄，主帳號也不能接手別人的班級', withXfer, MAIN, W, '/seating/classes/clsseat001/owner', 'MAIN', false);
+expect('就算有 xfer 紀錄，主帳號也不能接手題庫', withXfer, MAIN, W, '/orienteering/banks/bkold001/owner', 'MAIN', false);
+expect('就算有 xfer 紀錄，主帳號也不能接手老師代碼', withXfer, MAIN, W, '/excel-rescue-t/AAAAAA/meta/owner', 'MAIN', false);
+expect('sys/retired 已移除，主帳號也不能寫', base, MAIN, W, '/sys/retired/seat', true, false);
+expect('舊 +gps 帳號不能建題庫', base, GPS, W, '/orienteering/banks/bkgps0001', { owner: 'OLDGPS', name: 'x' }, false);
+expect('舊 +excel 帳號不能建老師代碼', base, EXCEL, W, '/excel-rescue-t/EEEEEE/meta', { owner: 'OLDEXCEL', at: 1 }, false);
 console.log('— 消失的實驗數據 —');
 const rec = { name: '小明', ts: 1 };
 expect('學生寫入管理員代碼', base, null, W, '/excel-rescue-t/AAAAAA/115-1/S001', rec, true);

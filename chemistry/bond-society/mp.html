@@ -76,7 +76,7 @@
 <script src="cloud.js?v=20261016b"></script>
 <script src="mp-data.js?v=20261016b"></script>
 <script src="mp-engine.js?v=20261016b"></script>
-<script src="mp-cloud.js?v=20261016b"></script>
+<script src="mp-cloud.js?v=20261018a"></script>
 <script src="mp-map.js?v=20261016b"></script>
 <script>
 const $ = id => document.getElementById(id);
@@ -125,7 +125,7 @@ async function connect() {
   try { OFF = await MPC.serverOffset(ROOM); } catch (e) {}
   VL = MPC.listen(`${ROOM}/v/${SID}`, onView);
   setInterval(clock, 1000);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden && VL) VL.refresh(); });
+  MPC.idle(VL, 60000); // 背景 60 秒放掉串流、切回來馬上重連（全站連線健檢 2026-10-18）
   window.addEventListener('online', () => { if (VL) VL.refresh(); toast('🔌 網路恢復，重新連線'); });
   $('app').addEventListener('focusout', () => { if (pendingRender) setTimeout(scheduleRender, 50); });
 }

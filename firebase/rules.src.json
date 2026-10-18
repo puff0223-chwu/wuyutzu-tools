@@ -212,13 +212,13 @@
       "classes": {
         "$cid": {
           ".read": "auth != null && data.child('owner').val() === auth.uid",
-          ".write": "({{STAFF:seat}} && (auth != null && $cid.matches(/^cls[a-z0-9]{6,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid))) || {{XFER:data.child('owner')}}",
+          ".write": "({{STAFF:seat}} && (auth != null && $cid.matches(/^cls[a-z0-9]{6,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)))",
           ".validate": "newData.child('owner').val() === auth.uid"
         }
       },
       "rounds": {
         "$code": {
-          ".write": "({{STAFF:seat}} && (auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid)))) || {{XFER:data.child('meta/owner')}}",
+          ".write": "({{STAFF:seat}} && (auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid))))",
           "meta": {
             ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)",
             ".write": "{{STAFF:seat}} && (auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid))",
@@ -258,14 +258,14 @@
       "banks": {
         "$bid": {
           ".read": "auth != null && data.child('owner').val() === auth.uid",
-          ".write": "({{STAFF:gps}} && (auth != null && $bid.matches(/^bk[a-z0-9]{6,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid))) || {{XFER:data.child('owner')}}",
+          ".write": "({{STAFF:gps}} && (auth != null && $bid.matches(/^bk[a-z0-9]{6,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)))",
           ".validate": "newData.child('owner').val() === auth.uid"
         }
       },
       "photos": {
         "$pid": {
           ".read": "$pid.matches(/^[a-z0-9]{8,24}$/)",
-          ".write": "({{STAFF:gps}} && (auth != null && $pid.matches(/^[a-z0-9]{8,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid))) || {{XFER:data.child('owner')}}",
+          ".write": "({{STAFF:gps}} && (auth != null && $pid.matches(/^[a-z0-9]{8,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)))",
           ".validate": "newData.hasChildren(['owner','data']) && newData.child('owner').val() === auth.uid && newData.child('data').isString() && newData.child('data').val().length < 600000"
         }
       },
@@ -278,7 +278,7 @@
       "runs": {
         "$code": {
           ".read": "auth != null && root.child('orienteering/runs/'+$code+'/meta/owner').val() === auth.uid",
-          ".write": "({{STAFF:gps}} && (auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid)))) || {{XFER:data.child('meta/owner')}}",
+          ".write": "({{STAFF:gps}} && (auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid))))",
           "meta": {
             ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)"
           },
@@ -336,7 +336,7 @@
       "contrib": {
         "$code": {
           ".read": "auth != null && root.child('orienteering/contrib/'+$code+'/meta/owner').val() === auth.uid",
-          ".write": "({{STAFF:gps}} && (auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid)))) || {{XFER:data.child('meta/owner')}}",
+          ".write": "({{STAFF:gps}} && (auth != null && $code.matches(/^[2-9A-HJ-NP-Z]{6}$/) && (data.child('meta/owner').val() === auth.uid || (!data.exists() && newData.child('meta/owner').val() === auth.uid))))",
           "meta": {
             ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{6}$/)"
           },
@@ -423,7 +423,7 @@
         ".read": "auth != null && data.child('meta/owner').val() === auth.uid",
         "meta": {
           ".read": "$t.matches(/^[A-HJ-NP-Z2-9]{6}$/)",
-          ".write": "(auth != null && $t.matches(/^[A-HJ-NP-Z2-9]{6}$/) && {{STAFF:excel}} && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)) || {{XFER:data.child('owner')}}",
+          ".write": "(auth != null && $t.matches(/^[A-HJ-NP-Z2-9]{6}$/) && {{STAFF:excel}} && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid))",
           ".validate": "newData.hasChildren(['owner','at']) && (!newData.child('admin').exists() || {{ADMIN}})"
         },
         "$sem": {
@@ -511,21 +511,6 @@
               }
             }
           }
-        }
-      }
-    },
-    "xfer": {
-      ".read": "{{ADMIN}}",
-      "$uid": {
-        ".write": "auth != null && auth.uid === $uid && newData.val() === true && {{LEGACY_ANY}}"
-      }
-    },
-    "sys": {
-      "retired": {
-        ".read": true,
-        "$app": {
-          ".write": "{{ADMIN}}",
-          ".validate": "newData.isBoolean() && $app.matches(/^(seat|gps|excel)$/)"
         }
       }
     }

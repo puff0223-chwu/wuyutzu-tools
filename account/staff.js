@@ -2,21 +2,21 @@
    - 老師在會員中心（account/）自己申請帳號 → 管理員核准，並勾選可以用哪些系統
    - 資料：staff/<uid> = { email, name, school, purpose, want{app:true}, at, status: pending|approved|rejected|disabled, apps{app:true}, note }
    - 管理員＝主帳號 puff0223@gmail.com（信箱要已驗證；用 Google 登入一定是已驗證），所有系統都能用
-   - 舊的系統專用帳號（+gps、+seat、+excel）：搬家到主帳號之前照常能用；搬家後 sys/retired/<系統>＝true 就退休
+   - 舊的系統專用帳號（+gps、+seat、+excel）2026-10-18 已搬家完成並從 Firebase 刪除，規則與這裡都不再特別處理
    ⚠ 這裡的檢查只負責「畫面」；真正擋資料的是 Firebase 安全規則（規則裡有同樣的條件） */
 (function (root) {
   var ADMIN = 'puff0223@gmail.com';
   var APPS = {
-    excel: { name: '📊 消失的實驗數據', desc: 'Excel 作圖與函數 Ending 作業（每位學生專屬數據）', url: 'inquiry/excel-rescue-teacher.html', legacy: 'puff0223+excel@gmail.com' },
-    gps: { name: '🧭 遺落的地點', desc: '校園照片定向越野（學生手機闖關）', url: 'inquiry/orienteering/', legacy: 'puff0223+gps@gmail.com' },
-    seat: { name: '🪑 座位大作戰', desc: '換座位：暗標、規則、隨機排位、A4 座位表', url: 'classroom/seating/', legacy: 'puff0223+seat@gmail.com' },
-    src: { name: '📜 出處失傳的秘文', desc: '文獻查詢、引用與參考文獻格式（小論文 APA）', url: 'inquiry/secret-source/teacher.html', legacy: '' }
+    excel: { name: '📊 消失的實驗數據', desc: 'Excel 作圖與函數 Ending 作業（每位學生專屬數據）', url: 'inquiry/excel-rescue-teacher.html' },
+    gps: { name: '🧭 遺落的地點', desc: '校園照片定向越野（學生手機闖關）', url: 'inquiry/orienteering/' },
+    seat: { name: '🪑 座位大作戰', desc: '換座位：暗標、規則、隨機排位、A4 座位表', url: 'classroom/seating/' },
+    src: { name: '📜 出處失傳的秘文', desc: '文獻查詢、引用與參考文獻格式（小論文 APA）', url: 'inquiry/secret-source/teacher.html' }
   };
   var STATUS = { pending: '⏳ 等待核准', approved: '✅ 已核准', rejected: '❌ 未通過', disabled: '⏸ 已停用' };
   function lower(s) { return String(s || '').trim().toLowerCase(); }
   function isAdmin(user) { return !!user && lower(user.email) === ADMIN && user.emailVerified === true; }
-  // 舊的系統專用帳號（不管退休了沒）；要不要放行還要看 sys/retired
-  function isOwner(user, app) { return !!user && !!APPS[app] && !!APPS[app].legacy && lower(user.email) === APPS[app].legacy; }
+  // 舊的系統專用帳號已經全部移除（保留函式名稱，舊程式呼叫不會壞）
+  function isOwner() { return false; }
   // Email 當成資料位置的寫法（小寫、. 換成 ,）：預先開通 staffpre/<ekey>，規則裡用同樣的算法核對
   function ekey(email) { return lower(email).replace(/\./g, ','); }
   function legacyApp(user) { for (var k in APPS) if (isOwner(user, k)) return k; return ''; }
@@ -24,12 +24,9 @@
   function check(getFn, user, app) {
     if (!user) return Promise.resolve({ ok: false, reason: 'login' });
     if (isAdmin(user)) return Promise.resolve({ ok: true, owner: true, admin: true });
-    var first = isOwner(user, app) ? Promise.resolve(getFn('sys/retired/' + app)).then(function (r) { return r === true ? 'retired' : 'ok'; }, function () { return 'ok'; }) : Promise.resolve('');
-    return first.then(function (leg) {
-      if (leg === 'ok') return { ok: true, owner: true };
+    return Promise.resolve().then(function () {
       return Promise.resolve(getFn('staff/' + user.uid)).then(function (rec) {
         if (rec && rec.status === 'approved' && rec.apps && rec.apps[app]) return { ok: true, rec: rec };
-        if (leg === 'retired') return { ok: false, rec: rec, reason: 'retired' };
         if (!rec || rec.status === 'pending') {
           // 管理員預先開通了這個 Email → 請他到會員中心啟用（第一次登入，一下子就好）
           return Promise.resolve(getFn('staffpre/' + ekey(user.email))).then(function (pre) { return pre ? { ok: false, rec: rec, reason: 'pre' } : (rec ? { ok: false, rec: rec, reason: 'pending' } : { ok: false, reason: 'none' }); }, function () { return rec ? { ok: false, rec: rec, reason: 'pending' } : { ok: false, reason: 'none' }; });

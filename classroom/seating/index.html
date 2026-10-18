@@ -237,8 +237,8 @@ table.list th{background:#f3eee2;font-weight:700}
 <script type="module">
 /* Firebase 只用來「老師登入＋存班級資料」。載入失敗（沒網路）時仍可用本機模式 */
 try {
-  const M = await import('../../account/fb.js?v=20261013d');
-  window.FB = await M.openFirebase('seating');
+  const M = await import('../../account/fb.js?v=20261018a');
+  window.FB = await M.openFirebase('seating'); window.FB.idle(60000);
   window.FBX = { authErr: M.authErr, googleButtonHTML: M.googleButtonHTML };
 } catch (e) { console.warn('Firebase 載入失敗，只能用本機模式', e); window.FB = null; }
 await import('./app.js?v=20261017b');

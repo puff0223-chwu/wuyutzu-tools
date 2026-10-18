@@ -107,7 +107,7 @@ async function boot() {
   if (!ST.rules.allowMix) ST.resId = ST.rules.resources[0] && ST.rules.resources[0].id;
   render();
   setInterval(() => { const c = $('#clock'); if (c) { c.textContent = clockText(); c.classList.toggle('end', !isOpen()); } }, 1000);
-  setInterval(async () => { try { const m = await api('meta'); if (m) { const was = isOpen(); ST.meta = m; if (was !== isOpen()) render(); } } catch (e) { } }, 30000);
+  setInterval(async () => { if (document.hidden) return; try { const m = await api('meta'); if (m) { const was = isOpen(); ST.meta = m; if (was !== isOpen()) render(); } } catch (e) { } }, 30000);
 }
 function fatal(msg) { $('#app').innerHTML = `<div class="head"><div class="en">SEAT AUCTION</div><h1>🪑 座位暗標</h1></div><div class="alert">${msg}</div>`; }
 

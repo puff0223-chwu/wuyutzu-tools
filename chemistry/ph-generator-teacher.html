@@ -444,7 +444,7 @@ let boardData = null, autoTimer = null;
 function setAuto() {
   clearInterval(autoTimer);
   if ($('bd-auto').checked && !$('t-board').classList.contains('hidden'))
-    autoTimer = setInterval(refreshBoard, 10000);
+    autoTimer = setInterval(() => { if (!document.hidden) refreshBoard(); }, 10000); // 分頁在背景就不抓（2026-10-18 連線健檢）
 }
 $('bd-auto').onchange = setAuto;
 $('btn-refresh').onclick = refreshBoard;

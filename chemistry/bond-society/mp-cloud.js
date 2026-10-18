@@ -57,16 +57,16 @@ const MPC = (() => {
   }
   // 監聽：cb(整份資料, 事件)；回傳 { close, refresh, mode }
   function listen(path, cb, { poll = false, every = 1500 } = {}) {
-    let data = null, es = null, timer = null, wd = null, closed = false, last = '', lastMsg = 0, mode = '';
+    let data = null, es = null, timer = null, wd = null, closed = false, paused = false, last = '', lastMsg = 0, mode = '';
     const forcePoll = poll || typeof EventSource === 'undefined' || (typeof location !== 'undefined' && /[?&]poll=1/.test(location.search));
     const emit = ev => { try { cb(data, ev); } catch (e) { console.warn(e); } };
     const startPoll = () => {
-      if (timer || closed) return; mode = 'poll';
-      const tick = async () => { try { const d = await get(path); const s = JSON.stringify(d); if (s !== last) { last = s; data = d; emit({ type: 'poll' }); } } catch (e) {} if (!closed) timer = setTimeout(tick, every); };
+      if (timer || closed || paused) return; mode = 'poll';
+      const tick = async () => { try { const d = await get(path); const s = JSON.stringify(d); if (s !== last) { last = s; data = d; emit({ type: 'poll' }); } } catch (e) {} if (!closed && !paused) timer = setTimeout(tick, every); else timer = null; };
       tick();
     };
     const startStream = () => {
-      if (closed) return;
+      if (closed || paused) return;
       try { if (es) es.close(); } catch (e) {}
       mode = 'stream'; lastMsg = Date.now(); let got = false;
       es = new EventSource(url(path));
@@ -80,13 +80,22 @@ const MPC = (() => {
     };
     if (forcePoll) startPoll(); else startStream();
     // 看門狗：串流 45 秒沒任何訊息（Firebase 約 30 秒送一次心跳）就重開
-    wd = setInterval(() => { if (!closed && mode === 'stream' && Date.now() - lastMsg > 45000) startStream(); }, 10000);
+    wd = setInterval(() => { if (!closed && !paused && mode === 'stream' && Date.now() - lastMsg > 45000) startStream(); }, 10000);
     return {
       close: () => { closed = true; try { if (es) es.close(); } catch (e) {} if (timer) clearTimeout(timer); clearInterval(wd); },
-      refresh: () => { if (closed) return; if (mode === 'stream') startStream(); else { if (timer) { clearTimeout(timer); timer = null; } startPoll(); } },
-      get mode() { return mode; }
+      // 暫停：背景分頁先放掉連線（Spark 方案同時連線上限 100），refresh() 再接回來
+      pause: () => { if (closed || paused) return; paused = true; try { if (es) es.close(); } catch (e) {} es = null; if (timer) { clearTimeout(timer); timer = null; } },
+      refresh: () => { if (closed) return; paused = false; if (mode === 'stream' || !mode) startStream(); else { if (timer) { clearTimeout(timer); timer = null; } startPoll(); } },
+      get mode() { return paused ? 'paused' : mode; }
     };
   }
-  return { BASE, setBase: b => { base = b; }, get, put, patch, post, del, retry, listen, roomCode, applyAt, serverOffset };
+  // 背景閒置：分頁藏起來 ms 毫秒後 pause()，回到前景立刻 refresh()
+  function idle(lis, ms = 60000) {
+    let t = null;
+    const on = () => { if (typeof document === 'undefined') return; if (document.hidden) { clearTimeout(t); t = setTimeout(() => lis && lis.pause(), ms); } else { clearTimeout(t); t = null; if (lis) lis.refresh(); } };
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', on);
+    return () => { clearTimeout(t); if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', on); };
+  }
+  return { idle, BASE, setBase: b => { base = b; }, get, put, patch, post, del, retry, listen, roomCode, applyAt, serverOffset };
 })();
 if (typeof module !== 'undefined') module.exports = MPC;

@@ -254,6 +254,13 @@ function useCode(code, title) {
   SUB = CB.subscribe(code, s => { STATE = s; render(); }, setSync);
   render();
 }
+/* 讓出連線（2026-10-18 全站連線健檢）：老師分頁切到背景超過 60 秒就放掉串流，回到畫面自動重連 */
+let idleTimer = null;
+document.addEventListener('visibilitychange', () => {
+  if (!CODE) return;
+  if (document.visibilityState === 'hidden') { clearTimeout(idleTimer); idleTimer = setTimeout(() => { if (SUB) { SUB.close(); SUB = null; setSync('paused'); } }, 60000); }
+  else { clearTimeout(idleTimer); if (!SUB) { setSync('reconnect'); SUB = CB.subscribe(CODE, s => { STATE = s; render(); }, setSync); } }
+});
 const link = () => `${STUDENT_PAGE}?code=${CODE}`;
 
 function loadRecent() { try { return JSON.parse(localStorage.getItem('case-board-teacher-recent') || '[]'); } catch (e) { return []; } }
@@ -298,7 +305,7 @@ function note(msg) { $('current').innerHTML = `<span style="color:#ffb4a8">⚠�
 let lastSync = '';
 function setSync(s) {
   lastSync = s || lastSync; s = lastSync;
-  $('sync').textContent = { live: '● 即時同步中', poll: '● 同步中', reconnect: '○ 重新連線中…', offline: '○ 連線中斷' }[s] || '';
+  $('sync').textContent = { live: '● 即時同步中', poll: '● 同步中', reconnect: '○ 重新連線中…', offline: '○ 連線中斷', paused: '⏸ 背景暫停（回來自動重連）' }[s] || '';
   $('sync').style.color = s === 'live' || s === 'poll' ? '#5fd394' : '#ff8a96';
 }
 
