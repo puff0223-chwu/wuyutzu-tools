@@ -10,8 +10,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="../../account/staff.js?v=20261018a"></script>
-<script src="core.js?v=20261018a"></script>
+<script src="core.js?v=20261018c"></script>
 <script src="check.js?v=20261018b"></script>
+<script src="stage1.js?v=20261018c"></script>
 <style>
 :root{--night:#1b1a17;--parch:#f3e9d2;--parch2:#e8dbbb;--edge:#c9b386;--ink:#2b2418;--muted:#76684e;--seal:#b3322a;--gold:#b98f35;--jade:#2f6b5a;--ok:#2f7d4f;--bad:#b3322a}
 *{box-sizing:border-box}
@@ -82,6 +83,12 @@ thead th{background:var(--ink);color:var(--parch);position:sticky;top:0}
 tbody tr:nth-child(even){background:var(--parch2)}
 td.p{color:var(--ok);font-weight:700} td.s{color:var(--bad);font-weight:700;background:#fbeeec} td.n{color:#b5a888}
 td.left{text-align:left;white-space:normal}
+.clu{background:#fffaf0;border:1px solid var(--edge);border-radius:10px;padding:10px 14px;margin-bottom:10px}
+.clu .h{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;margin-bottom:6px}
+.clu ol{margin:0;padding-left:22px}
+.clu li{margin:4px 0;font-size:.92rem}
+.clu .why{color:var(--muted)}
+.tg{display:inline-block;font-size:.75rem;font-weight:700;padding:0 7px;border-radius:10px;background:var(--parch2);margin-right:4px}
 .ans{background:#fffaf0;border:1px solid var(--edge);border-radius:8px;padding:10px 12px;margin-bottom:8px}
 .ans .t{font-weight:900;color:var(--muted);font-size:.85rem}
 .ans .a{font-size:1rem;line-height:1.8;word-break:break-all}
@@ -109,6 +116,7 @@ td.left{text-align:left;white-space:normal}
     <nav class="tabs" id="tabs">
       <button data-t="share" class="on">🔗 學生連結與設定</button>
       <button data-t="live">📡 即時進度</button>
+      <button data-t="clue">🗂️ 線索卡</button>
       <button data-t="key">🔑 答案查詢</button>
     </nav>
 
@@ -151,6 +159,15 @@ td.left{text-align:left;white-space:normal}
       </div>
     </section>
 
+    <section data-tab="clue">
+      <div class="parch">
+        <div class="row" style="margin-top:0"><h2 style="margin:0">🗂️ 第 1 關 B｜學生線索卡</h2><span style="flex:1"></span><button class="btn sm" id="btnClue">🔄 重新讀取</button></div>
+        <p class="note">學生在真實資料庫找到的文獻。系統已檢查欄位、張數、至少 1 本書、沒有論壇；內容是否真的相關、來源是否真實，請老師抽查（網址可以直接點開）。</p>
+        <div class="row"><select id="clueF" style="width:auto"><option value="all">全部</option><option value="ok">已完成</option><option value="no">還沒完成</option></select></div>
+        <div id="clueBody" style="margin-top:10px"></div>
+      </div>
+    </section>
+
     <section data-tab="key">
       <div class="parch">
         <h2>🔑 答案查詢</h2>
@@ -171,7 +188,7 @@ td.left{text-align:left;white-space:normal}
 </div>
 
 <script type="module">
-const X = window.SecretSource, C = window.SecretSourceCheck, W = window.WuStaff;
+const X = window.SecretSource, C = window.SecretSourceCheck, S1 = window.SecretSourceS1, W = window.WuStaff;
 const $ = (id) => document.getElementById(id);
 const esc = X.escapeHtml;
 const gate = $('gate');
@@ -235,21 +252,27 @@ const SUBJ = X.SUBJ_KEYS.map((k) => [k, X.SUBJECTS[k].name]);
 const ZH = X.TYPES.filter((t) => t.lang === 'zh');
 function settingsForm(m) {
   m = m || {};
-  const subj = m.subj || X.DEFAULT_SETTINGS.subjects, types = m.types || X.DEFAULT_SETTINGS.types, en = m.en !== false;
+  const subj = m.subj || X.DEFAULT_SETTINGS.subjects, types = m.types || X.DEFAULT_SETTINGS.types, en = m.en !== false, tmode = S1.topicMode(m);
   const ck = (name, v, label, on, small) => `<label class="ck"><input type="checkbox" name="${name}" value="${v}" ${on ? 'checked' : ''}>${label}${small ? ' <small>' + small + '</small>' : ''}</label>`;
   return `<div class="opts">
     <div class="opt" style="grid-column:1/-1"><h3>📌 任務名稱</h3><input type="text" id="fName" maxlength="40" value="${esc(m.name || '')}" placeholder="例如：115-1 探究 301"></div>
     <div class="opt"><h3>🔬 自然科學科目</h3>${SUBJ.map(([k, n]) => ck('subj', k, n, !!subj[k])).join('')}<p class="note">證物卡的題材只從勾選的科目產生（至少一科）。</p></div>
     <div class="opt"><h3>📚 第 3 關中文文獻類型</h3>${ZH.map((t) => ck('type', t.key, t.icon + ' ' + t.name, !!types[t.key], t.def ? '' : '加開')).join('')}<p class="note">預設：書籍、網路資源、YouTube、小論文、科展作品（至少一種）。</p></div>
-    <div class="opt"><h3>🌍 英文進階關</h3>${ck('en', '1', '開啟英文期刊、英文書籍（不影響結案）', en)}<p class="note">第 1 關（查文獻）與第 2 關（引用）開發中，完成後會在這裡出現設定。</p></div>
+    <div class="opt"><h3>🌍 英文進階關</h3>${ck('en', '1', '開啟英文期刊、英文書籍（不影響結案）', en)}<p class="note">第 2 關（引用）開發中，完成後會在這裡出現設定。</p></div>
+    <div class="opt" style="grid-column:1/-1"><h3>🗄️ 第 1 關｜檔案庫搜查</h3>${ck('s1', '1', '開放第 1 關（A 模擬檔案庫＋B 線索卡作業）', m.s1 !== false)}
+      <div style="margin-top:6px;font-weight:700">第 1 關 B 研究主題怎麼分派？</div>
+      ${[['rand', '依勾選科目隨機分派', '從內建的實戰主題庫抽，題目確定查得到中文文獻'], ['teacher', '老師指定主題', '一行一個主題；多個主題時依學號分派（大致平均）'], ['self', '學生自選', '學生自己輸入題目']].map(([v, n, d]) => `<label class="ck" style="display:flex"><input type="radio" name="tmode" value="${v}" ${tmode === v ? 'checked' : ''}>${n} <small>${d}</small></label>`).join('')}
+      <textarea id="fTopics" maxlength="1200" placeholder="一行一個主題，例如：&#10;鑑識科學&#10;四驅車" style="min-height:80px;margin-top:6px;font-family:inherit">${esc(m.topics || '')}</textarea>
+      <p class="note">模擬檔案庫的研究問題只從勾選的科目抽（每科 4 題，每人一題）。</p></div>
   </div>`;
 }
 function readForm() {
   const vals = (n) => Array.from(document.querySelectorAll(`input[name=${n}]:checked`)).map((x) => x.value);
   const subj = {}, types = {}; vals('subj').forEach((k) => (subj[k] = true)); vals('type').forEach((k) => (types[k] = true));
-  return { name: ($('fName').value || '').trim().slice(0, 40), subj, types, en: vals('en').length > 0 };
+  const tm = (document.querySelector('input[name=tmode]:checked') || {}).value || 'rand';
+  return { name: ($('fName').value || '').trim().slice(0, 40), subj, types, en: vals('en').length > 0, s1: vals('s1').length > 0, tmode: tm, topics: ($('fTopics').value || '').slice(0, 1200) };
 }
-function validForm(f) { if (!f.name) return '請填任務名稱'; if (!Object.keys(f.subj).length) return '至少勾一個科目'; if (!Object.keys(f.types).length) return '至少勾一種文獻類型'; return ''; }
+function validForm(f) { if (!f.name) return '請填任務名稱'; if (f.tmode === 'teacher' && !S1.topicLines(f.topics).length) return '選了「老師指定主題」，請至少輸入一個主題'; if (!Object.keys(f.subj).length) return '至少勾一個科目'; if (!Object.keys(f.types).length) return '至少勾一種文獻類型'; return ''; }
 
 $('btnNew').onclick = () => {
   const md = document.createElement('div'); md.className = 'modal';
@@ -320,6 +343,7 @@ function showTab(t) {
   document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
   document.querySelectorAll('section[data-tab]').forEach((s) => s.classList.toggle('on', s.dataset.tab === t));
   if (t === 'live') refreshLive(); else stopPoll();
+  if (t === 'clue') loadClues();
 }
 document.querySelectorAll('#tabs button').forEach((b) => (b.onclick = () => showTab(b.dataset.t)));
 
@@ -335,6 +359,25 @@ async function refreshLive() {
   renderLive(); schedule();
 }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && curTab === 'live') refreshLive(); });
+async function loadClues() {
+  if (!CUR) return;
+  $('clueBody').innerHTML = '<p class="note">讀取中……</p>';
+  try { LIVE = (await FB.get('secret-source/m/' + CUR + '/r')) || {}; liveAt = Date.now(); } catch (e) { $('clueBody').innerHTML = '<p class="note bad">讀取失敗：' + esc(e.code || e.message) + '</p>'; return; }
+  renderClues();
+}
+const cardsOf = (r) => { const c = (r && r.clue && r.clue.c) || {}; return Object.keys(c).sort().map((k) => c[k]); };
+function renderClues() {
+  const f = $('clueF').value, names = {}; rosterList().forEach((o) => (names[o.id] = o.name));
+  const ids = Object.keys(LIVE || {}).sort().filter((id) => { const ok = !!((LIVE[id].passed || {}).clues); return f === 'all' || (f === 'ok') === ok; });
+  if (!ids.length) { $('clueBody').innerHTML = '<p class="note">還沒有資料。</p>'; return; }
+  const link = (u) => /^https?:\/\//.test(u || '') ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(u.length > 60 ? u.slice(0, 60) + '…' : u)}</a>` : esc(u || '');
+  $('clueBody').innerHTML = ids.map((id) => {
+    const r = LIVE[id], cs = cardsOf(r), ok = !!(r.passed || {}).clues, topic = (r.clue && r.clue.topic) || S1.topicFor(CUR, id, META) || '（自選，未填）';
+    return `<div class="clu"><div class="h"><b class="mono">${esc(id)}</b><b>${esc(r.name || names[id] || '')}</b><span class="tg">${esc(topic)}</span>${ok ? '<span class="good">✓ 完成</span>' : `<span class="bad">未完成（${cs.length} 張）</span>`}<span class="note" style="margin:0">${r.clue && r.clue.at ? ago(r.clue.at) : ''}</span></div>` +
+      (cs.length ? '<ol>' + cs.map((c) => `<li><span class="tg">${esc((S1.CT[c.t] || {}).n || '未選類型')}</span>${esc(c.au || '？')}（${esc(c.yr || '？')}）。<b>${esc(c.ti || '？')}</b>。${esc(c.src || '')}${c.vp ? '，' + esc(c.vp) : ''}。${link(c.url)}${c.why ? `<div class="why">↳ ${esc(c.why)}</div>` : ''}</li>`).join('') + '</ol>' : '<p class="note">還沒有填線索卡。</p>') + '</div>';
+  }).join('');
+}
+$('btnClue').onclick = loadClues; $('clueF').onchange = renderClues;
 $('btnLive').onclick = refreshLive; $('optAuto').onchange = schedule; $('optSort').onchange = () => renderLive();
 
 const rosterList = () => ($('roster').value || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean).map((l) => { const p = l.split(/[\s,，\t]+/); return { id: X.normId(p[0]), name: p.slice(1).join(' ') }; }).filter((o) => /^[A-Z0-9]{3,12}$/.test(o.id));
@@ -345,31 +388,38 @@ $('btnRoster').onclick = async () => {
 
 function people() {
   const L = X.levels(META), req = L.filter((x) => x.required);
-  const recs = Object.keys(LIVE || {}).map((id) => { const r = LIVE[id] || {}; return { id, name: r.name || '', passed: r.passed || {}, att: r.att || {}, closedAt: r.closedAt || 0, ts: r.ts || 0, started: true }; });
+  const recs = Object.keys(LIVE || {}).map((id) => { const r = LIVE[id] || {}; return { id, name: r.name || '', passed: r.passed || {}, att: r.att || {}, closedAt: r.closedAt || 0, ts: r.ts || 0, started: true, arc: r.arc || null, nCards: cardsOf(r).length }; });
   const byId = {}; recs.forEach((r) => (byId[r.id] = r));
-  rosterList().forEach((o) => { if (!byId[o.id]) recs.push({ id: o.id, name: o.name, passed: {}, att: {}, closedAt: 0, ts: 0, started: false }); else if (!byId[o.id].name) byId[o.id].name = o.name; });
+  rosterList().forEach((o) => { if (!byId[o.id]) recs.push({ id: o.id, name: o.name, passed: {}, att: {}, closedAt: 0, ts: 0, started: false, arc: null, nCards: 0 }); else if (!byId[o.id].name) byId[o.id].name = o.name; });
   recs.forEach((r) => { r.done = req.filter((x) => r.passed[x.key]).length; });
-  return { L, req, recs };
+  return { L, req, recs, L1: X.levels1(META) };
+}
+// 第 1 關的格子：A 顯示評等，B 顯示線索卡張數
+function s1Cell(r, x) {
+  const n = r.att[x.key] || 0;
+  if (x.key === 'archive') return r.passed.archive ? `<td class="p">${esc((r.arc && r.arc.g) || '✓')}</td>` : n ? `<td class="s">✗${n}</td>` : '<td class="n">·</td>';
+  return r.passed.clues ? `<td class="p">✓${r.nCards}張</td>` : r.nCards ? `<td class="s">${r.nCards}張</td>` : '<td class="n">·</td>';
 }
 function ago(ts) { if (!ts) return ''; const m = Math.floor((Date.now() - ts) / 60000); return m < 1 ? '剛剛' : m < 60 ? m + ' 分鐘前' : m < 1440 ? Math.floor(m / 60) + ' 小時前' : Math.floor(m / 1440) + ' 天前'; }
 function renderLive() {
   if (curTab !== 'live') return;
   $('liveStamp').textContent = liveErr ? '⚠️ ' + liveErr : liveAt ? '最後更新 ' + new Date(liveAt).toLocaleTimeString() : '讀取中……';
   if (!LIVE) { $('liveBody').innerHTML = ''; return; }
-  const { L, req, recs } = people(), started = recs.filter((r) => r.started);
+  const { L, req, recs, L1 } = people(), started = recs.filter((r) => r.started);
   if (!recs.length) { $('liveBody').innerHTML = '<p class="note">還沒有學生開始。把「學生連結」給學生後就會出現在這裡。</p>'; return; }
   const closed = recs.filter((r) => r.done === req.length).length;
   const enL = L.filter((x) => !x.required), enDone = enL.length ? recs.filter((r) => enL.every((x) => r.passed[x.key])).length : 0;
   const stuck = recs.filter((r) => L.some((x) => !r.passed[x.key] && (r.att[x.key] || 0) >= 3)).length;
   let h = `<div class="cards"><div class="kpi"><b>${started.length}</b><span>已開始</span></div><div class="kpi"><b>${closed}</b><span>已結案（必修全過）</span></div>` +
-    (enL.length ? `<div class="kpi"><b>${enDone}</b><span>🌍 英文進階徽章</span></div>` : '') + `<div class="kpi"><b style="color:var(--bad)">${stuck}</b><span>有一關試 3 次以上還沒過</span></div></div>`;
+    (enL.length ? `<div class="kpi"><b>${enDone}</b><span>🌍 英文進階徽章</span></div>` : '') +
+    (L1.length ? `<div class="kpi"><b>${recs.filter((r) => r.passed.archive).length}</b><span>🗄️ 1-A 模擬檔案庫過關（S ${recs.filter((r) => r.arc && r.arc.g === 'S').length} 人）</span></div><div class="kpi"><b>${recs.filter((r) => r.passed.clues).length}</b><span>🗂️ 1-B 線索卡完成</span></div>` : '') + `<div class="kpi"><b style="color:var(--bad)">${stuck}</b><span>有一關試 3 次以上還沒過</span></div></div>`;
   const st = L.map((x) => { const pass = started.filter((r) => r.passed[x.key]).length, sk = started.filter((r) => !r.passed[x.key] && r.att[x.key]).length, tries = started.filter((r) => r.passed[x.key]).map((r) => r.att[x.key] || 1); return { x, pass, sk, avg: tries.length ? tries.reduce((a, b) => a + b, 0) / tries.length : 0 }; });
   const tried = st.filter((s) => s.pass + s.sk >= 3), hard = tried.length ? tried.slice().sort((a, b) => a.pass / (a.pass + a.sk) - b.pass / (b.pass + b.sk) || b.avg - a.avg)[0] : null;
   h += '<div class="lvstats">' + st.map((s) => `<div class="lvs${hard && hard.x.key === s.x.key && s.sk ? ' hard' : ''}"><b>${s.x.icon} ${esc(s.x.name)}</b>${hard && hard.x.key === s.x.key && s.sk ? ' <span class="bad">🔥 最卡</span>' : ''}<div class="bar"><i style="width:${started.length ? Math.round(s.pass / started.length * 100) : 0}%"></i></div>過關 <b>${s.pass}</b>／${started.length}　卡關 <b class="bad">${s.sk}</b>${s.pass ? '<br>平均試 ' + s.avg.toFixed(1) + ' 次' : ''}</div>`).join('') + '</div>';
   const sort = $('optSort').value;
   recs.sort((a, b) => sort === 'low' ? a.done - b.done || a.id.localeCompare(b.id) : sort === 'high' ? b.done - a.done || (a.closedAt || 9e15) - (b.closedAt || 9e15) : a.id.localeCompare(b.id));
-  h += '<div class="tablebox"><table><thead><tr><th>學號</th><th>姓名</th>' + L.map((x) => `<th>${x.icon} ${esc(x.name)}</th>`).join('') + '<th>必修</th><th>結案</th><th>鑑定代碼</th><th>最後活動</th></tr></thead><tbody>' +
-    recs.map((r) => `<tr><td class="mono">${esc(r.id)}</td><td>${esc(r.name)}</td>` + L.map((x) => { const n = r.att[x.key] || 0; return r.passed[x.key] ? `<td class="p">✓${n > 1 ? n : ''}</td>` : n ? `<td class="s">✗${n}</td>` : '<td class="n">·</td>'; }).join('') +
+  h += '<div class="tablebox"><table><thead><tr><th>學號</th><th>姓名</th>' + L1.map((x) => `<th>${x.icon} 1-${x.key === 'archive' ? 'A' : 'B'}</th>`).join('') + L.map((x) => `<th>${x.icon} ${esc(x.name)}</th>`).join('') + '<th>必修</th><th>結案</th><th>鑑定代碼</th><th>最後活動</th></tr></thead><tbody>' +
+    recs.map((r) => `<tr><td class="mono">${esc(r.id)}</td><td>${esc(r.name)}</td>` + L1.map((x) => s1Cell(r, x)).join('') + L.map((x) => { const n = r.att[x.key] || 0; return r.passed[x.key] ? `<td class="p">✓${n > 1 ? n : ''}</td>` : n ? `<td class="s">✗${n}</td>` : '<td class="n">·</td>'; }).join('') +
       `<td>${r.started ? r.done + '/' + req.length : '<span class="n">未開始</span>'}</td><td class="good">${r.closedAt ? new Date(r.closedAt).toLocaleString().replace(/:\d\d$/, '') : ''}</td><td class="mono">${r.done === req.length ? X.closeCode(CUR, r.id) : ''}</td><td class="note">${ago(r.ts)}</td></tr>`).join('') + '</tbody></table></div>';
   $('liveBody').innerHTML = h;
 }
@@ -378,10 +428,17 @@ const loadXLSX = () => xlsxP || (xlsxP = new Promise((ok, no) => { if (window.XL
 $('btnXlsx').onclick = async () => {
   if (!LIVE) return toast('還沒有資料');
   try { await loadXLSX(); } catch (e) { return toast(e.message); }
-  const { L, req, recs } = people();
-  const head = ['學號', '姓名'].concat(L.map((x) => x.name), ['必修完成', '結案時間', '鑑定代碼'].concat(L.map((x) => x.name + ' 嘗試次數')));
-  const rows = [head].concat(recs.map((r) => [r.id, r.name].concat(L.map((x) => r.passed[x.key] ? '✓' : (r.att[x.key] ? '卡關' : '')), [r.started ? r.done + '/' + req.length : '未開始', r.closedAt ? new Date(r.closedAt).toLocaleString() : '', r.done === req.length ? X.closeCode(CUR, r.id) : ''], L.map((x) => r.att[x.key] || 0))));
-  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), '出處鑑識進度');
+  const { L, req, recs, L1 } = people();
+  const s1h = L1.length ? ['1-A 模擬檔案庫評等', '1-A 搜尋次數', '1-B 線索卡張數', '1-B 完成'] : [];
+  const s1v = (r) => L1.length ? [r.passed.archive ? ((r.arc && r.arc.g) || '✓') : (r.att.archive ? '未過' : ''), r.arc ? r.arc.n : '', r.nCards || '', r.passed.clues ? '✓' : ''] : [];
+  const head = ['學號', '姓名'].concat(s1h, L.map((x) => x.name), ['必修完成', '結案時間', '鑑定代碼'].concat(L.map((x) => x.name + ' 嘗試次數')));
+  const rows = [head].concat(recs.map((r) => [r.id, r.name].concat(s1v(r), L.map((x) => r.passed[x.key] ? '✓' : (r.att[x.key] ? '卡關' : '')), [r.started ? r.done + '/' + req.length : '未開始', r.closedAt ? new Date(r.closedAt).toLocaleString() : '', r.done === req.length ? X.closeCode(CUR, r.id) : ''], L.map((x) => r.att[x.key] || 0))));
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), '闖關進度');
+  if (L1.length) {
+    const cr = [['學號', '姓名', '研究主題', '第幾張', '類型', '作者', '年份', '篇名／書名', '出處', '卷期頁碼', '網址或DOI', '跟題目的關係']];
+    Object.keys(LIVE).sort().forEach((id) => { const r = LIVE[id]; cardsOf(r).forEach((c, i) => cr.push([id, r.name || '', (r.clue && r.clue.topic) || '', i + 1, (S1.CT[c.t] || {}).n || '', c.au || '', c.yr || '', c.ti || '', c.src || '', c.vp || '', c.url || '', c.why || ''])); });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(cr), '線索卡');
+  }
   XLSX.writeFile(wb, '出處失傳的秘文_' + (META.name || CUR) + '.xlsx');
 };
 
@@ -390,6 +447,11 @@ $('btnKey').onclick = () => {
   const id = X.normId($('keyId').value); if (!/^[A-Z0-9]{3,12}$/.test(id)) return ($('keyBody').innerHTML = '<p class="note bad">學號格式不對</p>');
   const st = X.settingsOf(META), L = X.levels(META);
   let h = `<p class="note">學號 <b class="mono">${esc(id)}</b>｜鑑定代碼 <b class="mono">${X.closeCode(CUR, id)}</b>${st.en ? '｜英文徽章 <b class="mono">' + X.enBadge(CUR, id) + '</b>' : ''}</p>`;
+  if (X.levels1(META).length) {
+    const Q = S1.question(CUR, id, st.subjects), db = S1.buildDB(st.subjects), good = db.filter((d) => d.q === Q.id && d.rel && d.ok);
+    h += `<div class="ans"><div class="t">🗄️ 1-A 模擬檔案庫：${esc(Q.q)}</div><div class="a">相關又可靠（${good.length} 篇，收 3 篇以上且含書籍就過關）：` + good.map((d) => `<div>・${esc(S1.KIND[d.kind].name)}｜${esc(d.title)}</div>`).join('') + `</div><div class="note">搜尋建議：${esc(Q.kw.slice(0, 2).join(' AND '))}</div></div>`;
+    h += `<div class="ans"><div class="t">🗂️ 1-B 研究主題</div><div class="a">${esc(S1.topicFor(CUR, id, META) || '學生自選')}</div></div>`;
+  }
   L.forEach((x) => {
     if (x.kind === 'write') { const ev = X.evidence(CUR, id, x.type, { subjects: st.subjects }); h += `<div class="ans"><div class="t">${x.icon} ${esc(x.name)}</div><div class="a">${X.html(ev.segs)}</div></div>`; }
     else if (x.kind === 'spot') { const sp = C.makeSpot(CUR, id, META); h += `<div class="ans"><div class="t">🔎 找出破綻</div>` + sp.items.map((it, k) => `<div class="a">第 ${k + 1} 筆：${it.why ? esc(it.why) : '完全正確'}</div>`).join('') + '</div>'; }

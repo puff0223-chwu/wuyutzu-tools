@@ -34,7 +34,7 @@ wuyutzu-tools/
 ├── firebase/                     # 🔐 Firebase 規則原始檔與工具（2026-10-13）
 │   ├── rules.src.json            #   規則原始檔：用縮寫 {{ADMIN}}、{{STAFF:app}}、{{EKEY}}，改規則改這裡
 │   ├── build_rules.py            #   展開縮寫 → 產生 firebase-rules.json
-│   └── rules.test.js             #   規則自動測試（targaryen 模擬 Firebase，97 項）
+│   └── rules.test.js             #   規則自動測試（targaryen 模擬 Firebase，104 項）
 ├── .github/workflows/firebase.yml # 🤖 推上 main 自動測試＋部署規則、每週一回報用量（2026-10-18）
 ├── tools/health/                 # 🩺 全站連線健檢（2026-10-18，見 7-14）
 │   ├── check.py                  #   掃即時連線／輪詢頁有沒有背景讓位、大節點筆數、規則字數
@@ -111,7 +111,7 @@ wuyutzu-tools/
 │   ├── excel-rescue-checker.js   # 📊 消失的實驗數據：Excel 鑑識核心（拆開 .xlsx 檢查圖表／函數／格式化條件）
 │   ├── excel-rescue.html         # 消失的實驗數據：學生闖關頁
 │   ├── excel-rescue-teacher.html # 消失的實驗數據：老師答案頁（首頁卡片連到這裡，請勿給學生）
-│   ├── secret-source/            # 📜 出處失傳的秘文：文獻查詢、引用、參考文獻格式（2026-10-18 第 3 關）
+│   ├── secret-source/            # 📜 出處失傳的秘文：文獻查詢、引用、參考文獻格式（2026-10-18 第 3 關、10-18 第 1 關 stage1.js）
 │   │   ├── index.html            #   學生頁（?m=任務代碼，學號＋姓名登入，不連回首頁）
 │   │   ├── teacher.html          #   老師卷宗（會員中心登入 app=src：開任務、學生連結、即時進度、答案查詢）
 │   │   ├── core.js               #   共用核心：題材庫、11 種文獻的證物卡與標準答案、任務設定、REST 雲端
@@ -238,8 +238,8 @@ wuyutzu-tools/
 └── secret-source/                             ← 📜 出處失傳的秘文（老師需登入、開通 src；學生不用登入）
     ├── owners/<老師uid>/<任務代碼>: { name, at, roster(全班名單文字) }   ← 只有本人讀寫
     └── m/<任務代碼 6 碼>/                     ← 擁有者可以讀整包、刪除整個任務
-        ├── meta: { owner, at, name, subj{phy,chem,bio,geo}, types{book,web,yt,essay,fair,journal,thesis,news,gov}, en, admin?, closed? }   ← 公開可讀（學生頁讀設定）
-        └── r/<學號>: { name, ts, passed{關卡: 過關時間}, att{關卡: 嘗試次數}, closedAt }   ← 學生寫自己那筆（不能刪、不能多欄位）；單筆公開讀、整班只有老師讀
+        ├── meta: { owner, at, name, subj{phy,chem,bio,geo}, types{book,web,yt,essay,fair,journal,thesis,news,gov}, en, s1(第1關開放), tmode(rand/teacher/self), topics(老師指定主題), admin?, closed? }   ← 公開可讀（學生頁讀設定）
+        └── r/<學號>: { name, ts, passed{關卡: 過關時間}, att{關卡: 嘗試次數}, closedAt, arc{q,g,n,p[4]}(1-A 卷宗), clue{at,topic,c{0..5}}(1-B 線索卡) }   ← 學生寫自己那筆（不能刪、不能多欄位）；單筆公開讀、整班只有老師讀
 ```
 
 - **安全規則**（2026-10-03 發布）：根目錄全部上鎖。
@@ -747,10 +747,10 @@ wuyutzu-tools/
   - **Firebase 用量**：一張投稿照片約 60～150 KB；一個班 30 人各投 2 張約 5～9 MB，通過後原檔就刪掉（搬進題庫）
   - 📷 翻拍挑戰、積分賽「出題任務卡」：**保留、暫不開放**（會在比賽中大量上傳照片，佔 Firebase 免費額度；老師決定優先把額度留給更多系統）
 
-### 📜 出處失傳的秘文（inquiry/secret-source/，2026-10-18 第一階段：第 3 關出處鑑識）
+### 📜 出處失傳的秘文（inquiry/secret-source/，2026-10-18 第一階段：第 3 關出處鑑識；2026-10-18 第二階段：第 1 關檔案庫搜查）
 
 - **用途**：探究與實作「文獻查詢、引用、參考文獻格式」主題單元（2 節課）。依小論文撰寫順序：第 1 關查文獻 → 第 2 關引用寫作 → 第 3 關參考文獻格式 → 結案作業「我的文獻卷宗」。規格書在 claude.ai 專案文件 `出處失傳的秘文_開發規格書.md`
-- **分階段**：①第 3 關出處鑑識＋老師開任務（本次）→ ②第 1 關檔案庫搜查（模擬資料庫＋真實資料庫線索卡）→ ③AI 回饋（沿用科普閱讀測驗的 Vercel＋Gemini）做第 2 關與結案作業
+- **分階段**：①第 3 關出處鑑識＋老師開任務 ✅ → ②第 1 關檔案庫搜查（模擬資料庫＋真實資料庫線索卡）✅ → ③AI 回饋（沿用科普閱讀測驗的 Vercel＋Gemini）做第 2 關與結案作業
 - **格式依據**：全國高級中等學校小論文寫作比賽《引註及參考文獻格式範例》（參考 APA 精神，引註與參考文獻格式 111.03.16 修正）＋《格式說明暨評審要點》（114.06.10）。和大學 APA 7 不同處：頁碼用「-」、博碩士論文寫「系所：碩士論文」、網路無日期寫擷取日期
   - **老師的決定（2026-10-18）**：書名、期刊名＋卷數之外，博碩士論文題目、報紙名稱（含電子報名稱）、小論文篇名、科展作品名稱也設粗體；小論文與科展作品沒有官方範例，格式由本系統依比賽精神自訂（老師已確認）：
     - 小論文：作者（年）。**篇名**。全國高級中等學校小論文寫作比賽（第○梯次），○○類。中學生網站。網址
@@ -765,8 +765,13 @@ wuyutzu-tools/
   - **🗂️ 整理參考文獻清單**：5 筆中文（姓氏筆畫各不相同：丁2 王4 白5 朱6 李7 林8 洪9 高10 張11 黃12 楊13 趙14 劉15 盧16 謝17）＋（開英文時）2 筆英文，▲▼ 排序；答錯可按「顯示筆畫」
   - 雲端同步同消失的實驗數據：每次鑑定後上傳整筆、換裝置自動接回、離線照常可玩
 - **老師卷宗**：我的任務清單 → 🔗 學生連結與設定（QR、全螢幕投影、以學生身分預覽、改設定、刪除任務）／📡 即時進度（10 秒自動更新、只在這個分頁而且畫面看得到時才讀；每關過關／卡關人數、🔥最卡、每人 ✓n／✗n、鑑定代碼、匯出 Excel；可貼全班名單列出未開始的人，名單存在 owners）／🔑 答案查詢（輸入學號看每關標準答案、找錯說明、正確順序）。老師頁不連回事務所首頁（分享系統規則），放 👥 會員中心
-- **規則**：`secret-source` 抽屜（見第 4 節資料樹與附錄）。學生寫入要求任務存在、沒關閉，而且擁有者仍是核准且開通 src 的老師（或 meta.admin）
-- **測試**：4,400 筆（11 類 × 400 學號）標準答案自我批改全部通過；常見錯誤各有對應訊息；500 個學號的找錯題每筆都有正確答案、英文排序不重複；瀏覽器實測學生用 B 按鈕打出粗體、全部關卡過關、換裝置接回 9 關；老師頁＋3 位學生一起跑，每一次讀寫都用真正的 Firebase 規則（targaryen）檢查，0 次被拒；規則測試新增 28 項（共 104 項）
+- **第 1 關｜檔案庫搜查（stage1.js，2026-10-18）**：學生頁最上面一區，任務設定可關（`meta.s1 === false`）；不影響第 3 關的鑑定書與鑑定代碼
+  - **1-A 模擬檔案庫**（課堂）：16 個研究問題（四科各 4 題，只從勾選科目抽，種子 `S1A`）× 每題 12 篇虛構文獻＝192 篇（全班共用，固定種子 `S1-DB|題號`）。每題：相關又可靠 5 篇（書、小論文、科展、大學科普網頁、期刊或碩士論文）＋陷阱 5 篇（內容農場、論壇問答、維基百科內文、無作者無日期網頁、個人頻道影片）＋無關 2 篇（只對上部分關鍵字）
+  - 流程：關鍵字拆解表（對象／自變因／應變因／同義詞，填 2 格才能搜尋，💡 可看提示）→ 搜尋（空白分詞、AND／OR、類型篩選、近 5／10 年；最多顯示 15 篇）→ 看摘要、收進卷宗（4 篇）→ 鑑定。過關＝至少 3 篇相關又可靠、其中有 1 本相關的書、沒有論壇／內容農場；評等 S＝4 篇全對且搜尋 ≤ 8 次、A＝4 篇全對或搜尋 ≤ 15 次、B＝其他過關。**調查員筆記在鑑定後才出現**（收的當下不提示，不然學生不用判斷）。雲端只存最好的評等 `arc {q, g, n, p}`
+  - **1-B 線索卡**（作業）：主題分派 `meta.tmode`＝rand 依科目從實戰主題庫抽（四科各 8 個，選真實資料庫查得到中文文獻的題目）／teacher 老師指定（`meta.topics` 一行一個，依學號 hash 分派）／self 學生自選。附「去哪裡找」連結（中學生網站、科教館、國家圖書館、博碩士論文系統、華藝、Google 學術）。線索卡 3～6 張：類型、作者、西元年、篇名、出處、卷期頁碼（期刊／報紙／英文）、網址或 DOI、跟題目的關係；規則＝至少 3 張、至少 1 篇非網路來源（書、期刊、博碩士論文、報紙、政府出版品、英文）、不能有論壇。期刊／英文可按「用 DOI 查國際資料庫」（Crossref 公開 API，瀏覽器直接查，空欄位自動填入）。每次送出都上傳 `clue {at, topic, c{0..5}}`，通過才記 `passed.clues`
+  - **老師卷宗**：設定加「第 1 關」區（開關、主題分派、指定主題）；即時進度加 1-A（評等／✗n）、1-B（✓n張／n張）兩欄與兩個 KPI；新分頁「🗂️ 線索卡」列出每人的主題與線索卡（網址可點，可篩已完成／未完成）；Excel 多一張「線索卡」工作表；答案查詢加 1-A 研究問題與 5 篇正解、1-B 主題
+- **規則**：`secret-source` 抽屜（見第 4 節資料樹與附錄）。紀錄多了 `arc`（q 小寫字母＋數字、g 只能 S／A／B、n 0～9999、p 最多 4 篇）、`clue`（at 必填、topic ≤ 60 字、c 最多 6 張，每個欄位有長度上限、不能有其他欄位）。學生寫入要求任務存在、沒關閉，而且擁有者仍是核准且開通 src 的老師（或 meta.admin）
+- **測試**：4,400 筆（11 類 × 400 學號）標準答案自我批改全部通過；常見錯誤各有對應訊息；500 個學號的找錯題每筆都有正確答案、英文排序不重複；瀏覽器實測學生用 B 按鈕打出粗體、全部關卡過關、換裝置接回 9 關；老師頁＋3 位學生一起跑，每一次讀寫都用真正的 Firebase 規則（targaryen）檢查，0 次被拒；規則測試新增 28 項；第二階段：16 題用前兩個關鍵字 AND 搜尋都找得到 5 篇正解、不會混進別題；瀏覽器實測（電腦＋手機寬度）拆解表擋搜尋、收論壇被擋＋調查員筆記、換成書拿 S、線索卡逐欄提示到完成、換裝置接回線索卡；老師頁指定主題驗證、即時進度、線索卡分頁、Excel 兩張表、答案查詢，0 次被規則拒絕；規則測試再加 7 項（共 104 項）
 
 ### 👥 會員中心（account/，2026-10-13 新增）
 - **用途**：其他老師自己申請帳號 → 管理員核准並勾選可用的系統（excel／gps／seat／src），不用到 Firebase 控制台一個一個建帳號
@@ -993,7 +998,7 @@ fp/
 
 ---
 
-## 附錄：Firebase 安全規則全文（2026-10-18 瘦身：拿掉舊帳號搬家段落）
+## 附錄：Firebase 安全規則全文（2026-10-18：出處失傳的秘文加第 1 關 arc、clue）
 
 > 由 `firebase/build_rules.py` 從 `firebase/rules.src.json` 產生，和根目錄 `firebase-rules.json` 相同。要改規則請改原始檔再重新產生，不要直接改這裡。推上 main 後 GitHub Action 會自動部署。
 
@@ -1505,6 +1510,70 @@ fp/
        },
        "closedAt": {
         ".validate": "newData.isNumber()"
+       },
+       "arc": {
+        ".validate": "newData.hasChildren(['q','g','n'])",
+        "q": {
+         ".validate": "newData.isString() && newData.val().matches(/^[a-z][0-9]$/)"
+        },
+        "g": {
+         ".validate": "newData.isString() && newData.val().matches(/^[SAB]?$/)"
+        },
+        "n": {
+         ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 9999"
+        },
+        "p": {
+         "$i": {
+          ".validate": "$i.matches(/^[0-3]$/) && newData.isString() && newData.val().length <= 12"
+         }
+        },
+        "$other": {
+         ".validate": false
+        }
+       },
+       "clue": {
+        ".validate": "newData.hasChildren(['at'])",
+        "at": {
+         ".validate": "newData.isNumber()"
+        },
+        "topic": {
+         ".validate": "newData.isString() && newData.val().length <= 60"
+        },
+        "c": {
+         "$i": {
+          ".validate": "$i.matches(/^[0-5]$/)",
+          "t": {
+           ".validate": "newData.isString() && newData.val().length <= 10"
+          },
+          "au": {
+           ".validate": "newData.isString() && newData.val().length <= 120"
+          },
+          "yr": {
+           ".validate": "newData.isString() && newData.val().length <= 4"
+          },
+          "ti": {
+           ".validate": "newData.isString() && newData.val().length <= 200"
+          },
+          "src": {
+           ".validate": "newData.isString() && newData.val().length <= 120"
+          },
+          "vp": {
+           ".validate": "newData.isString() && newData.val().length <= 60"
+          },
+          "url": {
+           ".validate": "newData.isString() && newData.val().length <= 300"
+          },
+          "why": {
+           ".validate": "newData.isString() && newData.val().length <= 200"
+          },
+          "$other": {
+           ".validate": false
+          }
+         }
+        },
+        "$other": {
+         ".validate": false
+        }
        },
        "$other": {
         ".validate": false

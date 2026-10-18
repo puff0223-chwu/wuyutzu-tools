@@ -368,6 +368,12 @@
     if (st.en) ['ejournal', 'ebook'].forEach(function (k) { out.push({ key: k, kind: 'write', type: k, name: TYPE[k].name, icon: TYPE[k].icon, required: false }); });
     return out;
   }
+  /* ---------- 第 1 關的關卡（meta.s1 === false 時不開） ---------- */
+  function levels1(meta) {
+    if (meta && meta.s1 === false) return [];
+    return [{ key: 'archive', kind: 'archive', name: '模擬檔案庫', icon: '🗄️', sub: '拆關鍵字、搜尋、收 4 篇可靠文獻' },
+      { key: 'clues', kind: 'clues', name: '線索卡（作業）', icon: '🗂️', sub: '到真實資料庫找 3 篇以上，至少 1 本書' }];
+  }
 
   /* ---------- 結案代碼 ---------- */
   var ALPH = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -410,6 +416,13 @@
   function toRecord(name, prog) {
     var rec = { name: String(name || '').slice(0, 12), ts: Date.now(), passed: prog.passed || {}, att: prog.att || {} };
     if (prog.closedAt) rec.closedAt = prog.closedAt;
+    // 第 1 關（2026-10-18）：arc＝模擬檔案庫的卷宗與評等；clue＝線索卡
+    if (prog.arc && prog.arc.q) rec.arc = { q: String(prog.arc.q).slice(0, 4), g: String(prog.arc.g || '').slice(0, 1), n: Math.min(9999, +prog.arc.n || 0), p: (prog.arc.p || []).slice(0, 4).map(function (x) { return String(x).slice(0, 12); }) };
+    if (prog.clue && (prog.clue.c || []).length) {
+      var cc = {}; prog.clue.c.slice(0, 6).forEach(function (c, i) { if (c && Object.keys(c).length) cc[i] = c; });
+      rec.clue = { at: +prog.clue.at || Date.now(), c: cc };
+      if (prog.clue.topic) rec.clue.topic = String(prog.clue.topic).slice(0, 60);
+    }
     return rec;
   }
 
@@ -419,7 +432,7 @@
     hashStr: hashStr, makeRng: makeRng, rngFor: rngFor, normId: normId, int: int, pick: pick, shuffle: shuffle, pickN: pickN,
     people: people, personName: personName, givenName: givenName, enPeople: enPeople, GEN: GEN, S: S,
     evidence: evidence, plain: plain, html: html, escapeHtml: escapeHtml,
-    DEFAULT_SETTINGS: DEFAULT_SETTINGS, settingsOf: settingsOf, levels: levels,
+    DEFAULT_SETTINGS: DEFAULT_SETTINGS, settingsOf: settingsOf, levels: levels, levels1: levels1,
     closeCode: closeCode, enBadge: enBadge, validCode: validCode, newCode: newCode,
     getMeta: getMeta, getRec: getRec, putRec: putRec, mergeProgress: mergeProgress, toRecord: toRecord, LV_KEY: LV_KEY
   };

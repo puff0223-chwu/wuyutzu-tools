@@ -180,6 +180,16 @@ expect('任務不存在不能寫', ss, null, W, '/secret-source/m/ZZZZZZ/r/S002'
 expect('沒開通 src 的老師開的任務，學生不能寫', ss, null, W, '/secret-source/m/NNNNNN/r/S002', srec, false);
 expect('主帳號（admin 旗標）的任務，學生可以寫', ss, null, W, '/secret-source/m/PPPPPP/r/S002', srec, true);
 expect('關閉的任務不能寫', ss, null, W, '/secret-source/m/QQQQQQ/r/S002', srec, false);
+// 第 1 關（2026-10-18）：模擬檔案庫卷宗 arc、線索卡 clue
+const arc = { q: 'c1', g: 'S', n: 5, p: { 0: 'c1-book', 1: 'c1-essay', 2: 'c1-fair', 3: 'c1-web' } };
+const clue = { at: 1, topic: '水果電池', c: { 0: { t: 'book', au: '王小明', yr: '2020', ti: '電池的故事', src: '藍海文化', why: '介紹電池原理' }, 2: { t: 'web', url: 'https://a.b/c' } } };
+expect('學生寫模擬檔案庫卷宗', ss, null, W, '/secret-source/m/MMMMMM/r/S002', Object.assign({}, srec, { arc }), true);
+expect('卷宗評等只能是 S／A／B', ss, null, W, '/secret-source/m/MMMMMM/r/S002', Object.assign({}, srec, { arc: Object.assign({}, arc, { g: 'Z' }) }), false);
+expect('卷宗最多 4 篇', ss, null, W, '/secret-source/m/MMMMMM/r/S002', Object.assign({}, srec, { arc: Object.assign({}, arc, { p: { 4: 'x' } }) }), false);
+expect('學生寫線索卡', ss, null, W, '/secret-source/m/MMMMMM/r/S002', Object.assign({}, srec, { clue }), true);
+expect('線索卡最多 6 張', ss, null, W, '/secret-source/m/MMMMMM/r/S002', Object.assign({}, srec, { clue: { at: 1, c: { 6: { t: 'book' } } } }), false);
+expect('線索卡欄位太長不能寫', ss, null, W, '/secret-source/m/MMMMMM/r/S002', Object.assign({}, srec, { clue: { at: 1, c: { 0: { why: 'x'.repeat(201) } } } }), false);
+expect('線索卡多了奇怪欄位不能寫', ss, null, W, '/secret-source/m/MMMMMM/r/S002', Object.assign({}, srec, { clue: { at: 1, c: { 0: { hack: 'x' } } } }), false);
 expect('老師讀自己的任務清單', ss, SRC_TEA, R, '/secret-source/owners/SRCT', null, true);
 expect('老師寫自己的任務清單', ss, SRC_TEA, W, '/secret-source/owners/SRCT/ABCDEF', { name: 'x', at: 1, roster: '110 a' }, true);
 expect('不能寫別人的任務清單', ss, SRC_TEA, W, '/secret-source/owners/TEA/ABCDEF', { name: 'x', at: 1 }, false);

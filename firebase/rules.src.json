@@ -506,6 +506,70 @@
               "closedAt": {
                 ".validate": "newData.isNumber()"
               },
+              "arc": {
+                ".validate": "newData.hasChildren(['q','g','n'])",
+                "q": {
+                  ".validate": "newData.isString() && newData.val().matches(/^[a-z][0-9]$/)"
+                },
+                "g": {
+                  ".validate": "newData.isString() && newData.val().matches(/^[SAB]?$/)"
+                },
+                "n": {
+                  ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 9999"
+                },
+                "p": {
+                  "$i": {
+                    ".validate": "$i.matches(/^[0-3]$/) && newData.isString() && newData.val().length <= 12"
+                  }
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "clue": {
+                ".validate": "newData.hasChildren(['at'])",
+                "at": {
+                  ".validate": "newData.isNumber()"
+                },
+                "topic": {
+                  ".validate": "newData.isString() && newData.val().length <= 60"
+                },
+                "c": {
+                  "$i": {
+                    ".validate": "$i.matches(/^[0-5]$/)",
+                    "t": {
+                      ".validate": "newData.isString() && newData.val().length <= 10"
+                    },
+                    "au": {
+                      ".validate": "newData.isString() && newData.val().length <= 120"
+                    },
+                    "yr": {
+                      ".validate": "newData.isString() && newData.val().length <= 4"
+                    },
+                    "ti": {
+                      ".validate": "newData.isString() && newData.val().length <= 200"
+                    },
+                    "src": {
+                      ".validate": "newData.isString() && newData.val().length <= 120"
+                    },
+                    "vp": {
+                      ".validate": "newData.isString() && newData.val().length <= 60"
+                    },
+                    "url": {
+                      ".validate": "newData.isString() && newData.val().length <= 300"
+                    },
+                    "why": {
+                      ".validate": "newData.isString() && newData.val().length <= 200"
+                    },
+                    "$other": {
+                      ".validate": false
+                    }
+                  }
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
               "$other": {
                 ".validate": false
               }
