@@ -9,12 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="arcade.css">
 <style>
-  :root { --accent: #c98a12; }
-
-  /* 班級切換 */
-  .class-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: -4px 0 14px; }
-  .class-bar select { border: 2.5px solid var(--navy); border-radius: 12px; padding: 6px 10px; background: #fff; font-weight: 700; box-shadow: 3px 3px 0 var(--navy); }
-  .class-bar .info { color: var(--muted); font-size: .9em; }
+  :root { --accent: #c98a12; --boy: #2f6db5; --girl: #d4567a; }
 
   /* 抽選方式膠囊 */
   .method-pill {
@@ -39,9 +34,10 @@
   .board.rolling .d { animation: flick .09s linear infinite; }
   @keyframes flick { 0% { transform: translateY(-6px); opacity: .7; } 100% { transform: translateY(6px); opacity: 1; } }
   .board.locked { background: var(--mustard); color: var(--navy); box-shadow: 7px 7px 0 var(--navy); animation: pop .4s cubic-bezier(.2,1.3,.4,1); }
+  .board.locked.boy { background: #d6e6fb; } .board.locked.girl { background: #fbdbe5; }
   .board .stamp { position: absolute; bottom: 10px; right: 8px; font-size: .95em; padding: 0 8px; }
-  .result.n1 .board { width: clamp(180px, 34vw, 320px); }
-  .result.n1 .board .d { font-size: clamp(7em, 20vw, 14em); }
+  .result.n1 .board { width: clamp(180px, 30vw, 300px); }
+  .result.n1 .board .d { font-size: clamp(7em, 18vw, 13em); }
 
   .group-card {
     text-align: center; padding: 22px 30px; border-radius: 24px; border: 3px solid var(--navy); background: var(--mustard);
@@ -52,8 +48,23 @@
   .idle { text-align: center; color: var(--muted); }
   .idle .big { font-size: clamp(4em, 12vw, 7em); line-height: 1.1; }
   .idle p { margin-top: 6px; }
-
   .stage-status { min-height: 1.4em; font-weight: 700; color: var(--muted); text-align: center; }
+
+  /* 按鈕組 */
+  .pad { width: 100%; max-width: 760px; display: grid; gap: 10px; }
+  .pad .big-btn { max-width: none; }
+  .pad .row5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+  @media (max-width: 640px) { .pad .row5 { grid-template-columns: repeat(3, 1fr); } }
+  .pb {
+    border: 2.5px solid var(--navy); border-radius: 14px; background: #fff; cursor: pointer; padding: 10px 4px;
+    font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: clamp(1em, 2.2vw, 1.2em); letter-spacing: .06em;
+    box-shadow: 4px 4px 0 var(--navy); transition: transform .08s, box-shadow .08s; -webkit-tap-highlight-color: transparent;
+  }
+  .pb small { display: block; font-family: 'Noto Sans TC', sans-serif; font-weight: 500; font-size: .68em; color: var(--muted); letter-spacing: 0; margin-top: 1px; }
+  .pb:active { transform: translate(4px, 4px); box-shadow: none; }
+  .pb:disabled { opacity: .45; cursor: not-allowed; }
+  .pb.girl { background: #fdeef2; } .pb.boy { background: #e8f0fb; }
+  .pb.last, .big-btn.last { outline: 3px dashed var(--accent); outline-offset: 3px; }
 
   /* 座號條 */
   .seats-wrap { width: 100%; max-width: 900px; }
@@ -64,8 +75,9 @@
   .seat {
     position: relative; border: 2px solid var(--navy); border-radius: 9px; background: #fff; cursor: pointer;
     font-family: 'Bebas Neue', sans-serif; font-size: 1.25em; letter-spacing: .04em; padding: 4px 0 2px; text-align: center;
-    transition: background .15s, opacity .15s; -webkit-tap-highlight-color: transparent;
+    transition: background .15s, opacity .15s; -webkit-tap-highlight-color: transparent; border-bottom-width: 5px;
   }
+  .seat.b { border-bottom-color: var(--boy); } .seat.g { border-bottom-color: var(--girl); }
   .seat:hover { background: var(--mustard-soft); }
   .seat.rested { opacity: .4; }
   .seat.rested::after { content: '✓'; position: absolute; top: -2px; right: 3px; font-size: .55em; color: var(--teal); font-family: sans-serif; font-weight: 900; }
@@ -73,18 +85,11 @@
   .seat.absent::after { content: '假'; position: absolute; top: -3px; right: 2px; font-size: .5em; color: var(--red); font-family: 'Noto Sans TC', sans-serif; font-weight: 900; text-decoration: none; }
   .seat.hit { background: var(--mustard); opacity: 1; animation: pop .4s cubic-bezier(.2,1.3,.4,1); }
   .legend { color: var(--muted); font-size: .8em; margin-top: 8px; line-height: 1.6; }
+  .legend .sw { display: inline-block; width: 14px; height: 4px; border-radius: 2px; vertical-align: middle; margin: 0 2px 0 6px; }
 
-  /* 機率表 */
-  .wtable { width: 100%; border-collapse: collapse; font-size: .92em; }
-  .wtable td { padding: 4px 2px; vertical-align: middle; }
-  .wtable td.name { font-weight: 700; white-space: nowrap; }
-  .wtable td.bar { width: 40%; }
-  .wtable .barbg { height: 10px; border-radius: 6px; background: #f1ebdf; overflow: hidden; }
-  .wtable .barfg { height: 100%; background: var(--mustard); border-radius: 6px; transition: width .2s; }
-  .wtable .pct { font-family: 'Bebas Neue', sans-serif; font-size: 1.1em; letter-spacing: .05em; text-align: right; width: 48px; }
-  .wtable input { width: 56px; text-align: center; border: 2px solid var(--navy); border-radius: 8px; padding: 3px 2px; }
-  .sumline { margin-top: 8px; padding: 7px 10px; border-radius: 10px; font-size: .88em; font-weight: 700; background: var(--teal-soft); color: #13685e; }
-  .sumline.warn { background: var(--red-soft); color: #a33a1c; }
+  .odds { list-style: none; font-size: .9em; }
+  .odds li { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1.5px dashed var(--line); }
+  .odds li b { font-family: 'Bebas Neue', sans-serif; font-size: 1.1em; letter-spacing: .05em; }
   .divider { border: none; border-top: 2px dashed var(--line); margin: 14px 0; }
 </style>
 </head>
@@ -97,31 +102,34 @@
       <h1>巫魚子大師<span class="hl">選人系統</span></h1>
     </div>
     <div class="actions">
-      <button class="btn sm" id="btn-side" type="button" title="收起／打開右邊的設定面板">⇥ 收起面板</button>
+      <button class="btn sm" id="btn-side" type="button" title="收起／打開右邊的面板">⇥ 收起面板</button>
       <span id="toolbar" class="actions"></span>
     </div>
   </header>
 
-  <div class="class-bar">
-    <label class="small" for="class-sel"><b>班級</b></label>
-    <select id="class-sel" aria-label="選擇班級"></select>
-    <button class="btn sm" id="btn-class-add" type="button">＋ 新增班級</button>
-    <button class="btn sm ghost" id="btn-class-edit" type="button">✏️ 改名／人數</button>
-    <button class="btn sm ghost" id="btn-class-del" type="button">🗑️ 刪除</button>
-    <span class="info" id="class-info"></span>
-  </div>
+  <div class="class-bar" id="class-bar"></div>
 
   <div class="layout" id="layout">
     <main>
       <section class="stage" id="stage">
-        <div class="stage-label">STEP 1 · 抽選方式</div>
+        <div class="stage-label" id="label-1">STEP 1 · 抽選方式</div>
         <div class="method-pill" id="method">？？？</div>
         <div class="stage-label" style="margin-top:4px">STEP 2 · 指認嫌疑人</div>
         <div class="result" id="result">
-          <div class="idle"><div class="big">🕵️</div><p>按下「抽人」，讓命運指認今天的幸運兒！</p></div>
+          <div class="idle"><div class="big">🕵️</div><p>按下面的按鈕，讓命運指認今天的幸運兒！</p></div>
         </div>
         <div class="stage-status" id="status"></div>
-        <button class="big-btn" id="btn-draw" type="button">🎯 抽 人<span class="hint">也可以按空白鍵</span></button>
+
+        <div class="pad" id="pad">
+          <button class="big-btn" data-mode="mix" type="button">🎲 綜 合<span class="hint">系統依比重決定抽法・空白鍵＝再按一次上一個按鈕</span></button>
+          <div class="row5">
+            <button class="pb" data-mode="one" type="button">抽一位</button>
+            <button class="pb" data-mode="two" type="button">抽兩位</button>
+            <button class="pb" data-mode="three" type="button">抽三位</button>
+            <button class="pb girl" data-mode="girl" type="button">🙋‍♀️ 僅抽女生<small>一位</small></button>
+            <button class="pb boy" data-mode="boy" type="button">🙋‍♂️ 僅抽男生<small>一位</small></button>
+          </div>
+        </div>
 
         <div class="seats-wrap">
           <div class="seats-head">
@@ -132,7 +140,7 @@
             </span>
           </div>
           <div class="seats" id="seats"></div>
-          <div class="legend">點一下座號＝標記請假（不會被抽到），再點一下取消。<span id="legend-rest">✓ 淡色＝這一輪已經抽過，先休息。</span></div>
+          <div class="legend">點一下座號＝標記請假（不會被抽到），再點一下取消。<span id="legend-rest">✓ 淡色＝這一輪已經抽過，先休息。</span><span id="legend-gender">底線<span class="sw" style="background:var(--boy)"></span>男生<span class="sw" style="background:var(--girl)"></span>女生</span></div>
         </div>
       </section>
     </main>
@@ -140,24 +148,20 @@
     <aside class="side">
       <div class="panel">
         <div class="tabs">
-          <button class="on" data-tab="set" type="button">⚙️ 設定</button>
+          <button class="on" data-tab="set" type="button">⚙️ 玩法</button>
           <button data-tab="hist" type="button">📜 紀錄</button>
         </div>
 
         <div id="tab-set">
-          <h3>🎲 抽選方式機率</h3>
-          <table class="wtable" id="wtable"></table>
-          <div class="sumline" id="sumline"></div>
-          <div class="row" style="margin-top:8px">
-            <button class="btn sm" id="btn-even" type="button">平均分配</button>
-            <button class="btn sm ghost" id="btn-wreset" type="button">恢復預設</button>
-          </div>
-          <p class="muted small" style="margin-top:6px;line-height:1.6">數字是「比重」：填幾都可以，系統會自動換算成百分比。填 0 就不會抽到。</p>
-          <hr class="divider">
           <h3>🧩 玩法</h3>
           <label class="switch"><input type="checkbox" id="opt-norepeat"> 不重複：抽過的先休息，全班抽完自動新一輪</label>
           <label class="switch"><input type="checkbox" id="opt-fast"> 快速模式：跳過轉盤動畫，直接公布</label>
-          <p class="muted small" style="margin-top:8px;line-height:1.6">所有設定都自動存在這台裝置的瀏覽器裡，下次打開還在。</p>
+          <hr class="divider">
+          <h3>🎲「綜合」的抽法機率</h3>
+          <ul class="odds" id="odds"></ul>
+          <p class="muted small" style="margin-top:8px;line-height:1.6">「全體女生／男生」「奇數／偶數座號」是一群人一起；有設定男女座號時，座號條會把他們亮出來。</p>
+          <hr class="divider">
+          <p class="muted small" style="line-height:1.6">班級（人數、男女座號）三個遊戲工具共用；請假、輪次、紀錄存在這台裝置的瀏覽器。</p>
         </div>
 
         <div id="tab-hist" class="hidden">
@@ -172,18 +176,6 @@
   </div>
 </div>
 
-<!-- 班級設定對話框 -->
-<div class="modal-back hidden" id="class-modal">
-  <div class="modal" style="max-width:440px">
-    <button class="btn sm close" type="button" data-close>✕</button>
-    <h2 id="cm-title">新增班級</h2>
-    <p class="muted small" style="margin-bottom:12px">每個班級各自記錄座號、請假、這一輪抽過誰和抽選紀錄。</p>
-    <div class="field"><label for="cm-name">班級名稱</label><input class="input" id="cm-name" maxlength="20" placeholder="例如：201、高一忠"></div>
-    <div class="field"><label for="cm-count">人數（座號 1 到幾號）</label><input class="input num" id="cm-count" type="number" min="1" max="60" value="30"></div>
-    <div class="foot"><button class="btn" type="button" data-close>取消</button><button class="btn navy" type="button" id="cm-ok">儲存</button></div>
-  </div>
-</div>
-
 <script src="arcade.js"></script>
 <script>
 (function () {
@@ -192,149 +184,100 @@
   const $ = id => document.getElementById(id);
   const KEY = 'wu-picker-v2';
 
-  // 抽選方式（舊版 system.html 的 8 種，比重也沿用舊版預設）
-  const METHODS = [
+  // 「綜合」的比重（老師決定寫死在系統裡，2026-10-21）
+  const MIX = [
     { id: 'one',   name: '抽 1 名',  n: 1, w: 50 },
     { id: 'two',   name: '抽 2 名',  n: 2, w: 25 },
     { id: 'three', name: '抽 3 名',  n: 3, w: 12 },
     { id: 'all',   name: '全班一起', group: '全班同學', emoji: '🙌', w: 1 },
-    { id: 'girls', name: '女生',     group: '全體女生', emoji: '🙋‍♀️', w: 3 },
-    { id: 'boys',  name: '男生',     group: '全體男生', emoji: '🙋‍♂️', w: 3 },
+    { id: 'girls', name: '全體女生', group: '全體女生', emoji: '🙋‍♀️', w: 3, sex: 'g' },
+    { id: 'boys',  name: '全體男生', group: '全體男生', emoji: '🙋‍♂️', w: 3, sex: 'b' },
     { id: 'odd',   name: '奇數座號', group: '奇數座號', emoji: '1️⃣', w: 3, seats: n => n % 2 === 1 },
     { id: 'even',  name: '偶數座號', group: '偶數座號', emoji: '2️⃣', w: 3, seats: n => n % 2 === 0 }
   ];
-  const defaultWeights = () => Object.fromEntries(METHODS.map(m => [m.id, m.w]));
-  const newClass = (name, count) => ({ name, count, absent: [], rested: [], hist: [] });
+  const BUTTONS = {
+    one: { name: '抽一位', n: 1 }, two: { name: '抽兩位', n: 2 }, three: { name: '抽三位', n: 3 },
+    girl: { name: '僅抽女生', n: 1, sex: 'g' }, boy: { name: '僅抽男生', n: 1, sex: 'b' }
+  };
 
-  let S = A.store.get(KEY, null);
-  if (!S || !S.classes) {
-    S = { v: 2, weights: defaultWeights(), noRepeat: true, fast: false, cur: 'c1', classes: { c1: newClass('預設班級', 30) } };
+  // 這個工具自己的資料：{ noRepeat, fast, per:{ 班級id:{ absent, rested, hist } } }
+  let S = A.store.get(KEY, null) || {};
+  if (S.classes) { // 舊格式（班級放在這裡）→ 搬家：班級本身已由 Arcade.classes 搬走
+    S.per = S.per || {};
+    Object.entries(S.classes).forEach(([id, c]) => { S.per[id] = { absent: c.absent || [], rested: c.rested || [], hist: c.hist || [] }; });
+    delete S.classes; delete S.weights; delete S.cur;
   }
-  METHODS.forEach(m => { if (S.weights[m.id] == null) S.weights[m.id] = m.w; });
+  S.per = S.per || {};
+  if (S.noRepeat == null) S.noRepeat = true;
+  if (S.fast == null) S.fast = false;
   const save = () => A.store.set(KEY, S);
-  const C = () => S.classes[S.cur] || S.classes[Object.keys(S.classes)[0]];
+  const CL = () => A.classes.cur();
+  const P = () => { const id = A.classes.curId(); return S.per[id] || (S.per[id] = { absent: [], rested: [], hist: [] }); };
 
-  let busy = false;
-  let lastHits = [];
+  let busy = false, lastHits = [], lastMode = 'mix';
 
-  /* ---------- 班級 ---------- */
-  function renderClasses() {
-    const sel = $('class-sel');
-    sel.innerHTML = Object.entries(S.classes).map(([id, c]) => `<option value="${id}" ${id === S.cur ? 'selected' : ''}>${A.esc(c.name)}（${c.count} 人）</option>`).join('');
-    $('btn-class-del').disabled = Object.keys(S.classes).length <= 1;
-  }
-  $('class-sel').onchange = e => { S.cur = e.target.value; save(); lastHits = []; resetStage(); renderAll(); };
-  let editingId = null;
-  function openClassModal(id) {
-    editingId = id;
-    const c = id ? S.classes[id] : null;
-    $('cm-title').textContent = id ? '修改班級' : '新增班級';
-    $('cm-name').value = c ? c.name : '';
-    $('cm-count').value = c ? c.count : (C().count || 30);
-    A.modal($('class-modal'), true);
-    setTimeout(() => $('cm-name').focus(), 50);
-  }
-  $('btn-class-add').onclick = () => openClassModal(null);
-  $('btn-class-edit').onclick = () => openClassModal(S.cur);
-  $('cm-ok').onclick = () => {
-    const name = $('cm-name').value.trim() || '未命名班級';
-    const count = Math.max(1, Math.min(60, parseInt($('cm-count').value, 10) || 30));
-    if (editingId) {
-      const c = S.classes[editingId];
-      c.name = name; c.count = count;
-      c.absent = c.absent.filter(n => n <= count); c.rested = c.rested.filter(n => n <= count);
-    } else {
-      const id = 'c' + Date.now().toString(36);
-      S.classes[id] = newClass(name, count); S.cur = id;
-    }
-    save(); A.modal($('class-modal'), false); lastHits = []; resetStage(); renderAll();
+  /* ---------- 班級列 ---------- */
+  A.classBar($('class-bar'), {
+    onChange: () => { lastHits = []; resetStage(); renderAll(); },
+    onDelete: id => { delete S.per[id]; save(); }
+  });
+
+  /* ---------- 座號 ---------- */
+  const sexOf = n => A.classes.boys().includes(n) ? 'b' : A.classes.girls().includes(n) ? 'g' : '';
+  const present = (sex) => {
+    const c = CL(), p = P(), out = [];
+    const list = sex === 'b' ? A.classes.boys() : sex === 'g' ? A.classes.girls() : null;
+    for (let i = 1; i <= c.count; i++) if (!p.absent.includes(i) && (!list || list.includes(i))) out.push(i);
+    return out;
   };
-  document.querySelectorAll('#class-modal [data-close]').forEach(b => b.onclick = () => A.modal($('class-modal'), false));
-  $('btn-class-del').onclick = () => {
-    if (Object.keys(S.classes).length <= 1) return;
-    if (!confirm(`確定刪除「${C().name}」？這個班的請假、輪次和紀錄都會一起刪掉。`)) return;
-    delete S.classes[S.cur]; S.cur = Object.keys(S.classes)[0]; save(); lastHits = []; resetStage(); renderAll();
-  };
-
-  /* ---------- 座號條 ---------- */
-  const present = () => { const c = C(); const out = []; for (let i = 1; i <= c.count; i++) if (!c.absent.includes(i)) out.push(i); return out; };
   function renderSeats() {
-    const c = C();
+    const c = CL(), p = P();
+    p.absent = p.absent.filter(n => n <= c.count); p.rested = p.rested.filter(n => n <= c.count);
     let html = '';
     for (let i = 1; i <= c.count; i++) {
-      const cls = ['seat'];
-      if (c.absent.includes(i)) cls.push('absent');
-      else if (S.noRepeat && c.rested.includes(i)) cls.push('rested');
+      const cls = ['seat', sexOf(i)];
+      if (p.absent.includes(i)) cls.push('absent');
+      else if (S.noRepeat && p.rested.includes(i)) cls.push('rested');
       if (lastHits.includes(i)) cls.push('hit');
       html += `<button type="button" class="${cls.join(' ')}" data-n="${i}" title="${i} 號：點一下切換請假">${i}</button>`;
     }
     $('seats').innerHTML = html;
-    const p = present().length, r = c.rested.filter(n => !c.absent.includes(n)).length;
-    $('seat-count').textContent = `出席 ${p} 人` + (c.absent.length ? `・請假 ${c.absent.length} 人` : '') + (S.noRepeat ? `・這一輪已抽 ${r} 人` : '');
-    $('class-info').textContent = '';
+    const r = p.rested.filter(n => !p.absent.includes(n)).length;
+    $('seat-count').textContent = `出席 ${present().length} 人` + (p.absent.length ? `・請假 ${p.absent.length} 人` : '') + (S.noRepeat ? `・這一輪已抽 ${r} 人` : '');
     $('legend-rest').classList.toggle('hidden', !S.noRepeat);
     $('btn-round').classList.toggle('hidden', !S.noRepeat);
+    const hasSex = A.classes.boys().length || A.classes.girls().length;
+    $('legend-gender').classList.toggle('hidden', !hasSex);
+    $('pad').querySelector('[data-mode=girl]').disabled = busy;
+    $('pad').querySelector('[data-mode=boy]').disabled = busy;
   }
   $('seats').onclick = e => {
     const b = e.target.closest('.seat'); if (!b || busy) return;
-    const n = +b.dataset.n, c = C();
-    if (c.absent.includes(n)) c.absent = c.absent.filter(x => x !== n); else c.absent.push(n);
+    const n = +b.dataset.n, p = P();
+    if (p.absent.includes(n)) p.absent = p.absent.filter(x => x !== n); else p.absent.push(n);
     save(); renderSeats(); A.sfx.blip();
   };
-  $('btn-round').onclick = () => { C().rested = []; save(); renderSeats(); A.toast('🔄 全班重新一輪'); };
-  $('btn-clear-absent').onclick = () => { C().absent = []; save(); renderSeats(); };
+  $('btn-round').onclick = () => { P().rested = []; save(); renderSeats(); A.toast('🔄 全班重新一輪'); };
+  $('btn-clear-absent').onclick = () => { P().absent = []; save(); renderSeats(); };
 
-  /* ---------- 機率表 ---------- */
-  function renderWeights() {
-    const total = METHODS.reduce((s, m) => s + (+S.weights[m.id] || 0), 0);
-    $('wtable').innerHTML = METHODS.map(m => {
-      const w = +S.weights[m.id] || 0, pct = total ? (w / total * 100) : 0;
-      return `<tr><td class="name">${m.name}</td>
-        <td><input type="number" min="0" max="999" step="1" data-w="${m.id}" value="${w}" aria-label="${m.name}的比重"></td>
-        <td class="bar"><div class="barbg"><div class="barfg" style="width:${pct}%"></div></div></td>
-        <td class="pct">${pct ? (pct < 1 ? pct.toFixed(1) : Math.round(pct)) : 0}%</td></tr>`;
-    }).join('');
-    const sl = $('sumline');
-    if (!total) { sl.className = 'sumline warn'; sl.textContent = '⚠️ 全部都是 0，至少要有一種方式大於 0 才能抽'; }
-    else { sl.className = 'sumline'; sl.textContent = `✅ 比重合計 ${total}，已自動換算成百分比`; }
-    $('btn-draw').disabled = !total || busy;
+  /* ---------- 側欄 ---------- */
+  function renderOdds() {
+    const tot = MIX.reduce((s, m) => s + m.w, 0);
+    $('odds').innerHTML = MIX.map(m => `<li><span>${m.name}</span><b>${Math.round(m.w / tot * 100)}%</b></li>`).join('');
   }
-  $('wtable').addEventListener('input', e => {
-    const id = e.target.dataset.w; if (!id) return;
-    S.weights[id] = Math.max(0, Math.min(999, parseFloat(e.target.value) || 0)); save();
-    // 只更新比例條，不重畫表格（輸入框才不會跳掉）
-    const total = METHODS.reduce((s, m) => s + (+S.weights[m.id] || 0), 0);
-    document.querySelectorAll('#wtable tr').forEach((tr, i) => {
-      const w = +S.weights[METHODS[i].id] || 0, pct = total ? w / total * 100 : 0;
-      tr.querySelector('.barfg').style.width = pct + '%';
-      tr.querySelector('.pct').textContent = (pct ? (pct < 1 ? pct.toFixed(1) : Math.round(pct)) : 0) + '%';
-    });
-    const sl = $('sumline');
-    if (!total) { sl.className = 'sumline warn'; sl.textContent = '⚠️ 全部都是 0，至少要有一種方式大於 0 才能抽'; }
-    else { sl.className = 'sumline'; sl.textContent = `✅ 比重合計 ${total}，已自動換算成百分比`; }
-    $('btn-draw').disabled = !total || busy;
-  });
-  $('btn-even').onclick = () => { METHODS.forEach(m => S.weights[m.id] = 1); save(); renderWeights(); };
-  $('btn-wreset').onclick = () => { S.weights = defaultWeights(); save(); renderWeights(); };
-
-  /* ---------- 玩法開關 ---------- */
   $('opt-norepeat').onchange = e => { S.noRepeat = e.target.checked; save(); renderSeats(); };
   $('opt-fast').onchange = e => { S.fast = e.target.checked; save(); };
-
-  /* ---------- 紀錄 ---------- */
   function renderHist() {
-    const h = C().hist;
+    const h = P().hist;
     $('hist').innerHTML = h.length ? h.map(x => `<li><span class="t">${x.t}</span><span class="k">${A.esc(x.m)}</span><span class="v">${A.esc(x.r)}</span></li>`).join('')
       : '<li class="empty">還沒有紀錄</li>';
   }
-  $('btn-hclear').onclick = () => { if (!C().hist.length || !confirm('清空這個班的抽選紀錄？')) return; C().hist = []; save(); renderHist(); };
+  $('btn-hclear').onclick = () => { if (!P().hist.length || !confirm('清空這個班的抽選紀錄？')) return; P().hist = []; save(); renderHist(); };
   document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
     document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
     $('tab-set').classList.toggle('hidden', b.dataset.tab !== 'set');
     $('tab-hist').classList.toggle('hidden', b.dataset.tab !== 'hist');
   });
-
-  /* ---------- 面板收合 ---------- */
   let sideHidden = A.store.get('wu-picker-side-hidden', false);
   function paintSide() { $('layout').classList.toggle('side-hidden', sideHidden); $('btn-side').textContent = sideHidden ? '⇤ 打開面板' : '⇥ 收起面板'; }
   $('btn-side').onclick = () => { sideHidden = !sideHidden; A.store.set('wu-picker-side-hidden', sideHidden); paintSide(); };
@@ -343,84 +286,84 @@
   function resetStage() {
     $('method').textContent = '？？？'; $('method').className = 'method-pill';
     $('result').className = 'result';
-    $('result').innerHTML = '<div class="idle"><div class="big">🕵️</div><p>按下「抽人」，讓命運指認今天的幸運兒！</p></div>';
+    $('result').innerHTML = '<div class="idle"><div class="big">🕵️</div><p>按下面的按鈕，讓命運指認今天的幸運兒！</p></div>';
     $('status').textContent = '';
   }
 
-  // 決定要抽到誰（不重複模式會先從還沒抽過的人裡面抽）
-  function chooseSeats(n) {
-    const c = C(), all = present();
-    if (!all.length) return { seats: [], note: '' };
-    n = Math.min(n, all.length);
-    let note = '';
-    if (!S.noRepeat) return { seats: A.shuffle(all).slice(0, n), note };
-    let pool = all.filter(x => !c.rested.includes(x));
-    let seats = [];
+  // 抽 n 人；sex 限定性別。不重複模式：這一輪還沒抽過的人先上，不夠時這群人重新一輪再補
+  function chooseSeats(n, sex) {
+    const p = P(), cand = present(sex);
+    if (!cand.length) return { seats: [], note: '' };
+    n = Math.min(n, cand.length);
+    if (!S.noRepeat) return { seats: A.shuffle(cand).slice(0, n), note: '' };
+    let pool = cand.filter(x => !p.rested.includes(x)), seats = [], note = '';
     if (pool.length < n) {
-      seats = A.shuffle(pool);           // 這一輪剩下的人先上
-      c.rested = [];                     // 開新的一輪
-      pool = all.filter(x => !seats.includes(x));
-      note = '全班都抽過一輪了，開始新的一輪！';
+      seats = A.shuffle(pool);
+      p.rested = p.rested.filter(x => !cand.includes(x));
+      pool = cand.filter(x => !seats.includes(x));
+      note = (sex === 'g' ? '女生' : sex === 'b' ? '男生' : '全班') + '都抽過一輪了，開始新的一輪！';
     }
     seats = seats.concat(A.shuffle(pool).slice(0, n - seats.length));
-    c.rested = c.rested.concat(seats);
-    if (!pool.length && !seats.length) note = '';
+    p.rested = p.rested.concat(seats);
     return { seats, note };
   }
 
   async function rollMethod(final) {
     const pill = $('method');
-    const live = METHODS.filter(m => (+S.weights[m.id] || 0) > 0);
-    if (S.fast || live.length <= 1) { pill.textContent = final.name; pill.className = 'method-pill locked'; A.sfx.clunk(); return; }
+    if (S.fast) { pill.textContent = final.name; pill.className = 'method-pill locked'; A.sfx.clunk(); return; }
     pill.className = 'method-pill rolling';
     const gaps = A.easeTicks(1500, 55, 260);
-    let i = A.rand(live.length);
+    let i = A.rand(MIX.length);
     for (let k = 0; k < gaps.length; k++) {
-      i = (i + 1 + A.rand(Math.max(1, live.length - 1))) % live.length;
-      pill.textContent = live[i].name; A.sfx.tick(k / gaps.length);
+      i = (i + 1 + A.rand(MIX.length - 1)) % MIX.length;
+      pill.textContent = MIX[i].name; A.sfx.tick(k / gaps.length);
       await A.sleep(gaps[k]);
     }
     pill.textContent = final.name; pill.className = 'method-pill locked'; A.sfx.clunk();
     await A.sleep(350);
   }
 
-  async function rollBoards(seats) {
+  async function rollBoards(seats, pool) {
     const res = $('result');
     res.className = 'result' + (seats.length === 1 ? ' n1' : '');
     res.innerHTML = seats.map(() => '<div class="board"><div class="d">??</div><div class="u">號</div></div>').join('');
     const boards = [...res.querySelectorAll('.board')];
-    if (S.fast) {
-      boards.forEach((b, i) => { b.querySelector('.d').textContent = seats[i]; b.classList.add('locked'); });
-      return;
-    }
-    const pool = present();
+    const lock = (b, n) => { b.querySelector('.d').textContent = n; b.classList.remove('rolling'); b.classList.add('locked'); const s = sexOf(n); if (s) b.classList.add(s === 'b' ? 'boy' : 'girl'); };
+    if (S.fast) { boards.forEach((b, i) => lock(b, seats[i])); return; }
     const total = 1500 + (seats.length - 1) * 750;
     A.sfx.drumroll(total / 1000);
     boards.forEach(b => b.classList.add('rolling'));
     await Promise.all(boards.map(async (b, i) => {
-      const dur = 1500 + i * 750;
-      const gaps = A.easeTicks(dur, 45, 230);
+      const gaps = A.easeTicks(1500 + i * 750, 45, 230);
       const d = b.querySelector('.d');
       for (let k = 0; k < gaps.length; k++) {
         d.textContent = A.pick(pool);
         if (i === boards.length - 1 || k % 3 === 0) A.sfx.tick(0.3 + i * 0.2);
         await A.sleep(gaps[k]);
       }
-      d.textContent = seats[i]; b.classList.remove('rolling'); b.classList.add('locked'); A.sfx.clunk();
+      lock(b, seats[i]); A.sfx.clunk();
     }));
   }
 
-  async function draw() {
+  async function draw(mode) {
     if (busy) return;
-    const c = C();
+    lastMode = mode;
+    document.querySelectorAll('#pad [data-mode]').forEach(b => b.classList.toggle('last', b.dataset.mode === mode));
     if (!present().length) { A.toast('沒有出席的同學可以抽喔（全部都標成請假了）'); return; }
-    const method = A.weighted(METHODS, m => S.weights[m.id]);
-    if (!method) { A.toast('請先把至少一種抽選方式的比重設成大於 0'); return; }
-    busy = true; $('btn-draw').disabled = true; A.sfx.unlock();
+    let method;
+    if (mode === 'mix') method = A.weighted(MIX);
+    else method = { id: mode, ...BUTTONS[mode] };
+    if (method.sex && !method.group) {
+      const list = method.sex === 'g' ? A.classes.girls() : A.classes.boys();
+      if (!list.length) { A.toast(`還沒設定這個班的${method.sex === 'g' ? '女' : '男'}生座號，請按上面的「✏️ 修改」`, 3200); return; }
+      if (!present(method.sex).length) { A.toast(`今天${method.sex === 'g' ? '女' : '男'}生都請假了`); return; }
+    }
+    busy = true; document.querySelectorAll('#pad button').forEach(b => b.disabled = true); A.sfx.unlock();
     $('status').textContent = ''; lastHits = []; renderSeats();
     $('result').innerHTML = '<div class="idle"><div class="big">🔎</div><p>搜查中⋯⋯</p></div>';
 
-    await rollMethod(method);
+    if (mode === 'mix') { $('label-1').textContent = 'STEP 1 · 綜合抽選方式'; await rollMethod(method); }
+    else { $('label-1').textContent = 'STEP 1 · 指定抽法'; $('method').textContent = method.name; $('method').className = 'method-pill locked'; A.sfx.clunk(); await A.sleep(S.fast ? 0 : 300); }
 
     let resultText = '';
     if (method.group) {
@@ -428,43 +371,45 @@
       res.className = 'result';
       res.innerHTML = `<div class="group-card pop"><div class="e">${method.emoji}</div><div class="g">${method.group}！</div></div>`;
       if (method.seats) lastHits = present().filter(method.seats);
-      else if (method.id === 'all') lastHits = present();
+      else if (method.sex) lastHits = present(method.sex);
+      else lastHits = present();
       resultText = method.group;
       A.sfx.fanfare(); A.confetti({ count: 160 });
-      $('status').textContent = method.id === 'girls' || method.id === 'boys' ? '請全體' + method.name + '同學準備！' : '一起來吧！';
+      $('status').textContent = method.sex ? '請' + method.group + '同學準備！' : '一起來吧！';
     } else {
-      const { seats, note } = chooseSeats(method.n);
-      await rollBoards(seats);
+      const { seats, note } = chooseSeats(method.n, method.sex);
+      await rollBoards(seats, present(method.sex));
       lastHits = seats.slice();
       resultText = seats.map(n => n + ' 號').join('、');
       await A.sleep(120);
-      $('result').querySelectorAll('.board').forEach(b => { b.insertAdjacentHTML('beforeend', '<span class="stamp">指認</span>'); });
+      $('result').querySelectorAll('.board').forEach(b => b.insertAdjacentHTML('beforeend', '<span class="stamp">指認</span>'));
       A.sfx.fanfare(); A.confetti({ count: 120 + seats.length * 30 });
       $('status').textContent = note || (seats.length > 1 ? `恭喜這 ${seats.length} 位同學！` : '就決定是你了！');
       if (note) A.toast('🔄 ' + note, 3200);
     }
 
-    c.hist.unshift({ t: A.hhmm(), m: method.name, r: resultText });
-    if (c.hist.length > 60) c.hist.length = 60;
-    save(); renderSeats(); renderHist();
-    busy = false; $('btn-draw').disabled = false;
-    $('btn-draw').firstChild.textContent = '🎯 再抽一次';
+    const p = P();
+    p.hist.unshift({ t: A.hhmm(), m: (mode === 'mix' ? '綜合・' : '') + method.name, r: resultText });
+    if (p.hist.length > 60) p.hist.length = 60;
+    save(); busy = false;
+    document.querySelectorAll('#pad button').forEach(b => b.disabled = false);
+    renderSeats(); renderHist();
   }
-  $('btn-draw').onclick = draw;
+  $('pad').onclick = e => { const b = e.target.closest('[data-mode]'); if (b) draw(b.dataset.mode); };
   document.addEventListener('keydown', e => {
     if (e.code !== 'Space' && e.key !== 'Enter') return;
     const tag = (e.target.tagName || '').toLowerCase();
     if (['input', 'textarea', 'select', 'button', 'a'].includes(tag)) return;
-    if (!$('class-modal').classList.contains('hidden')) return;
-    e.preventDefault(); draw();
+    if (document.querySelector('.modal-back:not(.hidden)')) return;
+    e.preventDefault(); draw(lastMode);
   });
 
   function renderAll() {
     $('opt-norepeat').checked = S.noRepeat; $('opt-fast').checked = S.fast;
-    renderClasses(); renderSeats(); renderWeights(); renderHist();
+    renderSeats(); renderHist(); renderOdds();
   }
   A.toolbar($('toolbar'));
-  paintSide(); renderAll();
+  save(); paintSide(); renderAll();
 })();
 </script>
 </body>

@@ -199,3 +199,7 @@ body.is-fs .stage { min-height: calc(100vh - 120px); }
 @media (prefers-reduced-motion: reduce) {
   .stamp, .pop, .shake { animation: none !important; }
 }
+
+/* ===== 共用班級列（2026-10-21） ===== */
+.class-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: -4px 0 14px; }
+.cls-sel { border: 2.5px solid var(--navy); border-radius: 12px; padding: 6px 10px; background: #fff; font-weight: 700; box-shadow: 3px 3px 0 var(--navy); max-width: 100%; }

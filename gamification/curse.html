@@ -75,6 +75,8 @@
   .clist .p { flex: none; font-family: 'Bebas Neue', sans-serif; letter-spacing: .05em; font-size: 1.05em; color: var(--muted); width: 46px; text-align: right; }
   .clist .x { flex: 1; }
   .clist li.rv .x { color: #8a6208; font-weight: 700; }
+  .history .done { flex: none; }
+  .history .k.wait { background: #b3261e; }
   .ed-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; }
   @media (max-width: 640px) { .ed-grid { grid-template-columns: 1fr; } }
 </style>
@@ -92,6 +94,8 @@
       <span id="toolbar" class="actions"></span>
     </div>
   </header>
+
+  <div class="class-bar" id="class-bar"></div>
 
   <div class="layout" id="layout">
     <main>
@@ -121,7 +125,7 @@
       <div class="panel">
         <div class="tabs">
           <button class="on" data-tab="list" type="button">📜 詛咒清單</button>
-          <button data-tab="hist" type="button">🪦 陣亡紀錄</button>
+          <button data-tab="hist" type="button">⏳ 待執行 <span id="pend-n"></span></button>
         </div>
         <div id="tab-list">
           <h3>每一張牌的機率都一樣</h3>
@@ -131,10 +135,11 @@
           </div>
         </div>
         <div id="tab-hist" class="hidden">
-          <h3>🪦 陣亡紀錄</h3>
+          <h3>⏳ <span id="pend-title">這個班</span>待執行的詛咒</h3>
+          <p class="muted small" style="margin:-4px 0 8px;line-height:1.6">學生完成懲罰後按「✅ 完成」，就會從清單刪掉。抽到幸運復活不會列進來。</p>
           <ul class="history" id="hist"></ul>
           <div class="row" style="margin-top:10px;justify-content:flex-end">
-            <button class="btn sm ghost" id="btn-hclear" type="button">清空紀錄</button>
+            <button class="btn sm ghost" id="btn-hclear" type="button">清空這個班的清單</button>
           </div>
         </div>
       </div>
@@ -147,7 +152,7 @@
   <div class="modal">
     <button class="btn sm close" type="button" data-close>✕</button>
     <h2>✏️ 編輯詛咒清單</h2>
-    <p class="muted small" style="margin-bottom:12px;line-height:1.6">一行一張牌，每張牌被抽到的機率一樣。開頭可以放一個表情符號當圖示（例如「🧹 打掃化學實驗室一次」）。想讓某張牌比較容易抽到，就把它多寫幾行。</p>
+    <p class="muted small" style="margin-bottom:12px;line-height:1.6">一行一張牌，每張牌被抽到的機率一樣。<b>只要打文字就好</b>，按「儲存」時系統會依內容自動配一個小圖示（例如「打掃化學實驗室一次」→ 🧹）；想自己指定，就在開頭打一個表情符號，系統會照你的。想換掉自動配的圖示，把它刪掉再儲存即可。想讓某張牌比較容易抽到，就把它多寫幾行。</p>
     <div class="ed-grid">
       <div class="field"><label for="ed-curse">💀 詛咒牌</label><textarea class="input" id="ed-curse" rows="12"></textarea></div>
       <div class="field"><label for="ed-revive">🍀 幸運復活牌</label><textarea class="input" id="ed-revive" rows="12"></textarea>
@@ -189,7 +194,15 @@
     revives: ['🍀 免費復活，奇蹟式地沒有被詛咒']
   };
   let S = A.store.get(KEY, null);
-  if (!S || !Array.isArray(S.curses)) S = { curses: DEFAULT.curses.slice(), revives: DEFAULT.revives.slice(), hist: [] };
+  if (!S || !Array.isArray(S.curses)) S = { curses: DEFAULT.curses.slice(), revives: DEFAULT.revives.slice() };
+  // recs：{ 班級id: [{ id, d, time, who, t }] } 待執行的詛咒（2026-10-21 起分班記錄）
+  S.recs = S.recs || {};
+  if (S.hist) { // 舊版不分班的陣亡紀錄 → 詛咒搬到目前的班級
+    const cid = A.classes.curId();
+    S.recs[cid] = (S.recs[cid] || []).concat(S.hist.filter(h => !h.rv).map((h, i) => ({ id: 'o' + i, d: '', time: h.time, who: h.who, t: h.t })));
+    delete S.hist;
+  }
+  const RECS = () => { const id = A.classes.curId(); return S.recs[id] || (S.recs[id] = []); };
   const save = () => A.store.set(KEY, S);
   let busy = false;
 
@@ -198,6 +211,26 @@
   function split(text) {
     const m = text.match(EMOJI_RE);
     return m ? { ico: m[1], txt: text.slice(m[0].length) || text } : { ico: '', txt: text };
+  }
+  // 自動配圖示：沒有開頭表情符號的牌，依關鍵字挑一個（由上往下比對，先對到先用）
+  const ICONS = [
+    [/復活|免死|豁免|逃過|幸運|免費|赦免/, '🍀'],
+    [/手機|3C|平板/i, '📵'], [/週期表|元素|化學式|方程式/, '🧪'], [/實驗/, '⚗️'],
+    [/掃地|打掃|掃/, '🧹'], [/拖地|擦|黑板/, '🧽'], [/垃圾|資源回收|回收/, '🗑️'],
+    [/XP|經驗|扣分|扣.*分|點數|積分/i, '📉'], [/金幣|錢|請客|請全班/, '🪙'], [/血|HP|生命/i, '❤️'],
+    [/志工|幫忙|小幫手|服務|跑腿/, '🙋'], [/帽/, '⛑️'], [/鞋/, '👟'], [/衣|穿|戴/, '👕'],
+    [/真心話|大冒險/, '🎲'], [/唱|歌/, '🎤'], [/跳舞|舞/, '💃'], [/笑話|搞笑/, '🤡'],
+    [/伏地挺身|深蹲|仰臥|運動|跑|操場/, '💪'], [/罰站|站/, '🧍'],
+    [/作業|學習單|習題|考卷|題/, '📝'], [/默寫|抄|寫/, '✍️'], [/背|朗讀|唸|念/, '📖'],
+    [/畫/, '🎨'], [/拍照|自拍/, '📸'], [/說|講|介紹|分享|報告|演講/, '🗣️'],
+    [/中午|午休|放學|下課|辦公室/, '🕛'], [/走|繞/, '🚶'], [/零食|糖|飲料|請吃/, '🍬'], [/老師|大師/, '🧑‍🏫']
+  ];
+  function autoIcon(line, revive) {
+    if (EMOJI_RE.test(line)) return line;
+    const hit = ICONS.find(([re]) => re.test(line));
+    let ico = hit ? hit[1] : (revive ? '🍀' : '💀');
+    if (!revive && ico === '🍀') ico = '💀';
+    return ico + ' ' + line;
   }
   const deck = () => S.curses.map(t => ({ t, rv: false })).concat(S.revives.map(t => ({ t, rv: true })));
 
@@ -229,10 +262,20 @@
     $('btn-draw').disabled = !n || busy;
   }
   function renderHist() {
-    $('hist').innerHTML = S.hist.length ? S.hist.map(h => `<li><span class="t">${h.time}</span><span class="k" style="background:${h.rv ? '#c98a12' : '#b3261e'}">${h.who ? A.esc(h.who) + ' 號' : '英雄'}</span><span class="v">${A.esc(h.t)}</span></li>`).join('')
-      : '<li class="empty">還沒有英雄陣亡</li>';
+    const r = RECS(), c = A.classes.cur();
+    $('pend-title').textContent = c.name + ' ';
+    $('pend-n').textContent = r.length ? `(${r.length})` : '';
+    $('hist').innerHTML = r.length ? r.map(h => `<li><span class="t">${h.d ? h.d + '<br>' : ''}${h.time}</span><span class="k wait">${h.who ? A.esc(h.who) + ' 號' : '英雄'}</span><span class="v">${A.esc(h.t)}</span><button class="btn sm done" type="button" data-done="${h.id}" title="懲罰完成，從清單刪除">✅ 完成</button></li>`).join('')
+      : '<li class="empty">這個班沒有待執行的詛咒 🎉</li>';
+    $('victim').max = c.count;
   }
-  $('btn-hclear').onclick = () => { if (!S.hist.length || !confirm('清空陣亡紀錄？')) return; S.hist = []; save(); renderHist(); };
+  $('hist').onclick = e => {
+    const b = e.target.closest('[data-done]'); if (!b) return;
+    const id = A.classes.curId();
+    S.recs[id] = RECS().filter(h => h.id !== b.dataset.done); save(); renderHist(); A.sfx.magic();
+    A.toast('✅ 詛咒解除！');
+  };
+  $('btn-hclear').onclick = () => { if (!RECS().length || !confirm('清空這個班所有待執行的詛咒？')) return; S.recs[A.classes.curId()] = []; save(); renderHist(); };
   document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
     document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
     $('tab-list').classList.toggle('hidden', b.dataset.tab !== 'list');
@@ -293,8 +336,11 @@
     if (item.rv) { A.sfx.magic(); A.confetti({ colors: ['#f2b134', '#fff3c4', '#ffffff', '#1f9e8f'], count: 200, stars: true }); }
     else { A.sfx.doom(); $('stage').classList.add('shake', 'flash'); setTimeout(() => $('stage').classList.remove('shake', 'flash'), 1000); }
 
-    S.hist.unshift({ time: A.hhmm(), who, t: item.t, rv: item.rv });
-    if (S.hist.length > 80) S.hist.length = 80;
+    if (!item.rv) {
+      const now = new Date();
+      RECS().unshift({ id: now.getTime().toString(36) + A.rand(1000), d: (now.getMonth() + 1) + '/' + now.getDate(), time: A.hhmm(now), who, t: item.t });
+      if (RECS().length > 100) RECS().length = 100;
+    }
     save(); renderHist();
     $('msg').textContent = item.rv ? '幸運女神眷顧了你！' : '詛咒已降臨，下一位英雄請小心⋯⋯';
     busy = false; $('btn-draw').disabled = false;
@@ -304,7 +350,7 @@
   document.addEventListener('keydown', e => {
     if (e.code !== 'Space' && e.key !== 'Enter') return;
     const tag = (e.target.tagName || '').toLowerCase();
-    if (!$('ed').classList.contains('hidden')) return;
+    if (document.querySelector('.modal-back:not(.hidden)')) return;
     if (!$('reveal').classList.contains('hidden')) { e.preventDefault(); $('reveal').click(); return; }
     if (['textarea', 'select', 'button', 'a'].includes(tag)) return;
     if (tag === 'input' && e.code === 'Space') return;
@@ -325,7 +371,7 @@
   document.querySelectorAll('#ed [data-close]').forEach(b => b.onclick = () => A.modal($('ed'), false));
   $('ed-default').onclick = () => { $('ed-curse').value = DEFAULT.curses.join('\n'); $('ed-revive').value = DEFAULT.revives.join('\n'); edSum(); };
   $('ed-ok').onclick = () => {
-    const c = A.lines($('ed-curse').value), r = A.lines($('ed-revive').value);
+    const c = A.lines($('ed-curse').value).map(x => autoIcon(x, false)), r = A.lines($('ed-revive').value).map(x => autoIcon(x, true));
     if (!c.length && !r.length) { A.toast('至少要有一張牌喔'); return; }
     S.curses = c; S.revives = r; save(); A.modal($('ed'), false); renderList(); renderTable(); A.toast('✅ 詛咒清單已儲存');
   };
@@ -337,8 +383,11 @@
     A.toast('已載入，確認後按「儲存」');
   };
 
+  // 舊清單裡沒有圖示的牌也補上
+  S.curses = S.curses.map(x => autoIcon(x, false)); S.revives = S.revives.map(x => autoIcon(x, true));
+  A.classBar($('class-bar'), { onChange: () => { renderHist(); }, onDelete: id => { delete S.recs[id]; save(); } });
   A.toolbar($('toolbar'));
-  paintSide(); renderList(); renderHist();
+  save(); paintSide(); renderList(); renderHist();
 })();
 </script>
 </body>

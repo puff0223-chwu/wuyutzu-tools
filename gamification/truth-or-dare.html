@@ -116,6 +116,20 @@
   .big-btn.truth { background: var(--truth); color: #fff; }
   .big-btn.dare { background: var(--dare); color: #fff; }
 
+  /* ===== 選號 ===== */
+  .pk-setup { display: flex; gap: 8px 10px; align-items: center; flex-wrap: wrap; justify-content: center; }
+  .pk-board {
+    width: clamp(180px, 30vw, 280px); aspect-ratio: 4 / 5; border-radius: 24px; background: var(--navy); color: #fff;
+    border: 3px solid var(--navy); box-shadow: 8px 8px 0 var(--mustard);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .pk-board .d { font-family: 'Bebas Neue', sans-serif; font-size: clamp(7em, 18vw, 12em); line-height: .9; }
+  .pk-board .u { font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: 1.4em; opacity: .85; }
+  .pk-board.rolling .d { animation: flick .09s linear infinite; }
+  @keyframes flick { 0% { transform: translateY(-6px); opacity: .7; } 100% { transform: translateY(6px); opacity: 1; } }
+  .pk-board.locked { background: var(--mustard); color: var(--navy); box-shadow: 8px 8px 0 var(--navy); animation: pop .4s cubic-bezier(.2,1.3,.4,1); }
+  .pk-msg { color: var(--muted); font-weight: 700; min-height: 1.4em; }
+
   /* ===== 編輯題庫 ===== */
   .ed-cat { border: 2px solid var(--navy); border-radius: 14px; background: #fff; padding: 10px 12px; margin-bottom: 12px; }
   .ed-cat .row { margin-bottom: 6px; }
@@ -143,6 +157,7 @@
       <button data-mode="home" class="on" type="button">🪙 命運選擇</button>
       <button data-mode="truth" type="button">💬 真心話</button>
       <button data-mode="dare" type="button">🎰 大冒險</button>
+      <button data-mode="pick" type="button">🎯 選號</button>
     </div>
 
     <!-- 首頁 -->
@@ -186,6 +201,21 @@
       <div class="dare-card hidden" id="dare-card"><div class="lab">YOUR MISSION</div><div><span class="tg" id="dare-tg"></span></div><div class="s" id="dare-s"></div></div>
       <div class="btns">
         <button class="big-btn dare" id="btn-dare" type="button">🎰 拉 霸！<span class="hint">也可以按空白鍵</span></button>
+      </div>
+    </div>
+    <!-- 選號（2026-10-21：簡單抽一個座號） -->
+    <div class="view hidden" id="v-pick">
+      <div class="pk-setup">
+        <label for="pk-cls"><b>班級</b></label>
+        <select id="pk-cls" class="cls-sel"></select>
+        <label for="pk-n"><b>全班人數</b></label>
+        <input id="pk-n" class="input num" type="number" min="1" max="99" inputmode="numeric">
+        <span>人</span>
+      </div>
+      <div class="pk-board" id="pk-board"><div class="d" id="pk-d">?</div><div class="u">號</div></div>
+      <div class="pk-msg" id="pk-msg">從 1 號到最後一號，隨機抽出一位</div>
+      <div class="btns">
+        <button class="big-btn" id="btn-pick" type="button">🎯 抽 一 個 號 碼<span class="hint">也可以按空白鍵</span></button>
       </div>
     </div>
   </section>
@@ -381,9 +411,10 @@ const DARE_TEACHER = [
   function go(m) {
     mode = m;
     document.querySelectorAll('#modes button').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
-    ['home', 'truth', 'dare'].forEach(x => $('v-' + x).classList.toggle('hidden', x !== m));
+    ['home', 'truth', 'dare', 'pick'].forEach(x => $('v-' + x).classList.toggle('hidden', x !== m));
     if (m === 'truth') renderCats();
     if (m === 'dare') renderOdds();
+    if (m === 'pick') renderPick();
   }
   document.querySelectorAll('#modes button').forEach(b => b.onclick = () => { if (!busy) go(b.dataset.mode); });
   document.querySelectorAll('.choice').forEach(c => {
@@ -518,11 +549,12 @@ const DARE_TEACHER = [
 
   document.addEventListener('keydown', e => {
     if (e.code !== 'Space' && e.key !== 'Enter') return;
-    if (!$('ed').classList.contains('hidden')) return;
+    if (document.querySelector('.modal-back:not(.hidden)')) return;
     const tag = (e.target.tagName || '').toLowerCase();
     if (['input', 'textarea', 'select', 'button', 'a'].includes(tag) || e.target.classList.contains('choice')) return;
     if (mode === 'truth') { e.preventDefault(); drawTruth(); }
     else if (mode === 'dare') { e.preventDefault(); spin(); }
+    else if (mode === 'pick') { e.preventDefault(); pickOne(); }
   });
 
   /* ---------- 編輯題庫 ---------- */
@@ -601,6 +633,32 @@ const DARE_TEACHER = [
     if (d.type !== 'wu-tod' || !Array.isArray(d.truth) || !Array.isArray(d.dare)) { A.toast('這不是真心話大冒險的題庫檔'); return; }
     draft = { truth: d.truth, dare: d.dare }; paintEditor(); A.toast('已載入，確認後按「儲存」');
   };
+
+  /* ---------- 選號：選班級帶入人數，也可以直接改人數 ---------- */
+  function renderPick() {
+    const d = A.classes.load();
+    $('pk-cls').innerHTML = A.classes.all().map(c => `<option value="${c.id}" ${c.id === d.cur ? 'selected' : ''}>${A.esc(c.name)}（${c.count} 人）</option>`).join('');
+    if (!$('pk-n').value) $('pk-n').value = A.classes.cur().count;
+  }
+  $('pk-cls').onchange = e => { A.classes.setCur(e.target.value); $('pk-n').value = A.classes.cur().count; };
+  async function pickOne() {
+    if (busy) return;
+    const n = Math.max(1, Math.min(99, parseInt($('pk-n').value, 10) || 0));
+    if (!parseInt($('pk-n').value, 10)) { A.toast('請先輸入全班人數'); $('pk-n').focus(); return; }
+    $('pk-n').value = n;
+    busy = true; $('btn-pick').disabled = true; A.sfx.unlock();
+    const ans = 1 + A.rand(n), b = $('pk-board'), d = $('pk-d');
+    b.classList.remove('locked'); b.classList.add('rolling'); $('pk-msg').textContent = '抽號中⋯⋯';
+    A.sfx.drumroll(1.5);
+    const gaps = A.easeTicks(1500, 45, 230);
+    for (let k = 0; k < gaps.length; k++) { d.textContent = 1 + A.rand(n); A.sfx.tick(k / gaps.length); await A.sleep(gaps[k]); }
+    d.textContent = ans; b.classList.remove('rolling'); void b.offsetWidth; b.classList.add('locked');
+    A.sfx.clunk(); await A.sleep(120); A.sfx.fanfare(); A.confetti({ count: 120 });
+    $('pk-msg').textContent = `就是你了，${ans} 號！（1～${n} 號）`;
+    busy = false; $('btn-pick').disabled = false;
+    $('btn-pick').firstChild.textContent = '🎯 再抽一個';
+  }
+  $('btn-pick').onclick = pickOne;
 
   A.toolbar($('toolbar'));
   renderCats(); renderOdds();

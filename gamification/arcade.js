@@ -319,5 +319,159 @@
     }
   }
 
-  window.Arcade = { store, rand, pick, shuffle, weighted, sleep, sfx, easeTicks, awake, toggleFullscreen, toast, confetti, toolbar, exportJSON, importJSON, esc, lines, hhmm, modal };
+  /* ---------- 共用班級（2026-10-21：三個工具共用） ----------
+     key wu-classes-v1：{ cur, list:{ id:{ name, count, boys:'1-18', girls:'19-35' } } }
+     各工具自己的班級資料（請假、輪次、紀錄）另外存，用同一個班級 id 對應 */
+  const CLASS_KEY = 'wu-classes-v1';
+  // 「1-18, 36」→ [1..18, 36]（只留 1～count，去重、排序）
+  function parseRange(str, count) {
+    const out = new Set();
+    String(str || '').replace(/[，、；;\s]+/g, ',').replace(/[－—~～到至]/g, '-').split(',').forEach(part => {
+      if (!part) return;
+      const m = part.match(/^(\d+)(?:-(\d+))?$/);
+      if (!m) return;
+      let a = +m[1], b = m[2] ? +m[2] : a;
+      if (a > b) [a, b] = [b, a];
+      for (let i = a; i <= b && i <= 200; i++) if (i >= 1 && (!count || i <= count)) out.add(i);
+    });
+    return [...out].sort((x, y) => x - y);
+  }
+  // [1..18, 36] → 「1-18, 36」
+  function toRange(nums) {
+    const a = [...new Set(nums)].sort((x, y) => x - y), out = [];
+    for (let i = 0; i < a.length; i++) {
+      let j = i; while (j + 1 < a.length && a[j + 1] === a[j] + 1) j++;
+      out.push(j > i ? `${a[i]}-${a[j]}` : `${a[i]}`); i = j;
+    }
+    return out.join(', ');
+  }
+  const classes = {
+    data: null,
+    load() {
+      if (this.data) return this.data;
+      let d = store.get(CLASS_KEY, null);
+      if (!d || !d.list || !Object.keys(d.list).length) {
+        d = { cur: 'c1', list: {} };
+        // 舊版選人系統的班級搬過來（id 不變，選人的請假／紀錄才對得上）
+        const old = store.get('wu-picker-v2', null);
+        if (old && old.classes) Object.entries(old.classes).forEach(([id, c]) => { d.list[id] = { name: c.name, count: c.count, boys: '', girls: '' }; });
+        if (old && old.cur && d.list[old.cur]) d.cur = old.cur;
+        if (!Object.keys(d.list).length) d.list.c1 = { name: '預設班級', count: 30, boys: '', girls: '' };
+        store.set(CLASS_KEY, d);
+      }
+      if (!d.list[d.cur]) d.cur = Object.keys(d.list)[0];
+      this.data = d; return d;
+    },
+    save() { store.set(CLASS_KEY, this.load()); },
+    curId() { return this.load().cur; },
+    cur() { const d = this.load(); return d.list[d.cur]; },
+    get(id) { return this.load().list[id]; },
+    all() { return Object.entries(this.load().list).map(([id, c]) => ({ id, ...c })); },
+    setCur(id) { const d = this.load(); if (d.list[id]) { d.cur = id; this.save(); } },
+    boys(c) { c = c || this.cur(); return parseRange(c.boys, c.count); },
+    girls(c) { c = c || this.cur(); return parseRange(c.girls, c.count); }
+  };
+  // 別的分頁改了班級，這一頁也跟著更新
+  addEventListener('storage', e => { if (e.key === CLASS_KEY) { classes.data = null; if (classBarRefresh) classBarRefresh(); } });
+
+  let classBarRefresh = null;
+  function ensureClassModal() {
+    if (document.getElementById('cls-modal')) return;
+    const div = document.createElement('div');
+    div.className = 'modal-back hidden'; div.id = 'cls-modal';
+    div.innerHTML = `
+      <div class="modal" style="max-width:480px">
+        <button class="btn sm close" type="button" data-close>✕</button>
+        <h2 id="clsm-title">新增班級</h2>
+        <p class="muted small" style="margin-bottom:12px;line-height:1.6">選人、陣亡詛咒、真心話大冒險三個工具共用這份班級資料。</p>
+        <div class="field"><label for="clsm-name">班級名稱</label><input class="input" id="clsm-name" maxlength="20" placeholder="例如：201、高一忠"></div>
+        <div class="field"><label for="clsm-count">全班人數（座號 1 到幾號）</label><input class="input num" id="clsm-count" type="number" min="1" max="60" value="30"></div>
+        <div class="field"><label for="clsm-boys">🙋‍♂️ 男生座號</label>
+          <div class="row"><input class="input" id="clsm-boys" placeholder="例如：1-18" style="flex:1"><button class="btn sm" type="button" data-fill="boys">其餘都是男生</button></div></div>
+        <div class="field"><label for="clsm-girls">🙋‍♀️ 女生座號</label>
+          <div class="row"><input class="input" id="clsm-girls" placeholder="例如：19-35" style="flex:1"><button class="btn sm" type="button" data-fill="girls">其餘都是女生</button></div>
+          <div class="help">用「-」表示從幾號到幾號；號碼沒連在一起就用逗號隔開，例如「1-18, 36」。不填也可以，只是不能用「僅抽男生／女生」。</div></div>
+        <div class="small" id="clsm-check" style="font-weight:700"></div>
+        <div class="foot"><button class="btn" type="button" data-close>取消</button><button class="btn navy" type="button" id="clsm-ok">儲存</button></div>
+      </div>`;
+    document.body.appendChild(div);
+    const $c = id => document.getElementById(id);
+    const check = () => {
+      const n = Math.max(1, Math.min(60, parseInt($c('clsm-count').value, 10) || 0));
+      const b = parseRange($c('clsm-boys').value, n), g = parseRange($c('clsm-girls').value, n);
+      const both = b.filter(x => g.includes(x));
+      const none = []; for (let i = 1; i <= n; i++) if (!b.includes(i) && !g.includes(i)) none.push(i);
+      let msg = `男生 ${b.length} 人・女生 ${g.length} 人`, warn = false;
+      if (both.length) { msg += `　⚠️ ${toRange(both)} 號同時是男生和女生`; warn = true; }
+      if ((b.length || g.length) && none.length) msg += `　（${toRange(none)} 號沒有填性別）`;
+      $c('clsm-check').textContent = msg; $c('clsm-check').style.color = warn ? '#b3261e' : 'var(--muted)';
+    };
+    ['clsm-count', 'clsm-boys', 'clsm-girls'].forEach(id => $c(id).addEventListener('input', check));
+    div.querySelectorAll('[data-fill]').forEach(btn => btn.onclick = () => {
+      const n = Math.max(1, Math.min(60, parseInt($c('clsm-count').value, 10) || 30));
+      const other = parseRange($c(btn.dataset.fill === 'boys' ? 'clsm-girls' : 'clsm-boys').value, n);
+      const rest = []; for (let i = 1; i <= n; i++) if (!other.includes(i)) rest.push(i);
+      $c('clsm-' + btn.dataset.fill).value = toRange(rest); check();
+    });
+    div.querySelectorAll('[data-close]').forEach(b => b.onclick = () => modal(div, false));
+    div._check = check;
+  }
+  // 班級列：選擇班級＋新增／修改／刪除；onChange(id) 在換班或改資料後呼叫
+  function classBar(el, opt) {
+    const o = opt || {};
+    ensureClassModal();
+    const $c = id => document.getElementById(id);
+    let editing = null;
+    function paint() {
+      const d = classes.load();
+      el.innerHTML = `
+        <label class="small" for="cls-sel"><b>班級</b></label>
+        <select id="cls-sel" class="cls-sel" aria-label="選擇班級">${classes.all().map(c => `<option value="${c.id}" ${c.id === d.cur ? 'selected' : ''}>${esc(c.name)}（${c.count} 人）</option>`).join('')}</select>
+        <button class="btn sm" type="button" data-act="add">＋ 新增班級</button>
+        <button class="btn sm ghost" type="button" data-act="edit">✏️ 修改</button>
+        ${o.noDelete ? '' : `<button class="btn sm ghost" type="button" data-act="del" ${classes.all().length <= 1 ? 'disabled' : ''}>🗑️ 刪除</button>`}`;
+      el.querySelector('#cls-sel').onchange = e => { classes.setCur(e.target.value); if (o.onChange) o.onChange(e.target.value); };
+      el.querySelector('[data-act=add]').onclick = () => open(null);
+      el.querySelector('[data-act=edit]').onclick = () => open(classes.curId());
+      const del = el.querySelector('[data-act=del]');
+      if (del) del.onclick = () => {
+        if (classes.all().length <= 1) return;
+        const c = classes.cur();
+        if (!confirm(`確定刪除「${c.name}」？三個工具裡這個班的請假、紀錄、待執行詛咒都會一起刪掉。`)) return;
+        const id = classes.curId(); delete classes.load().list[id];
+        classes.load().cur = Object.keys(classes.load().list)[0]; classes.save();
+        if (o.onDelete) o.onDelete(id);
+        paint(); if (o.onChange) o.onChange(classes.curId());
+      };
+    }
+    function open(id) {
+      editing = id;
+      const c = id ? classes.get(id) : null;
+      $c('clsm-title').textContent = id ? '修改班級' : '新增班級';
+      $c('clsm-name').value = c ? c.name : '';
+      $c('clsm-count').value = c ? c.count : ((classes.cur() || {}).count || 30);
+      $c('clsm-boys').value = c ? (c.boys || '') : '';
+      $c('clsm-girls').value = c ? (c.girls || '') : '';
+      $c('cls-modal')._check();
+      $c('clsm-ok').onclick = () => {
+        const count = Math.max(1, Math.min(60, parseInt($c('clsm-count').value, 10) || 30));
+        const rec = {
+          name: $c('clsm-name').value.trim() || '未命名班級', count,
+          boys: toRange(parseRange($c('clsm-boys').value, count)),
+          girls: toRange(parseRange($c('clsm-girls').value, count))
+        };
+        const d = classes.load();
+        if (editing) Object.assign(d.list[editing], rec);
+        else { const nid = 'c' + Date.now().toString(36); d.list[nid] = rec; d.cur = nid; }
+        classes.save(); modal($c('cls-modal'), false); paint();
+        if (o.onChange) o.onChange(classes.curId());
+      };
+      modal($c('cls-modal'), true);
+      setTimeout(() => $c('clsm-name').focus(), 50);
+    }
+    classBarRefresh = () => { paint(); if (o.onChange) o.onChange(classes.curId()); };
+    paint();
+  }
+
+  window.Arcade = { store, rand, pick, shuffle, weighted, sleep, sfx, easeTicks, awake, toggleFullscreen, toast, confetti, toolbar, exportJSON, importJSON, esc, lines, hhmm, modal, classes, classBar, parseRange, toRange };
 })();

@@ -853,18 +853,23 @@ fp/
 - ⚠️ 需要在 Firebase 後台手動做（程式碼無法代勞）：啟用 Email/Password 登入、建立爸爸帳號、登記 `fp/admins/<UID>`、貼上並發布規則。步驟見 `family-points/SETUP.md`。
 - 備份：「備份/帳號」分頁可匯出 CSV。
 
-### 🎲 課堂遊戲化三工具（gamification/picker.html、curse.html、truth-or-dare.html，2026-10-21 改版）
+### 🎲 課堂遊戲化三工具（gamification/picker.html、curse.html、truth-or-dare.html，2026-10-21 改版＋老師第一輪調整）
 
-- **老師頁**（老師拿來投影），右上角有「🏠 回事務所首頁」；三個工具各自獨立、不互相串連（老師決定）
-- **共用核心 `arcade.js`（`window.Arcade`）**：`store`（localStorage，讀寫失敗不會壞）、`sfx`（tick／clunk／drumroll／fanfare／doom／magic／whoosh／blip，Web Audio 合成，第一次點擊時解鎖）、`easeTicks(總毫秒, 最快, 最慢)` 產生「越轉越慢」的間隔、`rand`（crypto，避免舊版 `sort(() => Math.random() - 0.5)` 不均勻的問題）、`shuffle`、`weighted`、`confetti`、`awake`（Wake Lock＋隱形影片後備，切回分頁自動重新申請）、`toolbar`、`exportJSON`／`importJSON`、`modal`
-- **資料**：全部存在這台裝置的瀏覽器（localStorage），不用 Firebase。key：`wu-picker-v2`、`wu-curse-v2`、`wu-tod-v2`（以及 `wu-game-sound`、`wu-game-awake`、`*-side-hidden`）。存檔壞掉或第一次打開就用預設值
-- **選人** `wu-picker-v2`：`{ weights:{one,two,three,all,girls,boys,odd,even}, noRepeat, fast, cur, classes:{ id:{ name, count, absent:[座號], rested:[這一輪抽過], hist:[{t,m,r}] } } }`
-  - 比重不必湊 100，自動換算；全部 0 時不能抽
-  - 不重複：`rested` 記這一輪抽過的人；剩下的人不夠時，先把剩下的全抽、再開新一輪補滿（同一次不會抽到同一人）
-  - 男生／女生沒有性別資料，只顯示「全體女生／男生」；奇數／偶數會在座號條亮出出席的座號
-- **詛咒** `wu-curse-v2`：`{ curses:[文字], revives:[文字], hist:[{time,who,t,rv}] }`；每張牌等機率；牌桌最多畫 24 張（牌只是動畫，結果先抽好再讓燈光停在隨機一張）；開頭表情符號用 `\p{Extended_Pictographic}` 拆出來當圖示
-- **真心話大冒險** `wu-tod-v2`：`{ truth:[{name, qs:[題目]}], dare:[{id, label, w, items:[{type, task, sentence}]}] }`；預設題庫寫在檔案最上面的 `TRUTH_DEFAULT`、`DARE_SELF/FIND/RANDOM/TEACHER`（舊版原文）；編輯器一行一個任務，`類型｜短名｜完整指令`（全形／半形直線都可）
-- 拉霸機：每條轉輪放 22～27 個隨機字＋最後一格答案，用 CSS `transform` 加 `cubic-bezier` 減速捲到最後一格，三條分別 1.6／2.4／3.3 秒停
+- **老師頁**（老師拿來投影），右上角有「🏠 回事務所首頁」；三個工具各自獨立、不互相串連（老師決定），但**班級資料共用**
+- **共用核心 `arcade.js`（`window.Arcade`）**：`store`（localStorage，讀寫失敗不會壞）、`sfx`（tick／clunk／drumroll／fanfare／doom／magic／whoosh／blip，Web Audio 合成，第一次點擊時解鎖）、`easeTicks(總毫秒, 最快, 最慢)` 產生「越轉越慢」的間隔、`rand`（crypto）、`shuffle`、`weighted`、`confetti`、`awake`（Wake Lock＋隱形影片後備）、`toolbar`、`exportJSON`／`importJSON`、`modal`
+- **共用班級 `Arcade.classes`**（key `wu-classes-v1`）：`{ cur, list:{ id:{ name, count, boys:'1-18', girls:'19-35, 36' } } }`；`classBar(el, {onChange, onDelete})` 畫班級列與設定視窗（三頁共用同一份，目前選的班級也共用）；`parseRange('1-18, 36', count)`／`toRange([...])` 互轉；別的分頁改了班級會透過 `storage` 事件同步。各工具自己的班級資料用同一個 id 另存
+- **資料**：全部存在這台裝置的瀏覽器（localStorage），不用 Firebase。key：`wu-classes-v1`、`wu-picker-v2`、`wu-curse-v2`、`wu-tod-v2`（以及 `wu-game-sound`、`wu-game-awake`、`*-side-hidden`）
+- **選人** `wu-picker-v2`：`{ noRepeat, fast, per:{ 班級id:{ absent, rested, hist:[{t,m,r}] } } }`
+  - 按鈕：🎲 綜合（`MIX` 比重寫死：抽 1／2／3 名 50／25／12、全班 1、全體女生／男生／奇數／偶數各 3）、抽一位／兩位／三位、僅抽女生／男生（各一位）；空白鍵重按上一個按鈕
+  - 不重複：`rested` 記這一輪抽過的人；`chooseSeats(n, sex)` 在「候選人」（全班或某性別）裡先抽還沒抽過的，不夠時只把這群候選人重新一輪再補滿
+  - 群體結果（全體女生／男生、奇偶數）會在座號條亮出出席的座號
+- **詛咒** `wu-curse-v2`：`{ curses:[文字], revives:[文字], recs:{ 班級id:[{ id, d:'10/21', time, who, t }] } }`
+  - 每張牌等機率；牌桌最多畫 24 張（結果先抽好再讓燈光停在隨機一張）
+  - `autoIcon(line, revive)`：開頭沒有表情符號時依 `ICONS` 關鍵字表（由上往下先對到先用）補一個，找不到用 💀／🍀；儲存清單與載入時都會跑
+  - 只有詛咒會進「⏳ 待執行」（復活不列），「✅ 完成」直接刪除該筆
+- **真心話大冒險** `wu-tod-v2`：`{ truth:[{name, qs:[題目]}], dare:[{id, label, w, items:[{type, task, sentence}]}] }`；預設題庫寫在檔案最上面的 `TRUTH_DEFAULT`、`DARE_SELF/FIND/RANDOM/TEACHER`（舊版原文）；編輯器一行一個任務，`類型｜短名｜完整指令`
+  - 🎯 選號分頁：選班級帶入人數（`A.classes`），人數可直接改，抽 1～n 其中一號（不記錄、不排除請假）
+- 拉霸機：每條轉輪放 22～27 個隨機字＋最後一格答案，CSS `transform`＋`cubic-bezier` 減速，三條分別 1.6／2.4／3.3 秒停
 - 硬幣：`--turns` 奇數圈停在背面（大冒險）、偶數圈停在正面（真心話）
 
 ### 🧹 打掃徵才 v4
@@ -1060,6 +1065,14 @@ fp/
 - **音效不用音檔**：Web Audio 現場合成，檔案小、不會載入失敗；iPad 一定要「使用者先點一下」才會出聲，所以在按抽的當下 `sfx.unlock()`
 - **題庫編輯用「一行一個」的大文字框**：比一格一格新增刪除快很多，老師可以直接從 Word／Google 文件貼整段進來；換裝置用匯出／匯入 JSON
 - **同一個 `deck` 的牌桌排版**：牌數不固定（老師會增刪），用 flex 換行＋依牌數算卡寬（最多 2～3 排、最後一排置中），避免最後一排只剩一張
+
+### 7-20 課堂遊戲化・老師第一輪調整（2026-10-21）
+- **老師要的是「按了就抽」不是「調機率」**：上課當下沒空調數字，把常用抽法做成按鈕，比重寫死；「綜合」保留原本的驚喜感（偶爾全班、全體女生）
+- **性別用座號範圍記最省事**：台灣班級座號多半男生在前、女生在後，填「1-18」再按「其餘都是女生」就好；轉學生在最後就寫「1-18, 36」
+- **不重複遇到性別篩選**：女生都抽過一輪時，只把女生從「已抽過」移掉，男生的輪次不受影響
+- **班級共用要注意舊資料搬家**：舊選人系統的班級原本存在 `wu-picker-v2` 裡，第一次打開新版時 `Arcade.classes.load()` 用同一個 id 搬到 `wu-classes-v1`，選人的請假／紀錄才對得上
+- **自動配圖示要可被老師覆蓋**：開頭已經有表情符號就不動；想換就刪掉圖示再儲存。關鍵字表由具體到籠統排序（「掃地」要比「走」先比對）
+- **待執行清單只放詛咒**：復活不需要追蹤，放進來只會讓老師多按一次刪除
 
 ## 8. 已知注意事項
 
