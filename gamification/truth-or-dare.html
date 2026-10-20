@@ -1,334 +1,232 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🎲 真心話大冒險</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
-    :root {
-      --truth: #4f46e5;
-      --truth-dark: #3730a3;
-      --dare: #dc2626;
-      --dare-dark: #991b1b;
-      --bg: #0f0f1a;
-      --card: #1a1a2e;
-      --text: #f1f5f9;
-      --sub: #94a3b8;
-      --gold: #fbbf24;
-      --radius: 18px;
-    }
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body {
-      font-family: 'Noto Sans TC','Microsoft JhengHei',sans-serif;
-      background: var(--bg); color: var(--text);
-      min-height: 100vh; overflow-x: hidden;
-    }
-    #canvas-bg {
-      position:fixed; inset:0;
-      pointer-events:none; z-index:0; opacity:0.35;
-    }
-    .screen {
-      position:relative; z-index:1;
-      display:none; min-height:100vh;
-      padding:24px 20px;
-      flex-direction:column; align-items:center; justify-content:center;
-    }
-    .screen.active { display:flex; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>🎲 真心話大冒險｜巫魚子教課事務所</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="arcade.css">
+<style>
+  :root { --accent: #e4572e; --truth: #1f9e8f; --truth-soft: #e3f4f1; --dare: #e4572e; --dare-soft: #fde8e1; }
 
-    /* ===== 首頁 ===== */
-    #screen-home { text-align:center; gap:0; }
-    .home-eyebrow {
-      font-size:0.85rem; color:var(--sub);
-      letter-spacing:0.4em; margin-bottom:20px;
-    }
-    /* 標題：真心話 大冒險 全部同樣大小 */
-    .home-main {
-      font-size: clamp(2.6rem, 9vw, 4.2rem);
-      font-weight:900; line-height:1.1;
-      margin-bottom:12px;
-      display:flex; flex-direction:column; align-items:center; gap:0;
-    }
-    .home-main .row1 { display:flex; gap:0.08em; }
-    .home-main .row2 { display:flex; gap:0.08em; }
-    .t { color:var(--truth); }
-    .d { color:var(--dare); }
-    .home-sub { color:var(--sub); font-size:0.95rem; margin-bottom:52px; }
+  .modes { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .modes button {
+    border: 2.5px solid var(--navy); background: #fff; border-radius: 999px; padding: 7px 18px; font-weight: 900; cursor: pointer;
+    box-shadow: 3px 3px 0 var(--navy); font-size: 1em;
+  }
+  .modes button.on { background: var(--navy); color: #fff; }
+  .modes button:active { transform: translate(3px, 3px); box-shadow: none; }
+  .view { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 18px; }
 
-    /* 返回按鈕 */
-    .back-btn {
-      align-self:flex-start;
-      background:none; border:1.5px solid rgba(255,255,255,0.2);
-      color:var(--sub); font-family:inherit;
-      padding:6px 16px; border-radius:20px;
-      cursor:pointer; font-size:0.85rem; margin-bottom:32px;
-      transition:all 0.2s; text-decoration:none; display:inline-block;
-    }
-    .back-btn:hover { border-color:rgba(255,255,255,0.5); color:white; }
+  /* ===== 首頁：兩個大選擇 ===== */
+  .choices { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(14px, 3vw, 28px); width: 100%; max-width: 820px; }
+  @media (max-width: 560px) { .choices { grid-template-columns: 1fr; } }
+  .choice {
+    border: 3px solid var(--navy); border-radius: 22px; padding: 26px 18px 22px; cursor: pointer; text-align: center;
+    box-shadow: 7px 7px 0 var(--navy); transition: transform .1s, box-shadow .1s; color: var(--navy);
+  }
+  .choice:hover { transform: translate(-2px, -2px); box-shadow: 9px 9px 0 var(--navy); }
+  .choice:active { transform: translate(7px, 7px); box-shadow: 0 0 0 var(--navy); }
+  .choice.t { background: var(--truth-soft); } .choice.d { background: var(--dare-soft); }
+  .choice .e { font-size: clamp(3.2em, 9vw, 4.6em); line-height: 1.1; }
+  .choice .n { font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: clamp(1.8em, 5vw, 2.6em); letter-spacing: .15em; margin-top: 6px; }
+  .choice .s { color: var(--muted); margin-top: 4px; font-size: .95em; }
 
-    /* 返回工具箱（首頁用） */
-    .home-back {
-      position:absolute; top:20px; left:20px;
-    }
+  /* 命運硬幣 */
+  .coin-zone { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .coin { width: 120px; height: 120px; perspective: 600px; }
+  .coin-in { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; }
+  .coin-f { position: absolute; inset: 0; border-radius: 50%; display: grid; place-items: center; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    border: 4px solid var(--navy); font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: 2.6em; box-shadow: inset 0 0 0 6px rgba(255,255,255,.5); }
+  .coin-f.a { background: var(--truth); color: #fff; }
+  .coin-f.b { background: var(--dare); color: #fff; transform: rotateY(180deg); }
+  @keyframes coinflip { from { transform: rotateY(0) translateY(0); } 50% { transform: rotateY(calc(var(--turns) * 90deg)) translateY(-60px); } to { transform: rotateY(calc(var(--turns) * 180deg)) translateY(0); } }
+  .coin-in.flipping { animation: coinflip 1.8s cubic-bezier(.25,.6,.3,1) forwards; }
 
-    /* 選擇卡 */
-    .choice-grid {
-      display:grid; grid-template-columns:1fr 1fr;
-      gap:20px; width:100%; max-width:520px;
-    }
-    .choice-btn {
-      border:none; cursor:pointer; border-radius:var(--radius);
-      padding:36px 20px; font-family:inherit;
-      transition:transform 0.18s, box-shadow 0.18s;
-      position:relative; overflow:hidden;
-    }
-    .choice-btn::before {
-      content:''; position:absolute; inset:0;
-      opacity:0; transition:opacity 0.2s;
-      background:rgba(255,255,255,0.08);
-    }
-    .choice-btn:hover::before { opacity:1; }
-    .choice-btn:hover { transform:translateY(-4px); box-shadow:0 16px 40px rgba(0,0,0,0.5); }
-    .btn-truth { background:linear-gradient(145deg,#4f46e5,#3730a3); }
-    .btn-dare  { background:linear-gradient(145deg,#dc2626,#991b1b); }
-    .choice-icon  { font-size:3rem; margin-bottom:14px; display:block; }
-    .choice-label { font-size:1.5rem; font-weight:900; color:white; display:block; }
-    .choice-desc  { font-size:0.8rem; color:rgba(255,255,255,0.6); display:block; margin-top:8px; }
+  /* ===== 真心話 ===== */
+  .cats { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 900px; }
+  .cat {
+    border: 2px solid var(--navy); background: #fff; border-radius: 12px; padding: 6px 12px; cursor: pointer; font-weight: 700;
+    display: inline-flex; align-items: center; gap: 6px; font-size: .95em;
+  }
+  .cat small { color: var(--muted); font-weight: 500; }
+  .cat.on { background: var(--truth); color: #fff; border-color: var(--navy); box-shadow: 3px 3px 0 var(--navy); }
+  .cat.on small { color: rgba(255,255,255,.8); }
 
-    /* ===== 通用內頁版頭 ===== */
-    .section-head { text-align:center; margin-bottom:28px; width:100%; }
-    .section-badge {
-      display:inline-block; background:var(--truth);
-      color:white; font-size:0.78rem;
-      padding:4px 14px; border-radius:20px;
-      letter-spacing:0.15em; margin-bottom:12px;
-    }
-    .section-badge.dare-badge { background:var(--dare); }
-    .section-title { font-size:1.6rem; font-weight:900; margin-bottom:6px; }
-    .section-desc  { color:var(--sub); font-size:0.88rem; }
+  .deck { position: relative; width: min(640px, 94%); min-height: 280px; perspective: 1400px; }
+  .deck .pile { position: absolute; inset: 0; border-radius: 22px; border: 3px solid var(--navy); background: var(--truth);
+    background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.12) 0 10px, transparent 10px 20px); }
+  .deck .pile:nth-child(1) { transform: rotate(-4deg) translate(-6px, 6px); }
+  .deck .pile:nth-child(2) { transform: rotate(3deg) translate(6px, 4px); }
+  .deck.shuffle .pile:nth-child(1) { animation: pileL .5s ease-in-out 2; }
+  .deck.shuffle .pile:nth-child(2) { animation: pileR .5s ease-in-out 2; }
+  @keyframes pileL { 50% { transform: rotate(-12deg) translate(-70px, 0); } }
+  @keyframes pileR { 50% { transform: rotate(12deg) translate(70px, 0); } }
+  .qcard { position: relative; width: 100%; min-height: 280px; transform-style: preserve-3d; transition: transform .8s cubic-bezier(.3,1.2,.5,1); }
+  .qcard.open { transform: rotateY(180deg); }
+  .qface { position: absolute; inset: 0; border-radius: 22px; border: 3px solid var(--navy); backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px 26px; }
+  .qface.b { background: var(--truth); color: #fff; font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: 2.4em; letter-spacing: .3em;
+    background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.12) 0 10px, transparent 10px 20px); box-shadow: 6px 6px 0 var(--navy); }
+  .qface.f { background: #fff; transform: rotateY(180deg); box-shadow: 6px 6px 0 var(--truth); gap: 14px; }
+  .qtag { display: inline-block; background: var(--truth-soft); color: #13685e; border: 2px solid var(--truth); border-radius: 999px; padding: 2px 14px; font-weight: 900; font-size: .95em; }
+  .qtext { font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: clamp(1.3em, 3.4vw, 2em); line-height: 1.55; letter-spacing: .03em; }
+  .qleft { color: var(--muted); font-size: .82em; }
 
-    /* ===== 真心話 ===== */
-    #screen-truth { gap:0; justify-content:flex-start; padding-top:40px; }
-    .cat-grid {
-      display:grid;
-      grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
-      gap:12px; width:100%; max-width:640px; margin-bottom:28px;
-    }
-    .cat-btn {
-      background:var(--card); border:2px solid transparent;
-      border-radius:14px; padding:18px 12px;
-      text-align:center; cursor:pointer;
-      font-family:inherit; color:var(--text); transition:all 0.18s;
-    }
-    .cat-btn:hover { border-color:var(--truth); background:rgba(79,70,229,0.15); }
-    .cat-btn.selected { border-color:var(--truth); background:rgba(79,70,229,0.25); }
-    .cat-icon  { font-size:1.8rem; display:block; margin-bottom:8px; }
-    .cat-name  { font-size:0.9rem; font-weight:700; }
-    .cat-count { font-size:0.75rem; color:var(--sub); margin-top:4px; }
+  /* ===== 大冒險拉霸機 ===== */
+  .slot {
+    width: min(860px, 100%); border-radius: 26px; padding: 18px 16px 20px; border: 3px solid var(--navy);
+    background: linear-gradient(180deg, #2b3657 0%, var(--navy) 100%); box-shadow: 7px 7px 0 var(--mustard); position: relative;
+  }
+  .lights { display: flex; justify-content: space-between; padding: 0 10px 10px; }
+  .lights i { width: 12px; height: 12px; border-radius: 50%; background: #5b647d; display: block; }
+  .slot.run .lights i { animation: blink .4s infinite alternate; }
+  .slot.run .lights i:nth-child(even) { animation-delay: .2s; }
+  .slot.win .lights i { background: var(--mustard); box-shadow: 0 0 10px var(--mustard); animation: blink .15s infinite alternate; }
+  @keyframes blink { from { background: #5b647d; box-shadow: none; } to { background: var(--mustard); box-shadow: 0 0 10px var(--mustard); } }
+  .reels { display: grid; grid-template-columns: 1fr 1fr 1.6fr; gap: 10px; }
+  @media (max-width: 560px) { .reels { grid-template-columns: 1fr; } .window { --h: 66px; } }
+  .reel-label { color: var(--mustard); font-family: 'Noto Serif TC', serif; font-weight: 900; text-align: center; letter-spacing: .12em; margin-bottom: 6px; font-size: .95em; }
+  .window {
+    --h: 92px; height: var(--h); overflow: hidden; border-radius: 14px; background: #fff; border: 3px solid #0d1426; position: relative;
+    box-shadow: inset 0 10px 14px -8px rgba(0,0,0,.45), inset 0 -10px 14px -8px rgba(0,0,0,.45);
+  }
+  .window::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 2px; background: rgba(228,87,46,.35); }
+  .strip { will-change: transform; }
+  .strip div {
+    height: var(--h); display: flex; align-items: center; justify-content: center; text-align: center; padding: 0 10px;
+    font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: clamp(1.05em, 2.6vw, 1.45em); line-height: 1.3; color: var(--navy);
+  }
+  .window.locked { border-color: var(--mustard); box-shadow: 0 0 0 3px var(--mustard), 0 0 18px rgba(242,177,52,.7); }
+  .window.locked .strip div:last-child { background: var(--mustard-soft); }
+  .odds { color: rgba(255,255,255,.7); text-align: center; font-size: .85em; margin-top: 12px; }
 
-    .draw-btn {
-      background:linear-gradient(135deg,var(--truth),var(--truth-dark));
-      color:white; border:none;
-      padding:16px 48px; border-radius:50px;
-      font-size:1.1rem; font-weight:900;
-      font-family:inherit; cursor:pointer; transition:all 0.2s;
-      letter-spacing:0.1em;
-    }
-    .draw-btn:hover { opacity:0.88; transform:translateY(-2px); box-shadow:0 8px 24px rgba(79,70,229,0.4); }
-    .draw-btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; box-shadow:none; }
-    .draw-btn.dare-draw { background:linear-gradient(135deg,var(--dare),var(--dare-dark)); }
-    .draw-btn.dare-draw:hover { box-shadow:0 8px 24px rgba(220,38,38,0.4); }
+  .dare-card {
+    width: min(860px, 100%); border-radius: 22px; border: 3px solid var(--navy); background: #fff; box-shadow: 6px 6px 0 var(--dare);
+    padding: 20px 24px; text-align: center;
+  }
+  .dare-card .lab { font-family: 'Bebas Neue', sans-serif; letter-spacing: .25em; color: var(--dare); }
+  .dare-card .tg { display: inline-block; background: var(--dare); color: #fff; font-weight: 900; border-radius: 999px; padding: 2px 16px; margin: 6px 0 10px; font-size: 1.05em; }
+  .dare-card .s { font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: clamp(1.25em, 3.2vw, 1.85em); line-height: 1.6; }
 
-    .question-card {
-      display:none; width:100%; max-width:520px;
-      background:linear-gradient(145deg,#1e1e35,#16162a);
-      border:2px solid rgba(79,70,229,0.4);
-      border-radius:24px; padding:36px 32px;
-      text-align:center; margin-top:24px;
-      animation:cardIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
-    }
-    .question-card.show { display:block; }
-    @keyframes cardIn {
-      from { transform:scale(0.85) translateY(20px); opacity:0; }
-      to   { transform:scale(1) translateY(0); opacity:1; }
-    }
-    .q-category-tag {
-      display:inline-block; font-size:0.75rem; letter-spacing:0.15em;
-      color:rgba(255,255,255,0.5); background:rgba(255,255,255,0.08);
-      padding:4px 12px; border-radius:12px; margin-bottom:20px;
-    }
-    .q-text {
-      font-size:clamp(1.1rem,3vw,1.4rem); font-weight:700;
-      line-height:1.7; color:white; margin-bottom:28px;
-    }
-    .q-again-btn {
-      background:none; border:1.5px solid rgba(255,255,255,0.25);
-      color:var(--sub); font-family:inherit;
-      padding:8px 24px; border-radius:20px;
-      cursor:pointer; font-size:0.85rem; transition:all 0.2s;
-    }
-    .q-again-btn:hover { border-color:rgba(255,255,255,0.6); color:white; }
+  .btns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; width: 100%; }
+  .btns .big-btn { width: min(520px, 100%); }
+  .big-btn.truth { background: var(--truth); color: #fff; }
+  .big-btn.dare { background: var(--dare); color: #fff; }
 
-    /* ===== 大冒險 ===== */
-    #screen-dare { gap:0; justify-content:flex-start; padding-top:40px; }
-
-    .slots-wrapper { width:100%; max-width:560px; margin:0 auto 24px; }
-    .slots-row {
-      display:grid; grid-template-columns:1fr 1fr 1fr;
-      gap:12px; margin-bottom:12px;
-    }
-    .slot-col { text-align:center; }
-    .slot-label { font-size:0.75rem; letter-spacing:0.15em; color:var(--sub); margin-bottom:8px; }
-    .slot-window {
-      background:#0a0a15;
-      border:2px solid rgba(255,255,255,0.12);
-      border-radius:14px; height:88px;
-      overflow:hidden; position:relative;
-      display:flex; align-items:center; justify-content:center;
-    }
-    .slot-window.locked { border-color:var(--gold); box-shadow:0 0 16px rgba(251,191,36,0.3); }
-    .slot-value {
-      font-size:clamp(0.82rem,2.2vw,1rem);
-      font-weight:700; color:white;
-      line-height:1.3; text-align:center; padding:6px;
-      transition:opacity 0.1s;
-    }
-    .slot-value.flash { opacity:0.2; }
-
-    .dare-result-card {
-      display:none; width:100%; max-width:520px;
-      background:linear-gradient(145deg,#2a1010,#1a0a0a);
-      border:2px solid rgba(220,38,38,0.45);
-      border-radius:24px; padding:32px 28px;
-      text-align:center; margin:0 auto 20px;
-      animation:cardIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
-    }
-    .dare-result-card.show { display:block; }
-    .dare-result-label {
-      font-size:0.75rem; letter-spacing:0.2em;
-      color:rgba(255,255,255,0.4); margin-bottom:14px;
-    }
-    .dare-result-text {
-      font-size:clamp(1.1rem,3.5vw,1.5rem);
-      font-weight:900; color:white; line-height:1.6;
-    }
-    .dare-result-text .hl { color:var(--dare); }
-
-    .prob-hint {
-      text-align:center; font-size:0.75rem;
-      color:rgba(255,255,255,0.3); margin-bottom:20px;
-    }
-
-    @media(max-width:480px){
-      .choice-grid { gap:14px; }
-      .choice-btn { padding:28px 14px; }
-      .choice-icon { font-size:2.4rem; }
-      .choice-label { font-size:1.25rem; }
-      .cat-grid { grid-template-columns:repeat(3,1fr); }
-    }
-  </style>
+  /* ===== 編輯題庫 ===== */
+  .ed-cat { border: 2px solid var(--navy); border-radius: 14px; background: #fff; padding: 10px 12px; margin-bottom: 12px; }
+  .ed-cat .row { margin-bottom: 6px; }
+  .ed-cat .input.name { flex: 1; min-width: 160px; font-weight: 700; }
+  .ed-cat textarea { min-height: 150px; }
+  .ed-cnt { color: var(--muted); font-size: .82em; }
+</style>
 </head>
 <body>
-<canvas id="canvas-bg"></canvas>
+<div class="wrap">
+  <header class="topbar">
+    <div class="badge">🎲</div>
+    <div class="titles">
+      <div class="eyebrow">DRAWER II · 課堂遊戲化 · TRUTH OR DARE</div>
+      <h1>真心話<span class="hl">大冒險</span></h1>
+    </div>
+    <div class="actions">
+      <button class="btn sm navy" id="btn-edit" type="button">✏️ 編輯題庫</button>
+      <span id="toolbar" class="actions"></span>
+    </div>
+  </header>
 
-<!-- ===== 首頁 ===== -->
-<div class="screen active" id="screen-home">
-  <a class="back-btn home-back" href="../index.html">← 返回工具箱</a>
-  <p class="home-eyebrow">巫魚子班級遊戲</p>
-  <div class="home-main">
-    <div class="row1">
-      <span class="t">真</span><span class="t">心</span><span class="t">話</span>
+  <section class="stage" id="stage">
+    <div class="modes" id="modes">
+      <button data-mode="home" class="on" type="button">🪙 命運選擇</button>
+      <button data-mode="truth" type="button">💬 真心話</button>
+      <button data-mode="dare" type="button">🎰 大冒險</button>
     </div>
-    <div class="row2">
-      <span class="d">大</span><span class="d">冒</span><span class="d">險</span>
+
+    <!-- 首頁 -->
+    <div class="view" id="v-home">
+      <div class="choices">
+        <div class="choice t" data-go="truth" role="button" tabindex="0"><div class="e">💬</div><div class="n">真心話</div><div class="s">抽一個問題，說出真心想法</div></div>
+        <div class="choice d" data-go="dare" role="button" tabindex="0"><div class="e">🎰</div><div class="n">大冒險</div><div class="s">拉霸機決定你的挑戰</div></div>
+      </div>
+      <div class="coin-zone">
+        <div class="coin"><div class="coin-in" id="coin"><div class="coin-f a">真</div><div class="coin-f b">冒</div></div></div>
+        <button class="btn mustard" id="btn-coin" type="button">🪙 不敢選？讓命運丟硬幣決定</button>
+      </div>
     </div>
-  </div>
-  <p class="home-sub">選擇你的挑戰方式</p>
-  <div class="choice-grid">
-    <button class="choice-btn btn-truth" onclick="goTo('truth')">
-      <span class="choice-icon">💬</span>
-      <span class="choice-label">真心話</span>
-      <span class="choice-desc">按主題抽題，說出真心想法</span>
-    </button>
-    <button class="choice-btn btn-dare" onclick="goTo('dare')">
-      <span class="choice-icon">🎰</span>
-      <span class="choice-label">大冒險</span>
-      <span class="choice-desc">拉霸決定你的命運</span>
-    </button>
+
+    <!-- 真心話 -->
+    <div class="view hidden" id="v-truth">
+      <div class="cats" id="cats"></div>
+      <div class="deck" id="deck">
+        <div class="pile"></div><div class="pile"></div>
+        <div class="qcard" id="qcard">
+          <div class="qface b">真心話</div>
+          <div class="qface f"><span class="qtag" id="qtag"></span><div class="qtext" id="qtext"></div><div class="qleft" id="qleft"></div></div>
+        </div>
+      </div>
+      <div class="btns">
+        <button class="big-btn truth" id="btn-truth" type="button">💬 抽 出 問 題<span class="hint">也可以按空白鍵</span></button>
+      </div>
+    </div>
+
+    <!-- 大冒險 -->
+    <div class="view hidden" id="v-dare">
+      <div class="slot" id="slot">
+        <div class="lights"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="reels">
+          <div><div class="reel-label">🎯 對象</div><div class="window" id="w0"><div class="strip" id="s0"><div>？</div></div></div></div>
+          <div><div class="reel-label">⚡ 挑戰類型</div><div class="window" id="w1"><div class="strip" id="s1"><div>？</div></div></div></div>
+          <div><div class="reel-label">🎪 任務</div><div class="window" id="w2"><div class="strip" id="s2"><div>？</div></div></div></div>
+        </div>
+        <div class="odds" id="odds"></div>
+      </div>
+      <div class="dare-card hidden" id="dare-card"><div class="lab">YOUR MISSION</div><div><span class="tg" id="dare-tg"></span></div><div class="s" id="dare-s"></div></div>
+      <div class="btns">
+        <button class="big-btn dare" id="btn-dare" type="button">🎰 拉 霸！<span class="hint">也可以按空白鍵</span></button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- 編輯題庫 -->
+<div class="modal-back hidden" id="ed">
+  <div class="modal" style="max-width:860px">
+    <button class="btn sm close" type="button" data-close>✕</button>
+    <h2>✏️ 編輯題庫</h2>
+    <div class="tabs" style="margin-top:10px">
+      <button class="on" data-etab="truth" type="button">💬 真心話題目</button>
+      <button data-etab="dare" type="button">🎰 大冒險任務</button>
+    </div>
+    <div id="et-truth">
+      <p class="muted small" style="margin-bottom:10px;line-height:1.6">每個類別一個框，<b>一行一題</b>。類別名稱開頭放一個表情符號，會當成按鈕圖示。</p>
+      <div id="ed-cats"></div>
+      <button class="btn sm" type="button" id="ed-addcat">＋ 新增類別</button>
+    </div>
+    <div id="et-dare" class="hidden">
+      <p class="muted small" style="margin-bottom:10px;line-height:1.6"><b>一行一個任務</b>，格式：<code>類型｜拉霸顯示的短名｜完整指令</code>（直線用全形「｜」或半形「|」都可以）。只寫一句也行，系統會自動截短顯示在拉霸機上。<br>「比重」決定對象被抽到的機會，填 0 就不會出現。</p>
+      <div id="ed-dares"></div>
+    </div>
+    <div class="foot">
+      <div class="left">
+        <button class="btn sm ghost" type="button" id="ed-default">恢復預設題庫</button>
+        <button class="btn sm" type="button" id="ed-export">⬇️ 匯出</button>
+        <button class="btn sm" type="button" id="ed-import">⬆️ 匯入</button>
+      </div>
+      <button class="btn" type="button" data-close>取消</button>
+      <button class="btn navy" type="button" id="ed-ok">儲存</button>
+    </div>
   </div>
 </div>
 
-<!-- ===== 真心話 ===== -->
-<div class="screen" id="screen-truth">
-  <button class="back-btn" onclick="goTo('home')">← 返回</button>
-  <div class="section-head">
-    <span class="section-badge">💬 真心話</span>
-    <h2 class="section-title">選擇問題類別</h2>
-    <p class="section-desc">選一個主題，抽出問題後說出你的真心想法！</p>
-  </div>
-  <div class="cat-grid" id="cat-grid"></div>
-  <button class="draw-btn" id="truth-draw-btn" onclick="drawTruth()" disabled>抽 出 問 題</button>
-  <div class="question-card" id="question-card">
-    <div class="q-category-tag" id="q-cat-tag"></div>
-    <div class="q-text" id="q-text"></div>
-    <button class="q-again-btn" onclick="drawTruth()">🔀 再抽一題</button>
-  </div>
-</div>
-
-<!-- ===== 大冒險 ===== -->
-<div class="screen" id="screen-dare">
-  <button class="back-btn" onclick="goTo('home')">← 返回</button>
-  <div class="section-head">
-    <span class="section-badge dare-badge">🎰 大冒險</span>
-    <h2 class="section-title">命運拉霸機</h2>
-    <p class="section-desc">按下拉霸，看看你的挑戰任務！</p>
-  </div>
-  <div class="prob-hint">對象機率：自己 60%・自覓同學 20%・隨機同學 10%・老師 10%</div>
-  <div class="slots-wrapper">
-    <div class="slots-row">
-      <div class="slot-col">
-        <div class="slot-label">🎯 對象</div>
-        <div class="slot-window" id="slot-0"><div class="slot-value" id="sv-0">？</div></div>
-      </div>
-      <div class="slot-col">
-        <div class="slot-label">⚡ 挑戰類型</div>
-        <div class="slot-window" id="slot-1"><div class="slot-value" id="sv-1">？</div></div>
-      </div>
-      <div class="slot-col">
-        <div class="slot-label">🎪 任務</div>
-        <div class="slot-window" id="slot-2"><div class="slot-value" id="sv-2">？</div></div>
-      </div>
-    </div>
-  </div>
-  <div class="dare-result-card" id="dare-result">
-    <div class="dare-result-label">🎲 你的大冒險任務是⋯⋯</div>
-    <div class="dare-result-text" id="dare-result-text"></div>
-  </div>
-  <button class="draw-btn dare-draw" id="dare-btn" onclick="spinDare()">🎰 開始拉霸！</button>
-</div>
-
+<script src="arcade.js"></script>
 <script>
-// ── 粒子背景 ──
-const cv = document.getElementById('canvas-bg');
-const cx = cv.getContext('2d');
-let pts = [];
-function resizeCv(){ cv.width=innerWidth; cv.height=innerHeight; }
-resizeCv(); addEventListener('resize',resizeCv);
-for(let i=0;i<60;i++) pts.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*2+0.5,dx:(Math.random()-.5)*.4,dy:(Math.random()-.5)*.4,a:Math.random()*.5+0.1});
-(function tick(){cx.clearRect(0,0,cv.width,cv.height);pts.forEach(p=>{cx.beginPath();cx.arc(p.x,p.y,p.r,0,Math.PI*2);cx.fillStyle=`rgba(150,130,255,${p.a})`;cx.fill();p.x+=p.dx;p.y+=p.dy;if(p.x<0||p.x>cv.width)p.dx*=-1;if(p.y<0||p.y>cv.height)p.dy*=-1;});requestAnimationFrame(tick);})();
-
-// ── 畫面切換 ──
-function goTo(id){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById('screen-'+id).classList.add('active');
-  if(id==='truth') renderCats();
-  if(id==='dare') resetDare();
-}
-
 // ══════════════════════════════════════
-//  真心話題庫（全開放式問法）
+//  預設題庫（沿用舊版 truth-or-dare.html，內容未改）
 // ══════════════════════════════════════
-const TRUTH = {
+const TRUTH_DEFAULT = {
   '🌏 社會議題': [
     '如果你是縣市長，你會把第一筆預算花在哪裡？說說你的理由。',
     '你覺得現在的高中生面對什麼社會壓力是大人沒有意識到的？',
@@ -415,51 +313,6 @@ const TRUTH = {
   ],
 };
 
-// ── 類別渲染 ──
-let selectedCat = null;
-let usedIdx = {};
-function renderCats(){
-  const g = document.getElementById('cat-grid');
-  g.innerHTML='';
-  Object.keys(TRUTH).forEach(cat=>{
-    const b=document.createElement('button');
-    b.className='cat-btn'+(selectedCat===cat?' selected':'');
-    b.innerHTML=`<span class="cat-icon">${cat.split(' ')[0]}</span><span class="cat-name">${cat.split(' ').slice(1).join(' ')}</span><span class="cat-count">${TRUTH[cat].length} 題</span>`;
-    b.onclick=()=>selectCat(cat,b);
-    g.appendChild(b);
-  });
-  document.getElementById('truth-draw-btn').disabled=!selectedCat;
-}
-function selectCat(cat,btn){
-  selectedCat=cat;
-  document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('selected'));
-  btn.classList.add('selected');
-  document.getElementById('truth-draw-btn').disabled=false;
-  document.getElementById('question-card').classList.remove('show');
-}
-function drawTruth(){
-  if(!selectedCat) return;
-  const qs=TRUTH[selectedCat];
-  if(!usedIdx[selectedCat]) usedIdx[selectedCat]=[];
-  let pool=qs.map((_,i)=>i).filter(i=>!usedIdx[selectedCat].includes(i));
-  if(!pool.length){ usedIdx[selectedCat]=[]; pool=qs.map((_,i)=>i); }
-  const idx=pool[Math.floor(Math.random()*pool.length)];
-  usedIdx[selectedCat].push(idx);
-  document.getElementById('q-cat-tag').textContent=selectedCat;
-  document.getElementById('q-text').textContent=qs[idx];
-  const card=document.getElementById('question-card');
-  card.classList.remove('show');
-  void card.offsetWidth;
-  card.classList.add('show');
-}
-
-// ══════════════════════════════════════
-//  大冒險——預先設計好的完整情境
-//  結構：{ target, type, task, sentence }
-//  sentence 是完整顯示給學生的指令
-// ══════════════════════════════════════
-
-// 「自己」類任務（60%）
 const DARE_SELF = [
   { type:'肢體挑戰', task:'用屁股在空中寫自己的名字', sentence:'用你的屁股在空中把自己的名字「寫」出來，一邊寫一邊唸出筆畫！' },
   { type:'表演挑戰', task:'模仿老師說話', sentence:'模仿一位老師說話的語氣和口頭禪，說一句上課常說的話，讓大家猜是誰！' },
@@ -501,84 +354,257 @@ const DARE_TEACHER = [
   { type:'師生挑戰', task:'請老師示範一個「青春舞蹈動作」', sentence:'禮貌地請老師示範一個他/她覺得很帥的舞蹈動作，全班跟著學！' },
 ];
 
-// 拉霸顯示用的暫時內容（滾動時顯示）
-const SLOT_TEMPS = [
-  ['自己','同學','老師','同學','自己'],
-  ['表演','互動','語言','歌唱','肢體'],
-  ['挑戰中','抽取中','決定中','載入中','隨機中'],
-];
 
-let dareResult = null;
-let isSpinning = false;
+(function () {
+  'use strict';
+  const A = window.Arcade;
+  const $ = id => document.getElementById(id);
+  const KEY = 'wu-tod-v2';
 
-function weightedPick(){
-  const r = Math.random()*100;
-  if(r < 60) return { group:'self',   label:'自己' };
-  if(r < 80) return { group:'find',   label:'自覓同學' };
-  if(r < 90) return { group:'random', label:'隨機同學' };
-  return           { group:'teacher', label:'老師' };
-}
-function pickDare(group){
-  const map = { self:DARE_SELF, find:DARE_FIND, random:DARE_RANDOM, teacher:DARE_TEACHER };
-  const arr = map[group];
-  return arr[Math.floor(Math.random()*arr.length)];
-}
+  function defaults() {
+    return {
+      truth: Object.entries(TRUTH_DEFAULT).map(([name, qs]) => ({ name, qs: qs.slice() })),
+      dare: [
+        { id: 'self', label: '自己', w: 60, items: DARE_SELF.map(x => ({ ...x })) },
+        { id: 'find', label: '自覓同學', w: 20, items: DARE_FIND.map(x => ({ ...x })) },
+        { id: 'random', label: '隨機同學', w: 10, items: DARE_RANDOM.map(x => ({ ...x })) },
+        { id: 'teacher', label: '老師', w: 10, items: DARE_TEACHER.map(x => ({ ...x })) }
+      ]
+    };
+  }
+  let BANK = A.store.get(KEY, null);
+  if (!BANK || !Array.isArray(BANK.truth) || !Array.isArray(BANK.dare)) BANK = defaults();
+  const save = () => A.store.set(KEY, BANK);
+  let busy = false, mode = 'home';
 
-function resetDare(){
-  for(let i=0;i<3;i++) document.getElementById('sv-'+i).textContent='？';
-  ['slot-0','slot-1','slot-2'].forEach(id=>document.getElementById(id).classList.remove('locked'));
-  document.getElementById('dare-result').classList.remove('show');
-  document.getElementById('dare-btn').textContent='🎰 開始拉霸！';
-  document.getElementById('dare-btn').onclick = spinDare;
-  isSpinning=false; dareResult=null;
-}
-
-function spinDare(){
-  if(isSpinning) return;
-  isSpinning=true;
-  document.getElementById('dare-result').classList.remove('show');
-  document.getElementById('dare-btn').disabled=true;
-  document.getElementById('dare-btn').textContent='⏳ 轉動中…';
-
-  // 決定結果
-  const picked = weightedPick();
-  const dare   = pickDare(picked.group);
-  dareResult   = { target:picked.label, type:dare.type, task:dare.task, sentence:dare.sentence };
-
-  // 滾動動畫
-  let ticks = [0,0,0];
-  const ivs = SLOT_TEMPS.map((temps,i)=>{
-    return setInterval(()=>{
-      document.getElementById('sv-'+i).textContent = temps[ticks[i]%temps.length];
-      ticks[i]++;
-    },120);
+  /* ---------- 切換模式 ---------- */
+  function go(m) {
+    mode = m;
+    document.querySelectorAll('#modes button').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
+    ['home', 'truth', 'dare'].forEach(x => $('v-' + x).classList.toggle('hidden', x !== m));
+    if (m === 'truth') renderCats();
+    if (m === 'dare') renderOdds();
+  }
+  document.querySelectorAll('#modes button').forEach(b => b.onclick = () => { if (!busy) go(b.dataset.mode); });
+  document.querySelectorAll('.choice').forEach(c => {
+    c.onclick = () => { if (!busy) { A.sfx.blip(); go(c.dataset.go); } };
+    c.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); c.click(); } };
   });
 
-  const stops = [900,1700,2500];
-  const finals = [picked.label, dare.type, dare.task];
-  stops.forEach((t,i)=>{
-    setTimeout(()=>{
-      clearInterval(ivs[i]);
-      const el = document.getElementById('sv-'+i);
-      el.textContent = finals[i];
-      document.getElementById('slot-'+i).classList.add('locked');
-      if(i===2) setTimeout(showDareResult, 250);
-    },t);
+  /* ---------- 命運硬幣 ---------- */
+  $('btn-coin').onclick = async () => {
+    if (busy) return; busy = true; A.sfx.unlock();
+    const toDare = A.rand(2) === 1;
+    const coin = $('coin');
+    coin.classList.remove('flipping'); void coin.offsetWidth;
+    coin.style.setProperty('--turns', toDare ? 9 : 10); // 奇數圈停在背面（冒）
+    coin.classList.add('flipping');
+    const gaps = A.easeTicks(1700, 70, 240);
+    for (let k = 0; k < gaps.length; k++) { A.sfx.tick(k / gaps.length); await A.sleep(gaps[k]); }
+    A.sfx.clunk(); await A.sleep(250); A.sfx.fanfare();
+    A.toast(toDare ? '🎰 命運選擇了：大冒險！' : '💬 命運選擇了：真心話！', 1800);
+    await A.sleep(1100);
+    busy = false; go(toDare ? 'dare' : 'truth');
+    setTimeout(() => toDare ? spin() : drawTruth(), 250);
+  };
+
+  /* ---------- 真心話 ---------- */
+  let selCat = -1;           // -1 = 隨機類別
+  const used = {};           // 這次打開頁面已抽過的題（同一類別不重複，抽完重來）
+  function renderCats() {
+    const total = BANK.truth.reduce((s, c) => s + c.qs.length, 0);
+    if (selCat >= BANK.truth.length) selCat = -1;
+    $('cats').innerHTML = `<button class="cat ${selCat === -1 ? 'on' : ''}" data-i="-1" type="button">🎲 隨機類別 <small>${total} 題</small></button>` +
+      BANK.truth.map((c, i) => `<button class="cat ${selCat === i ? 'on' : ''}" data-i="${i}" type="button">${A.esc(c.name)} <small>${c.qs.length} 題</small></button>`).join('');
+    $('btn-truth').disabled = !total;
+  }
+  $('cats').onclick = e => {
+    const b = e.target.closest('.cat'); if (!b || busy) return;
+    selCat = +b.dataset.i; renderCats(); A.sfx.blip();
+    $('qcard').classList.remove('open');
+  };
+  function nextQuestion() {
+    let ci = selCat;
+    if (ci === -1) {
+      const ok = BANK.truth.map((c, i) => i).filter(i => BANK.truth[i].qs.length);
+      if (!ok.length) return null;
+      ci = A.weighted(ok, i => BANK.truth[i].qs.length);
+    }
+    const cat = BANK.truth[ci]; if (!cat || !cat.qs.length) return null;
+    const k = cat.name + '\u0001' + cat.qs.length;
+    used[k] = used[k] || [];
+    let pool = cat.qs.map((_, i) => i).filter(i => !used[k].includes(i));
+    if (!pool.length) { used[k] = []; pool = cat.qs.map((_, i) => i); }
+    const qi = A.pick(pool); used[k].push(qi);
+    return { cat: cat.name, q: cat.qs[qi], left: cat.qs.length - used[k].length };
+  }
+  async function drawTruth() {
+    if (busy) return;
+    const r = nextQuestion();
+    if (!r) { A.toast('這個類別還沒有題目，請先編輯題庫'); return; }
+    busy = true; $('btn-truth').disabled = true; A.sfx.unlock();
+    const card = $('qcard'), deck = $('deck');
+    if (card.classList.contains('open')) { card.classList.remove('open'); A.sfx.whoosh(); await A.sleep(500); }
+    deck.classList.add('shuffle');
+    for (let k = 0; k < 5; k++) { A.sfx.whoosh(); await A.sleep(190); }
+    deck.classList.remove('shuffle');
+    $('qtag').textContent = r.cat; $('qtext').textContent = r.q;
+    $('qleft').textContent = r.left ? `這個類別還有 ${r.left} 題沒抽過` : '這個類別的題目都抽過一輪了，下次會重新洗牌';
+    A.sfx.clunk(); card.classList.add('open');
+    await A.sleep(500); A.sfx.magic();
+    busy = false; $('btn-truth').disabled = false;
+    $('btn-truth').firstChild.textContent = '💬 再抽一題';
+  }
+  $('btn-truth').onclick = drawTruth;
+
+  /* ---------- 大冒險 ---------- */
+  function renderOdds() {
+    const live = BANK.dare.filter(g => (+g.w || 0) > 0 && g.items.length);
+    const tot = live.reduce((s, g) => s + (+g.w), 0);
+    $('odds').textContent = tot ? '對象機率：' + live.map(g => `${g.label} ${Math.round(g.w / tot * 100)}%`).join('・') : '⚠️ 還沒有可以抽的任務，請先編輯題庫';
+    $('btn-dare').disabled = !tot;
+  }
+  function fill(strip, words, final) {
+    const n = 22 + A.rand(6);
+    const arr = []; for (let i = 0; i < n; i++) arr.push(A.pick(words));
+    arr.push(final);
+    strip.style.transition = 'none'; strip.style.transform = 'translateY(0)';
+    strip.innerHTML = arr.map(t => `<div>${A.esc(t)}</div>`).join('');
+    return arr.length;
+  }
+  async function spin() {
+    if (busy) return;
+    const live = BANK.dare.filter(g => (+g.w || 0) > 0 && g.items.length);
+    const g = A.weighted(live, x => x.w);
+    if (!g) { A.toast('還沒有可以抽的任務，請先編輯題庫'); return; }
+    busy = true; $('btn-dare').disabled = true; A.sfx.unlock();
+    const d = A.pick(g.items);
+    $('dare-card').classList.add('hidden');
+    const slot = $('slot'); slot.classList.remove('win'); slot.classList.add('run');
+    const allItems = BANK.dare.flatMap(x => x.items);
+    const words = [
+      BANK.dare.map(x => x.label),
+      [...new Set(allItems.map(x => x.type))],
+      allItems.map(x => x.task)
+    ];
+    const finals = [g.label, d.type, d.task];
+    const durs = [1600, 2400, 3300];
+    const h = $('w0').clientHeight - 6 || 92;
+    [0, 1, 2].forEach(i => {
+      $('w' + i).classList.remove('locked');
+      const strip = $('s' + i);
+      const len = fill(strip, words[i].length ? words[i] : ['？'], finals[i]);
+      void strip.offsetWidth;
+      const hh = strip.firstElementChild.getBoundingClientRect().height || h;
+      strip.style.transition = `transform ${durs[i]}ms cubic-bezier(.12,.62,.22,1)`;
+      strip.style.transform = `translateY(${-(len - 1) * hh}px)`;
+    });
+    // 音效跟著轉輪減速
+    (async () => {
+      const gaps = A.easeTicks(durs[2], 50, 300);
+      for (let k = 0; k < gaps.length; k++) { A.sfx.tick(k / gaps.length); await A.sleep(gaps[k]); }
+    })();
+    durs.forEach((t, i) => setTimeout(() => { $('w' + i).classList.add('locked'); A.sfx.clunk(); }, t));
+    await A.sleep(durs[2] + 300);
+    slot.classList.remove('run'); slot.classList.add('win');
+    $('dare-tg').textContent = '對象：' + g.label;
+    $('dare-s').textContent = d.sentence;
+    const card = $('dare-card'); card.classList.remove('hidden'); card.classList.remove('pop'); void card.offsetWidth; card.classList.add('pop');
+    A.sfx.fanfare(); A.confetti({ count: 150 });
+    busy = false; $('btn-dare').disabled = false;
+    $('btn-dare').firstChild.textContent = '🎰 再拉一次';
+  }
+  $('btn-dare').onclick = spin;
+
+  document.addEventListener('keydown', e => {
+    if (e.code !== 'Space' && e.key !== 'Enter') return;
+    if (!$('ed').classList.contains('hidden')) return;
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (['input', 'textarea', 'select', 'button', 'a'].includes(tag) || e.target.classList.contains('choice')) return;
+    if (mode === 'truth') { e.preventDefault(); drawTruth(); }
+    else if (mode === 'dare') { e.preventDefault(); spin(); }
   });
-}
 
-function showDareResult(){
-  const r = dareResult;
-  document.getElementById('dare-result-text').innerHTML =
-    `對象：<span class="hl">【${r.target}】</span><br><br>${r.sentence}`;
-  document.getElementById('dare-result').classList.add('show');
-  document.getElementById('dare-btn').disabled=false;
-  document.getElementById('dare-btn').textContent='🔄 再拉一次';
-  document.getElementById('dare-btn').onclick = ()=>{ resetDare(); setTimeout(spinDare,100); };
-  isSpinning=false;
-}
+  /* ---------- 編輯題庫 ---------- */
+  const SEP = /[｜|]/;
+  function parseDare(line) {
+    const p = line.split(SEP).map(s => s.trim());
+    if (p.length >= 3) return { type: p[0] || '挑戰', task: p[1] || p[2].slice(0, 12), sentence: p.slice(2).join('｜') };
+    if (p.length === 2) return { type: '挑戰', task: p[0], sentence: p[1] };
+    return { type: '挑戰', task: line.length > 12 ? line.slice(0, 12) + '…' : line, sentence: line };
+  }
+  const dareLine = x => `${x.type}｜${x.task}｜${x.sentence}`;
+  let draft = null;
+  function paintEditor() {
+    $('ed-cats').innerHTML = draft.truth.map((c, i) => `
+      <div class="ed-cat" data-i="${i}">
+        <div class="row"><input class="input name" data-f="name" value="${A.esc(c.name)}" maxlength="20" aria-label="類別名稱">
+          <span class="ed-cnt">${c.qs.length} 題</span>
+          <button class="btn sm ghost" type="button" data-del="${i}">🗑️ 刪除類別</button></div>
+        <textarea class="input" data-f="qs" aria-label="${A.esc(c.name)}的題目">${A.esc(c.qs.join('\n'))}</textarea>
+      </div>`).join('');
+    $('ed-dares').innerHTML = draft.dare.map((g, i) => `
+      <div class="ed-cat" data-g="${i}">
+        <div class="row"><b>🎯 對象</b><input class="input name" data-f="label" value="${A.esc(g.label)}" maxlength="10" style="max-width:160px" aria-label="對象名稱">
+          <label class="small">比重 <input class="input num" type="number" min="0" max="999" data-f="w" value="${g.w}"></label>
+          <span class="ed-cnt">${g.items.length} 個任務</span></div>
+        <textarea class="input" data-f="items" aria-label="${A.esc(g.label)}的任務">${A.esc(g.items.map(dareLine).join('\n'))}</textarea>
+      </div>`).join('');
+  }
+  function readEditor() {
+    document.querySelectorAll('#ed-cats .ed-cat').forEach(el => {
+      const c = draft.truth[+el.dataset.i];
+      c.name = el.querySelector('[data-f=name]').value.trim() || '未命名類別';
+      c.qs = A.lines(el.querySelector('[data-f=qs]').value);
+    });
+    document.querySelectorAll('#ed-dares .ed-cat').forEach(el => {
+      const g = draft.dare[+el.dataset.g];
+      g.label = el.querySelector('[data-f=label]').value.trim() || g.label;
+      g.w = Math.max(0, parseFloat(el.querySelector('[data-f=w]').value) || 0);
+      g.items = A.lines(el.querySelector('[data-f=items]').value).map(parseDare);
+    });
+  }
+  $('ed-cats').oninput = e => {
+    if (e.target.dataset.f !== 'qs') return;
+    e.target.closest('.ed-cat').querySelector('.ed-cnt').textContent = A.lines(e.target.value).length + ' 題';
+  };
+  $('ed-dares').oninput = e => {
+    if (e.target.dataset.f !== 'items') return;
+    e.target.closest('.ed-cat').querySelector('.ed-cnt').textContent = A.lines(e.target.value).length + ' 個任務';
+  };
+  $('ed-cats').onclick = e => {
+    const b = e.target.closest('[data-del]'); if (!b) return;
+    readEditor();
+    const c = draft.truth[+b.dataset.del];
+    if (c.qs.length && !confirm(`刪除「${c.name}」和裡面的 ${c.qs.length} 題？`)) return;
+    draft.truth.splice(+b.dataset.del, 1); paintEditor();
+  };
+  $('ed-addcat').onclick = () => { readEditor(); draft.truth.push({ name: '✨ 新類別', qs: [] }); paintEditor(); };
+  document.querySelectorAll('[data-etab]').forEach(b => b.onclick = () => {
+    document.querySelectorAll('[data-etab]').forEach(x => x.classList.toggle('on', x === b));
+    $('et-truth').classList.toggle('hidden', b.dataset.etab !== 'truth');
+    $('et-dare').classList.toggle('hidden', b.dataset.etab !== 'dare');
+  });
+  $('btn-edit').onclick = () => { if (busy) return; draft = JSON.parse(JSON.stringify(BANK)); paintEditor(); A.modal($('ed'), true); };
+  document.querySelectorAll('#ed [data-close]').forEach(b => b.onclick = () => A.modal($('ed'), false));
+  $('ed-default').onclick = () => { if (!confirm('把題庫恢復成原本的預設題目？（按「儲存」才會生效）')) return; draft = defaults(); paintEditor(); };
+  $('ed-ok').onclick = () => {
+    readEditor();
+    draft.truth = draft.truth.filter(c => c.qs.length || c.name !== '✨ 新類別');
+    BANK = draft; save(); A.modal($('ed'), false);
+    Object.keys(used).forEach(k => delete used[k]);
+    renderCats(); renderOdds(); A.toast('✅ 題庫已儲存在這台裝置');
+  };
+  $('ed-export').onclick = () => { readEditor(); A.exportJSON('真心話大冒險題庫.json', { type: 'wu-tod', ...draft }); };
+  $('ed-import').onclick = async () => {
+    const d = await A.importJSON(); if (!d) return;
+    if (d.type !== 'wu-tod' || !Array.isArray(d.truth) || !Array.isArray(d.dare)) { A.toast('這不是真心話大冒險的題庫檔'); return; }
+    draft = { truth: d.truth, dare: d.dare }; paintEditor(); A.toast('已載入，確認後按「儲存」');
+  };
 
-renderCats();
+  A.toolbar($('toolbar'));
+  renderCats(); renderOdds();
+})();
 </script>
 </body>
 </html>

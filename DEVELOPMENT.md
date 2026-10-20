@@ -2,7 +2,7 @@
 
 > 給未來的自己（和 Claude）看的說明書：這個網站怎麼組成、資料放哪裡、要新增工具時怎麼接進來。
 > **每次開發的過程與決定記在 [CHANGELOG.md](CHANGELOG.md)（開發歷程）**，每次開發結束都要同步更新本檔與 CHANGELOG。
-> 最後更新：2026-10-18
+> 最後更新：2026-10-21
 
 ---
 
@@ -102,9 +102,13 @@ wuyutzu-tools/
 │   └── sci-history-rpg/          # 🗄️ 舊的薩爾達式 RPG 試玩版（不在首頁，保留給未來其他領域參考）
 │
 ├── gamification/                 # 🎲 課堂遊戲化
-│   ├── system.html               # 選人系統＋陣亡詛咒系統
-│   ├── poke-game.html            # 戳戳樂
-│   └── truth-or-dare.html        # 真心話大冒險
+│   ├── arcade.js                 # 🎰 三個遊戲工具共用核心（音效、彩帶、常亮、亂數、匯出匯入、工具列，2026-10-21）
+│   ├── arcade.css                # 🎰 共用偵探風樣式
+│   ├── picker.html               # 🎯 選人系統（2026-10-21 改版獨立成頁）
+│   ├── curse.html                # 💀 陣亡詛咒系統（2026-10-21 改版獨立成頁）
+│   ├── truth-or-dare.html        # 🎲 真心話大冒險（2026-10-21 改版）
+│   ├── system.html               # 舊版選人＋詛咒（首頁已不連結，保留備查）
+│   └── poke-game.html            # 戳戳樂
 │
 ├── inquiry/                      # 🔬 探究與實作課程
 │   ├── excel-rescue-core.js      # 📊 消失的實驗數據：共用核心（學號→專屬數據、標準答案、對答案、結案代碼）
@@ -144,7 +148,7 @@ wuyutzu-tools/
 | | 🎉 班級氣氛 | 金曲歌王、詩籤、聖誕抽籤、形容詞產生器 |
 | ⚗️ 化學實驗室 No.223 | No.223 懸案系列 | 消失的實驗器材、消失的指示劑（pH）、失落的配方（單位換算）（後兩者連到老師頁）、時光手稿：科學史大冒險、隱秘的鍵結社（2026-10-17 從「科學史」「化學鍵」小分類併入） |
 | | 課程經營 | 案件委託公告欄、科普閱讀測驗（**外部連結**，不在本倉庫：`https://reading-quiz-system.vercel.app/`，Vercel＋Supabase，原始碼在 `puff0223-chwu/reading-quiz-system`；2026-10-17 從「探究與實作」搬來） |
-| | 🎲 課堂遊戲化 | 選人系統、陣亡詛咒、戳戳樂、真心話大冒險 |
+| | 🎲 課堂遊戲化 | 選人系統（`picker.html`）、陣亡詛咒（`curse.html`）、戳戳樂、真心話大冒險 |
 | 🎮 遊戲設計思考 | — | 巴圖玩家類型 |
 | 🔬 探究與實作 | Excel 數據處理 | 消失的實驗數據（連到老師頁） |
 | | 校園定向越野 | 遺落的地點（連到老師後台 `inquiry/orienteering/`） |
@@ -849,6 +853,20 @@ fp/
 - ⚠️ 需要在 Firebase 後台手動做（程式碼無法代勞）：啟用 Email/Password 登入、建立爸爸帳號、登記 `fp/admins/<UID>`、貼上並發布規則。步驟見 `family-points/SETUP.md`。
 - 備份：「備份/帳號」分頁可匯出 CSV。
 
+### 🎲 課堂遊戲化三工具（gamification/picker.html、curse.html、truth-or-dare.html，2026-10-21 改版）
+
+- **老師頁**（老師拿來投影），右上角有「🏠 回事務所首頁」；三個工具各自獨立、不互相串連（老師決定）
+- **共用核心 `arcade.js`（`window.Arcade`）**：`store`（localStorage，讀寫失敗不會壞）、`sfx`（tick／clunk／drumroll／fanfare／doom／magic／whoosh／blip，Web Audio 合成，第一次點擊時解鎖）、`easeTicks(總毫秒, 最快, 最慢)` 產生「越轉越慢」的間隔、`rand`（crypto，避免舊版 `sort(() => Math.random() - 0.5)` 不均勻的問題）、`shuffle`、`weighted`、`confetti`、`awake`（Wake Lock＋隱形影片後備，切回分頁自動重新申請）、`toolbar`、`exportJSON`／`importJSON`、`modal`
+- **資料**：全部存在這台裝置的瀏覽器（localStorage），不用 Firebase。key：`wu-picker-v2`、`wu-curse-v2`、`wu-tod-v2`（以及 `wu-game-sound`、`wu-game-awake`、`*-side-hidden`）。存檔壞掉或第一次打開就用預設值
+- **選人** `wu-picker-v2`：`{ weights:{one,two,three,all,girls,boys,odd,even}, noRepeat, fast, cur, classes:{ id:{ name, count, absent:[座號], rested:[這一輪抽過], hist:[{t,m,r}] } } }`
+  - 比重不必湊 100，自動換算；全部 0 時不能抽
+  - 不重複：`rested` 記這一輪抽過的人；剩下的人不夠時，先把剩下的全抽、再開新一輪補滿（同一次不會抽到同一人）
+  - 男生／女生沒有性別資料，只顯示「全體女生／男生」；奇數／偶數會在座號條亮出出席的座號
+- **詛咒** `wu-curse-v2`：`{ curses:[文字], revives:[文字], hist:[{time,who,t,rv}] }`；每張牌等機率；牌桌最多畫 24 張（牌只是動畫，結果先抽好再讓燈光停在隨機一張）；開頭表情符號用 `\p{Extended_Pictographic}` 拆出來當圖示
+- **真心話大冒險** `wu-tod-v2`：`{ truth:[{name, qs:[題目]}], dare:[{id, label, w, items:[{type, task, sentence}]}] }`；預設題庫寫在檔案最上面的 `TRUTH_DEFAULT`、`DARE_SELF/FIND/RANDOM/TEACHER`（舊版原文）；編輯器一行一個任務，`類型｜短名｜完整指令`（全形／半形直線都可）
+- 拉霸機：每條轉輪放 22～27 個隨機字＋最後一格答案，用 CSS `transform` 加 `cubic-bezier` 減速捲到最後一格，三條分別 1.6／2.4／3.3 秒停
+- 硬幣：`--turns` 奇數圈停在背面（大冒險）、偶數圈停在正面（真心話）
+
 ### 🧹 打掃徵才 v4
 
 - 老師在管理頁產生學生登記連結；學生資料透過 Google 表單送出
@@ -1033,6 +1051,15 @@ fp/
 - **打錯學號的多餘紀錄要能刪**：即時進度每列加 🗑（連評等一起刪）；規則讓任務擁有者可以刪單筆 `r/<學號>`，學生還是不能刪
 - **版面跟著「上課／回家」走**：1-B 線索卡移到「結案作業」區當「作業 1｜找文獻」、卷宗是「作業 2」；第 3 關改成和第 1、2 關一樣的一整塊（說明、碎片、必修、進階、鑑定書都在裡面）；「換人」改成「登出」
 - **練習設計不要製造迷思**：1-A 拆解表拿掉「換個說法」格（學生會以為一定要填、而且填的詞不一定對），只留對象／改變／觀察三格＋💡看提示；「換個說法」改成步驟二的搜尋小技巧
+
+### 7-19 課堂遊戲化三工具改版（2026-10-21）
+- **舊版抽人不公平**：`[...arr].sort(() => Math.random() - 0.5)` 洗牌結果有偏差，改用 Fisher–Yates＋`crypto.getRandomValues`（`Arcade.shuffle`／`rand`）
+- **「機率加總要剛好 100%」對老師太麻煩**：改成填比重、旁邊即時顯示換算後的百分比與長條；全部 0 才擋
+- **動畫要先決定結果再演**：轉盤、翻牌、拉霸都是「先抽好答案 → 動畫最後停在答案」，動畫只是表演，不會影響機率
+- **投影用的頁面**：右側設定面板可收起、空白鍵就能抽、全螢幕與螢幕常亮做在共用工具列，三頁一致
+- **音效不用音檔**：Web Audio 現場合成，檔案小、不會載入失敗；iPad 一定要「使用者先點一下」才會出聲，所以在按抽的當下 `sfx.unlock()`
+- **題庫編輯用「一行一個」的大文字框**：比一格一格新增刪除快很多，老師可以直接從 Word／Google 文件貼整段進來；換裝置用匯出／匯入 JSON
+- **同一個 `deck` 的牌桌排版**：牌數不固定（老師會增刪），用 flex 換行＋依牌數算卡寬（最多 2～3 排、最後一排置中），避免最後一排只剩一張
 
 ## 8. 已知注意事項
 

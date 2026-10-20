@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>🎯 選人系統｜巫魚子教課事務所</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="arcade.css">
+<style>
+  :root { --accent: #c98a12; }
+
+  /* 班級切換 */
+  .class-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: -4px 0 14px; }
+  .class-bar select { border: 2.5px solid var(--navy); border-radius: 12px; padding: 6px 10px; background: #fff; font-weight: 700; box-shadow: 3px 3px 0 var(--navy); }
+  .class-bar .info { color: var(--muted); font-size: .9em; }
+
+  /* 抽選方式膠囊 */
+  .method-pill {
+    min-width: min(420px, 86%); text-align: center; padding: 10px 26px; border-radius: 999px;
+    border: 3px solid var(--navy); background: var(--mustard-soft); box-shadow: 5px 5px 0 var(--navy);
+    font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: clamp(1.4em, 4.2vw, 2.3em); letter-spacing: .12em;
+    transition: background .2s;
+  }
+  .method-pill.rolling { background: #fff; }
+  .method-pill.locked { background: var(--mustard); animation: pop .35s cubic-bezier(.2,1.3,.4,1); }
+
+  /* 結果區 */
+  .result { min-height: 230px; display: flex; align-items: center; justify-content: center; gap: clamp(12px, 3vw, 28px); flex-wrap: wrap; width: 100%; }
+  .board {
+    position: relative; width: clamp(130px, 22vw, 230px); aspect-ratio: 4 / 5; border-radius: 22px;
+    background: var(--navy); color: #fff; border: 3px solid var(--navy); box-shadow: 7px 7px 0 var(--mustard);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden;
+  }
+  .board::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 2px; background: rgba(255,255,255,.12); }
+  .board .d { font-family: 'Bebas Neue', sans-serif; font-size: clamp(5em, 13vw, 9.5em); line-height: .9; letter-spacing: .02em; }
+  .board .u { font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: clamp(1em, 2.4vw, 1.5em); opacity: .85; }
+  .board.rolling .d { animation: flick .09s linear infinite; }
+  @keyframes flick { 0% { transform: translateY(-6px); opacity: .7; } 100% { transform: translateY(6px); opacity: 1; } }
+  .board.locked { background: var(--mustard); color: var(--navy); box-shadow: 7px 7px 0 var(--navy); animation: pop .4s cubic-bezier(.2,1.3,.4,1); }
+  .board .stamp { position: absolute; bottom: 10px; right: 8px; font-size: .95em; padding: 0 8px; }
+  .result.n1 .board { width: clamp(180px, 34vw, 320px); }
+  .result.n1 .board .d { font-size: clamp(7em, 20vw, 14em); }
+
+  .group-card {
+    text-align: center; padding: 22px 30px; border-radius: 24px; border: 3px solid var(--navy); background: var(--mustard);
+    box-shadow: 7px 7px 0 var(--navy);
+  }
+  .group-card .e { font-size: clamp(3em, 9vw, 5em); line-height: 1.1; }
+  .group-card .g { font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: clamp(2em, 7vw, 4em); letter-spacing: .1em; }
+  .idle { text-align: center; color: var(--muted); }
+  .idle .big { font-size: clamp(4em, 12vw, 7em); line-height: 1.1; }
+  .idle p { margin-top: 6px; }
+
+  .stage-status { min-height: 1.4em; font-weight: 700; color: var(--muted); text-align: center; }
+
+  /* 座號條 */
+  .seats-wrap { width: 100%; max-width: 900px; }
+  .seats-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; font-size: .88em; }
+  .seats-head .count { color: var(--muted); }
+  .seats-head .sp { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+  .seats { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 6px; }
+  .seat {
+    position: relative; border: 2px solid var(--navy); border-radius: 9px; background: #fff; cursor: pointer;
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.25em; letter-spacing: .04em; padding: 4px 0 2px; text-align: center;
+    transition: background .15s, opacity .15s; -webkit-tap-highlight-color: transparent;
+  }
+  .seat:hover { background: var(--mustard-soft); }
+  .seat.rested { opacity: .4; }
+  .seat.rested::after { content: '✓'; position: absolute; top: -2px; right: 3px; font-size: .55em; color: var(--teal); font-family: sans-serif; font-weight: 900; }
+  .seat.absent { background: #e9e4da; color: #a39e94; border-style: dashed; text-decoration: line-through; opacity: 1; }
+  .seat.absent::after { content: '假'; position: absolute; top: -3px; right: 2px; font-size: .5em; color: var(--red); font-family: 'Noto Sans TC', sans-serif; font-weight: 900; text-decoration: none; }
+  .seat.hit { background: var(--mustard); opacity: 1; animation: pop .4s cubic-bezier(.2,1.3,.4,1); }
+  .legend { color: var(--muted); font-size: .8em; margin-top: 8px; line-height: 1.6; }
+
+  /* 機率表 */
+  .wtable { width: 100%; border-collapse: collapse; font-size: .92em; }
+  .wtable td { padding: 4px 2px; vertical-align: middle; }
+  .wtable td.name { font-weight: 700; white-space: nowrap; }
+  .wtable td.bar { width: 40%; }
+  .wtable .barbg { height: 10px; border-radius: 6px; background: #f1ebdf; overflow: hidden; }
+  .wtable .barfg { height: 100%; background: var(--mustard); border-radius: 6px; transition: width .2s; }
+  .wtable .pct { font-family: 'Bebas Neue', sans-serif; font-size: 1.1em; letter-spacing: .05em; text-align: right; width: 48px; }
+  .wtable input { width: 56px; text-align: center; border: 2px solid var(--navy); border-radius: 8px; padding: 3px 2px; }
+  .sumline { margin-top: 8px; padding: 7px 10px; border-radius: 10px; font-size: .88em; font-weight: 700; background: var(--teal-soft); color: #13685e; }
+  .sumline.warn { background: var(--red-soft); color: #a33a1c; }
+  .divider { border: none; border-top: 2px dashed var(--line); margin: 14px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="topbar">
+    <div class="badge">🎯</div>
+    <div class="titles">
+      <div class="eyebrow">DRAWER II · 課堂遊戲化 · SUSPECT LINEUP</div>
+      <h1>巫魚子大師<span class="hl">選人系統</span></h1>
+    </div>
+    <div class="actions">
+      <button class="btn sm" id="btn-side" type="button" title="收起／打開右邊的設定面板">⇥ 收起面板</button>
+      <span id="toolbar" class="actions"></span>
+    </div>
+  </header>
+
+  <div class="class-bar">
+    <label class="small" for="class-sel"><b>班級</b></label>
+    <select id="class-sel" aria-label="選擇班級"></select>
+    <button class="btn sm" id="btn-class-add" type="button">＋ 新增班級</button>
+    <button class="btn sm ghost" id="btn-class-edit" type="button">✏️ 改名／人數</button>
+    <button class="btn sm ghost" id="btn-class-del" type="button">🗑️ 刪除</button>
+    <span class="info" id="class-info"></span>
+  </div>
+
+  <div class="layout" id="layout">
+    <main>
+      <section class="stage" id="stage">
+        <div class="stage-label">STEP 1 · 抽選方式</div>
+        <div class="method-pill" id="method">？？？</div>
+        <div class="stage-label" style="margin-top:4px">STEP 2 · 指認嫌疑人</div>
+        <div class="result" id="result">
+          <div class="idle"><div class="big">🕵️</div><p>按下「抽人」，讓命運指認今天的幸運兒！</p></div>
+        </div>
+        <div class="stage-status" id="status"></div>
+        <button class="big-btn" id="btn-draw" type="button">🎯 抽 人<span class="hint">也可以按空白鍵</span></button>
+
+        <div class="seats-wrap">
+          <div class="seats-head">
+            <b>座號</b><span class="count" id="seat-count"></span>
+            <span class="sp">
+              <button class="btn sm" id="btn-round" type="button" title="清除「已抽過」的記號，全班重新一輪">🔄 重新一輪</button>
+              <button class="btn sm ghost" id="btn-clear-absent" type="button">清除請假</button>
+            </span>
+          </div>
+          <div class="seats" id="seats"></div>
+          <div class="legend">點一下座號＝標記請假（不會被抽到），再點一下取消。<span id="legend-rest">✓ 淡色＝這一輪已經抽過，先休息。</span></div>
+        </div>
+      </section>
+    </main>
+
+    <aside class="side">
+      <div class="panel">
+        <div class="tabs">
+          <button class="on" data-tab="set" type="button">⚙️ 設定</button>
+          <button data-tab="hist" type="button">📜 紀錄</button>
+        </div>
+
+        <div id="tab-set">
+          <h3>🎲 抽選方式機率</h3>
+          <table class="wtable" id="wtable"></table>
+          <div class="sumline" id="sumline"></div>
+          <div class="row" style="margin-top:8px">
+            <button class="btn sm" id="btn-even" type="button">平均分配</button>
+            <button class="btn sm ghost" id="btn-wreset" type="button">恢復預設</button>
+          </div>
+          <p class="muted small" style="margin-top:6px;line-height:1.6">數字是「比重」：填幾都可以，系統會自動換算成百分比。填 0 就不會抽到。</p>
+          <hr class="divider">
+          <h3>🧩 玩法</h3>
+          <label class="switch"><input type="checkbox" id="opt-norepeat"> 不重複：抽過的先休息，全班抽完自動新一輪</label>
+          <label class="switch"><input type="checkbox" id="opt-fast"> 快速模式：跳過轉盤動畫，直接公布</label>
+          <p class="muted small" style="margin-top:8px;line-height:1.6">所有設定都自動存在這台裝置的瀏覽器裡，下次打開還在。</p>
+        </div>
+
+        <div id="tab-hist" class="hidden">
+          <h3>📜 這個班的抽選紀錄</h3>
+          <ul class="history" id="hist"></ul>
+          <div class="row" style="margin-top:10px;justify-content:flex-end">
+            <button class="btn sm ghost" id="btn-hclear" type="button">清空紀錄</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- 班級設定對話框 -->
+<div class="modal-back hidden" id="class-modal">
+  <div class="modal" style="max-width:440px">
+    <button class="btn sm close" type="button" data-close>✕</button>
+    <h2 id="cm-title">新增班級</h2>
+    <p class="muted small" style="margin-bottom:12px">每個班級各自記錄座號、請假、這一輪抽過誰和抽選紀錄。</p>
+    <div class="field"><label for="cm-name">班級名稱</label><input class="input" id="cm-name" maxlength="20" placeholder="例如：201、高一忠"></div>
+    <div class="field"><label for="cm-count">人數（座號 1 到幾號）</label><input class="input num" id="cm-count" type="number" min="1" max="60" value="30"></div>
+    <div class="foot"><button class="btn" type="button" data-close>取消</button><button class="btn navy" type="button" id="cm-ok">儲存</button></div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+(function () {
+  'use strict';
+  const A = window.Arcade;
+  const $ = id => document.getElementById(id);
+  const KEY = 'wu-picker-v2';
+
+  // 抽選方式（舊版 system.html 的 8 種，比重也沿用舊版預設）
+  const METHODS = [
+    { id: 'one',   name: '抽 1 名',  n: 1, w: 50 },
+    { id: 'two',   name: '抽 2 名',  n: 2, w: 25 },
+    { id: 'three', name: '抽 3 名',  n: 3, w: 12 },
+    { id: 'all',   name: '全班一起', group: '全班同學', emoji: '🙌', w: 1 },
+    { id: 'girls', name: '女生',     group: '全體女生', emoji: '🙋‍♀️', w: 3 },
+    { id: 'boys',  name: '男生',     group: '全體男生', emoji: '🙋‍♂️', w: 3 },
+    { id: 'odd',   name: '奇數座號', group: '奇數座號', emoji: '1️⃣', w: 3, seats: n => n % 2 === 1 },
+    { id: 'even',  name: '偶數座號', group: '偶數座號', emoji: '2️⃣', w: 3, seats: n => n % 2 === 0 }
+  ];
+  const defaultWeights = () => Object.fromEntries(METHODS.map(m => [m.id, m.w]));
+  const newClass = (name, count) => ({ name, count, absent: [], rested: [], hist: [] });
+
+  let S = A.store.get(KEY, null);
+  if (!S || !S.classes) {
+    S = { v: 2, weights: defaultWeights(), noRepeat: true, fast: false, cur: 'c1', classes: { c1: newClass('預設班級', 30) } };
+  }
+  METHODS.forEach(m => { if (S.weights[m.id] == null) S.weights[m.id] = m.w; });
+  const save = () => A.store.set(KEY, S);
+  const C = () => S.classes[S.cur] || S.classes[Object.keys(S.classes)[0]];
+
+  let busy = false;
+  let lastHits = [];
+
+  /* ---------- 班級 ---------- */
+  function renderClasses() {
+    const sel = $('class-sel');
+    sel.innerHTML = Object.entries(S.classes).map(([id, c]) => `<option value="${id}" ${id === S.cur ? 'selected' : ''}>${A.esc(c.name)}（${c.count} 人）</option>`).join('');
+    $('btn-class-del').disabled = Object.keys(S.classes).length <= 1;
+  }
+  $('class-sel').onchange = e => { S.cur = e.target.value; save(); lastHits = []; resetStage(); renderAll(); };
+  let editingId = null;
+  function openClassModal(id) {
+    editingId = id;
+    const c = id ? S.classes[id] : null;
+    $('cm-title').textContent = id ? '修改班級' : '新增班級';
+    $('cm-name').value = c ? c.name : '';
+    $('cm-count').value = c ? c.count : (C().count || 30);
+    A.modal($('class-modal'), true);
+    setTimeout(() => $('cm-name').focus(), 50);
+  }
+  $('btn-class-add').onclick = () => openClassModal(null);
+  $('btn-class-edit').onclick = () => openClassModal(S.cur);
+  $('cm-ok').onclick = () => {
+    const name = $('cm-name').value.trim() || '未命名班級';
+    const count = Math.max(1, Math.min(60, parseInt($('cm-count').value, 10) || 30));
+    if (editingId) {
+      const c = S.classes[editingId];
+      c.name = name; c.count = count;
+      c.absent = c.absent.filter(n => n <= count); c.rested = c.rested.filter(n => n <= count);
+    } else {
+      const id = 'c' + Date.now().toString(36);
+      S.classes[id] = newClass(name, count); S.cur = id;
+    }
+    save(); A.modal($('class-modal'), false); lastHits = []; resetStage(); renderAll();
+  };
+  document.querySelectorAll('#class-modal [data-close]').forEach(b => b.onclick = () => A.modal($('class-modal'), false));
+  $('btn-class-del').onclick = () => {
+    if (Object.keys(S.classes).length <= 1) return;
+    if (!confirm(`確定刪除「${C().name}」？這個班的請假、輪次和紀錄都會一起刪掉。`)) return;
+    delete S.classes[S.cur]; S.cur = Object.keys(S.classes)[0]; save(); lastHits = []; resetStage(); renderAll();
+  };
+
+  /* ---------- 座號條 ---------- */
+  const present = () => { const c = C(); const out = []; for (let i = 1; i <= c.count; i++) if (!c.absent.includes(i)) out.push(i); return out; };
+  function renderSeats() {
+    const c = C();
+    let html = '';
+    for (let i = 1; i <= c.count; i++) {
+      const cls = ['seat'];
+      if (c.absent.includes(i)) cls.push('absent');
+      else if (S.noRepeat && c.rested.includes(i)) cls.push('rested');
+      if (lastHits.includes(i)) cls.push('hit');
+      html += `<button type="button" class="${cls.join(' ')}" data-n="${i}" title="${i} 號：點一下切換請假">${i}</button>`;
+    }
+    $('seats').innerHTML = html;
+    const p = present().length, r = c.rested.filter(n => !c.absent.includes(n)).length;
+    $('seat-count').textContent = `出席 ${p} 人` + (c.absent.length ? `・請假 ${c.absent.length} 人` : '') + (S.noRepeat ? `・這一輪已抽 ${r} 人` : '');
+    $('class-info').textContent = '';
+    $('legend-rest').classList.toggle('hidden', !S.noRepeat);
+    $('btn-round').classList.toggle('hidden', !S.noRepeat);
+  }
+  $('seats').onclick = e => {
+    const b = e.target.closest('.seat'); if (!b || busy) return;
+    const n = +b.dataset.n, c = C();
+    if (c.absent.includes(n)) c.absent = c.absent.filter(x => x !== n); else c.absent.push(n);
+    save(); renderSeats(); A.sfx.blip();
+  };
+  $('btn-round').onclick = () => { C().rested = []; save(); renderSeats(); A.toast('🔄 全班重新一輪'); };
+  $('btn-clear-absent').onclick = () => { C().absent = []; save(); renderSeats(); };
+
+  /* ---------- 機率表 ---------- */
+  function renderWeights() {
+    const total = METHODS.reduce((s, m) => s + (+S.weights[m.id] || 0), 0);
+    $('wtable').innerHTML = METHODS.map(m => {
+      const w = +S.weights[m.id] || 0, pct = total ? (w / total * 100) : 0;
+      return `<tr><td class="name">${m.name}</td>
+        <td><input type="number" min="0" max="999" step="1" data-w="${m.id}" value="${w}" aria-label="${m.name}的比重"></td>
+        <td class="bar"><div class="barbg"><div class="barfg" style="width:${pct}%"></div></div></td>
+        <td class="pct">${pct ? (pct < 1 ? pct.toFixed(1) : Math.round(pct)) : 0}%</td></tr>`;
+    }).join('');
+    const sl = $('sumline');
+    if (!total) { sl.className = 'sumline warn'; sl.textContent = '⚠️ 全部都是 0，至少要有一種方式大於 0 才能抽'; }
+    else { sl.className = 'sumline'; sl.textContent = `✅ 比重合計 ${total}，已自動換算成百分比`; }
+    $('btn-draw').disabled = !total || busy;
+  }
+  $('wtable').addEventListener('input', e => {
+    const id = e.target.dataset.w; if (!id) return;
+    S.weights[id] = Math.max(0, Math.min(999, parseFloat(e.target.value) || 0)); save();
+    // 只更新比例條，不重畫表格（輸入框才不會跳掉）
+    const total = METHODS.reduce((s, m) => s + (+S.weights[m.id] || 0), 0);
+    document.querySelectorAll('#wtable tr').forEach((tr, i) => {
+      const w = +S.weights[METHODS[i].id] || 0, pct = total ? w / total * 100 : 0;
+      tr.querySelector('.barfg').style.width = pct + '%';
+      tr.querySelector('.pct').textContent = (pct ? (pct < 1 ? pct.toFixed(1) : Math.round(pct)) : 0) + '%';
+    });
+    const sl = $('sumline');
+    if (!total) { sl.className = 'sumline warn'; sl.textContent = '⚠️ 全部都是 0，至少要有一種方式大於 0 才能抽'; }
+    else { sl.className = 'sumline'; sl.textContent = `✅ 比重合計 ${total}，已自動換算成百分比`; }
+    $('btn-draw').disabled = !total || busy;
+  });
+  $('btn-even').onclick = () => { METHODS.forEach(m => S.weights[m.id] = 1); save(); renderWeights(); };
+  $('btn-wreset').onclick = () => { S.weights = defaultWeights(); save(); renderWeights(); };
+
+  /* ---------- 玩法開關 ---------- */
+  $('opt-norepeat').onchange = e => { S.noRepeat = e.target.checked; save(); renderSeats(); };
+  $('opt-fast').onchange = e => { S.fast = e.target.checked; save(); };
+
+  /* ---------- 紀錄 ---------- */
+  function renderHist() {
+    const h = C().hist;
+    $('hist').innerHTML = h.length ? h.map(x => `<li><span class="t">${x.t}</span><span class="k">${A.esc(x.m)}</span><span class="v">${A.esc(x.r)}</span></li>`).join('')
+      : '<li class="empty">還沒有紀錄</li>';
+  }
+  $('btn-hclear').onclick = () => { if (!C().hist.length || !confirm('清空這個班的抽選紀錄？')) return; C().hist = []; save(); renderHist(); };
+  document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+    document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
+    $('tab-set').classList.toggle('hidden', b.dataset.tab !== 'set');
+    $('tab-hist').classList.toggle('hidden', b.dataset.tab !== 'hist');
+  });
+
+  /* ---------- 面板收合 ---------- */
+  let sideHidden = A.store.get('wu-picker-side-hidden', false);
+  function paintSide() { $('layout').classList.toggle('side-hidden', sideHidden); $('btn-side').textContent = sideHidden ? '⇤ 打開面板' : '⇥ 收起面板'; }
+  $('btn-side').onclick = () => { sideHidden = !sideHidden; A.store.set('wu-picker-side-hidden', sideHidden); paintSide(); };
+
+  /* ---------- 舞台 ---------- */
+  function resetStage() {
+    $('method').textContent = '？？？'; $('method').className = 'method-pill';
+    $('result').className = 'result';
+    $('result').innerHTML = '<div class="idle"><div class="big">🕵️</div><p>按下「抽人」，讓命運指認今天的幸運兒！</p></div>';
+    $('status').textContent = '';
+  }
+
+  // 決定要抽到誰（不重複模式會先從還沒抽過的人裡面抽）
+  function chooseSeats(n) {
+    const c = C(), all = present();
+    if (!all.length) return { seats: [], note: '' };
+    n = Math.min(n, all.length);
+    let note = '';
+    if (!S.noRepeat) return { seats: A.shuffle(all).slice(0, n), note };
+    let pool = all.filter(x => !c.rested.includes(x));
+    let seats = [];
+    if (pool.length < n) {
+      seats = A.shuffle(pool);           // 這一輪剩下的人先上
+      c.rested = [];                     // 開新的一輪
+      pool = all.filter(x => !seats.includes(x));
+      note = '全班都抽過一輪了，開始新的一輪！';
+    }
+    seats = seats.concat(A.shuffle(pool).slice(0, n - seats.length));
+    c.rested = c.rested.concat(seats);
+    if (!pool.length && !seats.length) note = '';
+    return { seats, note };
+  }
+
+  async function rollMethod(final) {
+    const pill = $('method');
+    const live = METHODS.filter(m => (+S.weights[m.id] || 0) > 0);
+    if (S.fast || live.length <= 1) { pill.textContent = final.name; pill.className = 'method-pill locked'; A.sfx.clunk(); return; }
+    pill.className = 'method-pill rolling';
+    const gaps = A.easeTicks(1500, 55, 260);
+    let i = A.rand(live.length);
+    for (let k = 0; k < gaps.length; k++) {
+      i = (i + 1 + A.rand(Math.max(1, live.length - 1))) % live.length;
+      pill.textContent = live[i].name; A.sfx.tick(k / gaps.length);
+      await A.sleep(gaps[k]);
+    }
+    pill.textContent = final.name; pill.className = 'method-pill locked'; A.sfx.clunk();
+    await A.sleep(350);
+  }
+
+  async function rollBoards(seats) {
+    const res = $('result');
+    res.className = 'result' + (seats.length === 1 ? ' n1' : '');
+    res.innerHTML = seats.map(() => '<div class="board"><div class="d">??</div><div class="u">號</div></div>').join('');
+    const boards = [...res.querySelectorAll('.board')];
+    if (S.fast) {
+      boards.forEach((b, i) => { b.querySelector('.d').textContent = seats[i]; b.classList.add('locked'); });
+      return;
+    }
+    const pool = present();
+    const total = 1500 + (seats.length - 1) * 750;
+    A.sfx.drumroll(total / 1000);
+    boards.forEach(b => b.classList.add('rolling'));
+    await Promise.all(boards.map(async (b, i) => {
+      const dur = 1500 + i * 750;
+      const gaps = A.easeTicks(dur, 45, 230);
+      const d = b.querySelector('.d');
+      for (let k = 0; k < gaps.length; k++) {
+        d.textContent = A.pick(pool);
+        if (i === boards.length - 1 || k % 3 === 0) A.sfx.tick(0.3 + i * 0.2);
+        await A.sleep(gaps[k]);
+      }
+      d.textContent = seats[i]; b.classList.remove('rolling'); b.classList.add('locked'); A.sfx.clunk();
+    }));
+  }
+
+  async function draw() {
+    if (busy) return;
+    const c = C();
+    if (!present().length) { A.toast('沒有出席的同學可以抽喔（全部都標成請假了）'); return; }
+    const method = A.weighted(METHODS, m => S.weights[m.id]);
+    if (!method) { A.toast('請先把至少一種抽選方式的比重設成大於 0'); return; }
+    busy = true; $('btn-draw').disabled = true; A.sfx.unlock();
+    $('status').textContent = ''; lastHits = []; renderSeats();
+    $('result').innerHTML = '<div class="idle"><div class="big">🔎</div><p>搜查中⋯⋯</p></div>';
+
+    await rollMethod(method);
+
+    let resultText = '';
+    if (method.group) {
+      const res = $('result');
+      res.className = 'result';
+      res.innerHTML = `<div class="group-card pop"><div class="e">${method.emoji}</div><div class="g">${method.group}！</div></div>`;
+      if (method.seats) lastHits = present().filter(method.seats);
+      else if (method.id === 'all') lastHits = present();
+      resultText = method.group;
+      A.sfx.fanfare(); A.confetti({ count: 160 });
+      $('status').textContent = method.id === 'girls' || method.id === 'boys' ? '請全體' + method.name + '同學準備！' : '一起來吧！';
+    } else {
+      const { seats, note } = chooseSeats(method.n);
+      await rollBoards(seats);
+      lastHits = seats.slice();
+      resultText = seats.map(n => n + ' 號').join('、');
+      await A.sleep(120);
+      $('result').querySelectorAll('.board').forEach(b => { b.insertAdjacentHTML('beforeend', '<span class="stamp">指認</span>'); });
+      A.sfx.fanfare(); A.confetti({ count: 120 + seats.length * 30 });
+      $('status').textContent = note || (seats.length > 1 ? `恭喜這 ${seats.length} 位同學！` : '就決定是你了！');
+      if (note) A.toast('🔄 ' + note, 3200);
+    }
+
+    c.hist.unshift({ t: A.hhmm(), m: method.name, r: resultText });
+    if (c.hist.length > 60) c.hist.length = 60;
+    save(); renderSeats(); renderHist();
+    busy = false; $('btn-draw').disabled = false;
+    $('btn-draw').firstChild.textContent = '🎯 再抽一次';
+  }
+  $('btn-draw').onclick = draw;
+  document.addEventListener('keydown', e => {
+    if (e.code !== 'Space' && e.key !== 'Enter') return;
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (['input', 'textarea', 'select', 'button', 'a'].includes(tag)) return;
+    if (!$('class-modal').classList.contains('hidden')) return;
+    e.preventDefault(); draw();
+  });
+
+  function renderAll() {
+    $('opt-norepeat').checked = S.noRepeat; $('opt-fast').checked = S.fast;
+    renderClasses(); renderSeats(); renderWeights(); renderHist();
+  }
+  A.toolbar($('toolbar'));
+  paintSide(); renderAll();
+})();
+</script>
+</body>
+</html>

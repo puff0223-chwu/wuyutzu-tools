@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>💀 陣亡詛咒系統｜巫魚子教課事務所</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="arcade.css">
+<style>
+  :root { --accent: #b3261e; --blood: #8e1b16; --gold: #f2b134; }
+
+  .victim { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .victim label { font-family: 'Noto Serif TC', serif; font-weight: 900; letter-spacing: .1em; color: #e9e3f2; }
+  .victim input {
+    width: 92px; text-align: center; font-family: 'Bebas Neue', sans-serif; font-size: 1.6em; letter-spacing: .05em;
+    border: 2.5px solid var(--gold); border-radius: 12px; background: rgba(255,255,255,.08); color: #fff; padding: 2px 6px; outline: none;
+  }
+  .victim input::placeholder { color: rgba(255,255,255,.35); }
+  .victim .u { color: #e9e3f2; }
+
+  /* 牌桌 */
+  .table { width: 100%; display: flex; flex-wrap: wrap; gap: clamp(8px, 1.6vw, 16px); justify-content: center; perspective: 900px; padding: 6px 4px; }
+  .table .tcard { width: var(--cw, 96px); }
+  .tcard {
+    position: relative; aspect-ratio: 5 / 7; border-radius: 12px; cursor: default;
+    background:
+      radial-gradient(circle at 50% 50%, rgba(242,177,52,.18) 0 28%, transparent 29%),
+      repeating-linear-gradient(45deg, rgba(242,177,52,.12) 0 6px, transparent 6px 12px),
+      linear-gradient(160deg, #2b1f3f, #17112a);
+    border: 2.5px solid var(--gold); box-shadow: 0 6px 0 rgba(0,0,0,.35), inset 0 0 0 4px #17112a, inset 0 0 0 5.5px rgba(242,177,52,.55);
+    display: grid; place-items: center; color: var(--gold); font-size: clamp(1.4em, 3.6vw, 2.4em);
+    transition: transform .18s, box-shadow .18s, filter .18s;
+  }
+  .tcard .no { position: absolute; top: 5px; left: 8px; font-family: 'Bebas Neue', sans-serif; font-size: .45em; letter-spacing: .1em; opacity: .7; }
+  .tcard.lit { transform: translateY(-10px) scale(1.07); box-shadow: 0 0 0 3px #fff, 0 0 28px 6px rgba(242,177,52,.85), 0 12px 0 rgba(0,0,0,.35); filter: brightness(1.35); }
+  .tcard.chosen { transform: translateY(-14px) scale(1.12); box-shadow: 0 0 0 4px #fff, 0 0 40px 12px rgba(228,87,46,.95); filter: brightness(1.5); }
+  .tcard.dim { filter: brightness(.45) saturate(.6); }
+  @keyframes jiggle { 0%,100% { transform: translate(0,0) rotate(0); } 25% { transform: translate(-6px,-4px) rotate(-6deg); } 50% { transform: translate(5px,3px) rotate(5deg); } 75% { transform: translate(-3px,5px) rotate(-3deg); } }
+  .table.shuffling .tcard { animation: jiggle .32s ease-in-out 3; }
+
+  /* 揭曉 */
+  .reveal { position: absolute; inset: 0; display: grid; place-items: center; z-index: 5; background: rgba(10,8,20,.72); backdrop-filter: blur(3px); cursor: pointer; padding: 16px; }
+  .flip { width: min(480px, 88%); aspect-ratio: 5 / 6; perspective: 1400px; }
+  .flip-in { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform .9s cubic-bezier(.3,1.25,.5,1); }
+  .flip.open .flip-in { transform: rotateY(180deg); }
+  .face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 22px; overflow: hidden; }
+  .face.back {
+    background: repeating-linear-gradient(45deg, rgba(242,177,52,.14) 0 8px, transparent 8px 16px), linear-gradient(160deg, #2b1f3f, #17112a);
+    border: 4px solid var(--gold); display: grid; place-items: center; font-size: 6em; color: var(--gold);
+  }
+  .face.front {
+    transform: rotateY(180deg); border: 4px solid #fff; padding: 22px 22px 18px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; color: #fff;
+  }
+  .face.front.curse { background: radial-gradient(circle at 50% 30%, #c0392b 0%, var(--blood) 55%, #3d0b09 100%); box-shadow: 0 0 60px rgba(228,87,46,.6); }
+  .face.front.revive { background: radial-gradient(circle at 50% 30%, #fff6d8 0%, #f6cf62 50%, #d79c18 100%); color: var(--navy); box-shadow: 0 0 70px rgba(242,177,52,.85); }
+  .face .kind { font-family: 'Bebas Neue', sans-serif; letter-spacing: .3em; font-size: 1.15em; opacity: .85; }
+  .face .ico { font-size: clamp(3.2em, 10vw, 5em); line-height: 1; }
+  .face .txt { font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: clamp(1.4em, 4.4vw, 2.3em); line-height: 1.35; letter-spacing: .04em; word-break: break-word; }
+  .face .who { font-weight: 700; opacity: .9; }
+  .reveal .tap { position: absolute; bottom: 14px; left: 0; right: 0; text-align: center; color: rgba(255,255,255,.6); font-size: .85em; }
+  @keyframes redflash { 0% { box-shadow: inset 0 0 0 0 rgba(228,87,46,0); } 30% { box-shadow: inset 0 0 120px 40px rgba(228,87,46,.75); } 100% { box-shadow: inset 0 0 0 0 rgba(228,87,46,0); } }
+  .stage.flash { animation: redflash 1s ease-out; }
+
+  .stage-msg { color: #cfc8e0; text-align: center; min-height: 1.4em; font-weight: 700; }
+  .big-btn.curse-btn { background: #b3261e; color: #fff; border-color: #fff; box-shadow: 6px 6px 0 var(--gold); }
+  .big-btn.curse-btn:active { box-shadow: 0 0 0 var(--gold); }
+
+  /* 側欄清單 */
+  .clist { list-style: none; }
+  .clist li { display: flex; gap: 8px; align-items: flex-start; padding: 7px 0; border-bottom: 1.5px dashed var(--line); font-size: .92em; line-height: 1.45; }
+  .clist li:last-child { border-bottom: none; }
+  .clist .p { flex: none; font-family: 'Bebas Neue', sans-serif; letter-spacing: .05em; font-size: 1.05em; color: var(--muted); width: 46px; text-align: right; }
+  .clist .x { flex: 1; }
+  .clist li.rv .x { color: #8a6208; font-weight: 700; }
+  .ed-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; }
+  @media (max-width: 640px) { .ed-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="topbar">
+    <div class="badge">💀</div>
+    <div class="titles">
+      <div class="eyebrow">DRAWER II · 課堂遊戲化 · CURSED FILES</div>
+      <h1>陣亡<span class="hl">詛咒</span>系統</h1>
+    </div>
+    <div class="actions">
+      <button class="btn sm" id="btn-side" type="button">⇥ 收起面板</button>
+      <span id="toolbar" class="actions"></span>
+    </div>
+  </header>
+
+  <div class="layout" id="layout">
+    <main>
+      <section class="stage dark" id="stage">
+        <div class="stage-label">HERO DOWN · 英雄陣亡</div>
+        <div class="victim">
+          <label for="victim">陣亡者</label>
+          <input id="victim" type="number" min="1" max="99" inputmode="numeric" placeholder="座號">
+          <span class="u">號（可不填）</span>
+        </div>
+        <div class="table" id="table"></div>
+        <div class="stage-msg" id="msg">血量歸零的英雄，請從命運之牌中接受你的詛咒⋯⋯</div>
+        <button class="big-btn curse-btn" id="btn-draw" type="button">☠️ 抽 取 詛 咒<span class="hint">也可以按空白鍵</span></button>
+        <div class="reveal hidden" id="reveal">
+          <div class="flip" id="flip">
+            <div class="flip-in">
+              <div class="face back">☠</div>
+              <div class="face front" id="front"></div>
+            </div>
+          </div>
+          <div class="tap">點一下畫面回到牌桌</div>
+        </div>
+      </section>
+    </main>
+
+    <aside class="side">
+      <div class="panel">
+        <div class="tabs">
+          <button class="on" data-tab="list" type="button">📜 詛咒清單</button>
+          <button data-tab="hist" type="button">🪦 陣亡紀錄</button>
+        </div>
+        <div id="tab-list">
+          <h3>每一張牌的機率都一樣</h3>
+          <ul class="clist" id="clist"></ul>
+          <div class="row" style="margin-top:12px">
+            <button class="btn sm navy" id="btn-edit" type="button">✏️ 編輯清單</button>
+          </div>
+        </div>
+        <div id="tab-hist" class="hidden">
+          <h3>🪦 陣亡紀錄</h3>
+          <ul class="history" id="hist"></ul>
+          <div class="row" style="margin-top:10px;justify-content:flex-end">
+            <button class="btn sm ghost" id="btn-hclear" type="button">清空紀錄</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- 編輯清單 -->
+<div class="modal-back hidden" id="ed">
+  <div class="modal">
+    <button class="btn sm close" type="button" data-close>✕</button>
+    <h2>✏️ 編輯詛咒清單</h2>
+    <p class="muted small" style="margin-bottom:12px;line-height:1.6">一行一張牌，每張牌被抽到的機率一樣。開頭可以放一個表情符號當圖示（例如「🧹 打掃化學實驗室一次」）。想讓某張牌比較容易抽到，就把它多寫幾行。</p>
+    <div class="ed-grid">
+      <div class="field"><label for="ed-curse">💀 詛咒牌</label><textarea class="input" id="ed-curse" rows="12"></textarea></div>
+      <div class="field"><label for="ed-revive">🍀 幸運復活牌</label><textarea class="input" id="ed-revive" rows="12"></textarea>
+        <div class="help">抽到這裡的牌會出現金色光芒與彩帶，代表逃過一劫。</div></div>
+    </div>
+    <div class="muted small" id="ed-sum"></div>
+    <div class="foot">
+      <div class="left">
+        <button class="btn sm ghost" type="button" id="ed-default">恢復預設</button>
+        <button class="btn sm" type="button" id="ed-export">⬇️ 匯出</button>
+        <button class="btn sm" type="button" id="ed-import">⬆️ 匯入</button>
+      </div>
+      <button class="btn" type="button" data-close>取消</button>
+      <button class="btn navy" type="button" id="ed-ok">儲存</button>
+    </div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+(function () {
+  'use strict';
+  const A = window.Arcade;
+  const $ = id => document.getElementById(id);
+  const KEY = 'wu-curse-v2';
+
+  // 預設清單沿用舊版 system.html 的 9 張
+  const DEFAULT = {
+    curses: [
+      '🙋 擔任大師的小志工一次',
+      '📵 一日無手機體驗（上學上繳，放學領回）',
+      '📉 -500 XP',
+      '🧪 中午到辦公室默寫大師規定的元素週期表，直到過關為止',
+      '🧹 打掃化學實驗室一次',
+      '⛑️ 在教室戴著工地帽上課一節',
+      '👟 穿著健康鞋走教室一圈',
+      '🎲 玩一次真心話大冒險'
+    ],
+    revives: ['🍀 免費復活，奇蹟式地沒有被詛咒']
+  };
+  let S = A.store.get(KEY, null);
+  if (!S || !Array.isArray(S.curses)) S = { curses: DEFAULT.curses.slice(), revives: DEFAULT.revives.slice(), hist: [] };
+  const save = () => A.store.set(KEY, S);
+  let busy = false;
+
+  // 拆出開頭的表情符號
+  const EMOJI_RE = /^(\p{Extended_Pictographic}(?:️|‍\p{Extended_Pictographic}|\p{Emoji_Modifier})*)\s*/u;
+  function split(text) {
+    const m = text.match(EMOJI_RE);
+    return m ? { ico: m[1], txt: text.slice(m[0].length) || text } : { ico: '', txt: text };
+  }
+  const deck = () => S.curses.map(t => ({ t, rv: false })).concat(S.revives.map(t => ({ t, rv: true })));
+
+  /* ---------- 牌桌 ---------- */
+  // 排成最多兩～三排，每排張數平均，最後一排置中
+  function layoutTable(n) {
+    const w = $('table').clientWidth || 700;
+    const gap = w < 520 ? 8 : 14;
+    const rows = n <= 4 ? 1 : n <= 16 ? 2 : 3;
+    const perRow = Math.ceil(n / rows);
+    const cw = Math.max(52, Math.min(130, Math.floor((w - 8 - gap * (perRow - 1)) / perRow)));
+    $('table').style.setProperty('--cw', cw + 'px');
+  }
+  function renderTable() {
+    const n = Math.min(deck().length, 24);
+    const t = $('table');
+    layoutTable(n);
+    t.innerHTML = Array.from({ length: n }, (_, i) => `<div class="tcard"><span class="no">${String(i + 1).padStart(2, '0')}</span>☠</div>`).join('');
+  }
+  addEventListener('resize', () => { if (!busy) renderTable(); });
+
+  /* ---------- 側欄 ---------- */
+  function renderList() {
+    const d = deck(), n = d.length;
+    const pct = n ? (100 / n) : 0;
+    const p = pct ? (pct < 10 ? pct.toFixed(1) : Math.round(pct)) + '%' : '';
+    $('clist').innerHTML = n ? d.map(x => `<li class="${x.rv ? 'rv' : ''}"><span class="p">${p}</span><span class="x">${A.esc(x.t)}</span></li>`).join('')
+      : '<li class="muted">清單是空的，請按「編輯清單」新增</li>';
+    $('btn-draw').disabled = !n || busy;
+  }
+  function renderHist() {
+    $('hist').innerHTML = S.hist.length ? S.hist.map(h => `<li><span class="t">${h.time}</span><span class="k" style="background:${h.rv ? '#c98a12' : '#b3261e'}">${h.who ? A.esc(h.who) + ' 號' : '英雄'}</span><span class="v">${A.esc(h.t)}</span></li>`).join('')
+      : '<li class="empty">還沒有英雄陣亡</li>';
+  }
+  $('btn-hclear').onclick = () => { if (!S.hist.length || !confirm('清空陣亡紀錄？')) return; S.hist = []; save(); renderHist(); };
+  document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+    document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
+    $('tab-list').classList.toggle('hidden', b.dataset.tab !== 'list');
+    $('tab-hist').classList.toggle('hidden', b.dataset.tab !== 'hist');
+  });
+  let sideHidden = A.store.get('wu-curse-side-hidden', false);
+  function paintSide() { $('layout').classList.toggle('side-hidden', sideHidden); $('btn-side').textContent = sideHidden ? '⇤ 打開面板' : '⇥ 收起面板'; renderTable(); }
+  $('btn-side').onclick = () => { sideHidden = !sideHidden; A.store.set('wu-curse-side-hidden', sideHidden); paintSide(); };
+
+  /* ---------- 抽牌 ---------- */
+  async function draw() {
+    if (busy) return;
+    const d = deck();
+    if (!d.length) { A.toast('清單是空的，請先編輯清單'); return; }
+    busy = true; $('btn-draw').disabled = true; A.sfx.unlock();
+    const who = $('victim').value.trim();
+    const item = A.pick(d);
+    renderTable();
+    const cards = [...$('table').querySelectorAll('.tcard')];
+    const target = A.rand(cards.length);
+
+    // 1. 洗牌
+    $('msg').textContent = '命運之牌洗牌中⋯⋯';
+    $('table').classList.add('shuffling');
+    for (let k = 0; k < 6; k++) { A.sfx.whoosh(); await A.sleep(160); }
+    $('table').classList.remove('shuffling');
+
+    // 2. 燈光在牌之間跳動，越來越慢
+    $('msg').textContent = '詛咒正在挑選它的主人⋯⋯';
+    const gaps = A.easeTicks(2600, 60, 360);
+    let cur = A.rand(cards.length);
+    for (let k = 0; k < gaps.length; k++) {
+      cards.forEach(c => c.classList.remove('lit'));
+      const left = gaps.length - k;
+      if (left <= 1) cur = target;
+      else { let nx; do { nx = A.rand(cards.length); } while (cards.length > 1 && nx === cur); cur = nx; }
+      cards[cur].classList.add('lit'); A.sfx.tick(k / gaps.length);
+      await A.sleep(gaps[k]);
+    }
+    cards.forEach((c, i) => { c.classList.remove('lit'); c.classList.toggle('dim', i !== target); });
+    cards[target].classList.add('chosen'); A.sfx.clunk();
+    await A.sleep(650);
+
+    // 3. 翻牌
+    const sp = split(item.t);
+    const front = $('front');
+    front.className = 'face front ' + (item.rv ? 'revive' : 'curse');
+    front.innerHTML = `<div class="kind">${item.rv ? 'LUCKY · 逃過一劫' : 'CURSE · 詛咒降臨'}</div>
+      <div class="ico">${sp.ico || (item.rv ? '🍀' : '💀')}</div>
+      <div class="txt">${A.esc(sp.txt)}</div>
+      ${who ? `<div class="who">${A.esc(who)} 號 ${item.rv ? '原地復活！' : '請接受你的命運'}</div>` : ''}`;
+    $('flip').classList.remove('open');
+    $('reveal').classList.remove('hidden');
+    A.sfx.whoosh();
+    await A.sleep(80);
+    $('flip').classList.add('open');
+    await A.sleep(450);
+    if (item.rv) { A.sfx.magic(); A.confetti({ colors: ['#f2b134', '#fff3c4', '#ffffff', '#1f9e8f'], count: 200, stars: true }); }
+    else { A.sfx.doom(); $('stage').classList.add('shake', 'flash'); setTimeout(() => $('stage').classList.remove('shake', 'flash'), 1000); }
+
+    S.hist.unshift({ time: A.hhmm(), who, t: item.t, rv: item.rv });
+    if (S.hist.length > 80) S.hist.length = 80;
+    save(); renderHist();
+    $('msg').textContent = item.rv ? '幸運女神眷顧了你！' : '詛咒已降臨，下一位英雄請小心⋯⋯';
+    busy = false; $('btn-draw').disabled = false;
+  }
+  $('reveal').onclick = () => { $('reveal').classList.add('hidden'); $('flip').classList.remove('open'); renderTable(); $('victim').value = ''; };
+  $('btn-draw').onclick = draw;
+  document.addEventListener('keydown', e => {
+    if (e.code !== 'Space' && e.key !== 'Enter') return;
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (!$('ed').classList.contains('hidden')) return;
+    if (!$('reveal').classList.contains('hidden')) { e.preventDefault(); $('reveal').click(); return; }
+    if (['textarea', 'select', 'button', 'a'].includes(tag)) return;
+    if (tag === 'input' && e.code === 'Space') return;
+    e.preventDefault(); draw();
+  });
+
+  /* ---------- 編輯 ---------- */
+  function edSum() {
+    const c = A.lines($('ed-curse').value).length, r = A.lines($('ed-revive').value).length, n = c + r;
+    $('ed-sum').textContent = n ? `共 ${n} 張牌：詛咒 ${c} 張、復活 ${r} 張，每張機率 ${(100 / n).toFixed(1)}%（逃過一劫的機率 ${(r / n * 100).toFixed(1)}%）` + (n > 24 ? '。牌桌最多畫 24 張，但每一張都一樣會被抽到。' : '') : '至少要有一張牌';
+  }
+  function openEd() {
+    $('ed-curse').value = S.curses.join('\n'); $('ed-revive').value = S.revives.join('\n'); edSum();
+    A.modal($('ed'), true);
+  }
+  $('btn-edit').onclick = openEd;
+  ['ed-curse', 'ed-revive'].forEach(id => $(id).addEventListener('input', edSum));
+  document.querySelectorAll('#ed [data-close]').forEach(b => b.onclick = () => A.modal($('ed'), false));
+  $('ed-default').onclick = () => { $('ed-curse').value = DEFAULT.curses.join('\n'); $('ed-revive').value = DEFAULT.revives.join('\n'); edSum(); };
+  $('ed-ok').onclick = () => {
+    const c = A.lines($('ed-curse').value), r = A.lines($('ed-revive').value);
+    if (!c.length && !r.length) { A.toast('至少要有一張牌喔'); return; }
+    S.curses = c; S.revives = r; save(); A.modal($('ed'), false); renderList(); renderTable(); A.toast('✅ 詛咒清單已儲存');
+  };
+  $('ed-export').onclick = () => A.exportJSON('陣亡詛咒清單.json', { type: 'wu-curse', curses: A.lines($('ed-curse').value), revives: A.lines($('ed-revive').value) });
+  $('ed-import').onclick = async () => {
+    const d = await A.importJSON(); if (!d) return;
+    if (d.type !== 'wu-curse' || !Array.isArray(d.curses)) { A.toast('這不是陣亡詛咒的清單檔'); return; }
+    $('ed-curse').value = d.curses.join('\n'); $('ed-revive').value = (d.revives || []).join('\n'); edSum();
+    A.toast('已載入，確認後按「儲存」');
+  };
+
+  A.toolbar($('toolbar'));
+  paintSide(); renderList(); renderHist();
+})();
+</script>
+</body>
+</html>
