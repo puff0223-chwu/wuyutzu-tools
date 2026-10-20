@@ -7,10 +7,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<script src="core.js?v=20261019b"></script>
+<script src="core.js?v=20261020a"></script>
 <script src="check.js?v=20261018b"></script>
 <script src="stage1.js?v=20261019a"></script>
-<script src="stage2.js?v=20261019a"></script>
+<script src="stage2.js?v=20261020a"></script>
 <style>
 :root{
   --night:#1b1a17; --night2:#26241f; --parch:#f3e9d2; --parch2:#e8dbbb; --edge:#c9b386;
@@ -184,6 +184,12 @@ button{font:inherit;cursor:pointer}
 .sort-item .stroke{font-size:.78rem;color:var(--jade);font-weight:700;white-space:nowrap}
 
 
+/* 2026-10-20：第 3 關改成和其他關一樣的大區塊；碎片列放在區塊裡 */
+.stage .frag{margin:12px 0 0;padding:10px 14px;background:#fbf4e3;border:1px solid var(--edge);border-radius:10px;box-shadow:none}
+.stage .rules{margin-top:10px}
+.sub-h{font-family:"Noto Serif TC",serif;font-weight:900;font-size:1.02rem;margin:16px 0 0;display:flex;align-items:center;gap:8px}
+.sub-h span{color:var(--muted);font-size:.82rem;font-family:"Noto Sans TC",sans-serif;font-weight:500}
+.stage .cert{margin:16px 0 0}
 /* 第 1 關：檔案庫搜查 */
 .stage{padding:18px 22px;margin:16px 0}
 .stage h2{font-size:1.3rem}
@@ -299,6 +305,13 @@ button{font:inherit;cursor:pointer}
 .remind{max-width:820px;margin:14px auto 0;background:#fff4dc;border:2px dashed var(--gold);border-radius:10px;padding:12px 16px;font-size:.95rem}
 .tgrade{max-width:820px;margin:14px auto 0;background:#1b1a17;color:var(--parch);border-radius:10px;padding:12px 16px}
 @media (max-width:560px){ .paper{padding:20px 16px} }
+/* 2-4 兩行判定 */
+.vline{border-radius:8px;padding:8px 12px;margin-top:6px;background:#fffdf6;border:1px solid var(--edge);color:var(--ink)}
+.vline.ok{border-color:var(--ok);box-shadow:inset 4px 0 0 var(--ok)} .vline.ng{border-color:var(--bad);box-shadow:inset 4px 0 0 var(--bad)} .vline.wait{box-shadow:inset 4px 0 0 var(--gold)}
+.vline div{margin-top:3px;font-size:.93rem}
+.sendno{font-size:.8rem;color:var(--muted);font-weight:700}
+.res.good .sendno{color:#c9b386}
+.note3{font-size:.82rem;color:var(--muted);margin-top:4px}
 /* 結案 */
 .cert{margin:18px 0;padding:28px 24px;text-align:center;border:3px double var(--ink)}
 .cert h2{font-size:1.7rem;margin:8px 0}
@@ -345,12 +358,12 @@ button{font:inherit;cursor:pointer}
         <div class="who">調查員 <b id="whoName"></b>｜學號 <b class="mono" id="whoId"></b>｜<span id="whoMission"></span></div>
         <div class="cloud" id="cloud"></div>
       </div>
-      <button class="btn ghost" id="btnOut">換人</button>
+      <button class="btn ghost" id="btnOut">登出</button>
     </div>
 
     <div class="parch stage" id="s1Box">
       <h2>第 1 關｜檔案庫搜查</h2>
-      <p style="margin:6px 0 0">寫小論文的第一步是<b>找文獻</b>。先在<b>模擬檔案庫</b>練習拆關鍵字、搜尋、分辨哪些文獻可靠；再到<b>真實資料庫</b>幫自己的研究主題找文獻，填成線索卡。</p>
+      <p style="margin:6px 0 0">寫小論文的第一步是<b>找文獻</b>。在<b>模擬檔案庫</b>練習拆關鍵字、搜尋、分辨哪些文獻可靠；學會之後，回家用同樣的方法到真實資料庫找文獻（結案作業的線索卡）。</p>
       <div class="grid" id="gridS1"></div>
     </div>
 
@@ -360,34 +373,32 @@ button{font:inherit;cursor:pointer}
       <div class="grid" id="gridS2"></div>
     </div>
 
-    <div class="parch intro">
+    <div class="parch stage" id="s3Box">
       <h2>第 3 關｜出處鑑識</h2>
-      <p>每一張<b>證物卡</b>都是一份文獻的原始資料（版權頁、網頁、影片、作品封面……）。從裡面挑出需要的資訊，寫成小論文規定的參考文獻格式。卡片上有些資訊是<b>不用寫</b>的，小心陷阱！</p>
+      <p style="margin:6px 0 0">每一張<b>證物卡</b>都是一份文獻的原始資料（版權頁、網頁、影片、作品封面……）。從裡面挑出需要的資訊，寫成小論文規定的參考文獻格式。卡片上有些資訊是<b>不用寫</b>的，小心陷阱！</p>
       <div class="rules">
         <div class="rule">中文用<b>全形標點</b>：（）、，。：［］</div>
         <div class="rule">年份寫<b>西元年</b>，民國年＋1911</div>
         <div class="rule">作者之間用<b>頓號「、」</b></div>
         <div class="rule"><b>粗體</b>：書名、期刊名＋卷數、論文題目、報紙名、小論文篇名、科展作品名稱</div>
       </div>
+      <div class="frag">
+        <span class="lbl">🧩 秘文碎片</span>
+        <div class="slots" id="slots"></div>
+        <span class="cnt" id="fragCnt"></span>
+      </div>
+      <div class="sub-h">📂 必修關卡 <span>全部完成就能拿到鑑定書</span></div>
+      <div class="grid" id="gridReq"></div>
+      <div id="bonusWrap">
+        <div class="sub-h">🌍 進階關卡 <span>英文文獻，挑戰成功拿進階徽章</span></div>
+        <div class="grid" id="gridBonus"></div>
+      </div>
+      <div id="certBox"></div>
     </div>
-
-    <div class="sect-t">📂 必修關卡 <span>全部完成就能結案</span></div>
-    <div class="grid" id="gridReq"></div>
-    <div id="bonusWrap">
-      <div class="sect-t">🌍 進階關卡 <span>英文文獻，挑戰成功拿進階徽章</span></div>
-      <div class="grid" id="gridBonus"></div>
-    </div>
-    <div class="parch frag" style="margin-top:22px">
-      <span class="lbl">🧩 第 3 關秘文碎片</span>
-      <div class="slots" id="slots"></div>
-      <span class="cnt" id="fragCnt"></span>
-    </div>
-
-    <div id="certBox"></div>
 
     <div class="parch stage" id="dosBox" style="margin-top:22px">
       <h2>結案作業｜我的文獻卷宗</h2>
-      <p style="margin:6px 0 0">用<b>線索卡裡自己找的文獻</b>，寫一段可以直接放進小論文的文獻探討，並列出參考文獻。</p>
+      <p style="margin:6px 0 0">回家作業分兩步：先到<b>真實資料庫</b>幫自己的研究主題找文獻、填成<b>線索卡</b>；再用這些文獻寫一段可以直接放進小論文的<b>文獻探討</b>，並列出參考文獻。</p>
       <div class="grid" id="gridDos"></div><div id="dosCert"></div>
     </div>
     <p class="foot">證物卡上的作者、書名、網址都是練習用的虛構資料。每位調查員的證物都不一樣。</p>
@@ -501,17 +512,20 @@ button{font:inherit;cursor:pointer}
         (ok ? '<span class="stamp">已鑑定</span>' : '') + '</button>';
     };
     $('gridReq').innerHTML = req.map(function (L, i) { return cardH(L, i, false); }).join('');
-    $('s1Box').classList.toggle('hidden', !LEVELS1.length);
-    $('gridS1').innerHTML = LEVELS1.map(function (L, i) {
+    // 2026-10-20：課堂的 1-A 留在第 1 關；回家作業的 1-B 線索卡搬到「結案作業」區第一個
+    var L1A = LEVELS1.filter(function (L) { return L.key === 'archive'; }), L1B = LEVELS1.filter(function (L) { return L.key === 'clues'; });
+    $('s1Box').classList.toggle('hidden', !L1A.length);
+    $('gridS1').innerHTML = L1A.map(function (L, i) {
       var ok = state.passed[L.key], n = state.att[L.key] || 0, g = L.key === 'archive' && state.arc && state.arc.g;
-      return '<button class="parch card" data-k="' + L.key + '"><span class="ico">' + L.icon + '</span><div class="no">' + (i ? '1-B｜作業' : '1-A｜課堂') + '</div><h3>' + esc(L.name) + '</h3>' +
+      return '<button class="parch card" data-k="' + L.key + '"><span class="ico">' + L.icon + '</span><div class="no">1-A｜課堂</div><h3>' + esc(L.name) + '</h3>' +
         '<div class="att">' + esc(L.sub) + (n ? '｜試了 ' + n + ' 次' : '') + '</div>' + (ok ? '<span class="stamp">' + (g ? '評等 ' + g : '已完成') + '</span>' : '') + '</button>';
     }).join('');
     var simple = function (L, tag) { var ok = state.passed[L.key], n = state.att[L.key] || 0; return '<button class="parch card" data-k="' + L.key + '"><span class="ico">' + L.icon + '</span><div class="no">' + tag + '</div><h3>' + esc(L.name) + '</h3><div class="att">' + esc(L.sub) + (n ? '｜試了 ' + n + ' 次' : '') + '</div>' + (ok ? '<span class="stamp">已完成</span>' : '') + '</button>'; };
     $('s2Box').classList.toggle('hidden', !LEVELS2.length);
     $('gridS2').innerHTML = LEVELS2.map(function (L, i) { return simple(L, '2-' + (i + 1)); }).join('');
-    $('dosBox').classList.toggle('hidden', !LEVELSD.length);
-    $('gridDos').innerHTML = LEVELSD.map(function (L) { return simple(L, '結案｜作業'); }).join('');
+    var homework = L1B.concat(LEVELSD);
+    $('dosBox').classList.toggle('hidden', !homework.length);
+    $('gridDos').innerHTML = homework.map(function (L, i) { return simple(L, '作業 ' + (i + 1) + (L.key === 'clues' ? '｜找文獻' : '｜寫卷宗')); }).join('');
     var gr = state.grade && state.grade.g;
     $('dosCert').innerHTML = (state.dos && (state.dos.p || state.dos.r) ? '<div class="row2"><button class="btn gold" id="btnView">📄 檢視我的卷宗</button>' + (gr ? '<span class="gradebig">老師評等 <b>' + esc(gr) + '</b></span>' : state.passed.dossier ? '<span class="note2">老師還沒評等，過幾天再回來看看</span>' : '') + '</div>' : '') +
       (state.passed.dossier ? '<div class="parch cert" style="margin-top:14px"><div class="bigseal seal">結<br>案</div><h2>文獻卷宗結案證明</h2><div class="meta">調查員 <b>' + esc(state.name) + '</b>｜學號 <b class="mono">' + esc(data.id) + '</b></div><div class="code">' + S2.dossierCode(CODE, data.id) + '</div><div class="meta">卷宗代碼' + (gr ? '｜老師評等 <b style="color:var(--seal);font-size:1.3em">' + esc(gr) + '</b>' : '') + '</div></div>' : '');
@@ -753,7 +767,7 @@ button{font:inherit;cursor:pointer}
     var A = state.arcWork && state.arcWork.q === Q.id ? state.arcWork : { q: Q.id, kw: {}, picks: [], n: 0, op: 'and' };
     state.arcWork = A;
     var results = null, judged = null, done = !!state.passed[L.key], lastTerms = [], page = 0;
-    var kwOk = function () { return ['obj', 'iv', 'dv', 'syn'].filter(function (k) { return String(A.kw[k] || '').trim(); }).length >= 2; };
+    var kwOk = function () { return ['obj', 'iv', 'dv'].filter(function (k) { return String(A.kw[k] || '').trim(); }).length >= 2; };
     var metaLine = function (d) { return (d.au.length ? esc(d.au.join('、')) : '（沒有作者）') + '｜' + (d.yr || '（沒有日期）') + '｜' + esc(d.src); };
     openPanel('<div class="ptag">第 1 關 A｜檔案庫搜查</div><h2>🗄️ 模擬檔案庫</h2>' +
       '<div class="qbox"><small>你的研究問題</small><div class="qq">' + esc(Q.q) + '</div></div>' +
@@ -762,11 +776,12 @@ button{font:inherit;cursor:pointer}
       '<div class="tpl" style="margin:0 0 8px">搜尋引擎看不懂一整句話，要先把題目拆成幾個<b>詞</b>。<button class="mini" id="kwEx">👀 看範例</button>' +
       '<div class="hidden" id="kwExBox" style="margin-top:6px">範例題目：<b>「不同材質的煞車皮對腳踏車煞車距離的影響」</b><br>研究對象＝腳踏車煞車皮｜改變什麼＝煞車皮材質｜觀察什麼＝煞車距離｜換個說法＝摩擦力、制動</div></div>' +
       '<div class="kwt">' +
-      [['obj', '🎯 研究對象', '研究「誰」？'], ['iv', '🔧 改變什麼', '實驗中你改變的東西'], ['dv', '👀 觀察什麼', '你要測量的結果'], ['syn', '🔁 換個說法', '同一件事的其他講法']].map(function (f) {
+      [['obj', '🎯 研究對象', '研究「誰」？'], ['iv', '🔧 改變什麼', '實驗中你改變的東西'], ['dv', '👀 觀察什麼', '你要測量的結果']].map(function (f) {
         return '<div><label>' + f[1] + '</label><input data-kw="' + f[0] + '" maxlength="30" placeholder="' + esc(f[2]) + '" value="' + esc(A.kw[f[0]] || '') + '"></div>';
-      }).join('') + '</div><div class="hint">🔁 <b>為什麼要「換個說法」？</b>寫文獻的人不一定跟你用同一個詞，尤其是<b>書</b>，書名和內容常用比較大的概念（例如題目寫「煞車皮」，書上寫「摩擦力」）。只用題目的字，常常會漏掉好文獻。至少填 2 格才能搜尋。<button class="mini" id="kwHint">💡 看提示</button> <span id="kwHintTxt"></span></div>' +
+      }).join('') + '</div><div class="hint">至少填 2 格才能搜尋。<button class="mini" id="kwHint">💡 看提示</button> <span id="kwHintTxt"></span></div>' +
       '<p class="sub-t">▍步驟二　搜尋檔案庫</p>' +
-      '<div class="tpl" style="margin:0 0 8px">一格放<b>一個詞</b>。上面拆好的詞可以直接點來用：<div class="chipbar" id="kwChips"></div></div>' +
+      '<div class="tpl" style="margin:0 0 8px">一格放<b>一個詞</b>。上面拆好的詞可以直接點來用：<div class="chipbar" id="kwChips"></div>' +
+      '<div style="margin-top:8px">🔁 <b>找不到想要的文獻？試著「換個說法」</b>：寫文獻的人不一定跟你用同一個詞，尤其是<b>書</b>，常用比較大的概念（例如題目寫「煞車皮」，書上寫「摩擦力」）。自己想想同一件事還能怎麼說，換一個詞再搜尋看看。</div></div>' +
       '<div id="qBoxes"></div>' +
       '<div class="sbar"><button class="mini" id="qAdd">＋ 再加一個詞</button><span style="flex:1"></span>' +
       '<select id="qCat">' + S1.CATS.map(function (c) { return '<option value="' + c[0] + '">' + c[1] + '</option>'; }).join('') + '</select>' +
@@ -798,7 +813,7 @@ button{font:inherit;cursor:pointer}
       Array.prototype.forEach.call(document.querySelectorAll('[data-qx]'), function (b) { b.onclick = function () { A.qs.splice(+b.getAttribute('data-qx'), 1); saveW(); drawBoxes(); }; });
     };
     var drawChips = function () {
-      var words = []; ['obj', 'iv', 'dv', 'syn'].forEach(function (k) { String(A.kw[k] || '').split(/[\s,，、]+/).forEach(function (w) { w = w.trim(); if (w && words.indexOf(w) < 0) words.push(w); }); });
+      var words = []; ['obj', 'iv', 'dv'].forEach(function (k) { String(A.kw[k] || '').split(/[\s,，、]+/).forEach(function (w) { w = w.trim(); if (w && words.indexOf(w) < 0) words.push(w); }); });
       $('kwChips').innerHTML = words.length ? words.map(function (w) { return '<button data-chip="' + esc(w) + '">＋ ' + esc(w) + '</button>'; }).join('') : '<span class="hint" style="margin:0">（步驟一填好後，這裡會出現你的詞）</span>';
       Array.prototype.forEach.call(document.querySelectorAll('[data-chip]'), function (b) {
         b.onclick = function () {
@@ -947,7 +962,7 @@ button{font:inherit;cursor:pointer}
         };
       });
     };
-    openPanel('<div class="ptag">第 1 關 B｜作業</div><h2>🗂️ 線索卡：真實資料庫實戰</h2>' +
+    openPanel('<div class="ptag">結案作業 1｜找文獻</div><h2>🗂️ 線索卡：真實資料庫實戰</h2>' +
       '<div class="qbox"><small>' + (self ? '我的研究主題（自己決定）' : mode === 'teacher' ? '老師指定的研究主題' : '你分到的研究主題') + '</small>' +
       (self ? '<input class="topicIn" id="topicIn" maxlength="60" placeholder="例如：不同材質杯子的保溫效果" value="' + esc(cl.topic || '') + '" style="margin-top:6px">' : '<div class="qq">' + esc(cl.topic) + '</div>') + '</div>' +
       '<div class="tpl" style="margin-top:0">用模擬檔案庫學到的方法，到下面的真實資料庫幫這個主題找文獻，每找到一篇就填一張線索卡。<ul>' +
@@ -1018,32 +1033,50 @@ button{font:inherit;cursor:pointer}
   function openPara(L) {
     var p = S2.passages(CODE, data.id).para, useAI = META.ai !== false, done = !!state.passed[L.key], key = 'para';
     openPanel('<div class="ptag">第 2 關｜證詞重建</div><h2>✍️ 改寫練習</h2>' + origCard(p) +
-      '<div class="tpl" style="margin-top:0">把這段原文<b>用自己的話</b>重新寫一次（30～200 字），並加上<b>文中引用</b>。作者：<b>' + esc(p.au.join('、')) + '</b>　年份：<b>' + p.yr + '</b><ul><li>先讀懂，再把原文蓋起來寫，比較不會不小心照抄</li><li>改寫不用加「」，也不用粗體</li>' + (useAI ? '<li>系統先檢查和原文的重複程度與引用格式，通過後 AI 老師會給你回饋（AI 只給提示，不會幫你寫）</li>' : '') + '</ul></div>' +
+      '<div class="tpl" style="margin-top:0">把這段原文<b>用自己的話</b>重新寫一次（30～200 字），並加上<b>文中引用</b>。作者：<b>' + esc(p.au.join('、')) + '</b>　年份：<b>' + p.yr + '</b><ul><li>先讀懂，再把原文蓋起來寫，比較不會不小心照抄</li><li>改寫不用加「」，也不用粗體</li>' + (useAI ? '<li>分兩項判定：📝 <b>內容改寫</b>（系統先檢查有沒有照抄，再請 AI 老師看意思對不對）＋ 🔖 <b>出處格式</b>（系統檢查作者和年份），兩項都通過才過關</li>' : '') + '</ul></div>' +
       '<textarea class="ta" id="paraIn" maxlength="400" placeholder="在這裡用自己的話改寫……">' + esc(state.drafts[key] || '') + '</textarea><div class="wc" id="paraWc"></div>' +
       '<button class="btn wide" id="paraGo">🔍 檢查並送出</button><div class="res" id="res"></div><div class="aibox hidden" id="aiBox"></div><div class="attempts" id="att">' + (state.att[L.key] ? '已送出 ' + state.att[L.key] + ' 次' : '') + '</div>');
     var wc = function () { $('paraWc').textContent = S2.bare($('paraIn').value).length + ' 字（不含標點）'; };
     $('paraIn').addEventListener('input', function () { state.drafts[key] = $('paraIn').value.slice(0, 400); save(); wc(); }); wc();
     if (done) { var r0 = $('res'); r0.className = 'res show good'; r0.textContent = '✅ 這一關已經完成。想再練習可以改寫後再送一次。'; }
-    if (state.drafts.paraAi) { $('aiBox').classList.remove('hidden'); $('aiBox').innerHTML = '<b>🤖 上一次 AI 老師的回饋：</b>' + esc(state.drafts.paraAi); }
+    if (state.drafts.paraAi && !done) { $('aiBox').classList.remove('hidden'); $('aiBox').innerHTML = '<b>🤖 上一次 AI 老師對內容的回饋：</b>' + esc(state.drafts.paraAi); }
+    // 2026-10-20：分兩行判定——📝 內容改寫（重複度＋AI）、🔖 出處格式（系統）；兩個都 ✅ 才過關
+    var sendN = 0;
+    var line = function (icon, name, ok, html) { return '<div class="vline ' + (ok === true ? 'ok' : ok === false ? 'ng' : 'wait') + '"><b>' + icon + ' ' + name + '：' + (ok === true ? '✅ 通過' : ok === false ? '還差一點' : '⏳ 檢查中…') + '</b>' + (html ? '<div>' + html + '</div>' : '') + '</div>'; };
     $('paraGo').onclick = function () {
-      var t = $('paraIn').value.trim(), res = $('res'), box = $('aiBox');
+      var t = $('paraIn').value.trim(), res = $('res'), box = $('aiBox'), btn = $('paraGo');
       if (!t) { res.className = 'res show bad'; res.textContent = '還沒有寫喔！'; return; }
-      bump(L.key); $('att').textContent = '已送出 ' + state.att[L.key] + ' 次';
-      var c = S2.checkPara(p, t);
-      box.classList.add('hidden');
-      if (!c.ok) { save(); sync(); res.className = 'res show bad'; res.innerHTML = '<b>系統檢查還沒過：</b><ul class="issues">' + c.probs.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>'; return; }
-      var win = function (msg, ai) { var first = !state.passed[L.key]; pass(L.key); if (ai) state.drafts.paraAi = ai; save(); sync(); res.className = 'res show good'; res.textContent = msg; if (first) toast('✍️ 改寫練習過關！'); };
-      if (!useAI) { win('🎉 系統檢查通過！用自己的話改寫，也註明了出處。'); return; }
-      var wait = Math.ceil(((aiWaitAt.para || 0) - Date.now()) / 1000); if (wait > 0) { res.className = 'res show bad'; res.textContent = '請等 ' + wait + ' 秒再送出（讓 AI 老師喘口氣）'; return; }
-      aiWaitAt.para = Date.now() + 10000;
-      $('paraGo').disabled = true; res.className = 'res show'; res.innerHTML = '✅ 系統檢查通過，🤖 AI 老師正在看你的改寫……';
-      S2.aiFeedback({ code: CODE, sid: data.id, kind: 'para', original: p.orig, source: S2.srcLabel(p), text: t }).then(function (j) {
-        $('paraGo').disabled = false;
-        if (j.error) { win('✅ 系統檢查通過（' + j.error + ' 這次先算過關）'); return; }
-        box.classList.remove('hidden'); box.innerHTML = '<b>🤖 AI 老師的判定：' + (j.passed ? '<span style="color:var(--ok)">✅ 過關</span>' : '<span style="color:var(--bad)">還差一點</span>') + '</b><br>' + esc(j.feedback);
-        if (j.passed) win('🎉 2-4 過關！系統檢查和 AI 老師都說 OK，關卡卡片已經蓋章。', j.feedback);
-        else { state.drafts.paraAi = j.feedback; save(); sync(); res.className = 'res show bad'; res.innerHTML = '<b>還沒過關</b>：系統檢查通過了，但 AI 老師判定還差一點，照下面的提示改一改再送一次（改寫練習要 AI 判定「過關」才會蓋章）。'; }
-      }, function () { $('paraGo').disabled = false; win('✅ 系統檢查通過（AI 老師暫時連不上，這次先算過關）'); });
+      var wait = Math.ceil(((aiWaitAt.para || 0) - Date.now()) / 1000);
+      if (wait > 0) { res.className = 'res show bad'; res.textContent = '⏳ 請等 ' + wait + ' 秒再送出（讓 AI 老師喘口氣）'; return; }
+      bump(L.key); sendN++; $('att').textContent = '已送出 ' + state.att[L.key] + ' 次';
+      var c = S2.checkPara(p, t), stamp = '<div class="sendno">第 ' + state.att[L.key] + ' 次送出｜' + new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + '</div>';
+      var citeHtml = c.cite.ok ? (c.cite.note ? esc(c.cite.note) : '') : esc(c.cite.msg);
+      box.classList.add('hidden'); box.innerHTML = '';
+      var show = function (contentOk, contentHtml, extra) {
+        var all = contentOk === true && c.cite.ok;
+        res.className = 'res show ' + (all ? 'good' : contentOk === null ? '' : 'bad');
+        res.innerHTML = stamp + line('📝', '內容改寫', contentOk, contentHtml) + line('🔖', '出處格式', c.cite.ok, citeHtml) + (extra || '');
+      };
+      var win = function (contentHtml, ai) {
+        var first = !state.passed[L.key];
+        if (c.cite.ok) { pass(L.key); if (first) toast('✍️ 改寫練習過關！'); }
+        if (ai) state.drafts.paraAi = ai; save(); sync();
+        show(true, contentHtml, c.cite.ok ? '<div style="margin-top:6px;font-weight:900">🎉 2-4 過關！關卡卡片已經蓋章。</div>' : '<div style="margin-top:6px">內容已經 OK，<b>把出處改好</b>再送一次就過關（不會再請 AI 看一次內容也沒關係）。</div>');
+      };
+      if (!c.content.ok) { save(); sync(); show(false, '<ul class="issues">' + c.content.probs.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>'); return; }
+      // 內容之前已經被 AI 判定過關、這次只改出處 → 不用再問 AI
+      if (state.drafts.paraOkBody && state.drafts.paraOkBody === c.body) { win('（和上次 AI 判定過關的內容一樣）'); return; }
+      if (!useAI) { state.drafts.paraOkBody = c.body; win('系統檢查通過：用自己的話，也沒有照抄原文'); return; }
+      aiWaitAt.para = Date.now() + 5000;
+      btn.disabled = true; btn.textContent = '🤖 AI 老師正在看你的改寫…';
+      show(null, '系統檢查通過，AI 老師正在看意思有沒有寫對……');
+      var done2 = function () { btn.disabled = false; btn.textContent = '🔍 檢查並送出'; };
+      S2.aiFeedback({ code: CODE, sid: data.id, kind: 'para', original: p.orig, source: S2.srcLabel(p), text: c.body }).then(function (j) {
+        done2();
+        if (j.error) { state.drafts.paraOkBody = c.body; win('系統檢查通過（' + esc(j.error) + ' 這次內容先算過關）'); return; }
+        if (j.passed) { state.drafts.paraOkBody = c.body; win('🤖 ' + esc(j.feedback), j.feedback); }
+        else { state.drafts.paraAi = j.feedback; save(); sync(); show(false, '🤖 ' + esc(j.feedback) + '<div class="note3">照提示改一改再送一次；AI 只給提示，不會幫你寫。</div>'); }
+      }, function () { done2(); state.drafts.paraOkBody = c.body; win('系統檢查通過（AI 老師暫時連不上，這次內容先算過關）'); });
     };
   }
 
@@ -1087,7 +1120,7 @@ button{font:inherit;cursor:pointer}
   }
   function openDossier(L) {
     var cards = LEVELS1.length ? ((state.clue && state.clue.c) || []).filter(function (c) { return c && c.t; }) : null, useAI = META.ai !== false, done = !!state.passed[L.key];
-    var cardList = cards ? (cards.length ? '<ol>' + cards.map(function (c) { return '<li><b>' + esc(c.au || '?') + '（' + esc(c.yr || '?') + '）</b>' + esc(c.ti || '') + '｜' + esc((S1.CT[c.t] || {}).n || '') + '</li>'; }).join('') + '</ol>' : '<p style="margin:4px 0;color:var(--bad);font-weight:700">你還沒有線索卡！先完成第 1 關 B，結案作業要用自己找的文獻。</p>') : '<p style="margin:4px 0">（這個任務沒有開第 1 關，用你自己找的文獻就可以）</p>';
+    var cardList = cards ? (cards.length ? '<ol>' + cards.map(function (c) { return '<li><b>' + esc(c.au || '?') + '（' + esc(c.yr || '?') + '）</b>' + esc(c.ti || '') + '｜' + esc((S1.CT[c.t] || {}).n || '') + '</li>'; }).join('') + '</ol>' : '<p style="margin:4px 0;color:var(--bad);font-weight:700">你還沒有線索卡！先完成「作業 1 線索卡」，卷宗要用自己找的文獻。</p>') : '<p style="margin:4px 0">（這個任務沒有開第 1 關，用你自己找的文獻就可以）</p>';
     openPanel('<div class="ptag">結案作業</div><h2>📁 我的文獻卷宗</h2>' +
       '<div class="cols"><div><p class="sub-t">▍我的線索卡</p><div class="mycards">' + cardList + '</div>' +
       '<div class="tpl"><b>要求</b><ul><li>文獻探討 ' + S2.MIN_W + '～' + S2.MAX_W + ' 字，<b>至少引用 2 篇</b>線索卡裡的文獻</li><li>文中引用寫成（作者，年份）或 作者（年份）</li><li>可以有 1 處直接引用：「」＋粗體、不超過 50 字；其他用自己的話改寫</li><li>參考文獻：一行一筆，<b>文中引用的都要列、列的都要引用</b>（不然小論文扣 4 分）；中文在前、英文在後</li><li>至少 1 篇是書籍（或期刊等非網路資源）</li></ul></div></div>' +

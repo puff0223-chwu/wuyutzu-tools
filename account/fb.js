@@ -1,5 +1,5 @@
 /* 🔌 巫魚子教課事務所：老師頁共用的 Firebase 連線與登入（ES module）
-   - Firebase 設定、SDK 版本只寫在這裡；各系統用 openFirebase('系統名') 拿到自己的連線
+   - Firebase 設定、SDK 版本只寫在這裡；各系統用 openFirebase('系統名') 拿到連線（2026-10-20 起全部共用同一個登入）
    - 登入：Email＋密碼，或 Google 帳號（popup，被擋時改用整頁跳轉）
    - 學生頁不用這個檔：學生頁用 REST（fetch / EventSource），不載 SDK，比較輕
    用法：const { FB } = await import('../account/fb.js?v=…');  const FB = await openFirebase('excel'); */
@@ -31,10 +31,14 @@ const ERR = {
 };
 export const authErr = (e) => ERR[e && e.code] || ('登入失敗：' + ((e && (e.code || e.message)) || e));
 
+// 2026-10-20：所有老師頁共用同一個 app 名稱 → 登入狀態存在同一個地方（瀏覽器的 IndexedDB），
+// 在會員中心登入後，同一個瀏覽器打開座位大作戰、消失的實驗數據、遺落的地點、出處失傳的秘文都不用再登入；
+// 任何一個分頁登出，其他分頁也會跟著登出。以前每個系統用自己的名字（'src'、'excel'…），登入狀態各存各的，才會一直要重新登入
+const APP_NAME = 'wuyutzu';
 export async function openFirebase(name) {
   const [{ initializeApp, getApps, deleteApp }, A, D] = await loadLibs();
-  const old = getApps().find((a) => a.name === name);
-  const app = old || initializeApp(firebaseConfig, name);
+  const old = getApps().find((a) => a.name === APP_NAME);
+  const app = old || initializeApp(firebaseConfig, APP_NAME);
   const auth = A.getAuth(app), db = D.getDatabase(app);
   if (old) D.goOnline(db); // 同名的連線之前被關過的話，先接回來（不然讀寫會一直等）
   A.getRedirectResult(auth).catch(() => {}); // Google 整頁跳轉回來時，把登入結果收下

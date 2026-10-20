@@ -147,21 +147,31 @@
     who.forEach(function (w) { f.push('（' + w + '，' + y + '）', w + '（' + y + '）'); });
     return f;
   }
+  // 2026-10-20 老師上課回饋：「內容改寫」和「出處格式」分開判定；全形／半形在輸入框看不出差別，括號逗號寫成半形也通融
+  function normCite(t) { return String(t || '').replace(/\s+/g, '').replace(/\(/g, '（').replace(/\)/g, '）').replace(/,/g, '，'); }
+  function checkCite(p, text) {
+    var t = String(text || ''), n = normCite(t), forms = citeForms(p), y = String(p.yr);
+    var hit = forms.filter(function (f) { return n.indexOf(f) >= 0; })[0];
+    if (hit) return { ok: true, form: hit, note: t.replace(/\s+/g, '').indexOf(hit) < 0 ? '小提醒：小論文規定中文的括號和逗號用全形「（ ），」，這次不算錯' : '' };
+    var msg;
+    if (n.indexOf(y) < 0) msg = '少了出處：要寫出作者和年份，例如「' + forms[1] + '」或「' + forms[0] + '」';
+    else if (p.au.length >= 3) msg = '三位以上作者只寫第一位再加「等」：' + forms[1] + ' 或 ' + forms[0];
+    else if (p.au.length === 2) msg = '兩位作者都要寫：放在句子裡用「與」→ ' + p.au[0] + '與' + p.au[1] + '（' + y + '）；放在括號裡用「、」→ （' + p.au.join('、') + '，' + y + '）';
+    else msg = '出處要寫成：' + forms[1] + ' 或 ' + forms[0];
+    return { ok: false, msg: msg };
+  }
   function checkPara(p, text) {
     var t = String(text || '').trim(), probs = [], n = bare(t).length;
     if (n < 30) probs.push('改寫太短了（現在 ' + n + ' 字），至少寫 30 字，把原文的重點都交代到');
     if (n > 200) probs.push('太長了（現在 ' + n + ' 字），改寫是「整理重點」，200 字以內就好');
     if (/[「」]/.test(t)) probs.push('改寫（間接引用）不用加「」；「」是一字不改照抄時才用的');
-    var forms = citeForms(p), y = String(p.yr);
-    if (!forms.some(function (f) { return t.indexOf(f) >= 0; })) {
-      if (/[()]/.test(t) && t.indexOf(y) >= 0) probs.push('文中引用的括號要用全形「（ ）」，逗號也要全形「，」');
-      else if (t.indexOf(y) < 0) probs.push('少了出處：要寫出作者和年份，例如「' + forms[1] + '」或「' + forms[0] + '」');
-      else probs.push('出處的寫法不對，看一下規則：' + forms.slice(0, 2).join(' 或 ') + (p.au.length >= 3 ? '（三位以上作者寫「第一位＋等」）' : p.au.length === 2 ? '（兩位作者：括號裡用「、」，句子裡用「與」）' : ''));
-    }
-    var lc = longestCommon(p.orig, t.replace(new RegExp(forms.map(function (f) { return f.replace(/[()（）]/g, '\\$&'); }).join('|'), 'g'), ''));
+    var forms = citeForms(p), body = normCite(t);
+    forms.forEach(function (f) { body = body.split(f).join(''); });
+    var lc = longestCommon(p.orig, body);
     if (lc.len >= 10) probs.push('有一段連續 ' + lc.len + ' 個字和原文一模一樣：「' + lc.str + '」，要換成自己的說法');
-    else if (overlap(p.orig, t) > 0.3) probs.push('和原文太像了，很多詞的順序都沒變；試著先讀懂、把原文蓋起來，再用自己的話寫');
-    return { ok: !probs.length, probs: probs, n: n, lc: lc.len };
+    else if (overlap(p.orig, body) > 0.3) probs.push('和原文太像了，很多詞的順序都沒變；試著先讀懂、把原文蓋起來，再用自己的話寫');
+    var cite = checkCite(p, t);
+    return { ok: !probs.length && cite.ok, content: { ok: !probs.length, probs: probs }, cite: cite, probs: probs.concat(cite.ok ? [] : [cite.msg]), n: n, lc: lc.len, body: body };
   }
 
   /* ======================= 結案作業：我的文獻卷宗 ======================= */
@@ -264,7 +274,7 @@
     PASS: PASS, narr: narr, paren: paren, srcLabel: srcLabel, passages: passages, bare: bare,
     makeCite: makeCite, gradeCite: gradeCite, QKIND: QKIND, makeQuote: makeQuote, gradeQuote: gradeQuote,
     PKIND: PKIND, makePlag: makePlag, gradePlag: gradePlag,
-    longestCommon: longestCommon, overlap: overlap, citeForms: citeForms, checkPara: checkPara,
+    longestCommon: longestCommon, overlap: overlap, citeForms: citeForms, checkPara: checkPara, checkCite: checkCite, normCite: normCite,
     MIN_W: MIN_W, MAX_W: MAX_W, parseRef: parseRef, checkDossier: checkDossier, dossierCode: dossierCode,
     toMark: toMark, showMark: showMark, API: API, aiFeedback: aiFeedback
   };

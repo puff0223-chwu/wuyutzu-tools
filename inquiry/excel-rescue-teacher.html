@@ -879,7 +879,7 @@ const W = window.WuStaff, gate = document.getElementById('erGate');
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 let FB = null, authErr = (e) => String(e && (e.code || e.message) || e), gBtn = () => '';
 try {
-  const M = await import('../account/fb.js?v=20261018a');
+  const M = await import('../account/fb.js?v=20261020a');
   FB = await M.openFirebase('excel'); FB.idle(60000); authErr = M.authErr; gBtn = M.googleButtonHTML;
   window.ERFB = FB;
 } catch (e) { console.warn(e); }

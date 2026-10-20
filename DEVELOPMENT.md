@@ -34,7 +34,7 @@ wuyutzu-tools/
 ├── firebase/                     # 🔐 Firebase 規則原始檔與工具（2026-10-13）
 │   ├── rules.src.json            #   規則原始檔：用縮寫 {{ADMIN}}、{{STAFF:app}}、{{EKEY}}，改規則改這裡
 │   ├── build_rules.py            #   展開縮寫 → 產生 firebase-rules.json
-│   └── rules.test.js             #   規則自動測試（targaryen 模擬 Firebase，115 項）
+│   └── rules.test.js             #   規則自動測試（targaryen 模擬 Firebase，118 項）
 ├── .github/workflows/firebase.yml # 🤖 推上 main 自動測試＋部署規則、每週一回報用量（2026-10-18）
 ├── tools/health/                 # 🩺 全站連線健檢（2026-10-18，見 7-14）
 │   ├── check.py                  #   掃即時連線／輪詢頁有沒有背景讓位、大節點筆數、規則字數
@@ -1026,6 +1026,14 @@ fp/
 - **老師給的回饋要存在學生寫不到的地方**：評等如果寫進學生的紀錄 `r/<學號>`，學生下一次同步就會覆蓋掉 → 另開 `g/<學號>`，規則只讓任務老師寫
 - **代碼要有用途**：學生交截圖到其他平台時，老師用「驗證代碼」一次貼整班確認；給學生的參考答案 PDF 一定要拿掉代碼，不然等於把結案代碼發出去
 
+### 7-18 出處失傳的秘文・第一次正式上課回饋（2026-10-20）
+- **全形／半形在輸入框看起來一模一樣**：學生在 2-4 一直被判錯又看不出哪裡錯，AI 也常因為標點誤判。改成「📝 內容改寫」（系統重複度＋AI 只看意思與自己的話）和「🔖 出處格式」（系統檢查作者、年份、「、／與／等」）兩行分開判定；括號、逗號寫成半形就自動換成全形再比對，只給「小提醒」不算錯。內容已經被 AI 判過關、只改出處時不再問 AI
+- **「送出沒反應」其實是畫面沒變**：同樣的句子再送，AI 回一樣的話、結果區也長得一樣，學生以為卡住只好重新整理。每次送出都顯示「第 N 次送出＋時間」，送出中按鈕寫「AI 老師正在看…」、舊回饋先清掉；冷卻縮成 5 秒並明確說還要等幾秒
+- **同一個瀏覽器、不同系統要共用登入**：`openFirebase(name)` 以前用系統名稱當 Firebase app 名稱，每個 app 的登入狀態各存一份 → 會員中心登入了，打開其他系統還要再登入一次。改成全部用同一個 app 名稱 `wuyutzu`：登入一次全部通用，一個分頁登出其他分頁也跟著登出（這次改版後每位老師需要重新登入一次）
+- **打錯學號的多餘紀錄要能刪**：即時進度每列加 🗑（連評等一起刪）；規則讓任務擁有者可以刪單筆 `r/<學號>`，學生還是不能刪
+- **版面跟著「上課／回家」走**：1-B 線索卡移到「結案作業」區當「作業 1｜找文獻」、卷宗是「作業 2」；第 3 關改成和第 1、2 關一樣的一整塊（說明、碎片、必修、進階、鑑定書都在裡面）；「換人」改成「登出」
+- **練習設計不要製造迷思**：1-A 拆解表拿掉「換個說法」格（學生會以為一定要填、而且填的詞不一定對），只留對象／改變／觀察三格＋💡看提示；「換個說法」改成步驟二的搜尋小技巧
+
 ## 8. 已知注意事項
 
 - **Firebase 免費額度（Spark，2026-10-06 查）**：儲存 1 GB、每月下載 10 GB、同時連線 100 條。估計每月下載不到 1 GB；要留意的是同時連線。pH、單位換算、器材排行榜都是「問完就走」的一次性請求，不長期佔連線；**長期佔連線的只有公告欄（SSE 即時同步）和集點小金庫**（2026-10-18 起都會背景讓位，見 7-14）。公告欄學生頁切到背景超過 60 秒或關閉分頁就自動斷線、回到畫面自動重連（2026-10-06）。用量看 Firebase 控制台 → Realtime Database →「用量」
@@ -1044,7 +1052,7 @@ fp/
 
 ---
 
-## 附錄：Firebase 安全規則全文（2026-10-19：出處失傳的秘文加老師評等 g）
+## 附錄：Firebase 安全規則全文（2026-10-20：出處失傳的秘文老師可刪單筆學生紀錄）
 
 > 由 `firebase/build_rules.py` 從 `firebase/rules.src.json` 產生，和根目錄 `firebase-rules.json` 相同。要改規則請改原始檔再重新產生，不要直接改這裡。推上 main 後 GitHub Action 會自動部署。
 
@@ -1536,7 +1544,7 @@ fp/
      "r": {
       "$id": {
        ".read": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $id.matches(/^[A-Z0-9]{3,12}$/)",
-       ".write": "newData.exists() && $code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $id.matches(/^[A-Z0-9]{3,12}$/) && root.child('secret-source/m/'+$code+'/meta').exists() && root.child('secret-source/m/'+$code+'/meta/closed').val() !== true && (root.child('secret-source/m/'+$code+'/meta/admin').val() === true || (root.child('staff/'+root.child('secret-source/m/'+$code+'/meta/owner').val()+'/status').val() === 'approved' && root.child('staff/'+root.child('secret-source/m/'+$code+'/meta/owner').val()+'/apps/src').val() === true))",
+       ".write": "(newData.exists() && $code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $id.matches(/^[A-Z0-9]{3,12}$/) && root.child('secret-source/m/'+$code+'/meta').exists() && root.child('secret-source/m/'+$code+'/meta/closed').val() !== true && (root.child('secret-source/m/'+$code+'/meta/admin').val() === true || (root.child('staff/'+root.child('secret-source/m/'+$code+'/meta/owner').val()+'/status').val() === 'approved' && root.child('staff/'+root.child('secret-source/m/'+$code+'/meta/owner').val()+'/apps/src').val() === true))) || (!newData.exists() && auth != null && root.child('secret-source/m/'+$code+'/meta/owner').val() === auth.uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/src').val() === true))))",
        ".validate": "newData.hasChildren(['name','ts']) && newData.child('name').isString() && newData.child('name').val().length <= 12 && newData.child('ts').isNumber()",
        "name": {
         ".validate": "newData.isString()"

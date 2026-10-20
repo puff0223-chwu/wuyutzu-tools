@@ -381,7 +381,7 @@
   function levels1(meta) {
     if (meta && meta.s1 === false) return [];
     return [{ key: 'archive', kind: 'archive', name: '模擬檔案庫', icon: '🗄️', sub: '拆關鍵字、搜尋、收 4 篇可靠文獻' },
-      { key: 'clues', kind: 'clues', name: '線索卡（作業）', icon: '🗂️', sub: '到真實資料庫找 3 篇以上，至少 1 本書' }];
+      { key: 'clues', kind: 'clues', name: '線索卡', icon: '🗂️', sub: '到真實資料庫找 3 篇以上，至少 1 本書' }];
   }
 
   /* ---------- 結案代碼 ---------- */

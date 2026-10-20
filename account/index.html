@@ -94,7 +94,7 @@ const S = { user: null, rec: null, unsubs: [], tab: 'pending', all: {}, ver: {},
 let FB, authErr = (e) => String(e && (e.code || e.message) || e), gBtn = () => '';
 
 try {
-  const M = await import('./fb.js?v=20261018a');
+  const M = await import('./fb.js?v=20261020a');
   FB = await M.openFirebase('account'); FB.idle(60000); authErr = M.authErr; gBtn = M.googleButtonHTML;
 } catch (e) { console.warn(e); FB = null; }
 

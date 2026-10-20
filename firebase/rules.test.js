@@ -204,6 +204,9 @@ expect('別的老師不能給評等', ss, TEA, W, '/secret-source/m/MMMMMM/g/S00
 expect('學生讀得到自己的評等', ss, null, R, '/secret-source/m/MMMMMM/g/S001', null, true);
 expect('學生讀不到全班評等', ss, null, R, '/secret-source/m/MMMMMM/g', null, false);
 expect('評語太長不能寫', ss, SRC_TEA, W, '/secret-source/m/MMMMMM/g/S001', { g: 'A', at: 1, c: 'x'.repeat(301) }, false);
+expect('任務老師刪除一筆打錯學號的紀錄', ss, SRC_TEA, W, '/secret-source/m/MMMMMM/r/S001', null, true);
+expect('別的老師不能刪學生紀錄', ss, TEA, W, '/secret-source/m/MMMMMM/r/S001', null, false);
+expect('任務老師刪除評等', ss, SRC_TEA, W, '/secret-source/m/MMMMMM/g/S001', null, true);
 expect('老師讀自己的任務清單', ss, SRC_TEA, R, '/secret-source/owners/SRCT', null, true);
 expect('老師寫自己的任務清單', ss, SRC_TEA, W, '/secret-source/owners/SRCT/ABCDEF', { name: 'x', at: 1, roster: '110 a' }, true);
 expect('不能寫別人的任務清單', ss, SRC_TEA, W, '/secret-source/owners/TEA/ABCDEF', { name: 'x', at: 1 }, false);
