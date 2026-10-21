@@ -7,10 +7,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<script src="core.js?v=20261020a"></script>
+<script src="core.js?v=20261021a"></script>
 <script src="check.js?v=20261018b"></script>
 <script src="stage1.js?v=20261019a"></script>
-<script src="stage2.js?v=20261020a"></script>
+<script src="stage2.js?v=20261021a"></script>
 <style>
 :root{
   --night:#1b1a17; --night2:#26241f; --parch:#f3e9d2; --parch2:#e8dbbb; --edge:#c9b386;
@@ -517,7 +517,7 @@ button{font:inherit;cursor:pointer}
     $('s1Box').classList.toggle('hidden', !L1A.length);
     $('gridS1').innerHTML = L1A.map(function (L, i) {
       var ok = state.passed[L.key], n = state.att[L.key] || 0, g = L.key === 'archive' && state.arc && state.arc.g;
-      return '<button class="parch card" data-k="' + L.key + '"><span class="ico">' + L.icon + '</span><div class="no">1-A｜課堂</div><h3>' + esc(L.name) + '</h3>' +
+      return '<button class="parch card" data-k="' + L.key + '"><span class="ico">' + L.icon + '</span><div class="no">課堂練習</div><h3>' + esc(L.name) + '</h3>' +
         '<div class="att">' + esc(L.sub) + (n ? '｜試了 ' + n + ' 次' : '') + '</div>' + (ok ? '<span class="stamp">' + (g ? '評等 ' + g : '已完成') + '</span>' : '') + '</button>';
     }).join('');
     var simple = function (L, tag) { var ok = state.passed[L.key], n = state.att[L.key] || 0; return '<button class="parch card" data-k="' + L.key + '"><span class="ico">' + L.icon + '</span><div class="no">' + tag + '</div><h3>' + esc(L.name) + '</h3><div class="att">' + esc(L.sub) + (n ? '｜試了 ' + n + ' 次' : '') + '</div>' + (ok ? '<span class="stamp">已完成</span>' : '') + '</button>'; };
@@ -548,16 +548,23 @@ button{font:inherit;cursor:pointer}
 
   /* ---------- 面板 ---------- */
   function openPanel(h) { $('panel').innerHTML = '<button class="x" id="pClose" aria-label="關閉">✕</button>' + h; $('back').classList.remove('hidden'); document.body.style.overflow = 'hidden'; $('pClose').onclick = closePanel; $('back').scrollTop = 0; }
-  function closePanel() { $('back').classList.add('hidden'); document.body.style.overflow = ''; render(); }
+  function closePanel() { curLv = ''; $('back').classList.add('hidden'); document.body.style.overflow = ''; render(); }
   $('back').addEventListener('click', function (e) { if (e.target === $('back')) closePanel(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('back').classList.contains('hidden')) closePanel(); });
   function toast(t) { var d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.appendChild(d); setTimeout(function () { d.remove(); }, 2200); }
   function lv(k) { return LEVELS.concat(LEVELS1, LEVELS2, LEVELSD).filter(function (L) { return L.key === k; })[0]; }
   function bump(k) { state.att[k] = (state.att[k] || 0) + 1; }
-  function pass(k) { if (!state.passed[k]) state.passed[k] = Date.now(); }
+  // 2026-10-21 上課回饋：①過關後送出鈕關掉（不然有人按到 100 次）②過關當下就更新首頁卡片（AI 回來時學生可能已經關掉視窗）
+  var LOCK_BTNS = ['btnCheck', 'btnSpot', 'btnSort', 'chGo', 'paraGo', 'fGo'], HOMEWORK = { clues: 1, dossier: 1 }, curLv = '';
+  function lockIfDone() {
+    if (!curLv || HOMEWORK[curLv] || !state.passed[curLv]) return;
+    LOCK_BTNS.forEach(function (id) { var b = $(id); if (b) { b.disabled = true; b.textContent = '✅ 已過關，不用再送出'; b.onclick = null; } });
+  }
+  function pass(k) { if (!state.passed[k]) state.passed[k] = Date.now(); try { render(); } catch (e) { } if (k === curLv) setTimeout(lockIfDone, 0); }
 
   function openLevel(k) {
     var L = lv(k); if (!L) return;
+    curLv = k; setTimeout(lockIfDone, 0);
     if (L.kind === 'write') return openWrite(L);
     if (L.kind === 'spot') return openSpot(L);
     if (L.kind === 'sort') return openSort(L);
@@ -769,7 +776,7 @@ button{font:inherit;cursor:pointer}
     var results = null, judged = null, done = !!state.passed[L.key], lastTerms = [], page = 0;
     var kwOk = function () { return ['obj', 'iv', 'dv'].filter(function (k) { return String(A.kw[k] || '').trim(); }).length >= 2; };
     var metaLine = function (d) { return (d.au.length ? esc(d.au.join('、')) : '（沒有作者）') + '｜' + (d.yr || '（沒有日期）') + '｜' + esc(d.src); };
-    openPanel('<div class="ptag">第 1 關 A｜檔案庫搜查</div><h2>🗄️ 模擬檔案庫</h2>' +
+    openPanel('<div class="ptag">第 1 關｜檔案庫搜查</div><h2>🗄️ 模擬檔案庫</h2>' +
       '<div class="qbox"><small>你的研究問題</small><div class="qq">' + esc(Q.q) + '</div></div>' +
       '<div class="cols"><div>' +
       '<p class="sub-t">▍步驟一　把研究問題拆成關鍵字</p>' +
@@ -887,10 +894,8 @@ button{font:inherit;cursor:pointer}
         save(); sync();
         res.className = 'res show good';
         res.innerHTML = '<span class="grade">' + judged.grade + '</span>卷宗鑑定通過！相關又可靠的文獻 ' + judged.nGood + ' / ' + S1.NEED + ' 篇，搜尋 ' + (A.n || 0) + ' 次。' +
-          (judged.grade !== 'S' ? '<div style="margin-top:6px;font-size:.9rem;color:#d8c79f">想拿 S：4 篇全部相關又可靠，而且搜尋 8 次以內。可以清空重來。</div>' : '') +
-          '<div style="margin-top:8px"><button class="btn ghost" id="arcReset" style="color:var(--parch);border-color:var(--parch);padding:4px 12px">🔄 清空卷宗重新挑戰</button></div>';
-        if (first) toast('🗄️ 第 1 關 A 完成！');
-        $('arcReset').onclick = function () { A.picks = []; A.n = 0; judged = null; results = null; saveW(); drawFolder(); drawResults(); cnt(); res.className = 'res'; };
+          (judged.grade !== 'S' ? '<div style="margin-top:6px;font-size:.9rem;color:#d8c79f">（S 評等：4 篇全部相關又可靠，而且搜尋 8 次以內）</div>' : '');
+        if (first) toast('🗄️ 第 1 關完成！');
       } else {
         save(); sync();
         res.className = 'res show bad';
@@ -1018,7 +1023,10 @@ button{font:inherit;cursor:pointer}
     });
     var reveal = function () { items.forEach(function (it, i) { $('qw' + i).innerHTML = '<span style="color:var(--jade)">💡 ' + esc(it.why) + '</span>'; }); };
     if (done) { reveal(); var r0 = $('res'); r0.className = 'res show good'; r0.textContent = '✅ 這一關已經完成，每題的重點說明在上面。'; }
+    var lastGo = 0;
     $('chGo').onclick = function () {
+      if (Date.now() - lastGo < 3000) { var r2 = $('res'); r2.className = 'res show bad'; r2.textContent = '⏳ 先看一下紅框的題目和上面的規則，3 秒後再送出'; return; }
+      lastGo = Date.now();
       if (picks.some(function (p) { return p == null; })) { var r1 = $('res'); r1.className = 'res show bad'; r1.textContent = '每一題都要選一個答案'; return; }
       bump(L.key); $('att').textContent = '已送出 ' + state.att[L.key] + ' 次';
       var g = grade(picks), res = $('res');

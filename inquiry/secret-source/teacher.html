@@ -10,10 +10,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="../../account/staff.js?v=20261018a"></script>
-<script src="core.js?v=20261020a"></script>
+<script src="core.js?v=20261021a"></script>
 <script src="check.js?v=20261018b"></script>
 <script src="stage1.js?v=20261019a"></script>
-<script src="stage2.js?v=20261020a"></script>
+<script src="stage2.js?v=20261021a"></script>
 <style>
 :root{--night:#1b1a17;--parch:#f3e9d2;--parch2:#e8dbbb;--edge:#c9b386;--ink:#2b2418;--muted:#76684e;--seal:#b3322a;--gold:#b98f35;--jade:#2f6b5a;--ok:#2f7d4f;--bad:#b3322a}
 *{box-sizing:border-box}
@@ -218,7 +218,7 @@ body{font-size:16.5px}
       <div class="parch">
         <h2>🧭 上課流程</h2>
         <div class="steps" style="margin-top:4px">
-          <div class="step"><span class="no">1</span><b>第一節：查文獻</b>學生掃 QR 進來，做 <b>1-A 模擬檔案庫</b>；最後示範 <b>1-B 線索卡</b>，當回家作業</div>
+          <div class="step"><span class="no">1</span><b>第一節：查文獻</b>學生掃 QR 進來，做 <b>第 1 關模擬檔案庫</b>；最後示範 <b>作業 1 線索卡</b>，當回家作業</div>
           <div class="step"><span class="no">2</span><b>第二節：引用與參考文獻</b>先做 <b>第 2 關證詞重建</b>，再做 <b>第 3 關出處鑑識</b>，全部過關會拿到鑑定代碼</div>
           <div class="step"><span class="no">★</span><b>課後：結案作業</b>學生用自己的線索卡寫「我的文獻卷宗」；在「📁 結案作業」分頁評內容</div>
           <div class="step"><span class="no">3</span><b>上課中</b>開「📡 即時進度」看誰卡關；「🗂️ 線索卡」抽查學生找的文獻</div>
@@ -264,7 +264,7 @@ body{font-size:16.5px}
 
     <section data-tab="clue">
       <div class="parch">
-        <div class="row" style="margin-top:0"><h2 style="margin:0">🗂️ 第 1 關 B｜學生線索卡</h2><span style="flex:1"></span><button class="btn sm" id="btnClue">🔄 重新讀取</button></div>
+        <div class="row" style="margin-top:0"><h2 style="margin:0">🗂️ 結案作業 1｜學生線索卡</h2><span style="flex:1"></span><button class="btn sm" id="btnClue">🔄 重新讀取</button></div>
         <p class="note">學生在真實資料庫找到的文獻。系統已檢查欄位、張數、至少 1 本書、沒有論壇；內容是否真的相關、來源是否真實，請老師抽查（網址可以直接點開）。</p>
         <div id="clueSum" class="sumbox"></div>
         <div id="clueBody" style="margin-top:10px"></div>
@@ -398,7 +398,10 @@ function summary(m) {
 /* ---------- 設定表單 ---------- */
 const SUBJ = X.SUBJ_KEYS.map((k) => [k, X.SUBJECTS[k].name]);
 const ZH = X.TYPES.filter((t) => t.lang === 'zh');
-function settingsForm(m) {
+// 2026-10-21 修正：開新任務的視窗和「任務設定」分頁同時存在畫面上，兩份表單的 id、name 一樣，
+// 讀表單時讀到「設定分頁」那份 → 新任務的名稱、設定都變成目前任務的。現在每份表單加前綴（mk＝新任務、st＝設定分頁）
+function settingsForm(m, pfx) { return settingsHTML(m).replace(/name="(\w+)"/g, 'name="' + pfx + '_$1"').replace(/id="(fName|fTopics|topicWrap|topicChk)"/g, 'id="' + pfx + '_$1"'); }
+function settingsHTML(m) {
   m = m || {};
   const subj = m.subj || X.DEFAULT_SETTINGS.subjects, types = m.types || X.DEFAULT_SETTINGS.types, en = m.en !== false, tmode = S1.topicMode(m);
   const ck = (name, v, label, on, small) => `<label class="ck"><input type="checkbox" name="${name}" value="${v}" ${on ? 'checked' : ''}>${label}${small ? ' <small>' + small + '</small>' : ''}</label>`;
@@ -408,8 +411,8 @@ function settingsForm(m) {
       <label class="note" style="font-weight:700;color:var(--ink)">任務名稱</label><input type="text" id="fName" maxlength="40" value="${esc(m.name || '')}" placeholder="例如：115-1 探究 301">
       <div style="margin-top:10px;font-weight:700">自然科學科目 ${tip('第 1 關的研究問題、第 3 關的證物卡題材，都只從勾選的科目產生（至少一科）')}</div>${SUBJ.map(([k, n]) => ck('subj', k, n, !!subj[k])).join('')}</div>
     <div class="opt s1" style="grid-column:1/-1"><div class="stage-h s1">🗄️ 第 1 關｜檔案庫搜查</div>
-      ${ck('s1', '1', '開放第 1 關（1-A 模擬檔案庫＋1-B 線索卡作業）', m.s1 !== false)}
-      <div style="margin-top:8px;font-weight:700">1-B 研究主題怎麼分派？ ${tip('1-A 模擬檔案庫的研究問題由系統出題（每科 4 題，每人一題），這裡只決定 1-B 線索卡作業的主題')}</div>
+      ${ck('s1', '1', '開放第 1 關模擬檔案庫＋結案作業 1 線索卡', m.s1 !== false)}
+      <div style="margin-top:8px;font-weight:700"> 作業 1 線索卡的研究主題怎麼分派？ ${tip('第 1 關模擬檔案庫的研究問題由系統出題（每科 4 題，每人一題），這裡只決定作業 1 線索卡的主題')}</div>
       ${[['rand', '🎲 依勾選科目隨機分派', '內建主題庫（四科各 8 個），都是中學生網站、科教館查得到中文文獻的題目'], ['teacher', '👩‍🏫 老師指定主題', '一行一個；多個主題時依學號分派（大致平均）'], ['self', '✍️ 學生自選', '學生自己輸入題目，老師在「線索卡」分頁看得到']].map(([v, n, d]) => `<label class="ck" style="display:flex"><input type="radio" name="tmode" value="${v}" ${tmode === v ? 'checked' : ''}><b>${n}</b> <small>${d}</small></label>`).join('')}
       <div id="topicWrap" class="${tmode === 'teacher' ? '' : 'hidden'}" style="margin:6px 0 0 26px">
         <textarea id="fTopics" maxlength="1200" placeholder="一行一個主題，例如：&#10;鑑識科學&#10;四驅車" style="min-height:80px;font-family:inherit">${esc(m.topics || '')}</textarea>
@@ -418,37 +421,38 @@ function settingsForm(m) {
       </div></div>
     <div class="opt s2" style="grid-column:1/-1;border-left:5px solid var(--gold)"><div class="stage-h">✍️ 第 2 關｜證詞重建　＋　📁 結案作業</div>
       ${ck('s2', '1', '開放第 2 關（文中引用快問快答、直接／間接引用、這算不算抄襲、改寫練習）', m.s2 !== false)}<br>
-      ${ck('dos', '1', '開放結案作業「我的文獻卷宗」（用 1-B 線索卡的文獻寫 150～300 字文獻探討）', m.dos !== false)}<br>
+      ${ck('dos', '1', '開放結案作業「我的文獻卷宗」（作業 2：用線索卡的文獻寫 150～300 字文獻探討）', m.dos !== false)}<br>
       ${ck('ai', '1', '🤖 開啟 AI 回饋（改寫練習、結案作業）', m.ai !== false)} ${tip('AI 借用科普閱讀測驗的 Gemini，用量會算在那邊的「AI 用量統計」。關掉時，改寫練習只做重複度與引用格式檢查；AI 只給提示、不幫學生改寫')}</div>
     <div class="opt s3"><div class="stage-h s3">📚 第 3 關｜中文文獻類型</div>${ZH.map((t) => ck('type', t.key, t.icon + ' ' + t.name, !!types[t.key], t.def ? '' : '加開')).join('')}<p class="note">預設：書籍、網路資源、YouTube、小論文、科展作品（至少一種）。</p></div>
     <div class="opt en"><div class="stage-h" style="border-color:#3c5a8a">🌍 英文進階</div>${ck('en', '1', '開啟英文期刊、英文書籍', en)}<p class="note">當加分關卡，不影響第 3 關鑑定書。</p></div>
   </div>`;
 }
 // 主題「找不找得到」：每個主題給中學生網站、科教館、博碩士論文的搜尋連結（用 Google 限定網站）
-function bindTopics() {
+function bindTopics(pfx) {
+  const T = $(pfx + '_fTopics'), W2 = $(pfx + '_topicWrap'), K = $(pfx + '_topicChk');
   const draw = () => {
-    const list = S1.topicLines($('fTopics').value);
+    const list = S1.topicLines(T.value);
     const g = (site, t) => 'https://www.google.com/search?q=' + encodeURIComponent('site:' + site + ' ' + t);
-    $('topicChk').innerHTML = list.length ? list.map((t) => `<div><b>${esc(t)}</b>｜<a href="${g('shs.edu.tw', t)}" target="_blank" rel="noopener">小論文 ↗</a><a href="${g('ntsec.edu.tw', t)}" target="_blank" rel="noopener">科展 ↗</a><a href="https://ndltd.ncl.edu.tw/" target="_blank" rel="noopener" title="到網站上搜尋「${esc(t)}」">博碩士論文 ↗</a></div>`).join('') : '<span class="note">（輸入主題後會出現檢查連結）</span>';
+    K.innerHTML = list.length ? list.map((t) => `<div><b>${esc(t)}</b>｜<a href="${g('shs.edu.tw', t)}" target="_blank" rel="noopener">小論文 ↗</a><a href="${g('ntsec.edu.tw', t)}" target="_blank" rel="noopener">科展 ↗</a><a href="https://ndltd.ncl.edu.tw/" target="_blank" rel="noopener" title="到網站上搜尋「${esc(t)}」">博碩士論文 ↗</a></div>`).join('') : '<span class="note">（輸入主題後會出現檢查連結）</span>';
   };
-  document.querySelectorAll('input[name=tmode]').forEach((r) => (r.onchange = () => { $('topicWrap').classList.toggle('hidden', r.value !== 'teacher' || !r.checked); }));
-  $('fTopics').addEventListener('input', draw); draw();
+  document.querySelectorAll(`input[name=${pfx}_tmode]`).forEach((r) => (r.onchange = () => { W2.classList.toggle('hidden', r.value !== 'teacher' || !r.checked); }));
+  T.addEventListener('input', draw); draw();
 }
-function readForm() {
-  const vals = (n) => Array.from(document.querySelectorAll(`input[name=${n}]:checked`)).map((x) => x.value);
+function readForm(pfx) {
+  const vals = (n) => Array.from(document.querySelectorAll(`input[name=${pfx}_${n}]:checked`)).map((x) => x.value);
   const subj = {}, types = {}; vals('subj').forEach((k) => (subj[k] = true)); vals('type').forEach((k) => (types[k] = true));
-  const tm = (document.querySelector('input[name=tmode]:checked') || {}).value || 'rand';
-  return { name: ($('fName').value || '').trim().slice(0, 40), subj, types, en: vals('en').length > 0, s1: vals('s1').length > 0, s2: vals('s2').length > 0, dos: vals('dos').length > 0, ai: vals('ai').length > 0, tmode: tm, topics: ($('fTopics').value || '').slice(0, 1200) };
+  const tm = (document.querySelector(`input[name=${pfx}_tmode]:checked`) || {}).value || 'rand';
+  return { name: ($(pfx + '_fName').value || '').trim().slice(0, 40), subj, types, en: vals('en').length > 0, s1: vals('s1').length > 0, s2: vals('s2').length > 0, dos: vals('dos').length > 0, ai: vals('ai').length > 0, tmode: tm, topics: ($(pfx + '_fTopics').value || '').slice(0, 1200) };
 }
 function validForm(f) { if (!f.name) return '請填任務名稱'; if (f.tmode === 'teacher' && !S1.topicLines(f.topics).length) return '選了「老師指定主題」，請至少輸入一個主題'; if (!Object.keys(f.subj).length) return '至少勾一個科目'; if (!Object.keys(f.types).length) return '至少勾一種文獻類型'; return ''; }
 
 $('btnNew').onclick = () => {
   const md = document.createElement('div'); md.className = 'modal';
-  md.innerHTML = `<div class="parch"><h2>➕ 開設新任務</h2>${settingsForm({})}<div class="row" style="margin-top:14px"><button class="btn gold" id="mkGo">建立任務</button><button class="btn ghost" id="mkNo">取消</button><span class="note bad" id="mkMsg" style="margin:0"></span></div></div>`;
-  document.body.appendChild(md); bindTopics();
+  md.innerHTML = `<div class="parch"><h2>➕ 開設新任務</h2>${settingsForm({}, 'mk')}<div class="row" style="margin-top:14px"><button class="btn gold" id="mkGo">建立任務</button><button class="btn ghost" id="mkNo">取消</button><span class="note bad" id="mkMsg" style="margin:0"></span></div></div>`;
+  document.body.appendChild(md); bindTopics('mk');
   $('mkNo').onclick = () => md.remove();
   $('mkGo').onclick = async () => {
-    const f = readForm(), bad = validForm(f); if (bad) return ($('mkMsg').textContent = bad);
+    const f = readForm('mk'), bad = validForm(f); if (bad) return ($('mkMsg').textContent = bad);
     $('mkGo').disabled = true;
     try {
       let code = X.newCode();
@@ -476,7 +480,7 @@ async function openMission(code) {
   $('mCode').textContent = code; $('mLink').textContent = linkOf(code);
   $('btnPreview').href = linkOf(code);
   drawQR('qrSmall', linkOf(code), 150);
-  $('setBox').innerHTML = settingsForm(META); bindTopics(); $('saveMsg').textContent = '';
+  $('setBox').innerHTML = settingsForm(META, 'st'); bindTopics('st'); $('saveMsg').textContent = '';
   $('roster').value = (MINE[code] && MINE[code].roster) || '';
   $('keyBody').innerHTML = '';
   showTab(curTab);
@@ -492,7 +496,7 @@ $('btnProjClose').onclick = () => $('proj').classList.remove('on');
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { $('proj').classList.remove('on'); const m = document.querySelector('.modal'); if (m) m.remove(); } });
 
 $('btnSave').onclick = async () => {
-  const f = readForm(), bad = validForm(f); if (bad) return ($('saveMsg').textContent = '⚠️ ' + bad);
+  const f = readForm('st'), bad = validForm(f); if (bad) return ($('saveMsg').textContent = '⚠️ ' + bad);
   try {
     await FB.update('secret-source/m/' + CUR + '/meta', f);
     await FB.update('secret-source/owners/' + ME.uid + '/' + CUR, { name: f.name });
@@ -666,15 +670,23 @@ function renderLive() {
   let h = `<div class="cards"><div class="kpi"><b>${started.length}</b><span>已開始</span></div><div class="kpi"><b>${closed}</b><span>已結案（必修全過）</span></div>` +
     (enL.length ? `<div class="kpi"><b>${enDone}</b><span>🌍 英文進階徽章</span></div>` : '') +
     (L2.some((x) => x.key === 'dossier') ? `<div class="kpi"><b>${recs.filter((r) => r.passed.dossier).length}</b><span>📁 結案作業完成</span></div>` : '') +
-    (L1.length ? `<div class="kpi"><b>${recs.filter((r) => r.passed.archive).length}</b><span>🗄️ 1-A 模擬檔案庫過關（S ${recs.filter((r) => r.arc && r.arc.g === 'S').length} 人）</span></div><div class="kpi"><b>${recs.filter((r) => r.passed.clues).length}</b><span>🗂️ 1-B 線索卡完成</span></div>` : '') + `<div class="kpi"><b style="color:var(--bad)">${stuck}</b><span>有一關試 3 次以上還沒過</span></div></div>`;
+    (L1.length ? `<div class="kpi"><b>${recs.filter((r) => r.passed.archive).length}</b><span>🗄️ 第 1 關模擬檔案庫過關（S ${recs.filter((r) => r.arc && r.arc.g === 'S').length} 人）</span></div><div class="kpi"><b>${recs.filter((r) => r.passed.clues).length}</b><span>🗂️ 作業 1 線索卡完成</span></div>` : '') + `<div class="kpi"><b style="color:var(--bad)">${stuck}</b><span>有一關試 3 次以上還沒過</span></div></div>`;
   const st = L.map((x) => { const pass = started.filter((r) => r.passed[x.key]).length, sk = started.filter((r) => !r.passed[x.key] && r.att[x.key]).length, tries = started.filter((r) => r.passed[x.key]).map((r) => r.att[x.key] || 1); return { x, pass, sk, avg: tries.length ? tries.reduce((a, b) => a + b, 0) / tries.length : 0 }; });
   const tried = st.filter((s) => s.pass + s.sk >= 3), hard = tried.length ? tried.slice().sort((a, b) => a.pass / (a.pass + a.sk) - b.pass / (b.pass + b.sk) || b.avg - a.avg)[0] : null;
   h += '<div class="lvstats">' + st.map((s) => `<div class="lvs${hard && hard.x.key === s.x.key && s.sk ? ' hard' : ''}"><b>${s.x.icon} ${esc(s.x.name)}</b>${hard && hard.x.key === s.x.key && s.sk ? ' <span class="bad">🔥 最卡</span>' : ''}<div class="bar"><i style="width:${started.length ? Math.round(s.pass / started.length * 100) : 0}%"></i></div>過關 <b>${s.pass}</b>／${started.length}　卡關 <b class="bad">${s.sk}</b>${s.pass ? '<br>平均試 ' + s.avg.toFixed(1) + ' 次' : ''}</div>`).join('') + '</div>';
   const sort = $('optSort').value;
   recs.sort((a, b) => sort === 'low' ? a.done - b.done || a.id.localeCompare(b.id) : sort === 'high' ? b.done - a.done || (a.closedAt || 9e15) - (b.closedAt || 9e15) : a.id.localeCompare(b.id));
-  h += '<div class="tablebox"><table><thead><tr><th>學號</th><th>姓名</th>' + L1.map((x) => `<th>${x.icon} 1-${x.key === 'archive' ? 'A' : 'B'}</th>`).join('') + L2.map((x, i) => `<th title="${esc(x.name)}">${x.icon} ${x.key === 'dossier' ? '結案' : '2-' + (i + 1)}</th>`).join('') + L.map((x) => `<th>${x.icon} ${esc(x.name)}</th>`).join('') + '<th>必修</th><th>結案</th><th>鑑定代碼</th><th>最後活動</th><th title="刪除這筆紀錄">🗑</th></tr></thead><tbody>' +
-    recs.map((r) => `<tr><td class="mono">${esc(r.id)}</td><td>${esc(r.name)}</td>` + L1.map((x) => s1Cell(r, x)).join('') + L2.map((x) => { const n = r.att[x.key] || 0; return r.passed[x.key] ? `<td class="p">✓${n > 1 ? n : ''}</td>` : n ? `<td class="s">✗${n}</td>` : '<td class="n">·</td>'; }).join('') + L.map((x) => { const n = r.att[x.key] || 0; return r.passed[x.key] ? `<td class="p">✓${n > 1 ? n : ''}</td>` : n ? `<td class="s">✗${n}</td>` : '<td class="n">·</td>'; }).join('') +
-      `<td>${r.started ? r.done + '/' + req.length : '<span class="n">未開始</span>'}</td><td class="good">${r.closedAt ? new Date(r.closedAt).toLocaleString().replace(/:\d\d$/, '') : ''}</td><td class="mono">${r.done === req.length ? X.closeCode(CUR, r.id) : ''}</td><td class="note">${ago(r.ts)}</td><td>${r.started ? `<button class="delrec" data-del="${esc(r.id)}" title="刪除 ${esc(r.id)} 的紀錄">🗑</button>` : ''}</td></tr>`).join('') + '</tbody></table></div>';
+  // 2026-10-21：表格欄位跟學生頁的順序一樣：第 1 關 → 第 2 關 → 第 3 關（必修、鑑定書）→ 結案作業（作業 1 線索卡、作業 2 卷宗）
+  const LA = L1.filter((x) => x.key === 'archive'), LB = L1.filter((x) => x.key === 'clues'), L2s = L2.filter((x) => x.key !== 'dossier'), LD = L2.filter((x) => x.key === 'dossier');
+  const cell = (r, x) => { const n = r.att[x.key] || 0; return r.passed[x.key] ? `<td class="p">✓${n > 1 ? n : ''}</td>` : n ? `<td class="s">✗${n}</td>` : '<td class="n">·</td>'; };
+  h += '<div class="tablebox"><table><thead><tr><th>學號</th><th>姓名</th>' + LA.map((x) => `<th title="${esc(x.name)}">${x.icon} 第1關</th>`).join('') +
+    L2s.map((x, i) => `<th title="${esc(x.name)}">${x.icon} 2-${i + 1}</th>`).join('') + L.map((x) => `<th>${x.icon} ${esc(x.name)}</th>`).join('') +
+    '<th>第3關必修</th><th>鑑定書</th><th>鑑定代碼</th>' + LB.map((x) => `<th title="結案作業 1：${esc(x.name)}">${x.icon} 作業1</th>`).join('') + LD.map((x) => `<th title="結案作業 2：${esc(x.name)}">${x.icon} 作業2</th>`).join('') +
+    '<th>最後活動</th><th title="刪除這筆紀錄">🗑</th></tr></thead><tbody>' +
+    recs.map((r) => `<tr><td class="mono">${esc(r.id)}</td><td>${esc(r.name)}</td>` + LA.map((x) => s1Cell(r, x)).join('') + L2s.map((x) => cell(r, x)).join('') + L.map((x) => cell(r, x)).join('') +
+      `<td>${r.started ? r.done + '/' + req.length : '<span class="n">未開始</span>'}</td><td class="good">${r.closedAt ? new Date(r.closedAt).toLocaleString().replace(/:\d\d$/, '') : ''}</td><td class="mono">${r.done === req.length ? X.closeCode(CUR, r.id) : ''}</td>` +
+      LB.map((x) => s1Cell(r, x)).join('') + LD.map((x) => cell(r, x)).join('') +
+      `<td class="note">${ago(r.ts)}</td><td>${r.started ? `<button class="delrec" data-del="${esc(r.id)}" title="刪除 ${esc(r.id)} 的紀錄">🗑</button>` : ''}</td></tr>`).join('') + '</tbody></table></div>';
   $('liveBody').innerHTML = h;
   document.querySelectorAll('[data-del]').forEach((b) => (b.onclick = () => delRecord(b.dataset.del)));
 }
@@ -692,7 +704,7 @@ $('btnXlsx').onclick = async () => {
   try { await loadXLSX(); } catch (e) { return toast(e.message); }
   const { L, req, recs, L1, L2 } = people();
   const s2h = L2.map((x) => x.name), s2v = (r) => L2.map((x) => r.passed[x.key] ? '✓' : (r.att[x.key] ? '未過' : ''));
-  const s1h = L1.length ? ['1-A 模擬檔案庫評等', '1-A 搜尋次數', '1-B 線索卡張數', '1-B 完成'] : [];
+  const s1h = L1.length ? ['第1關 模擬檔案庫評等', '第1關 搜尋次數', '作業1 線索卡張數', '作業1 線索卡完成'] : [];
   const s1v = (r) => L1.length ? [r.passed.archive ? ((r.arc && r.arc.g) || '✓') : (r.att.archive ? '未過' : ''), r.arc ? r.arc.n : '', r.nCards || '', r.passed.clues ? '✓' : ''] : [];
   const head = ['學號', '姓名'].concat(s1h, s2h, L.map((x) => x.name), ['必修完成', '結案時間', '鑑定代碼'].concat(L.map((x) => x.name + ' 嘗試次數')));
   const rows = [head].concat(recs.map((r) => [r.id, r.name].concat(s1v(r), s2v(r), L.map((x) => r.passed[x.key] ? '✓' : (r.att[x.key] ? '卡關' : '')), [r.started ? r.done + '/' + req.length : '未開始', r.closedAt ? new Date(r.closedAt).toLocaleString() : '', r.done === req.length ? X.closeCode(CUR, r.id) : ''], L.map((x) => r.att[x.key] || 0))));
@@ -719,8 +731,8 @@ $('btnKey').onclick = () => {
   let h = `<p class="note codeonly">學號 <b class="mono">${esc(id)}</b>｜鑑定代碼 <b class="mono">${X.closeCode(CUR, id)}</b>${st.en ? '｜英文徽章 <b class="mono">' + X.enBadge(CUR, id) + '</b>' : ''}</p>`;
   if (X.levels1(META).length) {
     const Q = S1.question(CUR, id, st.subjects), db = S1.buildDB(st.subjects), good = db.filter((d) => d.q === Q.id && d.rel && d.ok);
-    h += `<div class="ans"><div class="t">🗄️ 1-A 模擬檔案庫：${esc(Q.q)}</div><div class="a">相關又可靠（${good.length} 篇，收 3 篇以上且含書籍就過關）：` + good.map((d) => `<div>・${esc(S1.KIND[d.kind].name)}｜${esc(d.title)}</div>`).join('') + `</div><div class="note">搜尋建議：${esc(Q.kw.slice(0, 2).join(' AND '))}</div></div>`;
-    h += `<div class="ans"><div class="t">🗂️ 1-B 研究主題</div><div class="a">${esc(S1.topicFor(CUR, id, META) || '學生自選')}</div></div>`;
+    h += `<div class="ans"><div class="t">🗄️ 第 1 關 模擬檔案庫：${esc(Q.q)}</div><div class="a">相關又可靠（${good.length} 篇，收 3 篇以上且含書籍就過關）：` + good.map((d) => `<div>・${esc(S1.KIND[d.kind].name)}｜${esc(d.title)}</div>`).join('') + `</div><div class="note">搜尋建議：${esc(Q.kw.slice(0, 2).join(' AND '))}</div></div>`;
+    h += `<div class="ans"><div class="t">🗂️ 作業 1 線索卡的研究主題</div><div class="a">${esc(S1.topicFor(CUR, id, META) || '學生自選')}</div></div>`;
   }
   if (X.levels2(META).length) {
     const ps = S2.passages(CUR, id), cq = S2.makeCite(CUR, id), qq = S2.makeQuote(CUR, id), pq = S2.makePlag(CUR, id);
