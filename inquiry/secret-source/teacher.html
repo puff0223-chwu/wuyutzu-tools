@@ -78,6 +78,17 @@ section[data-tab]{display:none} section[data-tab].on{display:block}
 .bar{height:9px;background:var(--parch2);border-radius:6px;overflow:hidden;margin:5px 0}
 .bar i{display:block;height:100%;background:var(--ok)}
 .tablebox{overflow-x:auto}
+/* 2026-10-21：即時檢視表格——自動更新不再跳回左邊、可縮放、學號姓名固定在左邊 */
+.zoombar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:4px 0 6px;font-size:.88rem;color:var(--muted);font-weight:700}
+.zoombar button{padding:3px 10px;border:1px solid var(--edge);border-radius:8px;background:#fffaf0;font:inherit;cursor:pointer;color:var(--ink)}
+.zoombar b{min-width:3.2em;text-align:center;font-family:"JetBrains Mono",monospace;color:var(--ink)}
+.livebox{max-height:72vh;overflow:auto;border:1px solid var(--edge);border-radius:8px}
+.livebox thead th{z-index:2}
+.livewrap.full{position:fixed;inset:0;z-index:45;background:var(--parch);padding:10px 14px;display:flex;flex-direction:column}
+.livewrap.full .livebox{max-height:none;flex:1}
+.livebox td.stk,.livebox th.stk{position:sticky;left:0;z-index:1;background:#f3e8d2;box-shadow:inset -1px 0 0 var(--edge)}
+.livebox th.stk{z-index:3;background:var(--ink)}
+.livebox tbody tr:nth-child(even) td.stk{background:#e8dbbd}
 table{border-collapse:collapse;font-size:.88rem;white-space:nowrap;width:100%}
 th,td{border:1px solid var(--edge);padding:5px 8px;text-align:center}
 thead th{background:var(--ink);color:var(--parch);position:sticky;top:0}
@@ -509,7 +520,7 @@ $('btnDel').onclick = () => delMission(CUR);
 
 /* ---------- 分頁 ---------- */
 function showTab(t) {
-  curTab = t;
+  curTab = t; liveHTML = ''; LIVE_FULL = false;
   document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
   document.querySelectorAll('section[data-tab]').forEach((s) => s.classList.toggle('on', s.dataset.tab === t));
   if (t === 'live') { refreshLive(); loadAiUse(); } else stopPoll();
@@ -658,12 +669,26 @@ function s1Cell(r, x) {
   return r.passed.clues ? `<td class="p">✓${r.nCards}張</td>` : r.nCards ? `<td class="s">${r.nCards}張</td>` : '<td class="n">·</td>';
 }
 function ago(ts) { if (!ts) return ''; const m = Math.floor((Date.now() - ts) / 60000); return m < 1 ? '剛剛' : m < 60 ? m + ' 分鐘前' : m < 1440 ? Math.floor(m / 60) + ' 小時前' : Math.floor(m / 1440) + ' 天前'; }
+let LIVE_ZOOM = 1, liveHTML = '', LIVE_FULL = false;
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && LIVE_FULL) setZoom('full'); });
+try { LIVE_ZOOM = Math.min(1.6, Math.max(0.4, +localStorage.getItem('ss-live-zoom') || 1)); } catch (e) { }
+// 姓名欄要黏在學號欄右邊：等表格畫好量出學號欄寬度再設定
+function stickCols(box) { const th = box.querySelector('thead th.stk'); if (!th) return; const w = th.offsetWidth; box.querySelectorAll('tr').forEach((tr) => { const c = tr.querySelectorAll('.stk')[1]; if (c) c.style.left = w + 'px'; }); }
+function setZoom(z) {
+  const box = $('liveTbl'), t = box && box.querySelector('table');
+  if (z === 'fit' && t) { const natural = t.scrollWidth / LIVE_ZOOM; LIVE_ZOOM = Math.max(0.4, Math.min(1, Math.floor((box.clientWidth - 4) / natural * 20) / 20)); }
+  else if (z === 'full') LIVE_FULL = !LIVE_FULL;
+  else if (z === 'reset') LIVE_ZOOM = 1;
+  else LIVE_ZOOM = Math.min(1.6, Math.max(0.4, Math.round((LIVE_ZOOM + (+z) * 0.1) * 10) / 10));
+  try { localStorage.setItem('ss-live-zoom', LIVE_ZOOM); } catch (e) { }
+  liveHTML = ''; renderLive();
+}
 function renderLive() {
   if (curTab !== 'live') return;
   $('liveStamp').textContent = liveErr ? '⚠️ ' + liveErr : liveAt ? '最後更新 ' + new Date(liveAt).toLocaleTimeString() : '讀取中……';
-  if (!LIVE) { $('liveBody').innerHTML = ''; return; }
+  if (!LIVE) { liveHTML = ''; $('liveBody').innerHTML = ''; return; }
   const { L, req, recs, L1, L2 } = people(), started = recs.filter((r) => r.started);
-  if (!recs.length) { $('liveBody').innerHTML = '<p class="note">還沒有學生開始。把「學生連結」給學生後就會出現在這裡。</p>'; return; }
+  if (!recs.length) { liveHTML = ''; $('liveBody').innerHTML = '<p class="note">還沒有學生開始。把「學生連結」給學生後就會出現在這裡。</p>'; return; }
   const closed = recs.filter((r) => r.done === req.length).length;
   const enL = L.filter((x) => !x.required), enDone = enL.length ? recs.filter((r) => enL.every((x) => r.passed[x.key])).length : 0;
   const stuck = recs.filter((r) => L.some((x) => !r.passed[x.key] && (r.att[x.key] || 0) >= 3)).length;
@@ -679,15 +704,22 @@ function renderLive() {
   // 2026-10-21：表格欄位跟學生頁的順序一樣：第 1 關 → 第 2 關 → 第 3 關（必修、鑑定書）→ 結案作業（作業 1 線索卡、作業 2 卷宗）
   const LA = L1.filter((x) => x.key === 'archive'), LB = L1.filter((x) => x.key === 'clues'), L2s = L2.filter((x) => x.key !== 'dossier'), LD = L2.filter((x) => x.key === 'dossier');
   const cell = (r, x) => { const n = r.att[x.key] || 0; return r.passed[x.key] ? `<td class="p">✓${n > 1 ? n : ''}</td>` : n ? `<td class="s">✗${n}</td>` : '<td class="n">·</td>'; };
-  h += '<div class="tablebox"><table><thead><tr><th>學號</th><th>姓名</th>' + LA.map((x) => `<th title="${esc(x.name)}">${x.icon} 第1關</th>`).join('') +
+  h += `<div class="livewrap${LIVE_FULL ? ' full' : ''}"><div class="zoombar">🔍 表格大小 <button data-z="-1" title="縮小">－</button><b>${Math.round(LIVE_ZOOM * 100)}%</b><button data-z="1" title="放大">＋</button><button data-z="fit" title="縮到整張表都看得到">↔ 塞進畫面</button><button data-z="reset">100%</button><button data-z="full">${LIVE_FULL ? '✕ 離開全螢幕' : '⛶ 全螢幕看表格'}</button><span class="note">學號、姓名會固定在左邊；自動更新時不會跳回最左邊</span></div>`;
+  h += '<div class="tablebox livebox" id="liveTbl"><table style="zoom:' + LIVE_ZOOM + '"><thead><tr><th class="stk">學號</th><th class="stk">姓名</th>' + LA.map((x) => `<th title="${esc(x.name)}">${x.icon} 第1關</th>`).join('') +
     L2s.map((x, i) => `<th title="${esc(x.name)}">${x.icon} 2-${i + 1}</th>`).join('') + L.map((x) => `<th>${x.icon} ${esc(x.name)}</th>`).join('') +
     '<th>第3關必修</th><th>鑑定書</th><th>鑑定代碼</th>' + LB.map((x) => `<th title="結案作業 1：${esc(x.name)}">${x.icon} 作業1</th>`).join('') + LD.map((x) => `<th title="結案作業 2：${esc(x.name)}">${x.icon} 作業2</th>`).join('') +
     '<th>最後活動</th><th title="刪除這筆紀錄">🗑</th></tr></thead><tbody>' +
-    recs.map((r) => `<tr><td class="mono">${esc(r.id)}</td><td>${esc(r.name)}</td>` + LA.map((x) => s1Cell(r, x)).join('') + L2s.map((x) => cell(r, x)).join('') + L.map((x) => cell(r, x)).join('') +
+    recs.map((r) => `<tr><td class="mono stk">${esc(r.id)}</td><td class="stk">${esc(r.name)}</td>` + LA.map((x) => s1Cell(r, x)).join('') + L2s.map((x) => cell(r, x)).join('') + L.map((x) => cell(r, x)).join('') +
       `<td>${r.started ? r.done + '/' + req.length : '<span class="n">未開始</span>'}</td><td class="good">${r.closedAt ? new Date(r.closedAt).toLocaleString().replace(/:\d\d$/, '') : ''}</td><td class="mono">${r.done === req.length ? X.closeCode(CUR, r.id) : ''}</td>` +
       LB.map((x) => s1Cell(r, x)).join('') + LD.map((x) => cell(r, x)).join('') +
-      `<td class="note">${ago(r.ts)}</td><td>${r.started ? `<button class="delrec" data-del="${esc(r.id)}" title="刪除 ${esc(r.id)} 的紀錄">🗑</button>` : ''}</td></tr>`).join('') + '</tbody></table></div>';
-  $('liveBody').innerHTML = h;
+      `<td class="note">${ago(r.ts)}</td><td>${r.started ? `<button class="delrec" data-del="${esc(r.id)}" title="刪除 ${esc(r.id)} 的紀錄">🗑</button>` : ''}</td></tr>`).join('') + '</tbody></table></div></div>';
+  // 自動更新：內容沒變就不重畫；有變就記住捲動位置、重畫後放回去（之前每次更新都跳回最左邊）
+  if (h === liveHTML) return;
+  const old = $('liveTbl'), sx = old ? old.scrollLeft : 0, sy = old ? old.scrollTop : 0, py = window.scrollY;
+  liveHTML = h; $('liveBody').innerHTML = h;
+  const box = $('liveTbl');
+  if (box) { stickCols(box); box.scrollLeft = sx; box.scrollTop = sy; window.scrollTo(0, py); }
+  document.querySelectorAll('[data-z]').forEach((b) => (b.onclick = () => setZoom(b.dataset.z)));
   document.querySelectorAll('[data-del]').forEach((b) => (b.onclick = () => delRecord(b.dataset.del)));
 }
 // 刪除一筆學生紀錄（學號打錯、重複登入產生的多餘紀錄）——2026-10-20 老師上課回饋
