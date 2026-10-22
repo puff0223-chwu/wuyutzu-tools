@@ -110,7 +110,8 @@ export async function startTeacher(opt) {
     panel.innerHTML = `<div class="lt-who">👤 ${esc(API.ME.name)}<a href="${W.centerURL('../', 'lab')}">👥 會員中心</a><button class="lt-link" id="ltOut">登出</button></div>
       <div class="lt-wrap">
         <div class="lt-box"><div class="lt-row" style="justify-content:space-between"><h3 style="margin:0">🗂️ 我的活動</h3><button class="lt-btn sm" id="ltNew">➕ 開新活動</button></div>
-          <div class="lt-list">${codes.length ? codes.map(k => { const x = API.mine[k]; return `<div class="lt-item ${k === c ? 'cur' : ''}" data-k="${k}"><span class="lt-dot ${x.open ? 'on' : ''}" title="${x.open ? '進行中' : '未開始／已停止'}"></span><div class="tx"><b>${esc(LAB.label(x))}</b><small>${k}</small></div></div>`; }).join('') : '<p style="font-size:.9em;color:#6b6248">還沒有活動，按「➕ 開新活動」開始。</p>'}</div></div>
+          <div class="lt-list">${codes.length ? codes.map(k => { const x = API.mine[k]; return `<div class="lt-item ${k === c ? 'cur' : ''}" data-k="${k}"><span class="lt-dot ${x.open ? 'on' : ''}" title="${x.open ? '進行中' : '未開始／已停止'}"></span><div class="tx"><b>${esc(LAB.label(x))}</b><small>${k}${x.from ? '・📦 改版前搬來' : ''}</small></div></div>`; }).join('') : '<p style="font-size:.9em;color:#6b6248">還沒有活動，按「➕ 開新活動」開始。</p>'}</div>
+          ${opt.legacy ? '<button class="lt-link" id="ltMig" style="margin-top:10px;font-size:.88em">📦 搬移改版前的紀錄（舊題組碼）</button>' : ''}</div>
         <div class="lt-box">${m ? `
           <div class="lt-cur"><div class="lt-qr" id="ltQR"></div><div>
             <div class="lt-row" style="justify-content:space-between"><b style="font-size:1.1em">${esc(LAB.label(m))}</b><span class="lt-state ${m.open ? 'on' : 'off'}">${m.open ? '🟢 進行中' : '⏸ 未開始／已停止'}</span></div>
@@ -123,6 +124,7 @@ export async function startTeacher(opt) {
       </div>`;
     panel.querySelector('#ltOut').onclick = async () => { await FB.logout(); location.reload(); };
     panel.querySelector('#ltNew').onclick = () => openForm();
+    const mg = panel.querySelector('#ltMig'); if (mg) mg.onclick = migrate;
     panel.querySelectorAll('[data-k]').forEach(b => b.onclick = () => select(b.dataset.k));
     if (!m) return;
     if (typeof QRCode !== 'undefined') new QRCode(panel.querySelector('#ltQR'), { text: studentURL(c), width: 140, height: 140, correctLevel: QRCode.CorrectLevel.M });
@@ -205,6 +207,70 @@ export async function startTeacher(opt) {
         close(); API.mine[code] = { sys, term: t, item: it, name: nm, at, open: false }; await select(code);
       } catch (e) { $f('lfOk').disabled = false; $f('lfErr').textContent = '儲存失敗：' + (e.code || e.message) + '（Firebase 規則可能還沒更新）'; }
     };
+  }
+
+
+  /* ---------- 📦 搬移改版前的紀錄（2026-10-22）----------
+     舊題組碼的學生紀錄 → 新活動（set＝同一個題組碼，題目和以前完全一樣）；學號留空、用途由老師整批指定；活動維持「未開始」
+     opt.legacy = { parse(code), fetch(code), pretty(code), recentKey } */
+  function migrate() {
+    const L = opt.legacy, done = Object.fromEntries(Object.entries(API.mine).filter(([, v]) => v.from).map(([k, v]) => [v.from, k]));
+    let recent = []; try { recent = JSON.parse(localStorage.getItem(L.recentKey) || '[]').filter(x => L.parse(x.code)); } catch (e) {}
+    const md = document.createElement('div'); md.className = 'lt-modal';
+    md.innerHTML = `<div><h3 style="margin-bottom:6px">📦 搬移改版前的紀錄｜${S.icon} ${S.name}</h3>
+      <p style="font-size:.9em;color:#6b6248;line-height:1.7">每個舊題組碼搬成一個新活動：題目設定相同，學生的題目和作答完全對得上，即時總表、能力分析、Excel 都能用。舊紀錄沒有學號（留空）和用途（下面整批指定）；搬好的活動維持「未開始」，舊紀錄也不會被刪掉。</p>
+      <b style="font-size:.9em">這台裝置最近用過的題組碼</b>
+      <div class="lt-list" id="mgList" style="max-height:200px">${recent.length ? recent.map(x => `<div class="lt-item" data-c="${x.code}"><div class="tx"><b class="mono">${esc(L.pretty(x.code))}</b><small>${new Date(x.t).toLocaleDateString('zh-TW')}${done[x.code] ? `・✅ 已搬到 ${done[x.code]}` : ''}</small></div></div>`).join('') : '<p style="font-size:.88em;color:#6b6248">這台裝置沒有紀錄（可能是在別台電腦／平板出的題），請在下面手動輸入。</p>'}</div>
+      <div class="lt-row" style="margin:10px 0"><input id="mgIn" placeholder="手動輸入題組碼，例：4TJ-6NKY" style="font:inherit;padding:8px 10px;border:2px solid #ddd3bd;border-radius:10px;width:220px;text-transform:uppercase"><button class="lt-btn dark sm" id="mgRead">讀取</button></div>
+      <div id="mgInfo"></div>
+      <div class="lt-row" style="margin-top:12px"><button class="lt-btn dark" id="mgX">關閉</button></div></div>`;
+    document.body.appendChild(md);
+    const $m = id => md.querySelector('#' + id);
+    $m('mgX').onclick = () => md.remove();
+    md.querySelectorAll('[data-c]').forEach(b => b.onclick = () => load(b.dataset.c));
+    $m('mgRead').onclick = () => { const p = L.parse($m('mgIn').value); if (!p) return ($m('mgInfo').innerHTML = '<p style="color:#c0392b;font-weight:700">題組碼不正確，請再確認一次</p>'); load(p.code); };
+    async function load(code) {
+      md.querySelectorAll('[data-c]').forEach(b => b.classList.toggle('cur', b.dataset.c === code));
+      $m('mgInfo').innerHTML = '<p>讀取中…</p>';
+      let recs = {}; try { recs = (await L.fetch(code)) || {}; } catch (e) { return ($m('mgInfo').innerHTML = `<p style="color:#c0392b;font-weight:700">讀不到這個題組碼的紀錄：${esc(e.message)}</p>`); }
+      const list = Object.values(recs).filter(r => r && r.cls && r.seat);
+      if (!list.length) return ($m('mgInfo').innerHTML = '<p style="color:#c0392b;font-weight:700">這個題組碼沒有學生紀錄。</p>');
+      const ts = list.map(r => r.ts || r.firstTs || 0).filter(Boolean), first = new Date(Math.min(...ts) || Date.now());
+      const classes = [...new Set(list.map(r => String(r.cls)))], term = LAB.defaultTerm(first);
+      const nextItem = 1 + Math.max(0, ...Object.values(API.mine).filter(x => x.term === term).map(x => +x.item || 0));
+      $m('mgInfo').innerHTML = `<div style="background:#fff;border-radius:10px;padding:12px;border:2px solid #e6dcc6">
+        <b class="mono">${esc(L.pretty(code))}</b>：${list.length} 位學生・班級 ${classes.map(esc).join('、')}・${first.toLocaleDateString('zh-TW')} 起${done[code] ? `<br><b style="color:#9a3a2c">⚠️ 這個題組碼已經搬到 ${done[code]}，再搬會多一個活動</b>` : ''}
+        <div class="lt-form" style="margin-top:10px"><div><label>學期</label><input id="mgT" value="${esc(term)}"></div><div><label>項次</label><input id="mgI" type="number" min="1" max="99" value="${nextItem}"></div>
+          <div class="w"><label>名稱</label><input id="mgN" maxlength="30" value="改版前 ${esc(classes.slice(0, 3).join('、'))}"></div></div>
+        <label style="font-size:.8em;font-weight:800;color:#6b6248">這批學生的用途</label><div class="lab-uses" id="mgU" style="margin:4px 0 10px">${LAB.USES.map(u => `<button type="button" data-u="${u}">${u}</button>`).join('')}</div>
+        <p id="mgErr" style="color:#c0392b;font-weight:700;min-height:1.2em"></p><button class="lt-btn" id="mgGo">📦 搬成新活動</button></div>`;
+      let use = '';
+      md.querySelectorAll('[data-u]').forEach(b => b.onclick = () => { use = b.dataset.u; md.querySelectorAll('[data-u]').forEach(x => x.classList.toggle('on', x === b)); });
+      $m('mgGo').onclick = async () => {
+        const t = LAB.toHalf($m('mgT').value).trim(), it = parseInt($m('mgI').value, 10), nm = $m('mgN').value.trim().slice(0, 30);
+        if (!LAB.validTerm(t)) return ($m('mgErr').textContent = '學期格式像「115-1」');
+        if (!(it >= 1 && it <= 99)) return ($m('mgErr').textContent = '項次要是 1～99');
+        if (!use) return ($m('mgErr').textContent = '請選這批學生的用途');
+        $m('mgGo').disabled = true; $m('mgGo').textContent = '搬移中…';
+        try {
+          let nc = null; for (let k = 0; k < 6 && !nc; k++) { const c = LAB.newCode(); if (!(await FB.get('lab223/m/' + c + '/meta'))) nc = c; }
+          const at = Date.now(), meta = { owner: API.ME.uid, sys, term: t, item: it, name: nm, open: false, at, set: code, from: code };
+          if (API.ME.admin) meta.admin = true;
+          await FB.set(`lab223/m/${nc}/meta`, meta);
+          await FB.set(`lab223/owners/${API.ME.uid}/${nc}`, { sys, term: t, item: it, name: nm, at, open: false, from: code });
+          let ok = 0; const skip = [];
+          for (const r of list) {
+            const cls = String(r.cls).trim().toUpperCase(), sid = LAB.sidOf(cls, r.seat);
+            if (!/^[A-Z0-9]{1,8}_[0-9]{1,2}$/.test(sid) || cls.length > 8) { skip.push(`${r.cls} ${r.seat} 號`); continue; }
+            const rec = { ...r, cls, seat: Number(r.seat), name: String(r.name || '').slice(0, 12) || '（無名）', no: '', use, ts: r.ts || at };
+            try { await FB.set(`lab223/m/${nc}/r/${sid}`, rec); ok++; } catch (e) { skip.push(`${r.cls} ${r.seat} 號`); }
+          }
+          API.mine[nc] = { sys, term: t, item: it, name: nm, at, open: false, from: code };
+          md.remove(); await select(nc);
+          alert(`📦 搬好了：${ok} 位學生搬到新活動 ${nc}${skip.length ? `\n\n這幾筆沒搬（班級格式不符）：${skip.join('、')}` : ''}\n\n活動維持「未開始」，舊紀錄沒有刪除。`);
+        } catch (e) { $m('mgGo').disabled = false; $m('mgGo').textContent = '📦 搬成新活動'; $m('mgErr').textContent = '搬移失敗：' + (e.code || e.message); }
+      };
+    }
   }
 
   /* ---------- 即時監聽學生紀錄 ---------- */

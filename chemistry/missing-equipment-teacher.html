@@ -90,9 +90,9 @@
 
 <script src="equipment-data.js?v=20261022a"></script>
 <script src="lab223.js?v=20261022a"></script>
-<script src="lab223-board.js?v=20261022a"></script>
+<script src="lab223-board.js?v=20261022b"></script>
 <script type="module">
-import { startTeacher } from './lab223-teacher.js?v=20261022a';
+import { startTeacher } from './lab223-teacher.js?v=20261022b';
 const $ = id => document.getElementById(id), esc = LAB.esc, IMG = 'images/equipment/';
 const st = document.createElement('style'); st.textContent = LabBoard.CSS; document.head.appendChild(st);
 let META = null, CODE = null, SET = EQ.DEFAULT, RECS = {}, ROWS = [];
@@ -148,7 +148,7 @@ function liveView(list) {
   $('lv-note').textContent = `🟢 即時更新：${ROWS.length} 人進來，篩選後 ${list.length} 人，${playing} 人正在遊戲中${!META.open ? '｜⏸ 活動目前停止中' : ''}　·　${new Date().toLocaleTimeString('zh-TW')}`;
   $('lv-table').innerHTML = list.length ? `<table><tr><th>班級</th><th>座號</th><th>學號</th><th>姓名</th><th>用途</th><th>現在</th><th>局數</th><th>最佳分數</th><th>最佳答對</th><th>累計答對／答錯</th><th>答對率</th><th>最後動作</th></tr>
     ${list.map(x => { const live = x.cur && Date.now() - x.cur.at < 90000;
-      return `<tr><td>${esc(x.cls)}</td><td>${x.seat}</td><td class="mono">${esc(x.no)}</td><td>${esc(x.name)}</td><td>${esc(x.use)}</td>
+      return `<tr><td>${esc(x.cls)}</td><td>${x.seat}</td><td class="mono">${esc(x.no) || "—"}</td><td>${esc(x.name)}</td><td>${esc(x.use)}</td>
         <td>${live ? `<span class="playing">🎮 第 ${x.cur.q}/${x.cur.n} 件・❤️${x.cur.lives}・${x.cur.score} 分</span>` : '<span class="idle">💤 沒在玩</span>'}</td>
         <td>${x.games}</td><td><b>${x.best ? x.best.score : '—'}</b></td><td>${x.best ? `${x.best.correct}/${x.best.total}` : '—'}</td><td>${x.o}／${x.x}</td>
         <td style="background:${heat(pct(x.o, x.o + x.x))}">${pct(x.o, x.o + x.x) ?? '—'}${x.o + x.x ? '%' : ''}</td><td style="font-size:.85em">${x.ts ? ago(x.ts) : ''}</td></tr>`; }).join('')}</table>`

@@ -211,9 +211,9 @@ wuyutzu-tools/
 └── lab223/                       ← ⚗️ 化學實驗室 No.223 三系統的「活動」（2026-10-22）
     ├── owners/<老師uid>/<活動代碼>: { sys, term, item, name, at, open }   ← 老師自己的活動清單
     └── m/<活動代碼 6 碼>/
-        ├── meta: { owner, sys(eq/ph/unit), term(115-1), item(項次 1～99), name, open, at, set, admin? }   ← 公開可讀
+        ├── meta: { owner, sys(eq/ph/unit), term(115-1), item(項次 1～99), name, open, at, set, admin?, from?(搬移來源的舊題組碼) }   ← 公開可讀
         │        set：ph／unit＝7 碼題組碼（題目設定）；eq＝"題數|命數|類別"（類別 all 或序號）；建立後不能改
-        ├── r/<班級_座號>: { cls, seat, no(學號), name, use(正式進度/考試複習/重補修), ts, …各系統欄位 }
+        ├── r/<班級_座號>: { cls, seat, no(學號；改版前搬來的是空白), name, use(正式進度/考試複習/重補修), ts, …各系統欄位 }
         │        ph／unit：answers、attempts、history、submitted、firstTs（同舊格式）
         │        eq：games、best{score,correct,wrong,total,seconds,cleared,at}、it{器材id:{o,x}}、wl{n:{i,t,at}}(最近 60 筆打錯的名稱)、wn、cur{q,n,lives,score,at}(遊戲中)、h{n:每局}、hn
         └── lb/<班級_座號>: { cls, seat, name, score, correct, total, seconds, cleared, at }   ← 器材活動排行榜（公開，只放名字成績）
@@ -297,6 +297,7 @@ wuyutzu-tools/
 - **入口**：`chemistry/lab223.html`（三張卡片＋上課流程）。三個老師頁上方都是「我的活動」：➕ 開新活動（學期預設依日期、項次預設＝同學期最大＋1、名稱選填＋各系統的題目設定）→ 建立後是「未開始」→ ▶ 開始活動／⏹ 停止活動、🖥️ 全螢幕投影（投影畫面上也能開始／停止，平板不會自動變暗）、📋 複製連結、✏️ 學期／項次、🗑 刪除
 - **學生頁**：`?a=活動代碼` → `LAB.studentLogin`：用途三選一＋班級、座號、學號（3～12 英數）、姓名；活動是別的系統的代碼會自動轉到正確頁面；活動還沒開始 → 等待畫面每 5 秒看一次，老師按開始就自動進入；作答中每 15 秒看一次（分頁切回來也看），停止就蓋上「⏸ 老師已經停止這個活動」並鎖住；寫入被規則擋下（401／403）也會判斷是不是停止了
 - **老師即時監聽**：`T.listen(code)` 用 SDK onValue 聽 `lab223/m/<代碼>/r`；老師頁背景 60 秒自動斷線（`FB.idle`）
+- **📦 搬移改版前的紀錄**（pH、單位換算老師頁「我的活動」下方）：列出這台裝置 localStorage 的「最近用過」題組碼（`ph-teacher-recent`／`unit-teacher-recent`），也可手動輸入 → 讀舊抽屜 → 老師填學期（預設依紀錄日期）、項次、名稱，整批指定用途 → 建一個 `set`＝同一題組碼、`from`＝舊題組碼的新活動（維持未開始），逐筆寫入 `r/<班級_座號>`（學號留空 `no: ''`）。題目種子＝題組碼＋班級＋座號，所以題目和作答完全對得上；舊紀錄不刪；已搬過的題組碼會標「✅ 已搬到 ○○」。規則：活動老師可以寫自己活動的學生紀錄（不論開放與否）、`no` 可以空白、meta 可以有 `from`。器材的舊成績留在全站名人堂（老師決定，舊資料沒有每題紀錄）
 - **管理員**：沒有會員中心紀錄，活動 meta 加 `admin: true`（規則只准管理員寫這個旗標），學生寫入規則看這個旗標
 - **測試工具（不在 repo）**：Node 測試伺服器＝靜態網站＋模擬 Firebase REST，每一次讀寫都用 targaryen 依 `firebase-rules.json` 判斷；假的 `account/fb.js` 把老師頁的 SDK 讀寫也送到同一台伺服器。三個系統瀏覽器實測：沒開通 lab 的老師被擋、開活動、學生等待→自動進入、作答、即時總表、能力分析、Excel、停止後學生被擋（正好 2 次預期中的拒絕）、重新開始、刪除；規則測試新增 46 項（共 163 項全過）
 
@@ -1140,7 +1141,7 @@ fp/
 
 ---
 
-## 附錄：Firebase 安全規則全文（2026-10-22：化學實驗室 No.223 活動 lab223、舊題組碼抽屜唯讀）
+## 附錄：Firebase 安全規則全文（2026-10-22：化學實驗室 No.223 活動 lab223、舊題組碼抽屜唯讀、搬移改版前紀錄）
 
 > 由 `firebase/build_rules.py` 從 `firebase/rules.src.json` 產生，和根目錄 `firebase-rules.json` 相同。要改規則請改原始檔再重新產生，不要直接改這裡。推上 main 後 GitHub Action 會自動部署。
 
@@ -1810,6 +1811,9 @@ fp/
       "admin": {
        ".validate": "newData.isBoolean()"
       },
+      "from": {
+       ".validate": "newData.isString() && newData.val().matches(/^[0-9A-Z]{7}$/)"
+      },
       "$other": {
        ".validate": false
       }
@@ -1817,7 +1821,7 @@ fp/
      "r": {
       "$id": {
        ".read": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $id.matches(/^[A-Z0-9]{1,8}_[0-9]{1,2}$/)",
-       ".write": "(newData.exists() && $code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $id.matches(/^[A-Z0-9]{1,8}_[0-9]{1,2}$/) && root.child('lab223/m/'+$code+'/meta').child('open').val() === true && (root.child('lab223/m/'+$code+'/meta').child('admin').val() === true || (root.child('staff/'+root.child('lab223/m/'+$code+'/meta').child('owner').val()+'/status').val() === 'approved' && root.child('staff/'+root.child('lab223/m/'+$code+'/meta').child('owner').val()+'/apps/lab').val() === true)) && data.child('submitted').val() !== true) || (!newData.exists() && auth != null && root.child('lab223/m/'+$code+'/meta').child('owner').val() === auth.uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/lab').val() === true))))",
+       ".write": "(newData.exists() && $code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $id.matches(/^[A-Z0-9]{1,8}_[0-9]{1,2}$/) && root.child('lab223/m/'+$code+'/meta').child('open').val() === true && (root.child('lab223/m/'+$code+'/meta').child('admin').val() === true || (root.child('staff/'+root.child('lab223/m/'+$code+'/meta').child('owner').val()+'/status').val() === 'approved' && root.child('staff/'+root.child('lab223/m/'+$code+'/meta').child('owner').val()+'/apps/lab').val() === true)) && data.child('submitted').val() !== true) || (auth != null && root.child('lab223/m/'+$code+'/meta').child('owner').val() === auth.uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/lab').val() === true))))",
        ".validate": "newData.hasChildren(['cls','seat','no','name','use','ts'])",
        "cls": {
         ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 8"
@@ -1826,7 +1830,7 @@ fp/
         ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 99"
        },
        "no": {
-        ".validate": "newData.isString() && newData.val().matches(/^[A-Z0-9]{3,12}$/)"
+        ".validate": "newData.isString() && newData.val().matches(/^([A-Z0-9]{3,12})?$/)"
        },
        "name": {
         ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 12"

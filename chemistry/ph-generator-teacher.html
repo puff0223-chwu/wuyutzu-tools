@@ -216,9 +216,9 @@
 
 <script src="ph-core.js?v=20261022a"></script>
 <script src="lab223.js?v=20261022a"></script>
-<script src="lab223-board.js?v=20261022a"></script>
+<script src="lab223-board.js?v=20261022b"></script>
 <script type="module">
-import { startTeacher } from './lab223-teacher.js?v=20261022a';
+import { startTeacher } from './lab223-teacher.js?v=20261022b';
 const $ = id => document.getElementById(id);
 const esc = PH.escapeHtml;
 const st = document.createElement('style'); st.textContent = LabBoard.CSS; document.head.appendChild(st);
@@ -246,7 +246,8 @@ function describe(p) {
 }
 
 /* ---------- 活動 ---------- */
-const T = await startTeacher({ sys: 'ph', gate: $('gate'), main: $('main'), panel: $('act-panel'), settings: $('setform'), readSettings, describe, onSelect });
+const T = await startTeacher({ sys: 'ph', gate: $('gate'), main: $('main'), panel: $('act-panel'), settings: $('setform'), readSettings, describe, onSelect,
+  legacy: { parse: c => PH.parseCode(c), fetch: c => PH.fetchAll(c), pretty: PH.prettyCode, recentKey: 'ph-teacher-recent' } });
 function onSelect(meta, code) {
   legacy = false; META = meta; CODE = code; current = meta ? PH.parseCode(meta.set) : null; projSeed = 0;
   RECS = {}; renderCurrent(); refresh();

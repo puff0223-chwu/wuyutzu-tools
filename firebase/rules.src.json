@@ -663,6 +663,9 @@
             "admin": {
               ".validate": "newData.isBoolean()"
             },
+            "from": {
+              ".validate": "newData.isString() && newData.val().matches(/^[0-9A-Z]{7}$/)"
+            },
             "$other": {
               ".validate": false
             }
@@ -670,7 +673,7 @@
           "r": {
             "$id": {
               ".read": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $id.matches(/^[A-Z0-9]{1,8}_[0-9]{1,2}$/)",
-              ".write": "(newData.exists() && $code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $id.matches(/^[A-Z0-9]{1,8}_[0-9]{1,2}$/) && root.child('lab223/m/'+$code+'/meta').child('open').val() === true && (root.child('lab223/m/'+$code+'/meta').child('admin').val() === true || (root.child('staff/'+root.child('lab223/m/'+$code+'/meta').child('owner').val()+'/status').val() === 'approved' && root.child('staff/'+root.child('lab223/m/'+$code+'/meta').child('owner').val()+'/apps/lab').val() === true)) && data.child('submitted').val() !== true) || (!newData.exists() && auth != null && root.child('lab223/m/'+$code+'/meta').child('owner').val() === auth.uid && {{STAFF:lab}})",
+              ".write": "(newData.exists() && $code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $id.matches(/^[A-Z0-9]{1,8}_[0-9]{1,2}$/) && root.child('lab223/m/'+$code+'/meta').child('open').val() === true && (root.child('lab223/m/'+$code+'/meta').child('admin').val() === true || (root.child('staff/'+root.child('lab223/m/'+$code+'/meta').child('owner').val()+'/status').val() === 'approved' && root.child('staff/'+root.child('lab223/m/'+$code+'/meta').child('owner').val()+'/apps/lab').val() === true)) && data.child('submitted').val() !== true) || (auth != null && root.child('lab223/m/'+$code+'/meta').child('owner').val() === auth.uid && {{STAFF:lab}})",
               ".validate": "newData.hasChildren(['cls','seat','no','name','use','ts'])",
               "cls": {
                 ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 8"
@@ -679,7 +682,7 @@
                 ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 99"
               },
               "no": {
-                ".validate": "newData.isString() && newData.val().matches(/^[A-Z0-9]{3,12}$/)"
+                ".validate": "newData.isString() && newData.val().matches(/^([A-Z0-9]{3,12})?$/)"
               },
               "name": {
                 ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 12"

@@ -253,6 +253,10 @@ expect('學生不能刪自己的紀錄', labBase, null, W, '/lab223/m/DXNEAA/r/1
 expect('活動老師刪一筆學生紀錄', labBase, LAB_TEA, W, '/lab223/m/DXNEAA/r/101_1', null, true);
 expect('活動老師刪除整個活動', labBase, LAB_TEA, W, '/lab223/m/DXNEAA', null, true);
 expect('別的老師不能刪整個活動', labBase, TEA, W, '/lab223/m/DXNEAA', null, false);
+expect('活動老師搬移改版前的紀錄（沒有學號）', labBase, LAB_TEA, W, '/lab223/m/SHUTAA/r/101_7', Object.assign({}, lrec, { no: '' }), true);
+expect('活動停止時學生還是不能寫（老師搬移不受影響）', labBase, null, W, '/lab223/m/SHUTAA/r/101_7', Object.assign({}, lrec, { no: '' }), false);
+expect('別的老師不能寫別人（已停止）活動的學生紀錄', labBase, TEA, W, '/lab223/m/SHUTAA/r/101_7', lrec, false);
+expect('活動記下搬移來源的舊題組碼', labBase, LAB_TEA, W, '/lab223/m/NEWACT/meta', Object.assign({}, lmeta, { from: 'ABCDEFG' }), true);
 const lb = { cls: '101', seat: 7, name: '王小明', score: 900, correct: 10, total: 10, seconds: 40, cleared: true, at: 1 };
 expect('活動排行榜：學生寫自己的最佳成績', labBase, null, W, '/lab223/m/KPENAA/lb/101_7', lb, true);
 expect('活動排行榜：停止後不能寫', labBase, null, W, '/lab223/m/SHUTAA/lb/101_7', lb, false);

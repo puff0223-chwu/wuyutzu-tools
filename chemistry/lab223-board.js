@@ -51,7 +51,7 @@ const LabBoard = (() => {
     if (!list.length) return '<p class="hint">還沒有學生進來（或篩選後沒有人）。</p>';
     const N = A.N;
     const head = `<tr><th>班級</th><th>座號</th><th>學號</th><th>姓名</th><th>用途</th>${Array.from({ length: N }, (_, i) => `<th>第 ${i + 1} 題</th>`).join('')}<th>答對</th><th>狀態</th><th>最後更新</th></tr>`;
-    const body = list.map(x => `<tr><td>${esc(x.cls)}</td><td>${x.seat}</td><td class="mono">${esc(x.no)}</td><td>${esc(x.name)}</td><td>${esc(x.use)}</td>
+    const body = list.map(x => `<tr><td>${esc(x.cls)}</td><td>${x.seat}</td><td class="mono">${esc(x.no) || "—"}</td><td>${esc(x.name)}</td><td>${esc(x.use)}</td>
       ${x.qs.map((q, i) => { const a = x.answers[i].trim(), c = a ? (x.correct[i] ? 'ok' : 'bad') : '';
         return `<td class="qcell"><div class="qtxt">${A.qHTML ? A.qHTML(q) : esc(A.qText(q))}</div><div class="key">解 ${esc(A.ansText(q))}</div>
           <div class="stu ${c}">${a ? esc(A.fmt(a)) + (x.correct[i] ? ' ✓' : ' ✗') : '—'}</div>${A.instant && x.attempts[i] ? `<div class="tries">試 ${x.attempts[i]} 次</div>` : ''}</td>`; }).join('')}
