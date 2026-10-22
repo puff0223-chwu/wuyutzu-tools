@@ -23,7 +23,8 @@ STORAGE_LIMIT = 1024 ** 3
 
 # 抽屜 → 系統名稱（新系統記得加一行）
 NAMES = {
-    'missing-equipment': '🔍 消失的實驗器材', 'unit-convert': '📜 失落的配方（單位換算）', 'ph-generator': '🧪 消失的指示劑（pH）',
+    'missing-equipment': '🔍 消失的實驗器材', 'unit-convert': '📜 失落的配方（舊題組碼，唯讀）', 'ph-generator': '🧪 消失的指示劑（舊題組碼，唯讀）',
+    'lab223': '⚗️ 化學實驗室 No.223（器材、pH、單位換算的活動）',
     'case-board': '📌 案件委託公告欄', 'excel-rescue': '📊 消失的實驗數據（舊連結）', 'excel-rescue-t': '📊 消失的實驗數據',
     'excel-rescue-owners': '📊 消失的實驗數據（老師清單）', 'fp': '🪙 集點小金庫', 'sci-history': '📖 時光手稿',
     'bond-society': '🕯️ 隱秘的鍵結社', 'bond-mp': '🕯️ 鍵結社多人連線', 'seating': '🪑 座位大作戰', 'orienteering': '🧭 遺落的地點',
