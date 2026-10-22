@@ -62,6 +62,7 @@
     <button data-t="live" class="on">📡 即時狀態</button>
     <button data-t="lb">🏆 排行榜</button>
     <button data-t="stats">📊 能力分析</button>
+    <button data-t="hof">🌐 改版前成績・名人堂</button>
   </div>
 
   <section class="paper" id="t-live">
@@ -72,6 +73,11 @@
   <section class="paper hidden" id="t-lb">
     <div class="toolbar"><div class="filters" id="lb-filter"></div><span style="flex:1"></span><button class="btn" id="btn-lbfull">🖥️ 全螢幕投影</button></div>
     <div class="table-wrap" id="lb-table"></div>
+  </section>
+  <section class="paper hidden" id="t-hof">
+    <div class="toolbar"><div class="filters" id="hf-filter"></div><span style="flex:1"></span><button class="btn dark" id="btn-hfreload">🔄 重新讀取</button><button class="btn dark" id="btn-hfxlsx">📥 匯出 Excel</button><button class="btn" id="btn-hffull">🖥️ 全螢幕投影</button></div>
+    <p class="hint" id="hf-note" style="margin-top:6px">不用選活動也能看。這裡是改版前所有學生的最佳成績，以及之後「標準設定（30 題、3 條命、全部類別）」活動的最佳成績，每位同學只留最好的一次。</p>
+    <div class="table-wrap" id="hf-table"></div>
   </section>
   <section class="paper hidden" id="t-stats">
     <div class="filters" id="st-filter"></div>
@@ -119,7 +125,7 @@ function onSelect(meta, code) {
 }
 let tab = 'live';
 document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b));
-  ['live', 'lb', 'stats'].forEach(x => $('t-' + x).classList.toggle('hidden', x !== tab)); refresh(); });
+  ['live', 'lb', 'stats', 'hof'].forEach(x => $('t-' + x).classList.toggle('hidden', x !== tab)); refresh(); });
 setInterval(() => { if (tab === 'live' && !document.hidden) refresh(); }, 15000);   // 「閒置」的判斷跟著時間走
 
 /* ---------- 整理資料 ---------- */
@@ -134,6 +140,7 @@ const pct = LabBoard.pct, heat = LabBoard.heat;
 const ago = t => { const s = Math.round((Date.now() - t) / 1000); return s < 60 ? `${s} 秒前` : s < 3600 ? `${Math.round(s / 60)} 分前` : new Date(t).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }); };
 
 function refresh() {
+  if (tab === 'hof') return hofView();
   if (!META) { ['lv-table', 'lb-table', 'st-body'].forEach(id => $(id).innerHTML = '<p class="hint">請先選一個活動。</p>'); return; }
   ROWS = rows();
   const list = LabBoard.applyFilter(ROWS, SEL);
@@ -168,6 +175,61 @@ $('btn-lbfull').onclick = () => {
   const draw = () => { d.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h2 style="font-size:1.8em">🏆 名偵探排行榜｜${esc(LAB.label(META))}</h2><button class="btn dark" id="lbx">✕ 關閉（Esc）</button></div>${lbHTML(LabBoard.applyFilter(rows(), SEL), 'full')}`; d.querySelector('#lbx').onclick = close; };
   const t = setInterval(draw, 3000), close = () => { clearInterval(t); d.remove(); document.removeEventListener('keydown', k); }, k = e => { if (e.key === 'Escape') close(); };
   document.addEventListener('keydown', k); document.body.appendChild(d); draw();
+};
+
+/* ---------- 🌐 改版前成績・全站名人堂（missing-equipment/scores，公開可讀）---------- */
+let HOF = null, HOF_ERR = '', HOF_LOADING = false;
+const HSEL = { cls: '', from: '', to: '', sort: 'score' };
+async function loadHof() {
+  HOF_LOADING = true; HOF_ERR = '';
+  try {
+    const res = await fetch(`${LAB.FB_URL}/missing-equipment/scores.json`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const d = await res.json() || {};
+    HOF = Object.entries(d).filter(([, r]) => r && r.name).map(([k, r]) => ({ k, cls: String(r.cls ?? ''), seat: +r.seat || 0, name: String(r.name), score: +r.score || 0, correct: +r.correct || 0,
+      wrong: +r.wrong || 0, total: +r.total || 30, seconds: +r.seconds || 0, cleared: !!r.cleared, ts: +r.ts || 0, act: r.act || '' }));
+  } catch (e) { HOF_ERR = e.message; }
+  HOF_LOADING = false; if (tab === 'hof') hofView();
+}
+const hofCmp = (a, b) => (b.score - a.score) || (b.correct - a.correct) || (a.seconds - b.seconds) || (a.ts - b.ts);
+const dstr = t => t ? new Date(t).toLocaleDateString('zh-TW') : '';
+function hofList() {
+  let L = (HOF || []).filter(r => !HSEL.cls || r.cls === HSEL.cls);
+  if (HSEL.from) L = L.filter(r => r.ts >= new Date(HSEL.from + 'T00:00').getTime());
+  if (HSEL.to) L = L.filter(r => r.ts <= new Date(HSEL.to + 'T23:59:59').getTime());
+  return HSEL.sort === 'seat' ? L.sort((a, b) => a.cls.localeCompare(b.cls, 'zh-Hant', { numeric: true }) || a.seat - b.seat) : L.sort(hofCmp);
+}
+function hofTable(L, big) {
+  const md = ['🥇', '🥈', '🥉'], rank = HSEL.sort !== 'seat';
+  return `<table class="lb"><tr>${rank ? '<th>名次</th>' : ''}<th>班級</th><th>座號</th><th>姓名</th><th>總分</th><th>答對</th><th>答錯</th><th>用時</th><th>破案</th>${big ? '' : '<th>日期</th>'}</tr>
+    ${L.map((r, i) => `<tr class="${rank && i < 3 ? 'top' : ''}">${rank ? `<td>${md[i] || i + 1}</td>` : ''}<td>${esc(r.cls)}</td><td>${r.seat}</td><td>${esc(r.name)}</td><td><b>${r.score}</b></td><td>${r.correct}/${r.total}</td><td>${r.wrong}</td><td>${r.seconds}s</td><td>${r.cleared ? '✅' : ''}</td>${big ? '' : `<td style="font-size:.85em">${dstr(r.ts)}</td>`}</tr>`).join('')}</table>`;
+}
+function hofView() {
+  if (!HOF && !HOF_LOADING && !HOF_ERR) loadHof();
+  if (HOF_ERR) { $('hf-table').innerHTML = `<p class="hint">😵 讀不到名人堂：${esc(HOF_ERR)}（按「🔄 重新讀取」再試）</p>`; return; }
+  if (!HOF) { $('hf-table').innerHTML = '<p class="hint">讀取中…</p>'; return; }
+  const classes = [...new Set(HOF.map(r => r.cls))].sort((a, b) => a.localeCompare(b, 'zh-Hant', { numeric: true }));
+  $('hf-filter').innerHTML = `<label>班級 <select id="hf-cls"><option value="">全部（${HOF.length} 人）</option>${classes.map(c => `<option ${c === HSEL.cls ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></label>
+    <label>日期 <input type="date" id="hf-from" value="${HSEL.from}"> ～ <input type="date" id="hf-to" value="${HSEL.to}"></label>
+    <label>排序 <select id="hf-sort"><option value="score">依成績（名次）</option><option value="seat" ${HSEL.sort === 'seat' ? 'selected' : ''}>依班級座號</option></select></label>`;
+  ['cls', 'from', 'to', 'sort'].forEach(k => $('hf-' + k).onchange = e => { HSEL[k] = e.target.value; hofView(); });
+  const L = hofList(), avg = L.length ? Math.round(L.reduce((s, r) => s + r.score, 0) / L.length) : '—';
+  const kpi = `<div class="kpis"><div><b>${L.length}</b>人</div><div><b>${avg}</b>平均最佳分數</div><div><b>${L.length ? pct(L.reduce((s, r) => s + r.correct, 0), L.reduce((s, r) => s + r.correct + r.wrong, 0)) + '%' : '—'}</b>答對率</div><div><b>${L.filter(r => r.cleared).length}</b>破案（30 件全對）</div></div>`;
+  $('hf-table').innerHTML = L.length ? kpi + hofTable(L) : '<p class="hint">這個篩選條件下沒有成績。</p>';
+}
+$('btn-hfreload').onclick = () => { HOF = null; loadHof(); hofView(); };
+$('btn-hfxlsx').onclick = () => {
+  if (!HOF || typeof XLSX === 'undefined') return;
+  const L = hofList(), wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(L.length ? L.map((r, i) => ({ 名次: HSEL.sort === 'seat' ? '' : i + 1, 班級: r.cls, 座號: r.seat, 姓名: r.name, 總分: r.score, 答對: r.correct, 答錯: r.wrong, 題數: r.total, 用時秒: r.seconds, 破案: r.cleared ? '✓' : '', 時間: r.ts ? new Date(r.ts).toLocaleString('zh-TW') : '' })) : [{ 說明: '尚無資料' }]), '名人堂');
+  XLSX.writeFile(wb, `消失的實驗器材_改版前成績與名人堂${HSEL.cls ? '_' + HSEL.cls : ''}.xlsx`);
+};
+$('btn-hffull').onclick = () => {
+  if (!HOF) return;
+  const d = document.createElement('div'); d.className = 'lbfull';
+  d.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h2 style="font-size:1.8em">🌐 名偵探名人堂${HSEL.cls ? '｜' + esc(HSEL.cls) : ''}</h2><button class="btn dark" id="hfx">✕ 關閉（Esc）</button></div>${hofTable(hofList().slice(0, 30), true)}`;
+  const close = () => { d.remove(); document.removeEventListener('keydown', k); }, k = e => { if (e.key === 'Escape') close(); };
+  d.querySelector('#hfx').onclick = close; document.addEventListener('keydown', k); document.body.appendChild(d);
 };
 
 /* ---------- 📊 能力分析 ---------- */

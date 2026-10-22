@@ -246,8 +246,7 @@ function describe(p) {
 }
 
 /* ---------- 活動 ---------- */
-const T = await startTeacher({ sys: 'ph', gate: $('gate'), main: $('main'), panel: $('act-panel'), settings: $('setform'), readSettings, describe, onSelect,
-  legacy: { parse: c => PH.parseCode(c), fetch: c => PH.fetchAll(c), pretty: PH.prettyCode, recentKey: 'ph-teacher-recent' } });
+const T = await startTeacher({ sys: 'ph', gate: $('gate'), main: $('main'), panel: $('act-panel'), settings: $('setform'), readSettings, describe, onSelect });
 function onSelect(meta, code) {
   legacy = false; META = meta; CODE = code; current = meta ? PH.parseCode(meta.set) : null; projSeed = 0;
   RECS = {}; renderCurrent(); refresh();

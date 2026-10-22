@@ -253,8 +253,7 @@ function describe(p) {
   return `${parts}｜${p.instant ? '即時對錯' : '交卷批改'}｜${p.hint ? (p.formula ? '地圖顯示路徑＋公式' : '地圖只顯示路徑') : '不顯示地圖（舊題組碼）'}`;
 }
 
-const T = await startTeacher({ sys: 'unit', gate: $('gate'), main: $('main'), panel: $('act-panel'), settings: $('setform'), readSettings, describe, onSelect,
-  legacy: { parse: c => UC.parseCode(c), fetch: c => UC.fetchAll(c), pretty: UC.prettyCode, recentKey: 'unit-teacher-recent' } });
+const T = await startTeacher({ sys: 'unit', gate: $('gate'), main: $('main'), panel: $('act-panel'), settings: $('setform'), readSettings, describe, onSelect });
 function onSelect(meta, code) {
   legacy = false; META = meta; CODE = code; current = meta ? UC.parseCode(meta.set) : null; projSeed = 0;
   RECS = {}; renderCurrent(); refresh();
