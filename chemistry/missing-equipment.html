@@ -156,6 +156,9 @@
 
   .footer { text-align: center; color: var(--muted); font-size: 0.8em; padding: 26px 0 10px; }
 
+  .actchip { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 4px; }
+  .actchip span { background: #f1e8d4; color: #4a3d22; border-radius: 999px; padding: 5px 12px; font-size: .9em; font-weight: 700; }
+  .best { margin-top: 10px; font-weight: 700; color: #6b5d43; }
   @media (max-width: 560px) {
     .form { grid-template-columns: 1fr 1fr; }
     .form .name-field { grid-column: 1 / -1; }
@@ -170,34 +173,32 @@
 <div class="wrap">
   <div class="tape"></div>
 
-  <!-- ===== 開始畫面 ===== -->
+  <!-- ===== 開始畫面：活動代碼＋用途＋班級座號學號姓名（lab223.js） ===== -->
   <section id="screen-start">
-    <div class="case-no">CASE FILE · 化學實驗室 No.223</div>
+    <div class="case-no">CASE FILE · 化學實驗室 No.223 · 第一案</div>
     <h1>消失的<span>實驗器材</span></h1>
-
     <div class="paper">
       <p class="story">
         昨晚化學實驗室遭人闖入，所有器材上的<b>標籤全被撕光</b>了！<br>
         明天就要上實驗課，身為實驗室助理的你，必須在最短時間內認出每一件器材，把正確名稱重新貼回去。
       </p>
-      <ul class="rules">
-        <li>🔎 每局隨機出現 <b>30 件</b>器材，看圖輸入名稱，<b>一字不差</b>才算過關</li>
-        <li>❤️ 整場共有 <b>3 條命</b>，答錯一次扣一條，扣完就 Game Over</li>
-        <li>⏱️ 答得越快分數越高：5 秒內答對得 100 分，之後每秒扣 5 分，最低 30 分</li>
-        <li>🔴 圖片裡有<b>紅圈</b>時，請回答紅圈中的那一件器材</li>
-      </ul>
+      <div id="login"></div>
+    </div>
+  </section>
 
-      <div class="form">
-        <div><label for="in-cls">班級</label><input id="in-cls" type="text" maxlength="10" placeholder="例：101"></div>
-        <div><label for="in-seat">座號</label><input id="in-seat" type="number" min="1" max="99" placeholder="例：7"></div>
-        <div class="name-field"><label for="in-name">姓名</label><input id="in-name" type="text" maxlength="12" placeholder="你的名字"></div>
-      </div>
-      <div class="err" id="start-err"></div>
-
+  <!-- ===== 準備畫面（登入後） ===== -->
+  <section id="screen-ready" class="hidden">
+    <div class="case-no">CASE FILE · 化學實驗室 No.223 · 第一案</div>
+    <h1>消失的<span>實驗器材</span></h1>
+    <div class="paper">
+      <div class="actchip" id="ready-chips"></div>
+      <ul class="rules" id="rules"></ul>
+      <div class="best" id="ready-best"></div>
       <div class="btn-row">
         <button class="btn" id="btn-start">開始搜查 🔍</button>
         <button class="btn dark" id="btn-lb-home">🏆 看排行榜</button>
       </div>
+      <p style="text-align:center;margin-top:10px"><button class="btn ghost" id="btn-switch" style="color:#6b5d43;border-color:#d8ccb2;font-size:.85em;padding:6px 14px">不是我？換人登入</button></p>
     </div>
   </section>
 
@@ -238,7 +239,7 @@
       <div class="review" id="res-review" style="text-align:left"></div>
       <div class="btn-row">
         <button class="btn" id="btn-again">再挑戰一次 🔁</button>
-        <button class="btn dark" id="btn-home">回到首頁</button>
+        <button class="btn dark" id="btn-home">回到準備畫面</button>
       </div>
     </div>
   </section>
@@ -248,8 +249,9 @@
     <div class="lb-head">
       <h2>🏆 名偵探排行榜</h2>
       <div class="seg">
-        <button id="seg-all" class="on">全部</button>
+        <button id="seg-all" class="on">本活動</button>
         <button id="seg-cls">只看我的班</button>
+        <button id="seg-hof">🌐 全站名人堂</button>
       </div>
     </div>
     <div id="lb-body"></div>
@@ -261,392 +263,216 @@
   <div class="footer">程式設計：巫魚子 © 2026 · 化學實驗器材辨識</div>
 </div>
 
+<script src="equipment-data.js?v=20261022a"></script>
+<script src="lab223.js?v=20261022a"></script>
 <script>
-/* ========== 設定區（老師可修改） ========== */
+/* ========== 設定區（老師可修改） ==========
+   題數、命數、類別改由老師開活動時設定（活動的 set）；這裡是固定的計分規則 */
 const CONFIG = {
-  QUESTIONS_PER_GAME: 30,     // 每局題數
-  LIVES: 3,                   // 整場命數
   FULL_SCORE: 100,            // 每題滿分
   FULL_SCORE_SECONDS: 5,      // 幾秒內答對拿滿分
   PENALTY_PER_SECOND: 5,      // 超過後每秒扣幾分
   MIN_SCORE: 30,              // 每題最低分
   LEADERBOARD_SIZE: 30,       // 排行榜顯示名次
   FIREBASE_URL: 'https://point-collection-stash-default-rtdb.asia-southeast1.firebasedatabase.app',
-  DB_PATH: 'missing-equipment/scores',
-  IMG_DIR: 'images/equipment/'
+  HOF_PATH: 'missing-equipment/scores',   // 全站名人堂（改版前的排行榜，標準設定 30 題 3 命才上榜）
+  IMG_DIR: 'images/equipment/',
+  WRONG_KEEP: 60              // 每人保留最近幾筆打錯的名稱（老師看常見錯字）
 };
-
-/* ========== 題庫：33 種實驗器材 ==========
-   name：標準答案；aliases：其他也算對的寫法；marked：圖片上有紅圈 */
-const ITEMS = [
-  {id:'volumetric-flask',    name:'容量瓶',     aliases:[], category:'精準刻度類'},
-  {id:'graduated-cylinder',  name:'量筒',       aliases:[], category:'精準刻度類'},
-  {id:'latex-dropper',       name:'乳膠滴管',   aliases:[], category:'精準刻度類'},
-  {id:'plastic-dropper',     name:'塑膠滴管',   aliases:[], category:'精準刻度類'},
-  {id:'burette',             name:'滴定管',     aliases:[], category:'精準刻度類'},
-  {id:'graduated-pipette',   name:'分度吸量管', aliases:[], category:'精準刻度類', marked:true},
-  {id:'pipette-bulb',        name:'安全吸球',   aliases:[], category:'精準刻度類', marked:true},
-  {id:'distilling-flask',    name:'蒸餾瓶',     aliases:[], category:'容器類'},
-  {id:'wide-mouth-bottle',   name:'廣口瓶',     aliases:[], category:'容器類'},
-  {id:'beaker',              name:'燒杯',       aliases:[], category:'容器類'},
-  {id:'round-flask',         name:'燒瓶',       aliases:[], category:'容器類'},
-  {id:'erlenmeyer-flask',    name:'錐形瓶',     aliases:[], category:'容器類'},
-  {id:'conical-test-tube',   name:'錐形試管',   aliases:[], category:'容器類'},
-  {id:'round-test-tube',     name:'圓形試管',   aliases:[], category:'容器類'},
-  {id:'alcohol-lamp',        name:'酒精燈',     aliases:[], category:'裝置類'},
-  {id:'electronic-balance',  name:'電子天平',   aliases:[], category:'裝置類'},
-  {id:'thermometer',         name:'溫度計',     aliases:[], category:'裝置類', marked:true},
-  {id:'digital-thermometer', name:'電子溫度計', aliases:[], category:'裝置類', marked:true},
-  {id:'hot-plate',           name:'加熱器',     aliases:[], category:'裝置類'},
-  {id:'separatory-funnel',   name:'分液漏斗',   aliases:[], category:'漏斗類'},
-  {id:'buchner-funnel',      name:'布氏漏斗',   aliases:[], category:'漏斗類'},
-  {id:'thistle-funnel',      name:'薊頭漏斗',   aliases:[], category:'漏斗類'},
-  {id:'funnel',              name:'普通漏斗',   aliases:[], category:'漏斗類'},
-  {id:'weighing-paper',      name:'秤量紙',     aliases:[], category:'耗材類'},
-  {id:'label-paper',         name:'標籤紙',     aliases:[], category:'耗材類'},
-  {id:'filter-paper',        name:'濾紙',       aliases:[], category:'耗材類'},
-  {id:'iron-stand',          name:'鐵架',       aliases:[], category:'其他專用器材', marked:true},
-  {id:'burette-clamp',       name:'滴定夾',     aliases:['蝴蝶夾','滴定夾(蝴蝶夾)'], category:'其他專用器材', marked:true},
-  {id:'spatula',             name:'刮勺',       aliases:[], category:'其他專用器材'},
-  {id:'condenser',           name:'蒸餾管',     aliases:[], category:'其他專用器材'},
-  {id:'combustion-spoon',    name:'燒匙',       aliases:[], category:'其他專用器材'},
-  {id:'mortar',              name:'研缽',       aliases:[], category:'其他專用器材'},
-  {id:'stirring-rod',        name:'攪拌棒',     aliases:[], category:'其他專用器材'}
-];
+const ITEMS = EQ.ITEMS;
 
 /* ========== 小工具 ========== */
 const $ = id => document.getElementById(id);
-const screens = ['start', 'game', 'result', 'lb'];
-function show(name) {
-  screens.forEach(s => $('screen-' + s).classList.toggle('hidden', s !== name));
-  window.scrollTo(0, 0);
-}
-function shuffle(arr) {
-  const a = arr.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-// 只忽略空白與全形/半形差異，錯字一律算錯
-function normalize(s) {
-  return String(s)
-    .replace(/[！-～]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
-    .replace(/\s+/g, '')
-    .toLowerCase();
-}
-function isCorrect(item, input) {
-  const ans = normalize(input);
-  return [item.name, ...(item.aliases || [])].some(a => normalize(a) === ans);
-}
-function scoreFor(seconds) {
-  const extra = Math.max(0, Math.ceil(seconds - CONFIG.FULL_SCORE_SECONDS));
-  return Math.max(CONFIG.MIN_SCORE, CONFIG.FULL_SCORE - extra * CONFIG.PENALTY_PER_SECOND);
-}
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
+const screens = ['start', 'ready', 'game', 'result', 'lb'];
+function show(name) { screens.forEach(s => $('screen-' + s).classList.toggle('hidden', s !== name)); window.scrollTo(0, 0); }
+function shuffle(arr) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+const isCorrect = EQ.isCorrect;
+function scoreFor(seconds) { const extra = Math.max(0, Math.ceil(seconds - CONFIG.FULL_SCORE_SECONDS)); return Math.max(CONFIG.MIN_SCORE, CONFIG.FULL_SCORE - extra * CONFIG.PENALTY_PER_SECOND); }
+const escapeHtml = LAB.esc;
 
-/* ========== 遊戲狀態 ========== */
-let player = null;      // {cls, seat, name}
-let game = null;
-
-// 先預載圖片，避免出題時閃一下
+/* ========== 狀態 ========== */
+let player = null;      // { code, meta, set, cls, seat, no, name, use, sid }
+let rec = null;         // 雲端上我的紀錄（本機副本）
+let game = null, WATCH = null, closed = false;
 ITEMS.forEach(it => { const im = new Image(); im.src = CONFIG.IMG_DIR + it.id + '.jpg'; });
 
-// 記住上次輸入的班級座號（只存在這台裝置）
-try {
-  const saved = JSON.parse(localStorage.getItem('missing-equipment-player') || 'null');
-  if (saved) { $('in-cls').value = saved.cls || ''; $('in-seat').value = saved.seat || ''; $('in-name').value = saved.name || ''; }
-} catch (e) {}
+/* ========== 登入（活動代碼＋用途＋班級座號學號姓名） ========== */
+LAB.studentLogin({ el: $('login'), sys: 'eq', onReady: async info => {
+  player = { ...info, set: EQ.parseSet(info.meta.set) };
+  try { rec = await LAB.getRec(info.code, info.sid); } catch (e) { rec = null; }
+  rec = rec || {};
+  await sync({ cls: player.cls, seat: player.seat, no: player.no, name: player.name, use: player.use, ts: Date.now(), games: rec.games || 0 });
+  if (!WATCH) WATCH = LAB.watch(player.code, (open, m) => { closed = !open; if (m) player.meta = m; LAB.stopOverlay(!open, player.meta); if (!open && game && !game.over) stopGame(); if (open) showReady(); });
+  showReady();
+} });
+function showReady() {
+  if (!player) return;
+  const st = player.set, pool = EQ.poolOf(st);
+  $('ready-chips').innerHTML = `<span>👤 ${escapeHtml(player.cls)} 班 ${player.seat} 號 ${escapeHtml(player.name)}</span><span>📋 ${escapeHtml(LAB.label(player.meta))}</span><span>🎯 ${escapeHtml(player.use)}</span>`;
+  $('rules').innerHTML = `<li>🔎 每局隨機出現 <b>${Math.min(st.n, pool.length)} 件</b>器材${st.cats === 'all' ? '' : `（範圍：${st.cats.split(',').map(i => EQ.CATS[+i]).join('、')}）`}，看圖輸入名稱，<b>一字不差</b>才算過關</li>
+    <li>❤️ 整場共有 <b>${st.lives} 條命</b>，答錯一次扣一條，扣完就 Game Over</li>
+    <li>⏱️ 答得越快分數越高：5 秒內答對得 100 分，之後每秒扣 5 分，最低 30 分</li>
+    <li>🔴 圖片裡有<b>紅圈</b>時，請回答紅圈中的那一件器材</li>`;
+  $('ready-best').textContent = rec && rec.best ? `🏅 你在這個活動的最佳成績：${rec.best.score} 分（答對 ${rec.best.correct}/${rec.best.total}，${rec.best.seconds} 秒）・已玩 ${rec.games || 0} 局` : '還沒有成績，開始第一局吧！';
+  show('ready');
+}
+$('btn-switch').onclick = () => { location.reload(); };
 
-$('btn-start').onclick = () => {
-  const cls = $('in-cls').value.trim();
-  const seat = $('in-seat').value.trim();
-  const name = $('in-name').value.trim();
-  if (!cls || !seat || !name) { $('start-err').textContent = '請把班級、座號、姓名都填好喔！'; return; }
-  $('start-err').textContent = '';
-  player = { cls, seat: Number(seat), name };
-  try { localStorage.setItem('missing-equipment-player', JSON.stringify(player)); } catch (e) {}
-  startGame();
-};
+/* ========== 雲端：只寫有變的欄位（PATCH） ========== */
+async function sync(obj) {
+  if (closed) return false;
+  obj.ts = Date.now();
+  try { await LAB.patchRec(player.code, player.sid, obj); Object.assign(rec, obj); return true; }
+  catch (e) {
+    if ((e.status === 401 || e.status === 403) && await LAB.isClosed(player.code)) { closed = true; if (WATCH) WATCH.open = false; LAB.stopOverlay(true, player.meta); if (game && !game.over) stopGame(); }
+    else console.error('同步失敗', e);
+    return false;
+  }
+}
 
+/* ========== 遊戲 ========== */
+$('btn-start').onclick = () => { if (!closed) startGame(); };
 function startGame() {
-  game = {
-    queue: shuffle(ITEMS).slice(0, Math.min(CONFIG.QUESTIONS_PER_GAME, ITEMS.length)),
-    index: 0,
-    lives: CONFIG.LIVES,
-    score: 0,
-    correct: 0,
-    wrong: 0,
-    missed: new Set(),
-    startAt: Date.now(),
-    qStart: 0,
-    locked: false,
-    tick: null
-  };
-  show('game');
-  renderHearts();
-  nextQuestion();
+  const st = player.set;
+  game = { queue: shuffle(EQ.poolOf(st)).slice(0, st.n), index: 0, lives: st.lives, score: 0, correct: 0, wrong: 0,
+    missed: new Set(), startAt: Date.now(), qStart: 0, locked: false, tick: null, over: false };
+  show('game'); renderHearts(); nextQuestion();
+  sync({ cur: { q: 1, n: game.queue.length, lives: game.lives, score: 0, at: Date.now() } });
 }
-
-function renderHearts() {
-  let h = '';
-  for (let i = 0; i < CONFIG.LIVES; i++) h += `<span class="${i < game.lives ? '' : 'lost'}">❤️</span>`;
-  $('hud-hearts').innerHTML = h;
-}
-
+function renderHearts() { let h = ''; for (let i = 0; i < player.set.lives; i++) h += `<span class="${i < game.lives ? '' : 'lost'}">❤️</span>`; $('hud-hearts').innerHTML = h; }
 function nextQuestion() {
-  const item = game.queue[game.index];
-  const total = game.queue.length;
+  const item = game.queue[game.index], total = game.queue.length;
   $('hud-q').textContent = `第 ${game.index + 1} / ${total} 件`;
   $('hud-bar').style.width = (game.index / total * 100) + '%';
   $('hud-score').textContent = game.score;
   $('q-img').src = CONFIG.IMG_DIR + item.id + '.jpg';
   $('q-cat').textContent = item.category;
   $('q-mark').textContent = item.marked ? '⭕ 請回答紅圈中的器材' : '';
-  $('feedback').textContent = '';
-  $('feedback').className = 'feedback';
-  $('in-answer').value = '';
-  $('in-answer').disabled = false;
-  $('btn-submit').disabled = false;
-  $('in-answer').focus();
-  game.locked = false;
-  game.qStart = Date.now();
-  clearInterval(game.tick);
-  updateTimer();
-  game.tick = setInterval(updateTimer, 250);
+  $('feedback').textContent = ''; $('feedback').className = 'feedback';
+  $('in-answer').value = ''; $('in-answer').disabled = false; $('btn-submit').disabled = false; $('in-answer').focus();
+  game.locked = false; game.qStart = Date.now();
+  clearInterval(game.tick); updateTimer(); game.tick = setInterval(updateTimer, 250);
 }
-
-function updateTimer() {
-  const sec = (Date.now() - game.qStart) / 1000;
-  $('q-time').textContent = Math.floor(sec);
-  $('q-worth').textContent = scoreFor(sec);
+function updateTimer() { const sec = (Date.now() - game.qStart) / 1000; $('q-time').textContent = Math.floor(sec); $('q-worth').textContent = scoreFor(sec); }
+// 每答一次就把這件器材的對錯（和打錯的名稱）送給老師
+function logAnswer(item, ok, input) {
+  const it = (rec.it && rec.it[item.id]) || { o: 0, x: 0 };
+  const upd = { [`it/${item.id}`]: { o: it.o + (ok ? 1 : 0), x: it.x + (ok ? 0 : 1) },
+    cur: { q: Math.min(game.index + (ok ? 2 : 1), game.queue.length), n: game.queue.length, lives: game.lives, score: game.score, at: Date.now() } };
+  if (!ok) { const k = (rec.wn || 0) % CONFIG.WRONG_KEEP; upd[`wl/${k}`] = { i: item.id, t: String(input).trim().slice(0, 20), at: Date.now() }; upd.wn = (rec.wn || 0) + 1; }
+  rec.it = rec.it || {}; rec.it[item.id] = upd[`it/${item.id}`];
+  sync(upd);
 }
-
 function submitAnswer() {
-  if (game.locked) return;
+  if (game.locked || closed) return;
   const input = $('in-answer').value;
   if (!input.trim()) { $('in-answer').focus(); return; }
-  const item = game.queue[game.index];
-  const card = $('evidence-card');
-
+  const item = game.queue[game.index], card = $('evidence-card');
   if (isCorrect(item, input)) {
-    game.locked = true;
-    clearInterval(game.tick);
-    const sec = (Date.now() - game.qStart) / 1000;
-    const pts = scoreFor(sec);
-    game.score += pts;
-    game.correct++;
+    game.locked = true; clearInterval(game.tick);
+    const sec = (Date.now() - game.qStart) / 1000, pts = scoreFor(sec);
+    game.score += pts; game.correct++;
     $('hud-score').textContent = game.score;
-    $('feedback').className = 'feedback ok';
-    $('feedback').textContent = `✅ 正確！${item.name}　+${pts} 分（${sec.toFixed(1)} 秒）`;
+    $('feedback').className = 'feedback ok'; $('feedback').textContent = `✅ 正確！${item.name}　+${pts} 分（${sec.toFixed(1)} 秒）`;
     card.classList.remove('flash-ok'); void card.offsetWidth; card.classList.add('flash-ok');
-    $('in-answer').disabled = true;
-    $('btn-submit').disabled = true;
-    setTimeout(() => {
-      game.index++;
-      if (game.index >= game.queue.length) endGame(true);
-      else nextQuestion();
-    }, 1100);
+    $('in-answer').disabled = true; $('btn-submit').disabled = true;
+    logAnswer(item, true, input);
+    setTimeout(() => { if (game.over) return; game.index++; if (game.index >= game.queue.length) endGame(true); else nextQuestion(); }, 1100);
   } else {
-    game.wrong++;
-    game.lives--;
-    game.missed.add(item.id);
-    renderHearts();
+    game.wrong++; game.lives--; game.missed.add(item.id);
+    renderHearts(); logAnswer(item, false, input);
     card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
     if (game.lives <= 0) {
-      game.locked = true;
-      clearInterval(game.tick);
-      $('feedback').className = 'feedback bad';
-      $('feedback').textContent = `💥 答錯了！這是「${item.name}」`;
-      $('in-answer').disabled = true;
-      $('btn-submit').disabled = true;
+      game.locked = true; clearInterval(game.tick);
+      $('feedback').className = 'feedback bad'; $('feedback').textContent = `💥 答錯了！這是「${item.name}」`;
+      $('in-answer').disabled = true; $('btn-submit').disabled = true;
       setTimeout(() => endGame(false), 1600);
     } else {
-      $('feedback').className = 'feedback bad';
-      $('feedback').textContent = `❌ 不對喔！還剩 ${game.lives} 條命，再仔細看看`;
+      $('feedback').className = 'feedback bad'; $('feedback').textContent = `❌ 不對喔！還剩 ${game.lives} 條命，再仔細看看`;
       $('in-answer').select();
     }
   }
 }
 $('btn-submit').onclick = submitAnswer;
-$('in-answer').addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.isComposing) submitAnswer();   // 避免注音選字時誤送
-});
+$('in-answer').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) submitAnswer(); });   // 避免注音選字時誤送
+// 老師按停止：這一局直接結束（不計成績）
+function stopGame() { game.over = true; clearInterval(game.tick); $('in-answer').disabled = true; $('btn-submit').disabled = true; }
 
 /* ========== 結算 ========== */
-
-function endGame(cleared) {
+const better = (a, b) => !b || (a.score - b.score || a.correct - b.correct || b.seconds - a.seconds) > 0;
+async function endGame(cleared) {
+  if (game.over) return; game.over = true;
   clearInterval(game.tick);
   const totalSec = Math.round((Date.now() - game.startAt) / 1000);
   $('res-stamp').textContent = cleared ? '破案成功' : 'GAME OVER';
   $('res-stamp').className = 'stamp ' + (cleared ? 'win' : 'lose');
-  $('res-sub').textContent = cleared
-    ? `${player.name}，30 件器材全部歸位，實驗課得救了！`
-    : `${player.name}，3 條命用完了…再挑戰一次吧！`;
-  $('res-correct').textContent = game.correct;
-  $('res-wrong').textContent = game.wrong;
-  $('res-time').textContent = totalSec;
-  $('res-score').textContent = game.score;
-
+  $('res-sub').textContent = cleared ? `${player.name}，${game.queue.length} 件器材全部歸位，實驗課得救了！` : `${player.name}，${player.set.lives} 條命用完了…再挑戰一次吧！`;
+  $('res-correct').textContent = game.correct; $('res-wrong').textContent = game.wrong; $('res-time').textContent = totalSec; $('res-score').textContent = game.score;
   const missed = ITEMS.filter(it => game.missed.has(it.id));
-  $('res-review').innerHTML = missed.length
-    ? `<h3>📌 這些器材要再記熟：</h3><div class="review-list">${missed.map(it =>
-        `<div class="review-item"><img src="${CONFIG.IMG_DIR}${it.id}.jpg" alt=""><b>${it.name}</b></div>`).join('')}</div>`
-    : '';
+  $('res-review').innerHTML = missed.length ? `<h3>📌 這些器材要再記熟：</h3><div class="review-list">${missed.map(it => `<div class="review-item"><img src="${CONFIG.IMG_DIR}${it.id}.jpg" alt=""><b>${it.name}</b></div>`).join('')}</div>` : '';
   show('result');
-
-  const record = {
-    cls: player.cls, seat: player.seat, name: player.name,
-    score: game.score, correct: game.correct, wrong: game.wrong,
-    total: game.queue.length, cleared, seconds: totalSec, ts: Date.now()
-  };
-  saveRecord(record);
+  const one = { score: game.score, correct: game.correct, wrong: game.wrong, total: game.queue.length, cleared, seconds: totalSec, at: Date.now() };
+  const games = (rec.games || 0) + 1, hk = (rec.hn || 0) % 20;
+  const upd = { games, cur: null, [`h/${hk}`]: one, hn: (rec.hn || 0) + 1 };
+  let msg = '';
+  if (better(one, rec.best)) { upd.best = one; upd.__lb = true; msg = rec.best ? `🎉 刷新你在這個活動的最佳紀錄！（原本 ${rec.best.score} 分）` : ''; }
+  else msg = `這次 ${one.score} 分，沒有超過你的最佳紀錄 ${rec.best.score} 分，排行榜保留最佳成績。`;
+  const toLb = upd.__lb; delete upd.__lb;
+  const ok = await sync(upd);
+  // 活動排行榜：只放名字和成績（學號、錯字不公開）
+  if (ok && toLb) try { await LAB.req(`m/${player.code}/lb/${encodeURIComponent(player.sid)}`, 'PUT', { cls: player.cls, seat: player.seat, name: player.name, score: one.score, correct: one.correct, total: one.total, seconds: one.seconds, cleared: !!one.cleared, at: one.at }); } catch (e) { console.warn('排行榜更新失敗', e); }
+  if (!ok) msg = closed ? '⏸ 老師已經停止活動，這局沒有記錄。' : '⚠️ 成績上傳失敗，請檢查網路後再挑戰一次。';
+  if (ok && EQ.isStandard(player.set)) saveHallOfFame({ cls: player.cls, seat: player.seat, name: player.name, ...one, ts: Date.now() });
+  appendLeaderboardToResult(msg);
 }
-
-// 每位學生一個固定位置：班級_座號_姓名（Firebase 不允許 . $ # [ ] / 等符號）
-function studentKey(p) {
-  return `${p.cls}_${p.seat}_${p.name}`.replace(/[.$#\[\]\/\x00-\x1F\x7F]/g, '_');
+// 全站名人堂：標準設定（30 題、3 命、全部類別）才上榜，每人只留最佳
+async function saveHallOfFame(r) {
+  const key = `${r.cls}_${r.seat}_${r.name}`.replace(/[.$#\[\]\/\x00-\x1F\x7F]/g, '_'), url = `${CONFIG.FIREBASE_URL}/${CONFIG.HOF_PATH}/${encodeURIComponent(key)}.json`;
+  try { const old = await (await fetch(url, { cache: 'no-store' })).json(); if (!old || better(r, old)) await fetch(url, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cls: r.cls, seat: r.seat, name: r.name, score: r.score, correct: r.correct, wrong: r.wrong, total: r.total, cleared: r.cleared, seconds: r.seconds, ts: r.ts }) }); } catch (e) {}
 }
-
-// 只保留每位學生的最佳成績：比舊紀錄好才寫入（Firebase 規則也會把關）
-let saveMessage = '';
-async function saveRecord(record) {
-  saveMessage = '';
-  const url = `${CONFIG.FIREBASE_URL}/${CONFIG.DB_PATH}/${encodeURIComponent(studentKey(player))}.json`;
-  try {
-    const r = await fetch(url, { cache: 'no-store' });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const old = await r.json();
-    if (old && compare(record, old) >= 0) {
-      saveMessage = `這次 ${record.score} 分，沒有超過你的最佳紀錄 ${old.score} 分，排行榜保留最佳成績。`;
-    } else {
-      const res = await fetch(url, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(record)
-      });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      saveMessage = old ? `🎉 刷新個人最佳紀錄！（原本 ${old.score} 分）` : '';
-    }
-  } catch (e) {
-    console.error('成績上傳失敗', e);
-    saveMessage = '⚠️ 成績上傳失敗，請檢查網路後再挑戰一次。';
-  }
-  // 結算畫面下方直接接排行榜
-  appendLeaderboardToResult();
-}
-
-function appendLeaderboardToResult() {
-  const box = $('screen-result');
-  let lb = $('result-lb');
-  if (!lb) {
-    lb = document.createElement('div');
-    lb.id = 'result-lb';
-    box.appendChild(lb);
-  }
-  lb.innerHTML = `<div class="lb-head"><h2>🏆 名偵探排行榜</h2>
-    <div class="seg"><button class="on" data-f="all">全部</button><button data-f="cls">只看我的班</button></div></div>
-    ${saveMessage ? `<p class="lb-note" style="color:var(--amber);margin:0 0 10px">${saveMessage}</p>` : ''}
-    <div class="lb-inner"><p class="lb-note">讀取排行榜中…</p></div>`;
-  const inner = lb.querySelector('.lb-inner');
-  const btns = lb.querySelectorAll('.seg button');
-  btns.forEach(b => b.onclick = () => {
-    btns.forEach(x => x.classList.toggle('on', x === b));
-    renderLeaderboard(inner, b.dataset.f === 'cls');
-  });
-  renderLeaderboard(inner, false);
+function appendLeaderboardToResult(msg) {
+  const box = $('screen-result'); let lb = $('result-lb');
+  if (!lb) { lb = document.createElement('div'); lb.id = 'result-lb'; box.appendChild(lb); }
+  lb.innerHTML = `<div class="lb-head"><h2>🏆 本活動排行榜</h2><div class="seg"><button class="on" data-f="all">本活動</button><button data-f="cls">只看我的班</button></div></div>
+    ${msg ? `<p class="lb-note" style="color:var(--amber);margin:0 0 10px">${msg}</p>` : ''}<div class="lb-inner"><p class="lb-note">讀取排行榜中…</p></div>`;
+  const inner = lb.querySelector('.lb-inner'), btns = lb.querySelectorAll('.seg button');
+  btns.forEach(b => b.onclick = () => { btns.forEach(x => x.classList.toggle('on', x === b)); renderLeaderboard(inner, b.dataset.f); });
+  renderLeaderboard(inner, 'all');
 }
 
 /* ========== 排行榜 ========== */
-let cachedRows = null;
-
-async function fetchRows() {
-  const res = await fetch(`${CONFIG.FIREBASE_URL}/${CONFIG.DB_PATH}.json`, { cache: 'no-store' });
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  const data = await res.json() || {};
-  return Object.entries(data).map(([key, r]) => ({ key, ...r }));
-}
-
-// 同一位學生（班級＋座號＋姓名）只保留最佳成績
-function bestPerStudent(rows) {
-  const best = new Map();
-  for (const r of rows) {
-    const k = `${r.cls}|${r.seat}|${r.name}`;
-    const cur = best.get(k);
-    if (!cur || compare(r, cur) < 0) best.set(k, r);
+async function fetchRows(mode) {
+  if (mode === 'hof') {
+    const res = await fetch(`${CONFIG.FIREBASE_URL}/${CONFIG.HOF_PATH}.json`, { cache: 'no-store' }); if (!res.ok) throw new Error('HTTP ' + res.status);
+    return Object.values(await res.json() || {});
   }
-  return [...best.values()].sort(compare);
+  return Object.values(await LAB.req(`m/${player.code}/lb`) || {});
 }
-// 排序：總分高 → 答對多 → 用時短 → 先完成
-function compare(a, b) {
-  return (b.score - a.score) || (b.correct - a.correct) || (a.seconds - b.seconds) || (a.ts - b.ts);
-}
-
-async function renderLeaderboard(container, onlyMyClass) {
+const compare = (a, b) => (b.score - a.score) || (b.correct - a.correct) || (a.seconds - b.seconds) || (a.at || a.ts || 0) - (b.at || b.ts || 0);
+async function renderLeaderboard(container, mode) {
   container.innerHTML = '<p class="lb-note">讀取排行榜中…</p>';
   let rows;
-  try {
-    rows = await fetchRows();
-    cachedRows = rows;
-  } catch (e) {
-    console.error(e);
-    container.innerHTML = '<p class="lb-note">😵 排行榜暫時連不上，請稍後再試或請老師檢查網路。</p>';
-    return;
-  }
-  if (onlyMyClass && player) rows = rows.filter(r => String(r.cls) === String(player.cls));
-  const ranked = bestPerStudent(rows);
+  try { rows = await fetchRows(mode === 'hof' ? 'hof' : 'act'); } catch (e) { console.error(e); container.innerHTML = '<p class="lb-note">😵 排行榜暫時連不上，請稍後再試或請老師檢查網路。</p>'; return; }
+  if (mode === 'cls') rows = rows.filter(r => String(r.cls) === String(player.cls));
+  const best = new Map(); rows.forEach(r => { const k = `${r.cls}|${r.seat}|${r.name}`; if (!best.has(k) || compare(r, best.get(k)) < 0) best.set(k, r); });
+  const ranked = [...best.values()].sort(compare);
   if (!ranked.length) { container.innerHTML = '<p class="lb-note">目前還沒有人上榜，快來搶第一！</p>'; return; }
-
-  const meKey = player ? `${player.cls}|${player.seat}|${player.name}` : null;
-  const myIdx = meKey ? ranked.findIndex(r => `${r.cls}|${r.seat}|${r.name}` === meKey) : -1;
-  const N = CONFIG.LEADERBOARD_SIZE;
-  const medals = ['🥇', '🥈', '🥉'];
-
-  const rowHtml = (r, i) => `<tr class="${i === myIdx ? 'me' : ''}">
-      <td>${i < 3 ? `<span class="medal">${medals[i]}</span>` : i + 1}</td>
-      <td>${escapeHtml(r.cls)}</td>
-      <td class="hide-sm">${escapeHtml(r.seat)}</td>
-      <td>${escapeHtml(r.name)}${i === myIdx ? ' 👈' : ''}</td>
-      <td class="num">${r.correct}/${r.total || 30}</td>
-      <td class="num hide-sm">${r.seconds}s</td>
-      <td class="num"><b>${r.score}</b></td>
-    </tr>`;
-
+  const meKey = `${player.cls}|${player.seat}|${player.name}`, myIdx = ranked.findIndex(r => `${r.cls}|${r.seat}|${r.name}` === meKey);
+  const N = CONFIG.LEADERBOARD_SIZE, medals = ['🥇', '🥈', '🥉'];
+  const rowHtml = (r, i) => `<tr class="${i === myIdx ? 'me' : ''}"><td>${i < 3 ? `<span class="medal">${medals[i]}</span>` : i + 1}</td><td>${escapeHtml(r.cls)}</td><td class="hide-sm">${escapeHtml(r.seat)}</td><td>${escapeHtml(r.name)}${i === myIdx ? ' 👈' : ''}</td>
+    <td class="num">${r.correct}/${r.total || 30}</td><td class="num hide-sm">${r.seconds}s</td><td class="num"><b>${r.score}</b></td></tr>`;
   let body = ranked.slice(0, N).map(rowHtml).join('');
-  if (myIdx >= N) {
-    body += `<tr class="lb-gap"><td colspan="7">⋯</td></tr>` + rowHtml(ranked[myIdx], myIdx);
-  }
-  let note = '';
-  if (myIdx >= 0) {
-    note = myIdx < N
-      ? `你目前排在第 <b>${myIdx + 1}</b> 名，共 ${ranked.length} 位偵探上榜！`
-      : `你目前排在第 <b>${myIdx + 1}</b> 名，再加把勁就能擠進前 ${N} 名！`;
-  }
-  container.innerHTML = `<table>
-      <thead><tr><th>名次</th><th>班級</th><th class="hide-sm">座號</th><th>姓名</th>
-      <th class="num">答對</th><th class="num hide-sm">用時</th><th class="num">總分</th></tr></thead>
-      <tbody>${body}</tbody></table>
-      <p class="lb-note">${note || `前 ${N} 名 · 每位同學只列最佳成績`}</p>`;
+  if (myIdx >= N) body += `<tr class="lb-gap"><td colspan="7">⋯</td></tr>` + rowHtml(ranked[myIdx], myIdx);
+  const note = myIdx >= 0 ? (myIdx < N ? `你目前排在第 <b>${myIdx + 1}</b> 名，共 ${ranked.length} 位偵探上榜！` : `你目前排在第 <b>${myIdx + 1}</b> 名，再加把勁就能擠進前 ${N} 名！`) : '';
+  container.innerHTML = `<table><thead><tr><th>名次</th><th>班級</th><th class="hide-sm">座號</th><th>姓名</th><th class="num">答對</th><th class="num hide-sm">用時</th><th class="num">總分</th></tr></thead><tbody>${body}</tbody></table>
+    <p class="lb-note">${note || `前 ${N} 名 · 每位同學只列最佳成績`}${mode === 'hof' ? '<br>🌐 全站名人堂：標準設定（30 題、3 條命）的所有活動與改版前的成績' : ''}</p>`;
 }
-
-/* 首頁的排行榜按鈕 */
-$('btn-lb-home').onclick = () => {
-  const cls = $('in-cls').value.trim();
-  const seat = $('in-seat').value.trim();
-  const name = $('in-name').value.trim();
-  if (cls && seat && name) player = { cls, seat: Number(seat), name };
-  show('lb');
-  $('seg-all').classList.add('on'); $('seg-cls').classList.remove('on');
-  renderLeaderboard($('lb-body'), false);
-};
-$('seg-all').onclick = () => { $('seg-all').classList.add('on'); $('seg-cls').classList.remove('on'); renderLeaderboard($('lb-body'), false); };
-$('seg-cls').onclick = () => { $('seg-cls').classList.add('on'); $('seg-all').classList.remove('on'); renderLeaderboard($('lb-body'), true); };
-$('btn-lb-back').onclick = () => show('start');
-$('btn-again').onclick = () => startGame();
-$('btn-home').onclick = () => show('start');
+const segs = ['seg-all', 'seg-cls', 'seg-hof'], segMode = { 'seg-all': 'all', 'seg-cls': 'cls', 'seg-hof': 'hof' };
+segs.forEach(id => $(id).onclick = () => { segs.forEach(x => $(x).classList.toggle('on', x === id)); renderLeaderboard($('lb-body'), segMode[id]); });
+$('btn-lb-home').onclick = () => { show('lb'); segs.forEach(x => $(x).classList.toggle('on', x === 'seg-all')); renderLeaderboard($('lb-body'), 'all'); };
+$('btn-lb-back').onclick = () => showReady();
+$('btn-again').onclick = () => { if (!closed) startGame(); };
+$('btn-home').onclick = () => showReady();
 </script>
 </body>
 </html>

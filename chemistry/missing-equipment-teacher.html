@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>🔍 消失的實驗器材｜老師頁</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="../account/staff.js?v=20261022a"></script>
+<style>
+  :root { --ink: #14212c; --ink-2: #1d2f3e; --paper: #fbf7ee; --line: #e6dcc6; --amber: #ffb627; --red: #e23d3d; --green: #2fb36d; --muted: #8a9aa8; --text: #22303c; --lab-accent: #ffb627; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif; background: var(--ink); color: var(--paper); min-height: 100vh; padding: 16px;
+    background-image: repeating-linear-gradient(0deg, rgba(255,255,255,.025) 0 1px, transparent 1px 32px), repeating-linear-gradient(90deg, rgba(255,255,255,.025) 0 1px, transparent 1px 32px); }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+  .hidden { display: none !important; }
+  .tape { height: 12px; border-radius: 3px; margin-bottom: 14px; background: repeating-linear-gradient(-45deg, var(--amber) 0 14px, #1a1a1a 14px 28px); }
+  h1 { font-weight: 900; font-size: 1.9em; } h1 small { font-size: .5em; color: var(--muted); font-weight: 400; margin-left: 8px; }
+  .home-row { display: flex; justify-content: flex-end; margin-bottom: 6px; }
+  .home-link { color: inherit; font-weight: 700; text-decoration: none; font-size: .9em; border: 2px solid currentColor; border-radius: 20px; padding: 2px 14px; opacity: .8; }
+  #act-panel { margin: 12px 0; }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .tabs button { font: inherit; border: none; padding: 9px 16px; border-radius: 999px; cursor: pointer; background: var(--ink-2); color: var(--muted); }
+  .tabs button.on { background: var(--amber); color: #1a1a1a; font-weight: 700; }
+  .paper { background: var(--paper); color: var(--text); border-radius: 14px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,.3); }
+  .paper h3 { font-size: 1.02em; margin: 16px 0 8px; }
+  .hint { color: #6b6248; font-size: .88em; line-height: 1.6; }
+  .btn { font: inherit; font-weight: 700; border: none; border-radius: 10px; padding: 9px 14px; cursor: pointer; background: var(--amber); color: #1a1a1a; }
+  .btn.dark { background: var(--ink-2); color: var(--paper); }
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .table-wrap { overflow-x: auto; margin-top: 10px; }
+  table { border-collapse: collapse; width: 100%; font-size: .88em; background: #fff; }
+  th, td { border: 1px solid var(--line); padding: 6px 8px; text-align: center; vertical-align: middle; }
+  th { background: #efe9d8; position: sticky; top: 0; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .thumb { width: 44px; height: 44px; object-fit: contain; background: #fff; border-radius: 6px; vertical-align: middle; }
+  .playing { background: #fff1cc; color: #8a6200; border-radius: 999px; padding: 2px 8px; font-weight: 700; white-space: nowrap; }
+  .idle { color: #8a8170; }
+  .wr span { display: inline-block; background: #fde8e6; color: #9a2c22; border-radius: 6px; padding: 1px 6px; margin: 1px; font-size: .9em; }
+  /* 排行榜（投影） */
+  .lb td { font-size: 1.05em; } .lb tr.top td { background: #fff6dc; font-weight: 900; }
+  .lbfull { position: fixed; inset: 0; z-index: 990; background: var(--ink); color: #fff; overflow: auto; padding: 24px; }
+  .lbfull table { background: transparent; color: #fff; font-size: 1.3em; } .lbfull th { background: var(--ink-2); color: var(--amber); } .lbfull td { border-color: #2e4456; }
+  /* 開新活動的設定 */
+  .eqset { display: grid; gap: 10px; }
+  .eqset .row2 { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+  .eqset select { font: inherit; padding: 7px 10px; border-radius: 9px; border: 2px solid var(--line); }
+  .cats { display: flex; flex-wrap: wrap; gap: 6px; } .cats label { background: #fff; border: 2px solid var(--line); border-radius: 10px; padding: 6px 10px; cursor: pointer; font-size: .92em; }
+</style>
+</head>
+<body>
+<div id="gate"></div>
+<div class="wrap hidden" id="main">
+  <div class="home-row"><a class="home-link" href="lab223.html">⚗️ 實驗室 No.223</a></div>
+  <div class="tape"></div>
+  <h1>🔍 消失的實驗器材 <small>器材辨識 · 老師頁 · 請勿提供給學生</small></h1>
+  <div id="act-panel"></div>
+
+  <div class="tabs" id="tabs">
+    <button data-t="live" class="on">📡 即時狀態</button>
+    <button data-t="lb">🏆 排行榜</button>
+    <button data-t="stats">📊 能力分析</button>
+  </div>
+
+  <section class="paper" id="t-live">
+    <div class="toolbar"><div class="filters" id="lv-filter"></div><span style="flex:1"></span><button class="btn dark" id="btn-xlsx">📥 匯出 Excel</button></div>
+    <p class="hint" id="lv-note" style="margin-top:6px"></p>
+    <div class="table-wrap" id="lv-table"></div>
+  </section>
+  <section class="paper hidden" id="t-lb">
+    <div class="toolbar"><div class="filters" id="lb-filter"></div><span style="flex:1"></span><button class="btn" id="btn-lbfull">🖥️ 全螢幕投影</button></div>
+    <div class="table-wrap" id="lb-table"></div>
+  </section>
+  <section class="paper hidden" id="t-stats">
+    <div class="filters" id="st-filter"></div>
+    <div id="st-body"></div>
+  </section>
+</div>
+
+<!-- 開新活動時的設定（會被搬進「開新活動」視窗） -->
+<div id="setform" class="hidden" style="color:var(--text)">
+  <div class="eqset">
+    <div class="row2"><label>每局題數 <select id="s-n"></select></label><label>整場命數 <select id="s-l"></select></label></div>
+    <div><b style="font-size:.9em">出題範圍</b>（不勾＝全部）<div class="cats" id="s-cats"></div></div>
+    <p class="hint">標準設定（30 題、3 條命、全部類別）的成績也會進「🌐 全站名人堂」。</p>
+  </div>
+</div>
+
+<script src="equipment-data.js?v=20261022a"></script>
+<script src="lab223.js?v=20261022a"></script>
+<script src="lab223-board.js?v=20261022a"></script>
+<script type="module">
+import { startTeacher } from './lab223-teacher.js?v=20261022a';
+const $ = id => document.getElementById(id), esc = LAB.esc, IMG = 'images/equipment/';
+const st = document.createElement('style'); st.textContent = LabBoard.CSS; document.head.appendChild(st);
+let META = null, CODE = null, SET = EQ.DEFAULT, RECS = {}, ROWS = [];
+const SEL = { cls: '', use: '', q: '' };
+
+/* ---------- 開新活動的設定 ---------- */
+$('s-n').innerHTML = [10, 15, 20, 25, 30].map(n => `<option ${n === 30 ? 'selected' : ''}>${n}</option>`).join('');
+$('s-l').innerHTML = [1, 2, 3, 4, 5].map(n => `<option ${n === 3 ? 'selected' : ''}>${n}</option>`).join('');
+$('s-cats').innerHTML = EQ.CATS.map((c, i) => `<label><input type="checkbox" value="${i}"> ${c}（${EQ.ITEMS.filter(it => it.category === c).length}）</label>`).join('');
+function readSettings() {
+  const cs = [...$('s-cats').querySelectorAll('input:checked')].map(x => x.value);
+  return EQ.makeSet({ n: +$('s-n').value, lives: +$('s-l').value, cats: cs.length && cs.length < EQ.CATS.length ? cs.join(',') : 'all' });
+}
+function describe(m) {
+  const s = EQ.parseSet(m && m.set), pool = EQ.poolOf(s);
+  return `每局 ${Math.min(s.n, pool.length)} 件｜${s.lives} 條命｜${s.cats === 'all' ? '全部類別' : s.cats.split(',').map(i => EQ.CATS[+i]).join('、')}${EQ.isStandard(s) ? '｜上全站名人堂' : ''}`;
+}
+
+/* ---------- 活動 ---------- */
+const T = await startTeacher({ sys: 'eq', gate: $('gate'), main: $('main'), panel: $('act-panel'), settings: $('setform'), readSettings, describe, onSelect });
+function onSelect(meta, code) {
+  META = meta; CODE = code; SET = EQ.parseSet(meta && meta.set); RECS = {}; refresh();
+  T.listen(code, (v, err) => { if (err) { $('lv-note').textContent = '⚠️ 讀不到作答資料：' + (err.code || err.message); return; } RECS = v; refresh(); });
+}
+let tab = 'live';
+document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b));
+  ['live', 'lb', 'stats'].forEach(x => $('t-' + x).classList.toggle('hidden', x !== tab)); refresh(); });
+setInterval(() => { if (tab === 'live' && !document.hidden) refresh(); }, 15000);   // 「閒置」的判斷跟著時間走
+
+/* ---------- 整理資料 ---------- */
+const vals = o => Array.isArray(o) ? o.filter(Boolean) : Object.values(o || {});
+function rows() {
+  return Object.entries(RECS || {}).filter(([, r]) => r && r.cls).map(([sid, r]) => {
+    const it = r.it || {}, o = Object.values(it).reduce((s, x) => s + (x.o || 0), 0), x = Object.values(it).reduce((s, v) => s + (v.x || 0), 0);
+    return { sid, cls: String(r.cls), seat: +r.seat, no: r.no || '', name: r.name || '', use: r.use || '', r, it, o, x, games: r.games || 0, best: r.best || null, cur: r.cur || null, wl: vals(r.wl), hist: vals(r.h).sort((a, b) => a.at - b.at), ts: r.ts || 0 };
+  }).sort((a, b) => a.cls.localeCompare(b.cls, 'zh-Hant', { numeric: true }) || a.seat - b.seat);
+}
+const pct = LabBoard.pct, heat = LabBoard.heat;
+const ago = t => { const s = Math.round((Date.now() - t) / 1000); return s < 60 ? `${s} 秒前` : s < 3600 ? `${Math.round(s / 60)} 分前` : new Date(t).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }); };
+
+function refresh() {
+  if (!META) { ['lv-table', 'lb-table', 'st-body'].forEach(id => $(id).innerHTML = '<p class="hint">請先選一個活動。</p>'); return; }
+  ROWS = rows();
+  const list = LabBoard.applyFilter(ROWS, SEL);
+  if (tab === 'live') { LabBoard.filterBar('lv-filter', ROWS, SEL, refresh); liveView(list); }
+  if (tab === 'lb') { LabBoard.filterBar('lb-filter', ROWS, SEL, refresh); $('lb-table').innerHTML = lbHTML(list, 'lb'); }
+  if (tab === 'stats') { LabBoard.filterBar('st-filter', ROWS, SEL, refresh); $('st-body').innerHTML = statsHTML(list); }
+}
+
+/* ---------- 📡 即時狀態 ---------- */
+function liveView(list) {
+  const playing = list.filter(x => x.cur && Date.now() - x.cur.at < 90000).length;
+  $('lv-note').textContent = `🟢 即時更新：${ROWS.length} 人進來，篩選後 ${list.length} 人，${playing} 人正在遊戲中${!META.open ? '｜⏸ 活動目前停止中' : ''}　·　${new Date().toLocaleTimeString('zh-TW')}`;
+  $('lv-table').innerHTML = list.length ? `<table><tr><th>班級</th><th>座號</th><th>學號</th><th>姓名</th><th>用途</th><th>現在</th><th>局數</th><th>最佳分數</th><th>最佳答對</th><th>累計答對／答錯</th><th>答對率</th><th>最後動作</th></tr>
+    ${list.map(x => { const live = x.cur && Date.now() - x.cur.at < 90000;
+      return `<tr><td>${esc(x.cls)}</td><td>${x.seat}</td><td class="mono">${esc(x.no)}</td><td>${esc(x.name)}</td><td>${esc(x.use)}</td>
+        <td>${live ? `<span class="playing">🎮 第 ${x.cur.q}/${x.cur.n} 件・❤️${x.cur.lives}・${x.cur.score} 分</span>` : '<span class="idle">💤 沒在玩</span>'}</td>
+        <td>${x.games}</td><td><b>${x.best ? x.best.score : '—'}</b></td><td>${x.best ? `${x.best.correct}/${x.best.total}` : '—'}</td><td>${x.o}／${x.x}</td>
+        <td style="background:${heat(pct(x.o, x.o + x.x))}">${pct(x.o, x.o + x.x) ?? '—'}${x.o + x.x ? '%' : ''}</td><td style="font-size:.85em">${x.ts ? ago(x.ts) : ''}</td></tr>`; }).join('')}</table>`
+    : '<p class="hint">還沒有學生進來（或篩選後沒有人）。學生輸入活動代碼後就會出現在這裡。</p>';
+}
+
+/* ---------- 🏆 排行榜 ---------- */
+function lbHTML(list, mode) {
+  const ranked = list.filter(x => x.best).sort((a, b) => (b.best.score - a.best.score) || (b.best.correct - a.best.correct) || (a.best.seconds - b.best.seconds));
+  if (!ranked.length) return '<p class="hint">還沒有人完成一局。</p>';
+  const md = ['🥇', '🥈', '🥉'];
+  return `<table class="lb"><tr><th>名次</th><th>班級</th><th>座號</th><th>姓名</th><th>答對</th><th>用時</th><th>總分</th><th>局數</th></tr>
+    ${ranked.slice(0, 30).map((x, i) => `<tr class="${i < 3 ? 'top' : ''}"><td>${md[i] || i + 1}</td><td>${esc(x.cls)}</td><td>${x.seat}</td><td>${esc(x.name)}</td><td>${x.best.correct}/${x.best.total}</td><td>${x.best.seconds}s</td><td><b>${x.best.score}</b></td><td>${x.games}</td></tr>`).join('')}</table>`;
+}
+$('btn-lbfull').onclick = () => {
+  const d = document.createElement('div'); d.className = 'lbfull';
+  const draw = () => { d.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h2 style="font-size:1.8em">🏆 名偵探排行榜｜${esc(LAB.label(META))}</h2><button class="btn dark" id="lbx">✕ 關閉（Esc）</button></div>${lbHTML(LabBoard.applyFilter(rows(), SEL), 'full')}`; d.querySelector('#lbx').onclick = close; };
+  const t = setInterval(draw, 3000), close = () => { clearInterval(t); d.remove(); document.removeEventListener('keydown', k); }, k = e => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', k); document.body.appendChild(d); draw();
+};
+
+/* ---------- 📊 能力分析 ---------- */
+function itemStats(list) {
+  const S = {}; EQ.ITEMS.forEach(it => { S[it.id] = { it, o: 0, x: 0, who: new Set(), wrong: {} }; });
+  list.forEach(st => { Object.entries(st.it).forEach(([id, v]) => { if (!S[id]) return; S[id].o += v.o || 0; S[id].x += v.x || 0; if (v.x) S[id].who.add(st.name); });
+    st.wl.forEach(w => { if (S[w.i] && w.t) S[w.i].wrong[w.t] = (S[w.i].wrong[w.t] || 0) + 1; }); });
+  return Object.values(S);
+}
+function statsHTML(list) {
+  if (!list.length) return '<p class="hint">還沒有作答資料（或篩選後沒有人）。</p>';
+  const IS = itemStats(list).filter(s => s.o + s.x), O = IS.reduce((s, v) => s + v.o, 0), X = IS.reduce((s, v) => s + v.x, 0);
+  const games = list.reduce((s, x) => s + x.games, 0), bests = list.filter(x => x.best);
+  const kpi = `<div class="kpis"><div><b>${list.length}</b>參加人數</div><div><b>${games}</b>總局數</div><div><b>${bests.length ? Math.round(bests.reduce((s, x) => s + x.best.score, 0) / bests.length) : '—'}</b>平均最佳分數</div>
+    <div><b>${pct(O, O + X) ?? '—'}%</b>整體答對率</div><div><b>${bests.filter(x => x.best.cleared).length}</b>破案（全部答對）人數</div></div>`;
+  const byItem = IS.slice().sort((a, b) => (a.o / (a.o + a.x)) - (b.o / (b.o + b.x)) || b.x - a.x).map(s => { const r = pct(s.o, s.o + s.x), w = Object.entries(s.wrong).sort((a, b) => b[1] - a[1]).slice(0, 4);
+    return `<tr><td><img class="thumb" src="${IMG}${s.it.id}.jpg" alt=""></td><td style="text-align:left"><b>${s.it.name}</b>${s.it.marked ? ' <small>⭕紅圈</small>' : ''}</td><td>${s.it.category}</td><td>${s.o + s.x}</td>
+      <td style="background:${heat(r)}"><b>${r}%</b></td><td>${s.who.size}</td><td class="wr" style="text-align:left">${w.map(([t, n]) => `<span>${esc(t)}${n > 1 ? ' ×' + n : ''}</span>`).join('') || '—'}</td></tr>`; }).join('');
+  const cat = EQ.CATS.map(c => { const a = IS.filter(s => s.it.category === c), o = a.reduce((s, v) => s + v.o, 0), x = a.reduce((s, v) => s + v.x, 0), r = pct(o, o + x);
+    return a.length ? `<tr><td style="text-align:left"><b>${c}</b></td><td>${o + x}</td><td style="background:${heat(r)}"><b>${r}%</b></td><td style="min-width:140px"><div class="sbar"><i style="width:${r || 0}%"></i></div></td></tr>` : ''; }).join('');
+  const stu = list.map(st => { const cells = EQ.CATS.map(c => { let o = 0, x = 0; EQ.ITEMS.filter(it => it.category === c).forEach(it => { const v = st.it[it.id]; if (v) { o += v.o || 0; x += v.x || 0; } });
+      const r = pct(o, o + x); return `<td style="background:${heat(r)}">${o + x ? r + '%' : '—'}</td>`; }).join('');
+    const weak = Object.entries(st.it).filter(([, v]) => v.x).sort((a, b) => b[1].x - a[1].x).slice(0, 3).map(([id, v]) => `${EQ.BY[id] ? EQ.BY[id].name : id}${v.x > 1 ? '×' + v.x : ''}`).join('、');
+    return `<tr><td>${esc(st.cls)}</td><td>${st.seat}</td><td>${esc(st.name)}</td><td>${esc(st.use)}</td>${cells}<td>${pct(st.o, st.o + st.x) ?? '—'}${st.o + st.x ? '%' : ''}</td><td>${st.best ? st.best.score : '—'}</td><td style="text-align:left;font-size:.85em">${weak || '—'}</td></tr>`; }).join('');
+  return `${kpi}
+    <h3>📦 依類別</h3><table><tr><th>類別</th><th>作答次數</th><th>答對率</th><th></th></tr>${cat}</table>
+    <h3>🔍 每件器材（答對率由低到高）<span class="hint">　「常見錯誤寫法」是學生實際打錯的名稱，最能看出搞混了哪些器材</span></h3>
+    <div class="table-wrap"><table><tr><th></th><th>器材</th><th>類別</th><th>作答次數</th><th>答對率</th><th>答錯人數</th><th>常見錯誤寫法</th></tr>${byItem}</table></div>
+    <h3>👩‍🎓 每位學生（各類別答對率）</h3><div class="table-wrap"><table><tr><th>班級</th><th>座號</th><th>姓名</th><th>用途</th>${EQ.CATS.map(c => `<th>${c}</th>`).join('')}<th>整體</th><th>最佳分數</th><th>最常錯的器材</th></tr>${stu}</table></div>`;
+}
+
+/* ---------- Excel ---------- */
+$('btn-xlsx').onclick = () => {
+  if (!META || typeof XLSX === 'undefined') return;
+  const list = LabBoard.applyFilter(rows(), SEL), wb = XLSX.utils.book_new();
+  const s1 = list.map(x => ({ 班級: x.cls, 座號: x.seat, 學號: x.no, 姓名: x.name, 用途: x.use, 局數: x.games, 最佳分數: x.best ? x.best.score : '', 最佳答對: x.best ? `${x.best.correct}/${x.best.total}` : '', 最佳用時秒: x.best ? x.best.seconds : '', 累計答對: x.o, 累計答錯: x.x, 答對率: x.o + x.x ? pct(x.o, x.o + x.x) + '%' : '' }));
+  const s2 = itemStats(list).map(s => ({ 器材: s.it.name, 類別: s.it.category, 作答次數: s.o + s.x, 答對: s.o, 答錯: s.x, 答對率: s.o + s.x ? pct(s.o, s.o + s.x) + '%' : '', 答錯人數: s.who.size, 常見錯誤寫法: Object.entries(s.wrong).sort((a, b) => b[1] - a[1]).map(([t, n]) => `${t}×${n}`).join('、') }));
+  const s3 = []; list.forEach(x => x.wl.forEach(w => s3.push({ 班級: x.cls, 座號: x.seat, 姓名: x.name, 器材: EQ.BY[w.i] ? EQ.BY[w.i].name : w.i, 學生寫: w.t, 時間: new Date(w.at).toLocaleString('zh-TW') })));
+  const s4 = []; list.forEach(x => x.hist.forEach(h => s4.push({ 班級: x.cls, 座號: x.seat, 姓名: x.name, 分數: h.score, 答對: h.correct, 答錯: h.wrong, 題數: h.total, 用時秒: h.seconds, 破案: h.cleared ? '✓' : '', 時間: new Date(h.at).toLocaleString('zh-TW') })));
+  [['學生總表', s1], ['器材統計', s2], ['錯誤寫法', s3], ['每局紀錄', s4]].forEach(([n, d]) => XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(d.length ? d : [{ 說明: '尚無資料' }]), n));
+  XLSX.writeFile(wb, `消失的實驗器材_${META.term}_第${META.item}次_${CODE}.xlsx`);
+};
+</script>
+</body>
+</html>

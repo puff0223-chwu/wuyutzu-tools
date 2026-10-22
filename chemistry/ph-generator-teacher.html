@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="../account/staff.js?v=20261022a"></script>
 <style>
   :root {
     --ink: #102226; --ink-2: #183238; --paper: #f8f6ef; --line: #e3ddca;
@@ -126,87 +127,59 @@
 .home-link { color: inherit; font-weight: 700; text-decoration: none; font-size: 0.9em; border: 2px solid currentColor; border-radius: 20px; padding: 2px 14px; opacity: 0.8; }
 .home-link:hover { opacity: 1; }
 @media print { .home-row { display: none !important; } }
+:root { --lab-accent: #ffb627; }
+#act-panel { margin-bottom: 12px; }
+.legacy { margin-top: 14px; }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="home-row"><a class="home-link" href="../index.html">🏠 回事務所首頁</a></div>
+<div id="gate"></div>
+<div class="wrap hidden" id="main">
+  <div class="home-row"><a class="home-link" href="lab223.html">⚗️ 實驗室 No.223</a></div>
   <div class="ph-strip"></div>
   <h1>🧪 消失的指示劑 <small>pH 值計算練習 · 老師頁 · 請勿提供給學生</small></h1>
 
+  <div id="act-panel"></div>
   <div class="current" id="current"></div>
 
   <div class="tabs" id="tabs">
-    <button data-t="setup" class="on">① 出題設定</button>
-    <button data-t="project">② 投影</button>
-    <button data-t="print">③ 列印學習單</button>
-    <button data-t="board">④ 全班總表</button>
+    <button data-t="board" class="on">📡 即時總表</button>
+    <button data-t="stats">📊 能力分析</button>
+    <button data-t="project">🖥️ 投影講解</button>
+    <button data-t="print">🖨️ 列印學習單</button>
   </div>
 
-  <!-- ① 出題設定 -->
-  <section class="paper" id="t-setup">
-    <h2>難度分配（每人 5 題）</h2>
-    <div class="levels" id="levels"></div>
-    <div class="total" id="total"></div>
-
-    <h3>出題方向</h3>
-    <div class="opts">
-      <label class="opt"><input type="radio" name="dir" value="fwd"><div><b>① 只出正向：濃度 → pH</b><div class="hint">例：[H⁺] = 1.5×10⁻⁵ M，求 pH</div></div></label>
-      <label class="opt"><input type="radio" name="dir" value="rev"><div><b>② 只出反向：pH／pOH → 濃度</b><div class="hint">例：pH = 4.82，求 [H⁺]；pOH = 3.30，求 [OH⁻]；pH = 10.70，求 [OH⁻]（挑戰）。答案寫成「係數 × 10 的次方」，係數必須是 2、3、5、7 組出的值</div></div></label>
-      <label class="opt"><input type="radio" name="dir" value="mix" checked><div><b>③ 正反混合</b><div class="hint">每一題隨機決定正向或反向</div></div></label>
-    </div>
-
-    <h3>學生作答方式</h3>
-    <div class="opts">
-      <label class="opt"><input type="radio" name="mode" value="instant" checked><div><b>✅ 即時對錯</b><div class="hint">每題按「檢查」只顯示對或錯（不給答案），可以一直重算到對；老師看得到每題試了幾次、填過什麼。</div></div></label>
-      <label class="opt"><input type="radio" name="mode" value="graded"><div><b>📝 交卷後由老師批改</b><div class="hint">學生只填答案、按交卷，看不到對錯；老師在「全班總表」看結果。</div></div></label>
-    </div>
-    <h3>其他</h3>
-    <label class="opt" style="max-width:520px"><input type="checkbox" id="opt-log" checked><div><b>在題目上方顯示 log 參考值</b><div class="hint">log 2 = 0.30、log 3 = 0.48、log 5 = 0.70、log 7 = 0.85</div></div></label>
-
-    <div class="row" style="margin-top:16px">
-      <button class="btn" id="btn-new">✨ 產生新題組碼</button>
-    </div>
-    <p class="hint" style="margin-top:8px">設定都藏在題組碼裡，改了設定就要產生新的題組碼。換一個題組碼，全班就會拿到全新的題目。</p>
-
-    <h3>或載入以前的題組碼</h3>
-    <div class="row">
-      <input type="text" id="in-load" class="mono" placeholder="例：4TJ-6NKY" style="width:180px;text-transform:uppercase">
-      <button class="btn dark" id="btn-load">載入</button>
-    </div>
-    <div class="recent" id="recent"></div>
-
-    <div class="result hidden" id="result">
-      <div class="qr" id="qr-small"></div>
-      <div>
-        <div class="hint">學生題組碼</div>
-        <div class="bigcode" id="res-code"></div>
-        <div class="linkbox" id="res-link"></div>
-        <div class="row">
-          <button class="btn" id="btn-copy">📋 複製學生連結</button>
-          <button class="btn dark" id="btn-show">🖥️ 全螢幕投影題組碼</button>
-        </div>
-      </div>
-    </div>
+  <!-- 即時總表 -->
+  <section class="paper" id="t-board">
+    <div class="toolbar"><div class="filters" id="bd-filter"></div><span style="flex:1"></span><button class="btn dark" id="btn-xlsx">📥 匯出 Excel</button></div>
+    <p class="hint" id="bd-note" style="margin-top:6px"></p>
+    <div class="table-wrap" id="bd-table"></div>
+    <details class="legacy"><summary class="hint" style="cursor:pointer">📂 查看改版前的題組碼紀錄（舊資料，只能看）</summary>
+      <div class="row" style="margin-top:8px"><input type="text" id="in-load" class="mono" placeholder="例：4TJ-6NKY" style="width:180px;text-transform:uppercase"><button class="btn dark" id="btn-load">載入舊紀錄</button><button class="btn ghost" id="btn-unload">回到目前活動</button></div></details>
   </section>
 
-  <!-- ② 投影 -->
+  <!-- 能力分析 -->
+  <section class="paper hidden" id="t-stats">
+    <div class="filters" id="st-filter"></div>
+    <div id="st-body"></div>
+  </section>
+
+  <!-- 投影 -->
   <section class="paper hidden" id="t-project">
     <h2>全班共同練習題</h2>
-    <p class="hint">依目前題組碼的難度分配，產生一組全班一起算的題目，適合上課講解。按「顯示答案」才會出現解法。</p>
+    <p class="hint">依目前活動的難度分配，產生一組全班一起算的題目，適合上課講解。按「顯示答案」才會出現解法。</p>
     <div class="row" style="margin:12px 0">
       <button class="btn" id="btn-proj-new">🔄 換一組</button>
       <button class="btn dark" id="btn-proj-all">顯示全部答案</button>
       <button class="btn ghost" id="btn-proj-hide">全部隱藏</button>
-      <button class="btn ghost" id="btn-show2">🖥️ 投影題組碼 QR</button>
     </div>
     <div id="proj-list"></div>
   </section>
 
-  <!-- ③ 列印 -->
+  <!-- 列印 -->
   <section class="paper hidden" id="t-print">
     <h2>列印學習單</h2>
-    <p class="hint">每位學生的題目和他用平板領到的完全一樣（同一個題組碼＋班級＋座號）。</p>
+    <p class="hint">每位學生的題目和他用平板領到的完全一樣（同一個活動＋班級＋座號）。</p>
     <div class="row" style="margin-top:12px">
       <div><label class="l">班級</label><input type="text" id="pr-cls" style="width:110px" placeholder="例：101"></div>
       <div><label class="l">座號從</label><input type="number" id="pr-from" value="1" min="1" style="width:80px"></div>
@@ -219,333 +192,149 @@
     <div class="row" style="margin-top:14px"><button class="btn" id="btn-print">🖨️ 列印</button></div>
   </section>
 
-  <!-- ④ 全班總表 -->
-  <section class="paper hidden" id="t-board">
-    <h2>全班總表</h2>
-    <div class="toolbar">
-      <div><label class="l">班級</label><input type="text" id="bd-cls" style="width:110px" placeholder="例：101"></div>
-      <div><label class="l">人數</label><input type="number" id="bd-n" value="35" min="1" max="60" style="width:80px"></div>
-      <button class="btn" id="btn-refresh" style="align-self:flex-end">🔄 更新</button>
-      <label style="align-self:flex-end;font-size:0.9em"><input type="checkbox" id="bd-auto"> 每 10 秒自動更新</label>
-      <button class="btn dark" id="btn-xlsx" style="align-self:flex-end">📥 匯出 Excel</button>
-    </div>
-    <p class="hint" id="bd-note" style="margin-top:8px"></p>
-    <div class="table-wrap" id="bd-table"></div>
-  </section>
-
   <div id="print-area"></div>
 </div>
 
-<div class="overlay hidden" id="overlay">
-  <button class="btn dark close" id="btn-close">✕ 關閉</button>
-  <div style="font-size:1.4em">🧪 消失的指示劑｜掃碼或輸入題組碼，領取你的溶液樣本</div>
-  <div class="qr" id="qr-big"></div>
-  <div class="big" id="ov-code"></div>
-  <div class="url" id="ov-url"></div>
+<!-- 開新活動時的題目設定（會被搬進「開新活動」視窗） -->
+<div id="setform" class="hidden" style="color:var(--text)">
+  <h3 style="margin:4px 0 8px">難度分配（每人 5 題）</h3>
+  <div class="levels" id="levels"></div>
+  <div class="total" id="total"></div>
+  <h3 style="margin:12px 0 6px">出題方向</h3>
+  <div class="opts">
+    <label class="opt"><input type="radio" name="dir" value="fwd"><div><b>① 只出正向：濃度 → pH</b><div class="hint">例：[H⁺] = 1.5×10⁻⁵ M，求 pH</div></div></label>
+    <label class="opt"><input type="radio" name="dir" value="rev"><div><b>② 只出反向：pH／pOH → 濃度</b><div class="hint">例：pH = 4.82，求 [H⁺]。答案寫成「係數 × 10 的次方」</div></div></label>
+    <label class="opt"><input type="radio" name="dir" value="mix" checked><div><b>③ 正反混合</b><div class="hint">每一題隨機決定正向或反向</div></div></label>
+  </div>
+  <h3 style="margin:12px 0 6px">學生作答方式</h3>
+  <div class="opts">
+    <label class="opt"><input type="radio" name="mode" value="instant" checked><div><b>✅ 即時對錯</b><div class="hint">每題按「檢查」只顯示對或錯（不給答案），可以一直重算到對；能力分析看得到每題試了幾次、錯成什麼。</div></div></label>
+    <label class="opt"><input type="radio" name="mode" value="graded"><div><b>📝 交卷後由老師批改</b><div class="hint">學生只填答案、按交卷，看不到對錯。</div></div></label>
+  </div>
+  <label class="opt" style="margin-top:8px"><input type="checkbox" id="opt-log" checked><div><b>在題目上方顯示 log 參考值</b><div class="hint">log 2 = 0.30、log 3 = 0.48、log 5 = 0.70、log 7 = 0.85</div></div></label>
 </div>
 
-<script src="ph-core.js?v=20261004a"></script>
-<script>
+<script src="ph-core.js?v=20261022a"></script>
+<script src="lab223.js?v=20261022a"></script>
+<script src="lab223-board.js?v=20261022a"></script>
+<script type="module">
+import { startTeacher } from './lab223-teacher.js?v=20261022a';
 const $ = id => document.getElementById(id);
 const esc = PH.escapeHtml;
-const STUDENT_PAGE = new URL('ph-generator.html', location.href).href;
-let current = null;              // 目前的題組（parseCode 的結果）
+const st = document.createElement('style'); st.textContent = LabBoard.CSS; document.head.appendChild(st);
+let current = null, META = null, CODE = null, legacy = false, RECS = {}, ROWS = [];
 const dist = [1, 2, 2, 0];
+const SEL = { cls: '', use: '', q: '' };
 
-/* ---------- 分頁 ---------- */
-document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => showTab(b.dataset.t));
-function showTab(t) {
-  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
-  ['setup', 'project', 'print', 'board'].forEach(x => $('t-' + x).classList.toggle('hidden', x !== t));
-  if (t === 'project') renderProjection();
-  if (t === 'board') refreshBoard();
-  setAuto();
-}
-
-/* ---------- ① 出題設定 ---------- */
+/* ---------- 題目設定（開新活動視窗裡） ---------- */
 function renderLevels() {
-  $('levels').innerHTML = PH.LEVELS.map((lv, i) => `<div class="lv">
-    <div class="stars">${lv.stars}</div><div class="name">${lv.name}</div><div class="desc">${lv.desc}</div>
-    <div class="stepper"><button data-i="${i}" data-d="-1">−</button><span>${dist[i]}</span><button data-i="${i}" data-d="1">+</button></div>
-  </div>`).join('');
-  $('levels').querySelectorAll('button').forEach(b => b.onclick = () => {
-    const i = +b.dataset.i, d = +b.dataset.d;
-    dist[i] = Math.max(0, Math.min(5, dist[i] + d));
-    renderLevels();
-  });
+  $('levels').innerHTML = PH.LEVELS.map((lv, i) => `<div class="lv"><div class="stars">${lv.stars}</div><div class="name">${lv.name}</div><div class="desc">${lv.desc}</div>
+    <div class="stepper"><button type="button" data-i="${i}" data-d="-1">−</button><span>${dist[i]}</span><button type="button" data-i="${i}" data-d="1">+</button></div></div>`).join('');
+  $('levels').querySelectorAll('button').forEach(b => b.onclick = () => { const i = +b.dataset.i; dist[i] = Math.max(0, Math.min(5, dist[i] + +b.dataset.d)); renderLevels(); });
   const sum = dist.reduce((a, b) => a + b, 0);
-  $('total').textContent = sum === 5 ? `合計 5 題 ✔` : `合計 ${sum} 題，必須剛好 5 題`;
+  $('total').textContent = sum === 5 ? '合計 5 題 ✔' : `合計 ${sum} 題，必須剛好 5 題`;
   $('total').className = 'total' + (sum === 5 ? '' : ' bad');
-  $('btn-new').disabled = sum !== 5;
 }
-
-$('btn-new').onclick = () => {
-  const code = PH.makeCode({
-    dist: dist.slice(),
-    instant: document.querySelector('input[name=mode]:checked').value === 'instant',
-    dir: document.querySelector('input[name=dir]:checked').value,
-    showLog: $('opt-log').checked
-  });
-  useCode(code, true);
-};
-$('btn-load').onclick = () => {
-  const p = PH.parseCode($('in-load').value);
-  if (!p) { alertBox('題組碼不正確，請再確認一次'); return; }
-  useCode(p.code, true);
-  $('in-load').value = '';
-};
-
-function useCode(code, remember) {
-  current = PH.parseCode(code);
-  if (!current) return;
-  // 設定區同步成這個題組碼的設定
-  current.dist.forEach((v, i) => dist[i] = v);
-  document.querySelector(`input[name=mode][value=${current.instant ? 'instant' : 'graded'}]`).checked = true;
-  document.querySelector(`input[name=dir][value=${current.dir}]`).checked = true;
-  $('opt-log').checked = current.showLog;
-  renderLevels();
-  if (remember) rememberCode(code);
-  try { localStorage.setItem('ph-teacher-current', code); } catch (e) {}
-
-  const link = studentLink();
-  $('result').classList.remove('hidden');
-  $('res-code').textContent = PH.prettyCode(code);
-  $('res-link').textContent = link;
-  drawQR('qr-small', link, 150);
-  renderCurrent();
-  projSeed = 0;
-  if (!$('t-project').classList.contains('hidden')) renderProjection();
-  if (!$('t-board').classList.contains('hidden')) refreshBoard();
-}
-const studentLink = () => `${STUDENT_PAGE}?code=${current.code}`;
-
+const readSettings = () => dist.reduce((a, b) => a + b, 0) !== 5 ? null : PH.makeCode({
+  dist: dist.slice(), instant: document.querySelector('input[name=mode]:checked').value === 'instant',
+  dir: document.querySelector('input[name=dir]:checked').value, showLog: $('opt-log').checked });
 function describe(p) {
+  if (!p) return '';
+  if (p.set) p = PH.parseCode(p.set); if (!p) return '';
   const parts = PH.LEVELS.map((lv, i) => p.dist[i] ? `${lv.name}${p.dist[i]}` : '').filter(Boolean).join('、');
   return `${parts}｜${{ fwd: '只正向', rev: '只反向', mix: '正反混合' }[p.dir]}｜${p.instant ? '即時對錯' : '交卷批改'}｜${p.showLog ? '顯示 log' : '不顯示 log'}`;
 }
+
+/* ---------- 活動 ---------- */
+const T = await startTeacher({ sys: 'ph', gate: $('gate'), main: $('main'), panel: $('act-panel'), settings: $('setform'), readSettings, describe, onSelect });
+function onSelect(meta, code) {
+  legacy = false; META = meta; CODE = code; current = meta ? PH.parseCode(meta.set) : null; projSeed = 0;
+  RECS = {}; renderCurrent(); refresh();
+  T.listen(code, (v, err) => { if (legacy) return; if (err) { $('bd-note').textContent = '⚠️ 讀不到作答資料：' + (err.code || err.message); return; } RECS = v; refresh(); });
+}
 function renderCurrent() {
-  $('current').innerHTML = current
-    ? `<span>目前題組碼</span><span class="code">${PH.prettyCode(current.code)}</span><span class="meta">${describe(current)}</span>`
-    : `<span class="meta">尚未選擇題組碼：請在「出題設定」產生或載入一組</span>`;
+  $('current').classList.toggle('hidden', !legacy && !!current);   // 目前活動已經顯示在上面的活動卡，只有看舊題組碼時才顯示這一條
+  $('current').innerHTML = current ? `<span>${legacy ? '📂 舊題組碼' : '目前活動'}</span><span class="code">${legacy ? PH.prettyCode(current.code) : CODE}</span><span class="meta">${legacy ? '' : esc(LAB.label(META)) + '｜'}${describe(current)}</span>`
+    : '<span class="meta">還沒有選活動：在上面「我的活動」選一個，或按「➕ 開新活動」</span>';
 }
 
-function rememberCode(code) {
-  const list = [{ code, t: Date.now() }, ...loadRecent().filter(x => x.code !== code)].slice(0, 20);
-  saveRecent(list);
-  renderRecent();
-}
-function loadRecent() { try { return JSON.parse(localStorage.getItem('ph-teacher-recent') || '[]'); } catch (e) { return []; } }
-function saveRecent(list) { try { localStorage.setItem('ph-teacher-recent', JSON.stringify(list)); } catch (e) {} }
-// 從清單移除（只刪老師頁的紀錄，學生作答資料不受影響；要再用時輸入題組碼即可載入）
-function removeRecent(code) {
-  saveRecent(loadRecent().filter(x => x.code !== code));
-  try { if (localStorage.getItem('ph-teacher-current') === code) localStorage.removeItem('ph-teacher-current'); } catch (e) {}
-  renderRecent();
-}
-function renderRecent() {
-  const list = loadRecent();
-  $('recent').innerHTML = list.length ? '<span class="hint">最近用過：</span>' + list.map(x => {
-    const p = PH.parseCode(x.code); if (!p) return '';
-    const d = new Date(x.t);
-    return `<span class="rc"><button class="use" data-c="${x.code}" title="${esc(describe(p))}">${PH.prettyCode(x.code)}・${d.getMonth() + 1}/${d.getDate()}</button><button class="del" data-c="${x.code}" title="從清單移除">✕</button></span>`;
-  }).join('') + '<button class="clear" id="btn-clear-recent">🗑️ 全部清除</button>' : '';
-  $('recent').querySelectorAll('.use').forEach(b => b.onclick = () => useCode(b.dataset.c, true));
-  $('recent').querySelectorAll('.del').forEach(b => b.onclick = () => removeRecent(b.dataset.c));
-  const clr = $('btn-clear-recent');
-  if (clr) clr.onclick = () => {
-    if (!confirm('確定要清除全部「最近用過」的題組碼嗎？\n（只是從清單移除，學生的作答紀錄不會被刪掉）')) return;
-    saveRecent([]);
-    try { localStorage.removeItem('ph-teacher-current'); } catch (e) {}
-    renderRecent();
-  };
-}
+/* ---------- 分頁 ---------- */
+let tab = 'board';
+document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b));
+  ['board', 'stats', 'project', 'print'].forEach(x => $('t-' + x).classList.toggle('hidden', x !== tab)); refresh(); });
 
-$('btn-copy').onclick = async () => {
-  try { await navigator.clipboard.writeText(studentLink()); $('btn-copy').textContent = '✔ 已複製'; }
-  catch (e) { $('btn-copy').textContent = '請手動複製上方連結'; }
-  setTimeout(() => $('btn-copy').textContent = '📋 複製學生連結', 1800);
+/* ---------- 轉接器（給 lab223-board.js） ---------- */
+const A = () => ({ N: PH.CONFIG.QUESTIONS, qs: (c, s) => PH.forStudent(current, c, s), isCorrect: PH.isCorrect, level: q => q.level, LEVELS: PH.LEVELS,
+  kind: PH.kindOf, KIND: PH.KIND, diagnose: PH.diagnose, DIAG: PH.DIAG, qText: PH.concText, qHTML: PH.concHTML,
+  ansText: q => PH.ansText(q).replace(/^.*?= /, ''), fmt: PH.formatAnswerStr, instant: current.instant });
+function refresh() {
+  if (tab === 'project') return renderProjection();
+  if (tab === 'print') return;
+  if (!current) { $('bd-table').innerHTML = $('st-body').innerHTML = '<p class="hint">請先選一個活動。</p>'; $('bd-note').textContent = ''; return; }
+  ROWS = LabBoard.rows(RECS, A());
+  const list = LabBoard.applyFilter(ROWS, SEL);
+  if (tab === 'board') {
+    LabBoard.filterBar('bd-filter', ROWS, SEL, refresh);
+    $('bd-note').textContent = `${legacy ? '舊紀錄' : '🟢 即時更新'}：共 ${ROWS.length} 人進來，篩選後 ${list.length} 人${META && !legacy && !META.open ? '｜⏸ 活動目前停止中' : ''}　·　${new Date().toLocaleTimeString('zh-TW')}`;
+    $('bd-table').innerHTML = LabBoard.boardHTML(list, A());
+  } else if (tab === 'stats') {
+    LabBoard.filterBar('st-filter', ROWS, SEL, refresh);
+    $('st-body').innerHTML = LabBoard.statsHTML(list, A());
+  }
+}
+$('btn-xlsx').onclick = () => {
+  if (!current) return;
+  const list = LabBoard.applyFilter(ROWS, SEL);
+  const s3 = []; list.forEach(x => x.qs.forEach((q, i) => s3.push({ 班級: x.cls, 座號: x.seat, 題號: i + 1, 難度: PH.LEVELS[q.level].name, 題型: PH.KIND[PH.kindOf(q)], 題目: PH.concText(q), 答案: PH.ansText(q), 解法: PH.solution(q).join('；') })));
+  LabBoard.xlsx(list, A(), `消失的指示劑_${legacy ? PH.prettyCode(current.code) : (META.term + '_第' + META.item + '次_' + CODE)}.xlsx`, [['題目與解法', s3]]);
 };
+// 改版前的舊題組碼：只讀一次，不能改
+$('btn-load').onclick = async () => {
+  const p = PH.parseCode($('in-load').value); if (!p) return alert('題組碼不正確，請再確認一次');
+  legacy = true; current = p; renderCurrent(); $('bd-note').textContent = '讀取中…';
+  try { RECS = await PH.fetchAll(p.code); } catch (e) { RECS = {}; $('bd-note').textContent = '⚠️ 讀不到舊資料'; }
+  refresh();
+};
+$('btn-unload').onclick = () => { if (META) onSelect(META, CODE); };
 
-function drawQR(id, text, size) {
-  const box = $(id); box.innerHTML = '';
-  if (typeof QRCode === 'undefined') { box.innerHTML = '<div class="hint">（QR Code 載入失敗）</div>'; return; }
-  new QRCode(box, { text, width: size, height: size, correctLevel: QRCode.CorrectLevel.M });
-}
-function showOverlay() {
-  if (!current) return alertBox('請先產生或載入題組碼');
-  $('overlay').classList.remove('hidden');
-  $('ov-code').textContent = PH.prettyCode(current.code);
-  $('ov-url').textContent = studentLink();
-  drawQR('qr-big', studentLink(), 512);
-}
-$('btn-show').onclick = showOverlay;
-$('btn-show2').onclick = showOverlay;
-$('btn-close').onclick = () => $('overlay').classList.add('hidden');
-document.addEventListener('keydown', e => { if (e.key === 'Escape') $('overlay').classList.add('hidden'); });
-
-function alertBox(msg) { $('current').innerHTML = `<span style="color:#ffb4a8">⚠️ ${esc(msg)}</span>`; setTimeout(renderCurrent, 2500); }
-function needCode() { if (!current) { alertBox('請先在「出題設定」產生或載入題組碼'); return false; } return true; }
-
-/* ---------- ② 投影 ---------- */
+/* ---------- 投影 ---------- */
 let projSeed = 0;
 function renderProjection() {
-  if (!current) { $('proj-list').innerHTML = '<p class="hint">請先產生或載入題組碼。</p>'; return; }
+  if (!current) { $('proj-list').innerHTML = '<p class="hint">請先選一個活動。</p>'; return; }
   const qs = PH.generate(current, 'PROJECT|' + projSeed);
-  $('proj-list').innerHTML = qs.map((q, i) => {
-    const lv = PH.LEVELS[q.level];
-    return `<div class="proj-q">
-      <div class="top"><span>第 ${i + 1} 題</span><span>${lv.stars} ${lv.name}</span></div>
-      <div class="conc">${PH.concHTML(q)}</div>
-      <button class="btn ghost" data-i="${i}">顯示答案</button>
-      <div class="sol hidden" id="sol${i}">${PH.solution(q).map(esc).join('<br>')}<div class="ans">${PH.ansHTML(q)}</div></div>
-    </div>`;
-  }).join('');
-  $('proj-list').querySelectorAll('button[data-i]').forEach(b => b.onclick = () => {
-    const s = $('sol' + b.dataset.i); s.classList.toggle('hidden');
-    b.textContent = s.classList.contains('hidden') ? '顯示答案' : '隱藏答案';
-  });
+  $('proj-list').innerHTML = qs.map((q, i) => { const lv = PH.LEVELS[q.level];
+    return `<div class="proj-q"><div class="top"><span>第 ${i + 1} 題</span><span>${lv.stars} ${lv.name}</span></div><div class="conc">${PH.concHTML(q)}</div>
+      <button class="btn ghost" data-i="${i}">顯示答案</button><div class="sol hidden" id="sol${i}">${PH.solution(q).map(esc).join('<br>')}<div class="ans">${PH.ansHTML(q)}</div></div></div>`; }).join('');
+  $('proj-list').querySelectorAll('button[data-i]').forEach(b => b.onclick = () => { const s = $('sol' + b.dataset.i); s.classList.toggle('hidden'); b.textContent = s.classList.contains('hidden') ? '顯示答案' : '隱藏答案'; });
 }
 $('btn-proj-new').onclick = () => { projSeed++; renderProjection(); };
 $('btn-proj-all').onclick = () => document.querySelectorAll('#proj-list .sol').forEach(s => s.classList.remove('hidden'));
 $('btn-proj-hide').onclick = () => document.querySelectorAll('#proj-list .sol').forEach(s => s.classList.add('hidden'));
 
-/* ---------- ③ 列印 ---------- */
+/* ---------- 列印 ---------- */
 $('btn-print').onclick = () => {
-  if (!needCode()) return;
-  const cls = PH.normalizeClass($('pr-cls').value);
-  const from = parseInt($('pr-from').value, 10), to = parseInt($('pr-to').value, 10);
-  if (!cls || !(from >= 1) || !(to >= from)) return alertBox('請填好班級和座號範圍');
+  if (!current) return alert('請先選一個活動');
+  const cls = LAB.normClass($('pr-cls').value), from = parseInt($('pr-from').value, 10), to = parseInt($('pr-to').value, 10);
+  if (!cls || !(from >= 1) || !(to >= from)) return alert('請填好班級和座號範圍');
+  try { localStorage.setItem('ph-teacher-print', cls); } catch (e) {}
   const seats = []; for (let s = from; s <= to; s++) seats.push(s);
+  const tag = legacy ? '題組碼 ' + PH.prettyCode(current.code) : '活動 ' + CODE;
   const logLine = current.showLog ? '<div class="logline">log 2 = 0.30　log 3 = 0.48　log 5 = 0.70　log 7 = 0.85</div>' : '';
   let html = '';
-  if ($('pr-sheets').checked) {
-    html += seats.map(seat => {
-      const qs = PH.forStudent(current, cls, seat);
-      return `<div class="sheet"><h4>🧪 消失的指示劑（pH 值計算）　<span style="font-weight:400;font-size:10pt">題組碼 ${PH.prettyCode(current.code)}</span></h4>
-        <div class="who"><span>班級：${esc(cls)}</span><span>座號：${seat}</span><span>姓名：＿＿＿＿＿＿＿</span></div>${logLine}
-        <ol>${qs.map(q => `<li>${PH.concHTML(q)}　　${PH.blankHTML(q)}</li>`).join('')}</ol></div>`;
-    }).join('');
-  }
+  if ($('pr-sheets').checked) html += seats.map(seat => { const qs = PH.forStudent(current, cls, seat);
+    return `<div class="sheet"><h4>🧪 消失的指示劑（pH 值計算）　<span style="font-weight:400;font-size:10pt">${tag}</span></h4>
+      <div class="who"><span>班級：${esc(cls)}</span><span>座號：${seat}</span><span>姓名：＿＿＿＿＿＿＿</span></div>${logLine}
+      <ol>${qs.map(q => `<li>${PH.concHTML(q)}　　${PH.blankHTML(q)}</li>`).join('')}</ol></div>`; }).join('');
   if ($('pr-key').checked) {
     if (html) html += '<div class="pb"></div>';
-    html += `<h3 style="margin-bottom:8px">解答表｜${esc(cls)} 班｜題組碼 ${PH.prettyCode(current.code)}</h3>
-      <table class="keytable"><tr><th>座號</th><th>題目與解法</th></tr>` +
-      seats.map(seat => `<tr><td>${seat}</td><td>${PH.forStudent(current, cls, seat).map((q, i) =>
-        `${i + 1}. ${esc(PH.concText(q))} → <b>${PH.ansHTML(q)}</b><br><span style="color:#555">${PH.solution(q).map(esc).join('；')}</span>`).join('<br>')}</td></tr>`).join('') +
-      `</table>`;
+    html += `<h3 style="margin-bottom:8px">解答表｜${esc(cls)} 班｜${tag}</h3><table class="keytable"><tr><th>座號</th><th>題目與解法</th></tr>` +
+      seats.map(seat => `<tr><td>${seat}</td><td>${PH.forStudent(current, cls, seat).map((q, i) => `${i + 1}. ${esc(PH.concText(q))} → <b>${PH.ansHTML(q)}</b><br><span style="color:#555">${PH.solution(q).map(esc).join('；')}</span>`).join('<br>')}</td></tr>`).join('') + '</table>';
   }
-  if (!html) return alertBox('請至少勾選一種要列印的內容');
-  $('print-area').innerHTML = html;
-  window.print();
+  if (!html) return alert('請至少勾選一種要列印的內容');
+  $('print-area').innerHTML = html; window.print();
 };
-
-/* ---------- ④ 全班總表 ---------- */
-let boardData = null, autoTimer = null;
-function setAuto() {
-  clearInterval(autoTimer);
-  if ($('bd-auto').checked && !$('t-board').classList.contains('hidden'))
-    autoTimer = setInterval(() => { if (!document.hidden) refreshBoard(); }, 10000); // 分頁在背景就不抓（2026-10-18 連線健檢）
-}
-$('bd-auto').onchange = setAuto;
-$('btn-refresh').onclick = refreshBoard;
-$('bd-cls').onchange = refreshBoard;
-$('bd-n').onchange = refreshBoard;
-
-async function refreshBoard() {
-  if (!current) { $('bd-table').innerHTML = '<p class="hint">請先產生或載入題組碼。</p>'; return; }
-  const cls = PH.normalizeClass($('bd-cls').value);
-  if (!cls) { $('bd-note').textContent = '請輸入班級。'; $('bd-table').innerHTML = ''; return; }
-  try { localStorage.setItem('ph-teacher-board', JSON.stringify({ cls, n: $('bd-n').value })); } catch (e) {}
-  $('bd-note').textContent = '讀取中…';
-  let all = {};
-  try { all = await PH.fetchAll(current.code); }
-  catch (e) { console.error(e); $('bd-note').textContent = '⚠️ 讀不到作答資料，請檢查網路或 Firebase 規則。'; }
-  const recs = {};
-  Object.values(all).forEach(r => { if (r && PH.normalizeClass(r.cls) === cls) recs[Number(r.seat)] = r; });
-  const n = Math.max(parseInt($('bd-n').value, 10) || 0, ...Object.keys(recs).map(Number), 0);
-  const N = PH.CONFIG.QUESTIONS;
-  const rows = [];
-  for (let seat = 1; seat <= n; seat++) {
-    const qs = PH.forStudent(current, cls, seat);
-    const r = recs[seat];
-    const answers = PH.toArray(r?.answers, N, '').map(String);
-    const attempts = PH.toArray(r?.attempts, N, 0).map(Number);
-    const correct = qs.map((q, i) => PH.isCorrect(q, answers[i]));
-    const filled = answers.filter(a => a.trim()).length;
-    const nCorrect = correct.filter(Boolean).length;
-    let status = 'none';
-    if (r) status = nCorrect === N ? 'all' : r.submitted ? 'sub' : 'doing';
-    rows.push({ seat, name: r?.name || '', qs, answers, attempts, correct, filled, nCorrect, status, r });
-  }
-  boardData = { cls, rows };
-  const joined = rows.filter(x => x.r).length;
-  $('bd-note').textContent = `${cls} 班：${joined} 人已領題　·　更新時間 ${new Date().toLocaleTimeString('zh-TW')}`;
-  const ST = { none: ['st-none', '未領題'], doing: ['st-doing', '作答中'], sub: ['st-sub', '已交卷'], all: ['st-all', '全對'] };
-  const instant = current.instant;
-  const head = `<tr><th>座號</th><th>姓名</th>${Array.from({ length: N }, (_, i) => `<th>第 ${i + 1} 題</th>`).join('')}<th>答對</th><th>狀態</th></tr>`;
-  const body = rows.map(x => `<tr>
-    <td>${x.seat}</td><td>${esc(x.name)}</td>
-    ${x.qs.map((q, i) => {
-      const a = x.answers[i].trim();
-      const cls2 = a ? (x.correct[i] ? 'ok' : 'bad') : '';
-      return `<td class="qcell"><div class="qtxt">${esc(PH.concText(q))}</div><div class="key">解 ${PH.ansHTML(q).replace(/^.*?= /, '')}</div>
-        <div class="stu ${cls2}">${a ? esc(PH.formatAnswerStr(a)) + (x.correct[i] ? ' ✓' : ' ✗') : (x.r ? '—' : '')}</div>
-        ${instant && x.attempts[i] ? `<div class="tries">試 ${x.attempts[i]} 次</div>` : ''}</td>`;
-    }).join('')}
-    <td><b>${x.r ? x.nCorrect : ''}</b></td><td><span class="status ${ST[x.status][0]}">${ST[x.status][1]}</span></td></tr>`).join('');
-  const active = rows.filter(x => x.r);
-  const rate = i => active.length ? `${active.filter(x => x.correct[i]).length} / ${active.length}` : '—';
-  const summary = `<tr class="summary"><td colspan="2">答對人數 / 領題人數</td>${Array.from({ length: N }, (_, i) => `<td>${rate(i)}</td>`).join('')}<td colspan="2"></td></tr>`;
-  $('bd-table').innerHTML = `<table>${head}${body}${summary}</table>`;
-}
-
-$('btn-xlsx').onclick = async () => {
-  if (!needCode()) return;
-  if (!boardData) await refreshBoard();
-  if (!boardData) return;
-  if (typeof XLSX === 'undefined') return alertBox('Excel 元件載入失敗，請檢查網路後重新整理');
-  const N = PH.CONFIG.QUESTIONS, code = PH.prettyCode(current.code);
-  const ST = { none: '未領題', doing: '作答中', sub: '已交卷', all: '全對' };
-  const sheet1 = boardData.rows.map(x => {
-    const o = { 座號: x.seat, 姓名: x.name };
-    x.qs.forEach((q, i) => {
-      o[`第${i + 1}題 題目`] = PH.concText(q);
-      o[`第${i + 1}題 正解`] = PH.ansText(q);
-      o[`第${i + 1}題 作答`] = PH.formatAnswerStr(x.answers[i]);
-      o[`第${i + 1}題 對錯`] = x.answers[i].trim() ? (x.correct[i] ? '✓' : '✗') : '';
-      if (current.instant) o[`第${i + 1}題 嘗試次數`] = x.attempts[i] || '';
-    });
-    o['答對題數'] = x.r ? x.nCorrect : '';
-    o['狀態'] = ST[x.status];
-    o['最後更新'] = x.r?.ts ? new Date(x.r.ts).toLocaleString('zh-TW') : '';
-    return o;
-  });
-  const sheet2 = [];
-  boardData.rows.forEach(x => {
-    const h = Array.isArray(x.r?.history) ? x.r.history : Object.values(x.r?.history || {});
-    h.forEach(([qi, val, ok, t]) => sheet2.push({ 座號: x.seat, 姓名: x.name, 題號: qi + 1, 題目: PH.concText(x.qs[qi]),
-      作答: PH.formatAnswerStr(val), 對錯: ok ? '✓' : '✗', 時間: new Date(t).toLocaleString('zh-TW') }));
-  });
-  const sheet3 = [];
-  boardData.rows.forEach(x => x.qs.forEach((q, i) => sheet3.push({ 座號: x.seat, 題號: i + 1, 難度: PH.LEVELS[q.level].name,
-    題目: PH.concText(q), 答案: PH.ansText(q), 解法: PH.solution(q).join('；') })));
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sheet1), '全班總表');
-  if (current.instant) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sheet2.length ? sheet2 : [{ 說明: '尚無作答紀錄' }]), '作答歷程');
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sheet3), '題目與解法');
-  XLSX.writeFile(wb, `消失的指示劑_${boardData.cls}班_${code}.xlsx`);
-};
-
-/* ---------- 啟動 ---------- */
-renderLevels();
-renderRecent();
-try {
-  const b = JSON.parse(localStorage.getItem('ph-teacher-board') || 'null');
-  if (b) { $('bd-cls').value = b.cls || ''; $('bd-n').value = b.n || 35; $('pr-cls').value = b.cls || ''; }
-  const c = localStorage.getItem('ph-teacher-current');
-  if (c) useCode(c, false);
-} catch (e) {}
-renderCurrent();
+try { const c = localStorage.getItem('ph-teacher-print'); if (c) $('pr-cls').value = c; } catch (e) {}
+renderLevels(); renderCurrent();
 </script>
 </body>
 </html>

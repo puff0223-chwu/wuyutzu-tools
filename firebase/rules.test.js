@@ -211,5 +211,63 @@ expect('老師讀自己的任務清單', ss, SRC_TEA, R, '/secret-source/owners/
 expect('老師寫自己的任務清單', ss, SRC_TEA, W, '/secret-source/owners/SRCT/ABCDEF', { name: 'x', at: 1, roster: '110 a' }, true);
 expect('不能寫別人的任務清單', ss, SRC_TEA, W, '/secret-source/owners/TEA/ABCDEF', { name: 'x', at: 1 }, false);
 expect('會員申請可以選 src', ss, STRANGER, W, '/staff/BAD', { email: 'bad@evil.com', name: 'B', school: 'S', purpose: 'p', want: { src: true }, at: 1, status: 'pending' }, true);
+// ⚗️ 化學實驗室 No.223（2026-10-22）：lab223 活動
+console.log('— ⚗️ 化學實驗室 No.223 —');
+const LAB_TEA = U('LABT', 'labt@school.edu.tw', true);
+const labBase = Object.assign({}, base, { staff: Object.assign({}, base.staff, { LABT: { email: 'labt@school.edu.tw', name: 'L', school: 'S', purpose: 'p', want: { lab: true }, at: 1, status: 'approved', apps: { lab: true } } }),
+  lab223: { m: {
+    KPENAA: { meta: { owner: 'LABT', sys: 'ph', term: '115-1', item: 1, name: '', open: true, at: 1, set: 'ABCDEFG' } },
+    SHUTAA: { meta: { owner: 'LABT', sys: 'ph', term: '115-1', item: 2, name: '', open: false, at: 1, set: 'ABCDEFG' } },
+    ADMNAA: { meta: { owner: 'MAIN', sys: 'eq', term: '115-1', item: 1, open: true, at: 1, set: '30|3|all', admin: true } },
+    DXNEAA: { meta: { owner: 'LABT', sys: 'ph', term: '115-1', item: 3, open: true, at: 1, set: 'ABCDEFG' }, r: { '101_1': { cls: '101', seat: 1, no: '1150001', name: 'a', use: '正式進度', ts: 1, submitted: true } } }
+  } } });
+const lrec = { cls: '101', seat: 7, no: '1150007', name: '王小明', use: '考試複習', ts: 1, answers: ['1'] };
+const lmeta = { owner: 'LABT', sys: 'unit', term: '115-1', item: 4, name: '301', open: false, at: 1, set: 'ABCDEFG' };
+expect('開通 lab 的老師開活動', labBase, LAB_TEA, W, '/lab223/m/NEWACT/meta', lmeta, true);
+expect('沒開通 lab 的老師不能開活動', labBase, TEA, W, '/lab223/m/NEWACT/meta', Object.assign({}, lmeta, { owner: 'TEA' }), false);
+expect('活動 owner 不能寫成別人', labBase, LAB_TEA, W, '/lab223/m/NEWACT/meta', Object.assign({}, lmeta, { owner: 'TEA' }), false);
+expect('學期格式要對', labBase, LAB_TEA, W, '/lab223/m/NEWACT/meta', Object.assign({}, lmeta, { term: '2026' }), false);
+expect('項次要 1～99', labBase, LAB_TEA, W, '/lab223/m/NEWACT/meta', Object.assign({}, lmeta, { item: 0 }), false);
+expect('系統代號只能 eq／ph／unit', labBase, LAB_TEA, W, '/lab223/m/NEWACT/meta', Object.assign({}, lmeta, { sys: 'xx' }), false);
+expect('一般老師不能自己加 admin 旗標', labBase, LAB_TEA, W, '/lab223/m/NEWACT/meta', Object.assign({}, lmeta, { admin: true }), false);
+expect('管理員開活動可以加 admin 旗標', labBase, MAIN, W, '/lab223/m/NEWAD2/meta', Object.assign({}, lmeta, { owner: 'MAIN', admin: true }), true);
+expect('老師開始／停止自己的活動', labBase, LAB_TEA, W, '/lab223/m/SHUTAA/meta/open', true, true);
+expect('老師改學期、項次', labBase, LAB_TEA, 'update', '/lab223/m/SHUTAA/meta', { term: '115-2', item: 5, name: '改名' }, true);
+expect('活動建好後題目設定不能改', labBase, LAB_TEA, W, '/lab223/m/SHUTAA/meta/set', 'ZZZZZZZ', false);
+expect('別的老師不能停止別人的活動', labBase, MAIN_UNVERIFIED, W, '/lab223/m/KPENAA/meta/open', false, false);
+expect('學生（沒登入）不能開始活動', labBase, null, W, '/lab223/m/SHUTAA/meta/open', true, false);
+expect('任何人讀得到活動資訊（學生要知道開了沒）', labBase, null, R, '/lab223/m/KPENAA/meta', null, true);
+expect('活動進行中學生可以寫自己的紀錄', labBase, null, W, '/lab223/m/KPENAA/r/101_7', lrec, true);
+expect('活動停止後學生不能寫', labBase, null, W, '/lab223/m/SHUTAA/r/101_7', lrec, false);
+expect('管理員的活動學生可以寫（admin 旗標）', labBase, null, W, '/lab223/m/ADMNAA/r/101_7', lrec, true);
+expect('學生紀錄要有學號、用途', labBase, null, W, '/lab223/m/KPENAA/r/101_7', { cls: '101', seat: 7, name: 'a', ts: 1 }, false);
+expect('用途只能三種', labBase, null, W, '/lab223/m/KPENAA/r/101_7', Object.assign({}, lrec, { use: '好玩' }), false);
+expect('學號格式要對', labBase, null, W, '/lab223/m/KPENAA/r/101_7', Object.assign({}, lrec, { no: '王' }), false);
+expect('紀錄位置要是 班級_座號', labBase, null, W, '/lab223/m/KPENAA/r/abc', lrec, false);
+expect('學生 PATCH 更新自己的紀錄', labBase, null, 'update', '/lab223/m/KPENAA/r/101_7', Object.assign({}, lrec, { 'it/beaker': { o: 1, x: 0 } }), true);
+expect('交卷後不能再改', labBase, null, W, '/lab223/m/DXNEAA/r/101_1', { cls: '101', seat: 1, no: '1150001', name: 'a', use: '正式進度', ts: 2 }, false);
+expect('學生讀得到自己的紀錄', labBase, null, R, '/lab223/m/KPENAA/r/101_7', null, true);
+expect('學生讀不到全班紀錄', labBase, null, R, '/lab223/m/KPENAA/r', null, false);
+expect('活動老師讀得到全班紀錄', labBase, LAB_TEA, R, '/lab223/m/KPENAA/r', null, true);
+expect('學生不能刪自己的紀錄', labBase, null, W, '/lab223/m/DXNEAA/r/101_1', null, false);
+expect('活動老師刪一筆學生紀錄', labBase, LAB_TEA, W, '/lab223/m/DXNEAA/r/101_1', null, true);
+expect('活動老師刪除整個活動', labBase, LAB_TEA, W, '/lab223/m/DXNEAA', null, true);
+expect('別的老師不能刪整個活動', labBase, TEA, W, '/lab223/m/DXNEAA', null, false);
+const lb = { cls: '101', seat: 7, name: '王小明', score: 900, correct: 10, total: 10, seconds: 40, cleared: true, at: 1 };
+expect('活動排行榜：學生寫自己的最佳成績', labBase, null, W, '/lab223/m/KPENAA/lb/101_7', lb, true);
+expect('活動排行榜：停止後不能寫', labBase, null, W, '/lab223/m/SHUTAA/lb/101_7', lb, false);
+expect('活動排行榜：分數超過上限不行', labBase, null, W, '/lab223/m/KPENAA/lb/101_7', Object.assign({}, lb, { score: 99999 }), false);
+expect('活動排行榜：不能塞學號等其他欄位', labBase, null, W, '/lab223/m/KPENAA/lb/101_7', Object.assign({}, lb, { no: '1150007' }), false);
+expect('任何人讀得到活動排行榜', labBase, null, R, '/lab223/m/KPENAA/lb', null, true);
+expect('老師讀自己的活動清單', labBase, LAB_TEA, R, '/lab223/owners/LABT', null, true);
+expect('老師寫自己的活動清單', labBase, LAB_TEA, W, '/lab223/owners/LABT/NEWACT', { sys: 'ph', term: '115-1', item: 1, at: 1, open: false }, true);
+expect('不能讀別人的活動清單', labBase, LAB_TEA, R, '/lab223/owners/TEA', null, false);
+expect('舊題組碼抽屜改成唯讀（pH）', labBase, null, W, '/ph-generator/ABCDEFG/101_7', { cls: '101', seat: 7, name: 'a', ts: 1 }, false);
+expect('舊題組碼抽屜改成唯讀（單位換算）', labBase, null, W, '/unit-convert/ABCDEFG/101_7', { cls: '101', seat: 7, name: 'a', ts: 1 }, false);
+expect('舊題組碼紀錄還讀得到', labBase, null, R, '/ph-generator/ABCDEFG', null, true);
+expect('會員申請可以選 lab', labBase, STRANGER, W, '/staff/BAD', { email: 'bad@evil.com', name: 'B', school: 'S', purpose: 'p', want: { lab: true }, at: 1, status: 'pending' }, true);
+expect('核准的老師不能自己加開 lab', labBase, TEA, W, '/staff/TEA', Object.assign({}, base.staff.TEA, { apps: Object.assign({}, base.staff.TEA.apps, { lab: true }) }), false);
+expect('核准的老師不能自己加開 src（補洞）', labBase, TEA, W, '/staff/TEA', Object.assign({}, base.staff.TEA, { apps: Object.assign({}, base.staff.TEA.apps, { src: true }) }), false);
+expect('核准的老師可以改自己的姓名學校', labBase, TEA, W, '/staff/TEA', Object.assign({}, base.staff.TEA, { name: '新名字' }), true);
 console.log(`\n${fail ? '❌' : '✅'} 通過 ${pass} 項，失敗 ${fail} 項`);
 process.exit(fail ? 1 : 0);

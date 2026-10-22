@@ -290,6 +290,39 @@ const PH = (() => {
     return Math.abs(v * 100 - q.ans) < 1e-6;
   }
 
+  /* ---------- 錯誤診斷（2026-10-22，老師頁能力分析用）----------
+     diagnose(q, 學生答案) → 錯誤類型代號；看學生寫出的數字最像哪一種常見錯誤 */
+  const DIAG = {
+    pohph: 'pH／pOH 搞混', exponly: '只看次方、沒算係數的 log', logdir: '係數 log 加減方向錯', sign: '正負號錯',
+    coef: '係數反推錯（次方對）', expoff: '次方差 1（係數沒調成 1～10）', blank: '沒有作答', calc: '其他計算錯誤'
+  };
+  function diagnose(q, input) {
+    if (!String(input || '').trim()) return 'blank';
+    const v = parseAnswer(input);
+    if (v === null || !isFinite(v)) return 'calc';
+    const near = (a, b, t = 0.015) => Math.abs(a - b) <= t;
+    if (q.dir !== 'rev') {
+      const a = q.ans / 100, L = q.coef.L / 100, n = q.exp;
+      if (near(v, -a)) return 'sign';
+      if (near(v, 14 - a)) return 'pohph';
+      if (q.coef.h !== 100 && (near(v, n) || (q.type === 'OH' && near(v, 14 - n)))) return 'exponly';
+      if (q.coef.h !== 100 && (q.type === 'H' ? near(v, n + L) : near(v, 14 - n - L) || near(v, n + L))) return 'logdir';
+      return 'calc';
+    }
+    if (v <= 0) return 'sign';
+    const rel = (a, b) => Math.abs(a - b) <= Math.abs(b) * 0.01;
+    if (rel(v, 1e-14 / q.val)) return 'pohph';
+    if (rel(v, q.coef.h / 100 * 10 ** q.exp)) return 'sign';
+    const k = Math.floor(Math.log10(v) + 1e-9), kk = Math.floor(Math.log10(q.val) + 1e-9);
+    const mv = v / 10 ** k, mq = q.val / 10 ** kk;
+    if (k === kk) return 'coef';
+    if (Math.abs(k - kk) === 1 && (rel(mv, mq) || rel(v * 10, q.val) || rel(v / 10, q.val))) return 'expoff';
+    return 'calc';
+  }
+  // 題型名稱（能力分析的分類）
+  const KIND = { H: '[H⁺] → pH', OH: '[OH⁻] → pH', pH2H: 'pH → [H⁺]', pOH2OH: 'pOH → [OH⁻]', pH2OH: 'pH → [OH⁻]' };
+  const kindOf = q => q.dir === 'rev' ? q.kind : q.type;
+
   /* ---------- Firebase ---------- */
   function studentId(cls, seat) {
     return `${normalizeClass(cls)}_${Number(seat)}`.replace(/[.$#\[\]\/\x00-\x1F\x7F]/g, '_');
@@ -324,6 +357,6 @@ const PH = (() => {
     makeCode, parseCode, normalizeCode, prettyCode,
     generate, forStudent, normalizeClass,
     concHTML, concText, askHTML, ansHTML, ansText, blankHTML, formatAnswerStr, solution, fix2, isCorrect, parseAnswer, DIRS,
-    studentId, fetchRecord, fetchAll, saveRecord, toArray, escapeHtml
+    studentId, fetchRecord, fetchAll, saveRecord, toArray, escapeHtml, DIAG, diagnose, KIND, kindOf
   };
 })();

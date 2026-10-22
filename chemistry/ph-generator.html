@@ -99,19 +99,10 @@
   <div class="case-no">CASE FILE · 化學實驗室 No.223 · 第二案</div>
   <h1>消失的<span>指示劑</span></h1>
   <p class="story">石蕊、酚酞、廣用試紙……實驗室裡所有的<b>酸鹼指示劑</b>一夜之間全被偷走了！<br>
-  沒有指示劑，只能靠<b>計算</b>判斷每一瓶溶液的 pH 值。輸入老師給的題組碼，領取你負責鑑定的 5 瓶溶液樣本。</p>
+  沒有指示劑，只能靠<b>計算</b>判斷每一瓶溶液的 pH 值。輸入老師給的<b>活動代碼</b>，領取你負責鑑定的 5 瓶溶液樣本。</p>
 
-  <!-- 領題 -->
-  <section id="join" class="paper">
-    <div class="grid">
-      <div class="wide"><label for="in-code">題組碼</label><input id="in-code" class="code-input" type="text" maxlength="9" placeholder="例：4TJ-6NKY" autocomplete="off"></div>
-      <div><label for="in-cls">班級</label><input id="in-cls" type="text" maxlength="10" placeholder="例：101"></div>
-      <div><label for="in-seat">座號</label><input id="in-seat" type="number" min="1" max="99" placeholder="例：7"></div>
-      <div class="wide"><label for="in-name">姓名</label><input id="in-name" type="text" maxlength="12" placeholder="你的名字"></div>
-    </div>
-    <div class="err" id="join-err"></div>
-    <button class="btn" id="btn-join" style="width:100%;margin-top:6px">開始鑑定樣本 🧪</button>
-  </section>
+  <!-- 領題：活動代碼＋用途＋班級座號學號姓名（lab223.js） -->
+  <section id="join" class="paper"><div id="login"></div></section>
 
   <!-- 作答 -->
   <section id="work" class="hidden">
@@ -123,39 +114,25 @@
   </section>
 </div>
 
-<script src="ph-core.js?v=20261004a"></script>
+<script src="ph-core.js?v=20261022a"></script>
+<script src="lab223.js?v=20261022a"></script>
 <script>
 const $ = id => document.getElementById(id);
 let S = null;   // { parsed, cls, seat, name, sid, qs, answers, attempts, solved, history, submitted }
 
-/* ---------- 領題 ---------- */
-const urlCode = new URLSearchParams(location.search).get('code');
-if (urlCode) $('in-code').value = PH.prettyCode(PH.normalizeCode(urlCode));
-try {
-  const saved = JSON.parse(localStorage.getItem('ph-student') || 'null');
-  if (saved) { $('in-cls').value = saved.cls || ''; $('in-seat').value = saved.seat || ''; $('in-name').value = saved.name || ''; }
-} catch (e) {}
-
-$('btn-join').onclick = join;
-async function join() {
-  const parsed = PH.parseCode($('in-code').value);
-  const cls = PH.normalizeClass($('in-cls').value);
-  const seat = parseInt($('in-seat').value, 10);
-  const name = $('in-name').value.trim();
-  if (!parsed) return showErr('題組碼不正確，請再確認一次（共 7 個字）');
-  if (!cls || !seat || seat < 1 || !name) return showErr('請把班級、座號、姓名都填好喔！');
-  showErr('');
-  try { localStorage.setItem('ph-student', JSON.stringify({ cls, seat, name })); } catch (e) {}
-
+/* ---------- 領題（2026-10-22 改用活動代碼） ---------- */
+let WATCH = null;
+LAB.studentLogin({ el: $('login'), sys: 'ph', onReady: join });
+async function join(info) {
+  const parsed = PH.parseCode(info.meta.set);
+  if (!parsed) { $('login').innerHTML = '<p class="err">這個活動的設定壞掉了，請告訴老師。</p>'; return; }
   const n = PH.CONFIG.QUESTIONS;
-  S = { parsed, cls, seat, name, sid: PH.studentId(cls, seat), qs: PH.forStudent(parsed, cls, seat),
-        answers: Array(n).fill(''), attempts: Array(n).fill(0), solved: Array(n).fill(false),
-        history: [], submitted: false, firstTs: Date.now() };
-
-  $('btn-join').disabled = true; $('btn-join').textContent = '領取中…';
+  S = { parsed, code: info.code, meta: info.meta, cls: info.cls, seat: info.seat, name: info.name, no: info.no, use: info.use, sid: info.sid,
+        qs: PH.forStudent(parsed, info.cls, info.seat),
+        answers: Array(n).fill(''), attempts: Array(n).fill(0), solved: Array(n).fill(false), history: [], submitted: false, firstTs: Date.now() };
   // 先讀回之前的作答（重新整理或換裝置也接得上）
   try {
-    const rec = await PH.fetchRecord(parsed.code, S.sid);
+    const rec = await LAB.getRec(info.code, info.sid);
     if (rec) {
       S.answers = PH.toArray(rec.answers, n, '').map(String);
       S.attempts = PH.toArray(rec.attempts, n, 0).map(Number);
@@ -165,15 +142,12 @@ async function join() {
       if (parsed.instant) S.solved = S.qs.map((q, i) => PH.isCorrect(q, S.answers[i]));
     }
     setSync('');
-  } catch (e) {
-    console.error(e);
-    setSync('⚠️ 目前連不上伺服器，仍可作答，下次作答時會再送出');
-  }
-  $('btn-join').disabled = false; $('btn-join').textContent = '開始鑑定樣本 🧪';
+  } catch (e) { console.error(e); setSync('⚠️ 目前連不上伺服器，仍可作答，下次作答時會再送出'); }
   render();
+  save();   // 一進來就登記，老師的即時總表馬上看得到
+  // 老師按「停止」→ 鎖住作答；重新開始 → 解鎖
+  WATCH = LAB.watch(S.code, (open, m) => { S.closed = !open; if (m) S.meta = m; LAB.stopOverlay(!open, S.meta); render(); });
 }
-function showErr(msg) { $('join-err').textContent = msg; }
-
 /* ---------- 畫題目 ---------- */
 function render() {
   $('join').classList.add('hidden');
@@ -181,7 +155,7 @@ function render() {
   const p = S.parsed;
   $('info').innerHTML =
     `<span class="chip">${PH.escapeHtml(S.cls)} 班 ${S.seat} 號 <b>${PH.escapeHtml(S.name)}</b></span>` +
-    `<span class="chip">題組碼 ${PH.prettyCode(p.code)}</span>` +
+    `<span class="chip">${PH.escapeHtml(LAB.label(S.meta))}</span>` +
     `<span class="chip">${p.instant ? '✅ 即時對錯' : '📝 交卷後由老師批改'}</span>`;
   $('logbox').classList.toggle('hidden', !p.showLog);
 
@@ -251,6 +225,7 @@ function paintQuestion(i) {
   } else if (S.submitted) {
     lock();
   }
+  if (S.closed) { lock(); const c = $('c' + i); if (c) c.disabled = true; }
 }
 
 /* ---------- 即時對錯 ---------- */
@@ -295,6 +270,7 @@ function renderFoot() {
     $('btn-submit').onclick = () => { $('confirm').classList.remove('hidden'); $('btn-submit').classList.add('hidden'); };
     $('btn-no').onclick = () => { $('confirm').classList.add('hidden'); $('btn-submit').classList.remove('hidden'); };
     $('btn-yes').onclick = submit;
+    if (S.closed) { $('btn-submit').disabled = true; $('btn-submit').textContent = '⏸ 活動已停止'; }
   }
 }
 
@@ -319,16 +295,19 @@ function updateFilled() {
   if (b) b.textContent = S.answers.filter(a => String(a).trim()).length;
 }
 async function save() {
+  if (S.closed) return false;
   const rec = {
-    cls: S.cls, seat: S.seat, name: S.name,
+    cls: S.cls, seat: S.seat, name: S.name, no: S.no, use: S.use,
     answers: S.answers, attempts: S.attempts, history: S.history,
     submitted: S.submitted, firstTs: S.firstTs, ts: Date.now()
   };
   try {
-    await PH.saveRecord(S.parsed.code, S.sid, rec);
+    await LAB.putRec(S.code, S.sid, rec);
     setSync('✔ 已同步給老師 ' + new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }));
     return true;
   } catch (e) {
+    // 規則擋下（401／403）通常是老師按了停止
+    if ((e.status === 401 || e.status === 403) && await LAB.isClosed(S.code)) { S.closed = true; if (WATCH) WATCH.open = false; LAB.stopOverlay(true, S.meta); render(); setSync('⏸ 活動已停止，這次的作答沒有送出'); return false; }
     console.error(e);
     setSync('⚠️ 送出失敗，請檢查網路後再試一次');
     return false;

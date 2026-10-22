@@ -10,7 +10,8 @@
     excel: { name: '📊 消失的實驗數據', desc: 'Excel 作圖與函數 Ending 作業（每位學生專屬數據）', url: 'inquiry/excel-rescue-teacher.html' },
     gps: { name: '🧭 遺落的地點', desc: '校園照片定向越野（學生手機闖關）', url: 'inquiry/orienteering/' },
     seat: { name: '🪑 座位大作戰', desc: '換座位：暗標、規則、隨機排位、A4 座位表', url: 'classroom/seating/' },
-    src: { name: '📜 出處失傳的秘文', desc: '文獻查詢、引用與參考文獻格式（小論文 APA）', url: 'inquiry/secret-source/teacher.html' }
+    src: { name: '📜 出處失傳的秘文', desc: '文獻查詢、引用與參考文獻格式（小論文 APA）', url: 'inquiry/secret-source/teacher.html' },
+    lab: { name: '⚗️ 化學實驗室 No.223', desc: '消失的實驗器材、消失的指示劑（pH）、失落的配方（單位換算）：開活動、即時統計', url: 'chemistry/lab223.html' }
   };
   var STATUS = { pending: '⏳ 等待核准', approved: '✅ 已核准', rejected: '❌ 未通過', disabled: '⏸ 已停用' };
   function lower(s) { return String(s || '').trim().toLowerCase(); }

@@ -15,7 +15,7 @@
       "$code": {
         ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{7}$/)",
         "$sid": {
-          ".write": "newData.exists() && $code.matches(/^[2-9A-HJ-NP-Z]{7}$/) && data.child('submitted').val() != true",
+          ".write": "false",
           ".validate": "newData.hasChildren(['cls','seat','name','ts']) && newData.child('cls').isString() && newData.child('cls').val().length <= 10 && newData.child('seat').isNumber() && newData.child('name').isString() && newData.child('name').val().length <= 12"
         }
       }
@@ -24,7 +24,7 @@
       "$code": {
         ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{7}$/)",
         "$sid": {
-          ".write": "newData.exists() && $code.matches(/^[2-9A-HJ-NP-Z]{7}$/) && data.child('submitted').val() != true",
+          ".write": "false",
           ".validate": "newData.hasChildren(['cls','seat','name','ts']) && newData.child('cls').isString() && newData.child('cls').val().length <= 10 && newData.child('seat').isNumber() && newData.child('name').isString() && newData.child('name').val().length <= 12"
         }
       }
@@ -376,10 +376,10 @@
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
         ".write": "auth != null && ({{ADMIN}} || (auth.uid === $uid && newData.exists()))",
-        ".validate": "{{ADMIN}} || ((!data.exists() || data.child('status').val() === 'pending') && newData.hasChildren(['email','name','school','purpose','want','at','status']) && newData.child('status').val() === 'pending' && !newData.child('apps').exists() && newData.child('email').val() === auth.token.email && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && newData.child('purpose').isString() && newData.child('purpose').val().length >= 1 && newData.child('purpose').val().length <= 200 && newData.child('at').isNumber()) || ((!data.exists() || data.child('status').val() === 'pending') && auth.token.email_verified === true && root.child('staffpre/'+{{EKEY}}).exists() && newData.child('status').val() === 'approved' && newData.child('email').val() === auth.token.email && newData.hasChildren(['email','name','school','at','status','apps']) && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && (!newData.child('apps/excel').exists() || root.child('staffpre/'+{{EKEY}}+'/apps/excel').val() === true) && (!newData.child('apps/gps').exists() || root.child('staffpre/'+{{EKEY}}+'/apps/gps').val() === true) && (!newData.child('apps/seat').exists() || root.child('staffpre/'+{{EKEY}}+'/apps/seat').val() === true)) || (data.exists() && newData.child('status').val() === data.child('status').val() && newData.child('email').val() === data.child('email').val() && newData.child('note').val() === data.child('note').val() && newData.child('apps/excel').val() === data.child('apps/excel').val() && newData.child('apps/gps').val() === data.child('apps/gps').val() && newData.child('apps/seat').val() === data.child('apps/seat').val() && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30)",
+        ".validate": "{{ADMIN}} || ((!data.exists() || data.child('status').val() === 'pending') && newData.hasChildren(['email','name','school','purpose','want','at','status']) && newData.child('status').val() === 'pending' && !newData.child('apps').exists() && newData.child('email').val() === auth.token.email && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && newData.child('purpose').isString() && newData.child('purpose').val().length >= 1 && newData.child('purpose').val().length <= 200 && newData.child('at').isNumber()) || ((!data.exists() || data.child('status').val() === 'pending') && auth.token.email_verified === true && root.child('staffpre/'+{{EKEY}}).exists() && newData.child('status').val() === 'approved' && newData.child('email').val() === auth.token.email && newData.hasChildren(['email','name','school','at','status','apps']) && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && (!newData.child('apps/excel').exists() || root.child('staffpre/'+{{EKEY}}+'/apps/excel').val() === true) && (!newData.child('apps/gps').exists() || root.child('staffpre/'+{{EKEY}}+'/apps/gps').val() === true) && (!newData.child('apps/seat').exists() || root.child('staffpre/'+{{EKEY}}+'/apps/seat').val() === true) && (!newData.child('apps/src').exists() || root.child('staffpre/'+{{EKEY}}+'/apps/src').val() === true) && (!newData.child('apps/lab').exists() || root.child('staffpre/'+{{EKEY}}+'/apps/lab').val() === true)) || (data.exists() && newData.child('status').val() === data.child('status').val() && newData.child('email').val() === data.child('email').val() && newData.child('note').val() === data.child('note').val() && newData.child('apps/excel').val() === data.child('apps/excel').val() && newData.child('apps/gps').val() === data.child('apps/gps').val() && newData.child('apps/seat').val() === data.child('apps/seat').val() && newData.child('apps/src').val() === data.child('apps/src').val() && newData.child('apps/lab').val() === data.child('apps/lab').val() && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30)",
         "apps": {
           "$app": {
-            ".validate": "$app.matches(/^(excel|gps|seat|src)$/) && newData.val() === true"
+            ".validate": "$app.matches(/^(excel|gps|seat|src|lab)$/) && newData.val() === true"
           }
         }
       }
@@ -392,7 +392,7 @@
         ".validate": "newData.hasChildren(['email','apps','at']) && newData.child('email').isString() && newData.child('email').val().toLowerCase().replace('.', ',') === $key",
         "apps": {
           "$app": {
-            ".validate": "$app.matches(/^(excel|gps|seat|src)$/) && newData.val() === true"
+            ".validate": "$app.matches(/^(excel|gps|seat|src|lab)$/) && newData.val() === true"
           }
         }
       }
@@ -612,6 +612,117 @@
               },
               "c": {
                 ".validate": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "lab223": {
+      "owners": {
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid && {{STAFF:lab}}",
+          "$code": {
+            ".validate": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && newData.hasChildren(['sys','term','item','at'])"
+          }
+        }
+      },
+      "m": {
+        "$code": {
+          ".read": "auth != null && data.child('meta/owner').val() === auth.uid",
+          ".write": "auth != null && !newData.exists() && data.child('meta/owner').val() === auth.uid && {{STAFF:lab}}",
+          "meta": {
+            ".read": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/)",
+            ".write": "auth != null && $code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && {{STAFF:lab}} && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)",
+            ".validate": "newData.hasChildren(['owner','sys','term','item','open','at','set']) && (!newData.child('admin').exists() || {{ADMIN}})",
+            "owner": {
+              ".validate": "newData.isString() && (!data.exists() || newData.val() === data.val())"
+            },
+            "sys": {
+              ".validate": "newData.isString() && newData.val().matches(/^(eq|ph|unit)$/) && (!data.exists() || newData.val() === data.val())"
+            },
+            "term": {
+              ".validate": "newData.isString() && newData.val().matches(/^[0-9]{2,3}-[12]$/)"
+            },
+            "item": {
+              ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 99"
+            },
+            "name": {
+              ".validate": "newData.isString() && newData.val().length <= 30"
+            },
+            "open": {
+              ".validate": "newData.isBoolean()"
+            },
+            "at": {
+              ".validate": "newData.isNumber()"
+            },
+            "set": {
+              ".validate": "newData.isString() && newData.val().length <= 80 && (!data.exists() || newData.val() === data.val())"
+            },
+            "admin": {
+              ".validate": "newData.isBoolean()"
+            },
+            "$other": {
+              ".validate": false
+            }
+          },
+          "r": {
+            "$id": {
+              ".read": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $id.matches(/^[A-Z0-9]{1,8}_[0-9]{1,2}$/)",
+              ".write": "(newData.exists() && $code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $id.matches(/^[A-Z0-9]{1,8}_[0-9]{1,2}$/) && root.child('lab223/m/'+$code+'/meta').child('open').val() === true && (root.child('lab223/m/'+$code+'/meta').child('admin').val() === true || (root.child('staff/'+root.child('lab223/m/'+$code+'/meta').child('owner').val()+'/status').val() === 'approved' && root.child('staff/'+root.child('lab223/m/'+$code+'/meta').child('owner').val()+'/apps/lab').val() === true)) && data.child('submitted').val() !== true) || (!newData.exists() && auth != null && root.child('lab223/m/'+$code+'/meta').child('owner').val() === auth.uid && {{STAFF:lab}})",
+              ".validate": "newData.hasChildren(['cls','seat','no','name','use','ts'])",
+              "cls": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 8"
+              },
+              "seat": {
+                ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 99"
+              },
+              "no": {
+                ".validate": "newData.isString() && newData.val().matches(/^[A-Z0-9]{3,12}$/)"
+              },
+              "name": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 12"
+              },
+              "use": {
+                ".validate": "newData.isString() && newData.val().matches(/^(正式進度|考試複習|重補修)$/)"
+              },
+              "ts": {
+                ".validate": "newData.isNumber()"
+              }
+            }
+          },
+          "lb": {
+            ".read": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/)",
+            "$id": {
+              ".write": "(newData.exists() && $code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $id.matches(/^[A-Z0-9]{1,8}_[0-9]{1,2}$/) && root.child('lab223/m/'+$code+'/meta').child('open').val() === true && (root.child('lab223/m/'+$code+'/meta').child('admin').val() === true || (root.child('staff/'+root.child('lab223/m/'+$code+'/meta').child('owner').val()+'/status').val() === 'approved' && root.child('staff/'+root.child('lab223/m/'+$code+'/meta').child('owner').val()+'/apps/lab').val() === true))) || (!newData.exists() && auth != null && root.child('lab223/m/'+$code+'/meta').child('owner').val() === auth.uid && {{STAFF:lab}})",
+              ".validate": "newData.hasChildren(['cls','seat','name','score','correct','total','seconds','at']) && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 3000 && newData.child('correct').isNumber() && newData.child('correct').val() <= newData.child('total').val() && newData.child('total').isNumber() && newData.child('total').val() <= 40 && newData.child('seconds').isNumber() && newData.child('at').isNumber() && newData.child('cls').isString() && newData.child('cls').val().length <= 8 && newData.child('seat').isNumber() && newData.child('name').isString() && newData.child('name').val().length <= 12",
+              "$other": {
+                ".validate": "$other === 'cleared' && newData.isBoolean()"
+              },
+              "cls": {
+                ".validate": "true"
+              },
+              "seat": {
+                ".validate": "true"
+              },
+              "name": {
+                ".validate": "true"
+              },
+              "score": {
+                ".validate": "true"
+              },
+              "correct": {
+                ".validate": "true"
+              },
+              "total": {
+                ".validate": "true"
+              },
+              "seconds": {
+                ".validate": "true"
+              },
+              "at": {
+                ".validate": "true"
               }
             }
           }

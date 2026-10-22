@@ -160,28 +160,28 @@ const UC = (() => {
       const id = pick(rng, generalSubs()), M = molarMass(id);
       const w = massGiven(between(rng, 0.1, 5, 2) * M);
       return { html: `${pick(rng, SUBS[id].scenes)}中含有 ${massStr(w)} g 的${nameF(id)}，相當於多少莫耳？`,
-        route: ['g', 'mol'], kind: 'plain', unit: 'mol', ans: w / M, els: els(id),
+        mm: (typeof M !== 'undefined' ? M : null), route: ['g', 'mol'], kind: 'plain', unit: 'mol', ans: w / M, els: els(id),
         steps: [molarMassLine(id), `n = ${massStr(w)} ÷ ${trimNum(M)} = ${fix2(w / M)} mol`] };
     },
     mol2g(rng) {
       const id = pick(rng, generalSubs()), M = molarMass(id);
       const n = between(rng, 0.1, 5, 2);
       return { html: `${pick(rng, SUBS[id].scenes)}中含有 ${n.toFixed(2)} mol 的${nameF(id)}，質量是多少公克？`,
-        route: ['mol', 'g'], kind: 'plain', unit: 'g', ans: n * M, els: els(id),
+        mm: (typeof M !== 'undefined' ? M : null), route: ['mol', 'g'], kind: 'plain', unit: 'g', ans: n * M, els: els(id),
         steps: [molarMassLine(id), `W = ${n.toFixed(2)} × ${trimNum(M)} = ${fix2(n * M)} g`] };
     },
     mol2N(rng) {
       const id = pick(rng, molecularSubs());
       const n = between(rng, 0.1, 5, 2);
       return { html: `${pick(rng, SUBS[id].scenes)}中含有 ${n.toFixed(2)} mol 的${nameF(id)}，共有多少個${SUBS[id].name}分子？`,
-        route: ['mol', 'molecule'], kind: 'sci', unit: '個', ans: n * CONFIG.NA, els: [],
+        mm: (typeof M !== 'undefined' ? M : null), route: ['mol', 'molecule'], kind: 'sci', unit: '個', ans: n * CONFIG.NA, els: [],
         steps: [`分子數 = ${n.toFixed(2)} × ${CONFIG.NA_TEXT} = ${sciText(n * CONFIG.NA)} 個`] };
     },
     N2mol(rng) {
       const id = pick(rng, molecularSubs());
       const N = countGiven(between(rng, 0.1, 5, 2) * CONFIG.NA);
       return { html: `${pick(rng, SUBS[id].scenes)}中含有 ${N.html} 個${SUBS[id].name}分子（${fHTML(SUBS[id].f)}），相當於多少莫耳？`,
-        route: ['molecule', 'mol'], kind: 'plain', unit: 'mol', ans: N.v / CONFIG.NA, els: [],
+        mm: (typeof M !== 'undefined' ? M : null), route: ['molecule', 'mol'], kind: 'plain', unit: 'mol', ans: N.v / CONFIG.NA, els: [],
         steps: [`n = ${N.text} ÷ ${CONFIG.NA_TEXT} = ${fix2(N.v / CONFIG.NA)} mol`] };
     },
 
@@ -191,7 +191,7 @@ const UC = (() => {
       const w = massGiven(between(rng, 0.1, 5, 2) * M);
       const n = r2(w / M), N = n * CONFIG.NA;
       return { html: `${pick(rng, SUBS[id].scenes)}中含有 ${massStr(w)} g 的${nameF(id)}，共有多少個${SUBS[id].name}分子？`,
-        route: ['g', 'mol', 'molecule'], kind: 'sci', unit: '個', ans: N, alt: w / M * CONFIG.NA, els: els(id),
+        mm: (typeof M !== 'undefined' ? M : null), route: ['g', 'mol', 'molecule'], kind: 'sci', unit: '個', ans: N, alt: w / M * CONFIG.NA, els: els(id),
         steps: [molarMassLine(id), `n = ${massStr(w)} ÷ ${trimNum(M)} = ${fix2(n)} mol`, `分子數 = ${fix2(n)} × ${CONFIG.NA_TEXT} = ${sciText(N)} 個`] };
     },
     N2g(rng) {
@@ -199,14 +199,14 @@ const UC = (() => {
       const N = countGiven(between(rng, 0.1, 5, 2) * CONFIG.NA);
       const n = r2(N.v / CONFIG.NA);
       return { html: `${pick(rng, SUBS[id].scenes)}中含有 ${N.html} 個${SUBS[id].name}分子（${fHTML(SUBS[id].f)}），質量是多少公克？`,
-        route: ['molecule', 'mol', 'g'], kind: 'plain', unit: 'g', ans: n * M, alt: N.v / CONFIG.NA * M, els: els(id),
+        mm: (typeof M !== 'undefined' ? M : null), route: ['molecule', 'mol', 'g'], kind: 'plain', unit: 'g', ans: n * M, alt: N.v / CONFIG.NA * M, els: els(id),
         steps: [molarMassLine(id), `n = ${N.text} ÷ ${CONFIG.NA_TEXT} = ${fix2(n)} mol`, `W = ${fix2(n)} × ${trimNum(M)} = ${fix2(n * M)} g`] };
     },
     mol2atoms(rng) {
       const id = pick(rng, molecularSubs().filter(k => totalAtoms(k) > 1));
       const n = between(rng, 0.1, 5, 2), k = totalAtoms(id), A = sciR(n * CONFIG.NA) * k;
       return { html: `${pick(rng, SUBS[id].scenes)}中含有 ${n.toFixed(2)} mol 的${nameF(id)}，總共含有多少個原子？`,
-        route: ['mol', 'molecule', 'atom'], kind: 'sci', unit: '個', ans: A, alt: n * CONFIG.NA * k, els: [],
+        mm: (typeof M !== 'undefined' ? M : null), route: ['mol', 'molecule', 'atom'], kind: 'sci', unit: '個', ans: A, alt: n * CONFIG.NA * k, els: [],
         steps: [`每個 ${fText(SUBS[id].f)} 分子含 ${k} 個原子`, `分子數 = ${n.toFixed(2)} × ${CONFIG.NA_TEXT} = ${sciText(n * CONFIG.NA)}`, `原子數 = ${sciText(n * CONFIG.NA)} × ${k} = ${sciText(A)} 個`] };
     },
 
@@ -216,7 +216,7 @@ const UC = (() => {
       const V = pickVol(rng), CM0 = pickCM(rng, V);
       const w = massGiven(CM0 * V / 1000 * M), n = r2(w / M), CM = n / (V / 1000), alt = w / M / (V / 1000);
       return { html: `${pick(rng, so.ctx)}：將 ${massStr(w)} g 的${nameF(id)}溶於水，配成 ${V} mL 的溶液，其體積莫耳濃度（C<sub>M</sub>）為多少 M？`,
-        route: ['g', 'mol', 'CM'], kind: 'plain', unit: 'M', ans: CM, alt, els: els(id),
+        mm: (typeof M !== 'undefined' ? M : null), route: ['g', 'mol', 'CM'], kind: 'plain', unit: 'M', ans: CM, alt, els: els(id),
         steps: [molarMassLine(id), `n = ${massStr(w)} ÷ ${trimNum(M)} = ${fix2(n)} mol`, `CM = ${fix2(n)} ÷ ${V / 1000} L = ${fix2(CM)} M`] };
     },
     CM2g(rng) {
@@ -224,7 +224,7 @@ const UC = (() => {
       const V = pickVol(rng), CM = pickCM(rng, V);
       const n = r2(CM * V / 1000);
       return { html: `${pick(rng, so.ctx)}：要配製 ${V} mL、${CM.toFixed(2)} M 的${nameF(id)}溶液，需要秤取多少公克的${SUBS[id].name}？`,
-        route: ['CM', 'mol', 'g'], kind: 'plain', unit: 'g', ans: n * M, alt: CM * V / 1000 * M, els: els(id),
+        mm: (typeof M !== 'undefined' ? M : null), route: ['CM', 'mol', 'g'], kind: 'plain', unit: 'g', ans: n * M, alt: CM * V / 1000 * M, els: els(id),
         steps: [molarMassLine(id), `n = ${CM.toFixed(2)} × ${V / 1000} L = ${fix2(n)} mol`, `W = ${fix2(n)} × ${trimNum(M)} = ${fix2(n * M)} g`] };
     },
     g2pct(rng) {
@@ -233,14 +233,14 @@ const UC = (() => {
       const w1 = massGiven(total * p0 / 100), w2 = Math.round((total - w1) * 10) / 10;
       const p = w1 / (w1 + w2) * 100;
       return { html: `${pick(rng, so.ctx)}：將 ${massStr(w1)} g 的${nameF(id)}溶於 ${w2.toFixed(1)} g 的水中，此溶液的重量百分率濃度為多少 %？`,
-        route: ['g', 'pct'], kind: 'plain', unit: '%', ans: p, els: [],
+        mm: (typeof M !== 'undefined' ? M : null), route: ['g', 'pct'], kind: 'plain', unit: '%', ans: p, els: [],
         steps: [`溶液質量 = ${massStr(w1)} + ${w2.toFixed(1)} = ${trimNum(w1 + w2)} g`, `重量百分率 = ${massStr(w1)} ÷ ${trimNum(w1 + w2)} × 100% = ${fix2(p)} %`] };
     },
     pct2g(rng) {
       const so = pick(rng, SOLUTES), id = so.s;
       const m = between(rng, 50, 1000, 0), p = between(rng, 1, so.pctMax, 1);
       return { html: `${pick(rng, so.ctx)}：${m} g、重量百分率 ${p.toFixed(1)}% 的${nameF(id)}溶液中，含有多少公克的${SUBS[id].name}？`,
-        route: ['pct', 'g'], kind: 'plain', unit: 'g', ans: m * p / 100, els: [],
+        mm: (typeof M !== 'undefined' ? M : null), route: ['pct', 'g'], kind: 'plain', unit: 'g', ans: m * p / 100, els: [],
         steps: [`溶質質量 = ${m} × ${p.toFixed(1)}% = ${fix2(m * p / 100)} g`] };
     },
     ppmMass(rng) {
@@ -248,7 +248,7 @@ const UC = (() => {
       const host = between(rng, c.host_g[0], c.host_g[1], 0), ppm0 = between(rng, c.ppm[0], c.ppm[1], 0);
       const mg = Math.round(ppm0 * host / 1000 * 10) / 10, ppm = mg / 1000 / host * 1e6;
       return { html: `${c.ctx}：${host} g 的${c.host}中含有 ${mg.toFixed(1)} mg 的${nameF(id)}，${SUBS[id].name}的濃度為多少 ppm？<span class="note">（ppm 以質量計算：溶質質量 ÷ 溶液質量 × 10<sup>6</sup>）</span>`,
-        route: ['g', 'ppm'], kind: 'plain', unit: 'ppm', ans: ppm, els: [],
+        mm: (typeof M !== 'undefined' ? M : null), route: ['g', 'ppm'], kind: 'plain', unit: 'ppm', ans: ppm, els: [],
         steps: [`${mg.toFixed(1)} mg = ${trimNum(mg / 1000)} g`, `ppm = ${trimNum(mg / 1000)} ÷ ${host} × 10⁶ = ${fix2(ppm)} ppm`] };
     },
     ppmVol(rng) {
@@ -256,14 +256,14 @@ const UC = (() => {
       const V = pickVol(rng), ppm0 = between(rng, c.ppm[0], c.ppm[1], 1);
       const mg = Math.round(ppm0 * V / 1000 * 100) / 100, ppm = mg / (V / 1000);
       return { html: `${c.ctx}：${V} mL 的水樣中含有 ${mg.toFixed(2)} mg 的${c.what}（${fHTML(SUBS[id].f)}），濃度為多少 ppm？<span class="note">（稀薄水溶液：1 ppm = 1 mg/L）</span>`,
-        route: ['g', 'ppm'], kind: 'plain', unit: 'ppm', ans: ppm, els: [],
+        mm: (typeof M !== 'undefined' ? M : null), route: ['g', 'ppm'], kind: 'plain', unit: 'ppm', ans: ppm, els: [],
         steps: [`${V} mL = ${V / 1000} L`, `ppm = ${mg.toFixed(2)} mg ÷ ${V / 1000} L = ${fix2(ppm)} ppm`] };
     },
     ppm2mg(rng) {
       const c = pick(rng, PPM_VOL), id = c.s;
       const V = pickVol(rng), ppm = between(rng, c.ppm[0], c.ppm[1], 1);
       return { html: `${c.ctx}：水樣中${c.what}（${fHTML(SUBS[id].f)}）的濃度為 ${ppm.toFixed(1)} ppm，${V} mL 的水樣中含有多少 mg？<span class="note">（稀薄水溶液：1 ppm = 1 mg/L）</span>`,
-        route: ['ppm', 'g'], kind: 'plain', unit: 'mg', ans: ppm * V / 1000, els: [],
+        mm: (typeof M !== 'undefined' ? M : null), route: ['ppm', 'g'], kind: 'plain', unit: 'mg', ans: ppm * V / 1000, els: [],
         steps: [`${V} mL = ${V / 1000} L`, `質量 = ${ppm.toFixed(1)} mg/L × ${V / 1000} L = ${fix2(ppm * V / 1000)} mg`] };
     },
 
@@ -274,7 +274,7 @@ const UC = (() => {
       else { const so = pick(rng, SOLUTES); id = so.s; p = between(rng, 5, so.pctMax, 1); d = Math.round((1 + p / 100 * 0.75) * 100) / 100; ctx = pick(rng, so.ctx); }
       const M = molarMass(id), mass = 1000 * d, solute = r2(mass * p / 100), n = r2(solute / M);
       return { html: `${ctx}：${nameF(id)}溶液的重量百分率為 ${trimNum(p)}%、密度為 ${d.toFixed(2)} g/mL，其體積莫耳濃度（C<sub>M</sub>）為多少 M？`,
-        route: ['pct', 'g', 'mol', 'CM'], kind: 'plain', unit: 'M', ans: n, alt: mass * p / 100 / M, els: els(id),
+        mm: (typeof M !== 'undefined' ? M : null), route: ['pct', 'g', 'mol', 'CM'], kind: 'plain', unit: 'M', ans: n, alt: mass * p / 100 / M, els: els(id),
         steps: [molarMassLine(id), `取 1 L（1000 mL）溶液：質量 = 1000 × ${d.toFixed(2)} = ${trimNum(mass)} g`,
           `溶質質量 = ${trimNum(mass)} × ${trimNum(p)}% = ${fix2(solute)} g`, `n = ${fix2(solute)} ÷ ${trimNum(M)} = ${fix2(n)} mol，CM = ${fix2(n)} M`] };
     },
@@ -285,7 +285,7 @@ const UC = (() => {
       const pApprox = CM * M / 10, d = Math.round((1 + pApprox / 100 * 0.75) * 100) / 100;
       const solute = r2(CM * M), mass = 1000 * d, p = solute / mass * 100;
       return { html: `${pick(rng, so.ctx)}：${nameF(id)}溶液的濃度為 ${CM.toFixed(2)} M、密度為 ${d.toFixed(2)} g/mL，其重量百分率濃度為多少 %？`,
-        route: ['CM', 'mol', 'g', 'pct'], kind: 'plain', unit: '%', ans: p, els: els(id),
+        mm: (typeof M !== 'undefined' ? M : null), route: ['CM', 'mol', 'g', 'pct'], kind: 'plain', unit: '%', ans: p, els: els(id),
         steps: [molarMassLine(id), `取 1 L 溶液：溶質 ${CM.toFixed(2)} mol × ${trimNum(M)} = ${fix2(solute)} g`,
           `溶液質量 = 1000 × ${d.toFixed(2)} = ${trimNum(mass)} g`, `重量百分率 = ${fix2(solute)} ÷ ${trimNum(mass)} × 100% = ${fix2(p)} %`] };
     },
@@ -294,7 +294,7 @@ const UC = (() => {
       const el = pick(rng, els(id)), k = SUBS[id].atoms[el];
       const w = massGiven(between(rng, 0.1, 5, 2) * M), n = r2(w / M), A = sciR(n * CONFIG.NA) * k;
       return { html: `${pick(rng, SUBS[id].scenes)}中含有 ${massStr(w)} g 的${nameF(id)}，其中共有多少個${ELEMENT_NAME[el]}原子（${el}）？`,
-        route: ['g', 'mol', 'molecule', 'atom'], kind: 'sci', unit: '個', ans: A, alt: w / M * CONFIG.NA * k, els: els(id),
+        mm: (typeof M !== 'undefined' ? M : null), route: ['g', 'mol', 'molecule', 'atom'], kind: 'sci', unit: '個', ans: A, alt: w / M * CONFIG.NA * k, els: els(id),
         steps: [molarMassLine(id), `n = ${massStr(w)} ÷ ${trimNum(M)} = ${fix2(n)} mol`, `分子數 = ${fix2(n)} × ${CONFIG.NA_TEXT} = ${sciText(n * CONFIG.NA)}`,
           `每個分子含 ${k} 個 ${el}：${el} 原子數 = ${sciText(n * CONFIG.NA)} × ${k} = ${sciText(A)} 個`] };
     },
@@ -304,7 +304,7 @@ const UC = (() => {
       const A = countGiven(between(rng, 0.1, 5, 2) * CONFIG.NA * k);
       const N = sciR(A.v / k), n = r2(N / CONFIG.NA);
       return { html: `${pick(rng, SUBS[id].scenes)}中的${nameF(id)}共含有 ${A.html} 個${ELEMENT_NAME[el]}原子（${el}），這些${SUBS[id].name}的質量是多少公克？`,
-        route: ['atom', 'molecule', 'mol', 'g'], kind: 'plain', unit: 'g', ans: n * M, alt: A.v / k / CONFIG.NA * M, els: els(id),
+        mm: (typeof M !== 'undefined' ? M : null), route: ['atom', 'molecule', 'mol', 'g'], kind: 'plain', unit: 'g', ans: n * M, alt: A.v / k / CONFIG.NA * M, els: els(id),
         steps: [molarMassLine(id), `每個分子含 ${k} 個 ${el}：分子數 = ${A.text} ÷ ${k} = ${sciText(N)}`,
           `n = ${sciText(N)} ÷ ${CONFIG.NA_TEXT} = ${fix2(n)} mol`, `W = ${fix2(n)} × ${trimNum(M)} = ${fix2(n * M)} g`] };
     },
@@ -315,7 +315,7 @@ const UC = (() => {
       const total = w1 + w2, p = w1 / total * 100, d = Math.round((1 + p / 100 * 0.75) * 100) / 100;
       const V = r2(total / d), n = r2(w1 / M), CM = n / (V / 1000), alt = w1 / M / (total / d / 1000);
       return { html: `${pick(rng, so.ctx)}：將 ${massStr(w1)} g 的${nameF(id)}溶於 ${w2} g 的水中，所得溶液的密度為 ${d.toFixed(2)} g/mL，其體積莫耳濃度（C<sub>M</sub>）為多少 M？`,
-        route: ['g', 'mol', 'CM'], kind: 'plain', unit: 'M', ans: CM, alt, els: els(id),
+        mm: (typeof M !== 'undefined' ? M : null), route: ['g', 'mol', 'CM'], kind: 'plain', unit: 'M', ans: CM, alt, els: els(id),
         steps: [molarMassLine(id), `n = ${massStr(w1)} ÷ ${trimNum(M)} = ${fix2(n)} mol`,
           `溶液體積 = (${massStr(w1)} + ${w2}) ÷ ${d.toFixed(2)} = ${fix2(V)} mL`, `CM = ${fix2(n)} ÷ ${trimNum(V / 1000)} L = ${fix2(CM)} M`] };
     }
@@ -418,6 +418,32 @@ const UC = (() => {
     if (v === null || !isFinite(v)) return false;
     return closeTo(q, v, q.ans) || (q.alt !== undefined && closeTo(q, v, q.alt));
   }
+  /* ---------- 錯誤診斷（2026-10-22，老師頁能力分析用）----------
+     看學生答案和正解差幾倍，猜最像哪一種常見錯誤；mm＝這題的分子量（題目有用到才有） */
+  const DIAG = {
+    round: '四捨五入／位數誤差', unit: '單位沒換算（mL↔L、mg↔g）', pct: '百分率沒有 ×100 或 ÷100', na: '亞佛加厥數 × ÷ 弄反或漏掉',
+    mmdir: '分子量 × ÷ 方向反了', mmmiss: '漏乘或漏除分子量', exp: '科學記號次方錯', blank: '沒有作答', calc: '其他計算錯誤'
+  };
+  function diagnose(q, str) {
+    if (!String(str || '').trim()) return 'blank';
+    const v = parseAnswer(str);
+    if (v === null || !isFinite(v) || v === 0) return 'calc';
+    const a = q.ans, r = v / a, near = (x, y, t = 0.03) => Math.abs(x / y - 1) <= t;
+    if (r > 0 && Math.abs(r - 1) <= 0.04) return 'round';
+    const lg0 = Math.log10(Math.abs(r));
+    if (q.kind === 'sci' && Math.abs(lg0 - Math.round(lg0)) < 0.01) return 'exp';   // 科學記號答案差 10 的次方：通常是次方寫錯
+    if ([1e3, 1e-3, 1e6, 1e-6].some(k => near(r, k))) return 'unit';
+    if ([100, 0.01].some(k => near(r, k))) return 'pct';
+    const NA = CONFIG.NA;
+    if ([NA, 1 / NA, NA * NA, 1 / (NA * NA)].some(k => near(r, k))) return 'na';
+    if (q.mm) { if ([q.mm * q.mm, 1 / (q.mm * q.mm)].some(k => near(r, k))) return 'mmdir'; if ([q.mm, 1 / q.mm].some(k => near(r, k))) return 'mmmiss'; }
+    const lg = Math.log10(Math.abs(r)); if (Math.abs(lg - Math.round(lg)) < 0.01 && Math.round(lg) !== 0) return 'exp';
+    return 'calc';
+  }
+  // 題型名稱（能力分析的分類）
+  const KIND = { g2mol: 'g → mol', mol2g: 'mol → g', mol2N: 'mol → 分子數', N2mol: '分子數 → mol', g2N: 'g → 分子數', N2g: '分子數 → g', mol2atoms: 'mol → 總原子數',
+    g2CM: 'g＋體積 → CM', CM2g: 'CM＋體積 → g', g2pct: '→ 重量百分率', pct2g: '重量百分率 → g', ppmMass: 'ppm（質量）', ppmVol: 'ppm（mg/L）', ppm2mg: 'ppm → mg',
+    pct2CM: '%＋密度 → CM', CM2pct: 'CM＋密度 → %', g2atomsEl: 'g → 某原子數', atomsEl2g: '某原子數 → g', densityCM: '溶質＋水＋密度 → CM' };
   function formatAnswerStr(str) {
     const s = String(str || '').trim();
     const m = /^(.*)e(-?\d+)$/i.exec(s);
@@ -498,6 +524,6 @@ const UC = (() => {
     qText, ansText, ansHTML, atomicHTML, sci, fix2,
     parseAnswer, isCorrect, formatAnswerStr,
     mapSVG, routeText, richText,
-    studentId, fetchRecord, fetchAll, saveRecord, toArray, escapeHtml
+    studentId, fetchRecord, fetchAll, saveRecord, toArray, escapeHtml, DIAG, diagnose, KIND
   };
 })();

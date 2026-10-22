@@ -62,12 +62,18 @@ wuyutzu-tools/
 │   └── poetry_fortune.html       # 詩籤系統
 │
 ├── chemistry/                    # ⚗️ 化學學習遊戲
-│   ├── missing-equipment.html    # 消失的實驗器材
+│   ├── lab223.html               # ⚗️ 化學實驗室 No.223 入口（三個老師頁的卡片；會員中心 lab 系統連到這裡）
+│   ├── lab223.js                 # No.223 三系統共用：活動代碼、學生登入（用途＋班級座號學號姓名）、REST 讀寫、停止偵測
+│   ├── lab223-teacher.js         # No.223 三系統共用（ES module）：老師登入、我的活動、開新活動、▶開始／⏹停止、QR 投影、即時監聽
+│   ├── lab223-board.js           # pH 與單位換算共用：即時總表、能力分析、Excel
+│   ├── missing-equipment.html    # 🔍 消失的實驗器材：學生頁（活動代碼進入）
+│   ├── missing-equipment-teacher.html # 消失的實驗器材：老師頁（2026-10-22 新增；首頁卡片連到這裡）
+│   ├── equipment-data.js         # 消失的實驗器材：題庫 ITEMS、判分、活動設定（學生頁、老師頁共用）
 │   ├── images/equipment/         # 33 張器材圖片（檔名＝題庫 id）
-│   ├── ph-core.js                # 🧪 消失的指示劑（pH 練習）：共用核心（出題、題組碼、解法、Firebase）
+│   ├── ph-core.js                # 🧪 消失的指示劑（pH 練習）：共用核心（出題、題組碼、解法、錯誤診斷）
 │   ├── ph-generator.html         # pH 練習：學生作答頁
 │   ├── ph-generator-teacher.html # pH 練習：老師頁（首頁卡片連到這裡，請勿給學生）
-│   ├── unit-core.js              # 📜 失落的配方（單位換算）：共用核心（物質庫、題型、題組碼、判分、換算地圖）
+│   ├── unit-core.js              # 📜 失落的配方（單位換算）：共用核心（物質庫、題型、題組碼、判分、換算地圖、錯誤診斷）
 │   ├── unit-generator.html       # 單位換算：學生作答頁
 │   ├── unit-generator-teacher.html # 單位換算：老師頁（首頁卡片連到這裡）
 │   ├── case-board-core.js        # 📌 No.940 案件委託公告欄：共用核心（代碼、即時同步、統計）
@@ -146,7 +152,7 @@ wuyutzu-tools/
 | 🏫 導師班工具 | 📋 班級行政 | 座位大作戰、打掃徵才 |
 | | 🧠 認識學生 | DISC、貝爾賓 |
 | | 🎉 班級氣氛 | 金曲歌王、詩籤、聖誕抽籤、形容詞產生器 |
-| ⚗️ 化學實驗室 No.223 | No.223 懸案系列 | 消失的實驗器材、消失的指示劑（pH）、失落的配方（單位換算）（後兩者連到老師頁）、時光手稿：科學史大冒險、隱秘的鍵結社（2026-10-17 從「科學史」「化學鍵」小分類併入） |
+| ⚗️ 化學實驗室 No.223 | No.223 懸案系列 | 消失的實驗器材、消失的指示劑（pH）、失落的配方（單位換算）（三者都連到老師頁，2026-10-22 起用活動）、時光手稿：科學史大冒險、隱秘的鍵結社（2026-10-17 從「科學史」「化學鍵」小分類併入） |
 | | 課程經營 | 案件委託公告欄、科普閱讀測驗（**外部連結**，不在本倉庫：`https://reading-quiz-system.vercel.app/`，Vercel＋Supabase，原始碼在 `puff0223-chwu/reading-quiz-system`；2026-10-17 從「探究與實作」搬來） |
 | | 🎲 課堂遊戲化 | 選人系統（`picker.html`）、陣亡詛咒（`curse.html`）、戳戳樂、真心話大冒險 |
 | 🎮 遊戲設計思考 | — | 巴圖玩家類型 |
@@ -195,13 +201,22 @@ wuyutzu-tools/
     └── scores/
         └── <班級_座號_姓名>: { cls, seat, name, score, correct, wrong, total, cleared, seconds, ts }
             （每位學生一筆，只保留最佳成績）
-└── ph-generator/
+└── ph-generator/                 ← 2026-10-22 起唯讀（改版前的舊紀錄，老師頁「查看改版前的題組碼紀錄」）
     └── <題組碼 7 碼>/
         └── <班級_座號>: { cls, seat, name, answers[5], attempts[5], history[[題號,作答,對錯,時間]…], submitted, firstTs, ts }
             （不存正確答案，老師頁用固定亂數重算後比對）
-└── unit-convert/
+└── unit-convert/                 ← 2026-10-22 起唯讀（同上）
 │   └── <題組碼 7 碼>/
 │       └── <班級_座號>: 格式同 ph-generator；科學記號答案存成 "3.01e23"
+└── lab223/                       ← ⚗️ 化學實驗室 No.223 三系統的「活動」（2026-10-22）
+    ├── owners/<老師uid>/<活動代碼>: { sys, term, item, name, at, open }   ← 老師自己的活動清單
+    └── m/<活動代碼 6 碼>/
+        ├── meta: { owner, sys(eq/ph/unit), term(115-1), item(項次 1～99), name, open, at, set, admin? }   ← 公開可讀
+        │        set：ph／unit＝7 碼題組碼（題目設定）；eq＝"題數|命數|類別"（類別 all 或序號）；建立後不能改
+        ├── r/<班級_座號>: { cls, seat, no(學號), name, use(正式進度/考試複習/重補修), ts, …各系統欄位 }
+        │        ph／unit：answers、attempts、history、submitted、firstTs（同舊格式）
+        │        eq：games、best{score,correct,wrong,total,seconds,cleared,at}、it{器材id:{o,x}}、wl{n:{i,t,at}}(最近 60 筆打錯的名稱)、wn、cur{q,n,lives,score,at}(遊戲中)、h{n:每局}、hn
+        └── lb/<班級_座號>: { cls, seat, name, score, correct, total, seconds, cleared, at }   ← 器材活動排行榜（公開，只放名字成績）
 └── case-board/
     └── <公告欄代碼 6 碼>/
         ├── meta: { title, createdAt, open }                    ← 老師頁寫入；open=false 停止收件
@@ -249,7 +264,8 @@ wuyutzu-tools/
 
 - **安全規則**（2026-10-03 發布）：根目錄全部上鎖。
   - `missing-equipment/scores`：可讀；每位學生的紀錄只有在「分數更高，或同分但用時更短」時才能覆蓋，不能刪除；分數 0～3000。
-  - `ph-generator/<題組碼>`、`unit-convert/<題組碼>`：可讀；題組碼必須是 7 碼合法字元；可新增或更新，但**交卷（submitted=true）後就不能再改**，不能刪除。
+  - `ph-generator/<題組碼>`、`unit-convert/<題組碼>`：可讀；**2026-10-22 起不能寫**（學生改用活動代碼，避免繞過「停止活動」）。
+  - `lab223`：活動 meta 公開可讀，只有開通 lab 的老師（或管理員）能建立、改自己的；學生寫 `r/<班級_座號>`、`lb/<班級_座號>` 要活動 `open === true` 而且老師仍是核准開通 lab（或 meta.admin）；交卷後不能改；整班紀錄只有活動老師讀得到。
   - 規則全文見本檔最後的附錄。
 - ⚠️ **之後新工具要用 Firebase**：要在規則裡為它新增一個抽屜的規則，否則會被擋（HTTP 401/403）。
 - **`seating/` 抽屜（座位大作戰，2026-10-09）**：老師用 Email 登入（座位系統專用帳號），每個班級記錄 `owner`，規則只讓擁有者讀寫；未來分享給其他老師只要幫對方開帳號。
@@ -274,10 +290,23 @@ wuyutzu-tools/
 
 ## 6. 各工具重點備忘
 
-### 🔍 消失的實驗器材（chemistry/missing-equipment.html）
+### ⚗️ 化學實驗室 No.223：活動（三系統共用，2026-10-22）
 
-- 題庫在檔案中的 `ITEMS` 陣列：`id`（圖片檔名）、`name`（標準答案）、`aliases`（其他可接受寫法）、`category`、`marked`（圖上有紅圈）
-- 遊戲參數集中在 `CONFIG`：每局 30 題、3 條命、5 秒內 100 分、之後每秒 −5、最低 30 分、排行榜前 30 名
+- **老師要求**：三個系統都要能開活動（代碼＋學期＋項次）、可以開始與停止、學生登入選用途並填班級座號學號姓名、老師看即時回饋與統計做能力分析
+- **老師的決定**：會員中心登入（新系統代號 `lab`，三系統共用）；新的 6 碼活動代碼（題目設定存在活動裡，舊題組碼的紀錄仍可在老師頁查看）；器材活動各有自己的排行榜（另保留全站名人堂）；用途＝正式進度／考試複習／重補修
+- **入口**：`chemistry/lab223.html`（三張卡片＋上課流程）。三個老師頁上方都是「我的活動」：➕ 開新活動（學期預設依日期、項次預設＝同學期最大＋1、名稱選填＋各系統的題目設定）→ 建立後是「未開始」→ ▶ 開始活動／⏹ 停止活動、🖥️ 全螢幕投影（投影畫面上也能開始／停止，平板不會自動變暗）、📋 複製連結、✏️ 學期／項次、🗑 刪除
+- **學生頁**：`?a=活動代碼` → `LAB.studentLogin`：用途三選一＋班級、座號、學號（3～12 英數）、姓名；活動是別的系統的代碼會自動轉到正確頁面；活動還沒開始 → 等待畫面每 5 秒看一次，老師按開始就自動進入；作答中每 15 秒看一次（分頁切回來也看），停止就蓋上「⏸ 老師已經停止這個活動」並鎖住；寫入被規則擋下（401／403）也會判斷是不是停止了
+- **老師即時監聽**：`T.listen(code)` 用 SDK onValue 聽 `lab223/m/<代碼>/r`；老師頁背景 60 秒自動斷線（`FB.idle`）
+- **管理員**：沒有會員中心紀錄，活動 meta 加 `admin: true`（規則只准管理員寫這個旗標），學生寫入規則看這個旗標
+- **測試工具（不在 repo）**：Node 測試伺服器＝靜態網站＋模擬 Firebase REST，每一次讀寫都用 targaryen 依 `firebase-rules.json` 判斷；假的 `account/fb.js` 把老師頁的 SDK 讀寫也送到同一台伺服器。三個系統瀏覽器實測：沒開通 lab 的老師被擋、開活動、學生等待→自動進入、作答、即時總表、能力分析、Excel、停止後學生被擋（正好 2 次預期中的拒絕）、重新開始、刪除；規則測試新增 46 項（共 163 項全過）
+
+### 🔍 消失的實驗器材（chemistry/missing-equipment*.html）
+
+- 題庫在 `equipment-data.js` 的 `ITEMS` 陣列（2026-10-22 從學生頁搬出來，老師頁共用）：`id`（圖片檔名）、`name`（標準答案）、`aliases`（其他可接受寫法）、`category`、`marked`（圖上有紅圈）
+- **題數、命數、類別由老師開活動時設定**（每局 10～30 件、1～5 條命、可只出某幾類）；學生頁 `CONFIG` 只剩計分：5 秒內 100 分、之後每秒 −5、最低 30 分、排行榜前 30 名
+- **每答一題就 PATCH 一次**（`it/<器材>`、`cur`、打錯時 `wl/<n>`），老師頁「📡 即時狀態」看得到誰正在玩、第幾件、剩幾條命；一局結束更新 `games`、`best`、`h`，刷新最佳時寫 `lb`（公開排行榜，不含學號）
+- 排行榜：本活動／只看我的班／🌐 全站名人堂（`missing-equipment/scores`，只有標準設定 30 題 3 命全部類別的成績會寫進去）
+- **老師頁** `missing-equipment-teacher.html`：📡 即時狀態（現在第幾件、局數、最佳、累計答對／答錯、答對率、最後動作）、🏆 排行榜（可全螢幕投影，每 3 秒更新）、📊 能力分析（依類別答對率、每件器材答對率由低到高＋學生實際打錯的名稱、每位學生各類別答對率與最常錯的器材）、Excel（學生總表、器材統計、錯誤寫法、每局紀錄）
 - 判分只忽略空白與全形/半形差異，錯字一律算錯；「滴定夾」也接受「蝴蝶夾」
 - 排行榜：資料庫裡每位學生（班級＋座號＋姓名）只存一筆最佳成績，分數更高（或同分但更快）才會覆蓋；排序依總分 → 答對數 → 用時
 - 圖片來源：老師自製的器材簡報 PDF（6 頁、6 大類）；同框器材用遮白或紅圈處理
@@ -300,8 +329,10 @@ wuyutzu-tools/
   - 答案輸入「係數 × 10^次方」兩格，存成 `"1.5e-5"`；係數必須是 2、3、5、7 組出的值（±0.5%），1.50、15×10⁻⁶ 等等價寫法也算對
   - 同一個 log 值只對應一個係數：反向題排除 4.9（log 4.9 ＝ log 5 ＝ 0.70）
   - 顯示函式：`concHTML`／`concText`（題目）、`askHTML`（作答欄標籤）、`ansHTML`／`ansText`（正解）、`blankHTML`（列印作答欄）、`formatAnswerStr`（學生作答顯示）
-- 學生頁：`ph-generator.html?code=題組碼`；答案只判對錯不給解；重新整理會從 Firebase 接回進度
-- 老師頁四個分頁：出題設定（產生題組碼＋QR）、投影（共同題目＋逐題解法）、列印（每人學習單＋解答表）、全班總表（即時作答、每 10 秒自動更新、匯出 Excel：總表／作答歷程／題目與解法）
+- 學生頁：`ph-generator.html?a=活動代碼`（2026-10-22 起；舊的 `?code=題組碼` 不能再作答）；答案只判對錯不給解；重新整理會從 Firebase 接回進度；一進來就登記（老師總表馬上看得到）
+- 老師頁（2026-10-22 改版）：上方「我的活動」（開新活動時選難度分配、方向、作答方式、log；設定存成活動的 `set`＝7 碼題組碼）＋四個分頁：📡 即時總表（即時監聽、班級／用途／搜尋篩選、匯出 Excel：全班總表／能力分析／錯誤紀錄／題目與解法；下方可查看改版前的題組碼紀錄）、📊 能力分析、🖥️ 投影講解、🖨️ 列印學習單
+- **能力分析**（`lab223-board.js`，pH 與單位換算共用）：摘要（領題、全對、平均答對、一次就答對、每題平均嘗試）、依難度、依題型、🩺 常見錯誤類型（每種錯誤的次數、人數、哪些學生、例子）、每位學生各難度答對與主要錯誤
+- **錯誤診斷** `PH.diagnose(q, 答案)`：pH／pOH 搞混（寫成 14−答案，或反向題算成另一種離子）、只看次方沒算係數的 log、係數 log 加減方向錯、正負號錯、係數反推錯（次方對）、次方差 1、其他計算錯誤；題型 `PH.KIND`
 - 限制：答案是在學生瀏覽器裡算的，懂程式的學生理論上能從原始碼推出答案；屬於練習工具，不適合正式考試
 
 ### 📜 失落的配方：化學單位換算練習（chemistry/unit-*.html）
@@ -309,7 +340,8 @@ wuyutzu-tools/
 - 故事：實驗室 No.223 第三案，老化學家的配方筆記單位被打亂，要換算回正確份量；題目稱為「配方第 n 頁」
 - 配色：深咖啡＋羊皮紙＋銅色，標題用 Noto Serif TC；地圖路線為藍綠色
 
-- 架構完全比照 pH 練習（題組碼、固定亂數、即時對錯／交卷批改、投影、列印、全班總表、Excel）
+- 架構完全比照 pH 練習（活動代碼、固定亂數、即時對錯／交卷批改、投影、列印、即時總表、能力分析、Excel）
+- **錯誤診斷** `UC.diagnose(q, 答案)`：看學生答案是正解的幾倍——四捨五入誤差、單位沒換算（×1000／×10⁶）、百分率沒 ×100、亞佛加厥數 × ÷ 弄反、分子量 × ÷ 方向反了（差分子量平方倍）、漏乘漏除分子量、科學記號次方錯；每題多記 `mm`（這題的分子量）；題型名稱 `UC.KIND`
 - 題組碼的檢查碼加了 `CODE_SALT`，所以 pH 的題組碼不能拿來這裡用（反之亦然）；題組碼第 2 個旗標改為「顯示換算地圖與路線提示」
 - **物質庫** `SUBS`、**溶液情境** `SOLUTES`、**市售濃溶液** `CONC_STOCK`、**ppm 情境** `PPM_MASS`／`PPM_VOL` 都在 `unit-core.js` 上方，新增物質只要加一行（原子量表 `ATOMIC`）
 - 只給原子量（H1 C12 N14 O16 F19 Na23 S32 Cl35.5 Ca40），N<sub>A</sub> = 6.02×10²³
@@ -325,7 +357,7 @@ wuyutzu-tools/
 - 老師頁「單位換算地圖」只有兩個選項：① 顯示路徑，不顯示公式（預設）② 顯示路徑，也顯示公式（如「× / ÷ 分子量 M」）
   - 「是否顯示公式」記在題組碼的**檢查碼 salt** 裡（`CODE_SALT`＝顯示、`CODE_SALT+1`＝不顯示）；新題組碼的 hint 旗標一律為開
   - 老師投影頁的地圖一律顯示公式
-- 學生頁、老師頁載入核心檔時加了版本號（`unit-core.js?v=…`、`ph-core.js?v=…`，目前 ph-core 為 `20261004a`），**改核心檔後記得一起改版本號**，避免瀏覽器用到舊的快取
+- 學生頁、老師頁載入核心檔時加了版本號（`unit-core.js?v=…`、`ph-core.js?v=…`、`lab223*.js?v=…`、`equipment-data.js?v=…`，目前都是 `20261022a`），**改核心檔後記得一起改版本號**，避免瀏覽器用到舊的快取
 
 ### 📌 No.940 案件委託公告欄（chemistry/case-board*.html，2026-10-05 新增）
 
@@ -794,7 +826,7 @@ wuyutzu-tools/
 
 ### 👥 會員中心（account/，2026-10-13 新增）
 - **用途**：其他老師自己申請帳號 → 管理員核准並勾選可用的系統（excel／gps／seat／src），不用到 Firebase 控制台一個一個建帳號
-- **新增系統（2026-10-18 加 src）**：`account/staff.js` 的 `APPS` 加一筆、規則裡三處 app 名單（staff／staffpre 的 `$app`）加上代號；各頁 `staff.js?v=` 版本號一起更新。會員中心的申請、核准、加開畫面都是讀 `APPS` 自動產生，不用另外改
+- **新增系統（2026-10-18 加 src；2026-10-22 加 lab＝⚗️ 化學實驗室 No.223，同時補上「核准的老師不能自己加開 src／lab」的規則檢查）**：`account/staff.js` 的 `APPS` 加一筆、規則裡三處 app 名單（staff／staffpre 的 `$app`）加上代號；各頁 `staff.js?v=` 版本號一起更新。會員中心的申請、核准、加開畫面都是讀 `APPS` 自動產生，不用另外改
 - **管理員＝主帳號 `puff0223@gmail.com`**（規則同時要求信箱已驗證 `email_verified`；Google 登入一定是已驗證，所以別人沒辦法冒名註冊同一個 Email 拿到管理權）。主帳號可以用全部系統，不用申請
 - **登入方式**：Email＋密碼，或「使用 Google 帳號登入」（popup；被瀏覽器擋就改整頁跳轉）。Google 新使用者第一次登入沒有申請資料 → 會員中心自動顯示「補填申請資料」
 - **流程**：會員中心申請（姓名、學校、想用的系統、用途）→ Email 申請者收驗證信 → `staff/<uid>` 狀態 pending → 管理員在「待核准」分頁勾系統按核准 → 老師重新整理各系統頁面就能用
@@ -1081,9 +1113,18 @@ fp/
 - **自動更新會讓表格跳回最左邊**：每 10 秒 `innerHTML` 整個重畫，捲動位置歸零。改成內容沒變就不重畫；有變就先記下 `scrollLeft/scrollTop` 再放回去。另外加縮放（CSS `zoom`，記在 localStorage）、塞進畫面、全螢幕（Esc 離開），學號姓名用 `position:sticky` 固定在左邊（姓名欄的 left 要畫完後量學號欄寬度）
 - **老師統計表的欄位順序跟著學生頁走**：關卡搬家（1-B → 結案作業 1）時，表格、KPI、Excel 欄名、答案查詢都要一起改，不然老師對不起來
 
+### 7-22 化學實驗室 No.223・三系統加上活動（2026-10-22）
+- **一般 script 的 `const` 不會掛在 window 上**：`lab223.js` 用 `const LAB = …` 宣告，ES module 裡寫 `window.LAB` 拿到 undefined（老師頁整個打不開）。模組和一般 script 共用同一個全域範圍，直接寫 `LAB` 就拿得到；只有 `root.WuStaff = …` 這種寫法才會掛在 window
+- **file:// 開不了 ES module**：老師頁改用 `<script type="module">` 之後，本機測試要用 http 伺服器開，不能直接開檔案
+- **公開排行榜要另外一個抽屜**：學生頁原本讀整班紀錄排名次，但整班紀錄含學號、打錯的名稱，規則只讓活動老師讀。另開 `lb/<班級_座號>` 只放名字與成績，規則限制欄位（不能塞學號）
+- **舊入口要一起關**：學生改用活動代碼後，舊的題組碼抽屜如果還能寫，學生拿舊連結就能繞過「停止活動」，所以 `ph-generator`、`unit-convert` 改成唯讀（舊紀錄仍可在老師頁查看）
+- **會員中心的權限檢查要涵蓋每個系統代號**：老師改自己的會員資料時，規則要檢查每個 `apps/<代號>` 都沒變；之前加 src 時漏了這一行（核准的老師理論上能自己加開 src），這次加 lab 時一起補上，規則測試各加一項
+- **錯誤診斷用「差幾倍」最好判斷**：學生答案÷正解＝1000（單位）、分子量的平方（× ÷ 弄反）、6.02×10²³（亞佛加厥數）、10 的整數次方（科學記號次方）；pH 則看是不是 14−答案（pH／pOH 搞混）、只寫次方、係數 log 加減方向相反。老師看到的是「哪一種錯」而不只是「錯幾題」
+- **測試要經過真正的規則**：本機 Node 伺服器同時提供網站和假的 Firebase REST，每一次讀寫都用 targaryen 照 `firebase-rules.json` 判斷，老師頁的 SDK 用假的 `fb.js` 也送到這台伺服器；測試結束看「拒絕清單」，只能出現預期中的拒絕（例如停止後學生寫入）
+
 ## 8. 已知注意事項
 
-- **Firebase 免費額度（Spark，2026-10-06 查）**：儲存 1 GB、每月下載 10 GB、同時連線 100 條。估計每月下載不到 1 GB；要留意的是同時連線。pH、單位換算、器材排行榜都是「問完就走」的一次性請求，不長期佔連線；**長期佔連線的只有公告欄（SSE 即時同步）和集點小金庫**（2026-10-18 起都會背景讓位，見 7-14）。公告欄學生頁切到背景超過 60 秒或關閉分頁就自動斷線、回到畫面自動重連（2026-10-06）。用量看 Firebase 控制台 → Realtime Database →「用量」
+- **Firebase 免費額度（Spark，2026-10-06 查）**：儲存 1 GB、每月下載 10 GB、同時連線 100 條。估計每月下載不到 1 GB；要留意的是同時連線。pH、單位換算、器材都是「問完就走」的一次性請求（學生頁每 15 秒看一次活動有沒有停止），不長期佔連線（老師頁開著時 1 條）；**長期佔連線的只有公告欄（SSE 即時同步）和集點小金庫**（2026-10-18 起都會背景讓位，見 7-14）。公告欄學生頁切到背景超過 60 秒或關閉分頁就自動斷線、回到畫面自動重連（2026-10-06）。用量看 Firebase 控制台 → Realtime Database →「用量」
 
 - **全站資源預算（2026-10-13 整合檢查）**：所有系統共用同一個 Firebase 專案、同一份免費額度
   - 同時連線上限 100 是最可能碰到的天花板。長期佔連線的：遺落的地點每組手機 1 條（50 組≈50 條）＋投影看板 1 條、公告欄每位學生 1 條、各老師頁開著時各 1 條。**一場 50 組定向越野＋一班公告欄≈90 條**；兩場大型即時活動不要同時開
@@ -1099,7 +1140,7 @@ fp/
 
 ---
 
-## 附錄：Firebase 安全規則全文（2026-10-20：出處失傳的秘文老師可刪單筆學生紀錄）
+## 附錄：Firebase 安全規則全文（2026-10-22：化學實驗室 No.223 活動 lab223、舊題組碼抽屜唯讀）
 
 > 由 `firebase/build_rules.py` 從 `firebase/rules.src.json` 產生，和根目錄 `firebase-rules.json` 相同。要改規則請改原始檔再重新產生，不要直接改這裡。推上 main 後 GitHub Action 會自動部署。
 
@@ -1121,7 +1162,7 @@ fp/
    "$code": {
     ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{7}$/)",
     "$sid": {
-     ".write": "newData.exists() && $code.matches(/^[2-9A-HJ-NP-Z]{7}$/) && data.child('submitted').val() != true",
+     ".write": "false",
      ".validate": "newData.hasChildren(['cls','seat','name','ts']) && newData.child('cls').isString() && newData.child('cls').val().length <= 10 && newData.child('seat').isNumber() && newData.child('name').isString() && newData.child('name').val().length <= 12"
     }
    }
@@ -1130,7 +1171,7 @@ fp/
    "$code": {
     ".read": "$code.matches(/^[2-9A-HJ-NP-Z]{7}$/)",
     "$sid": {
-     ".write": "newData.exists() && $code.matches(/^[2-9A-HJ-NP-Z]{7}$/) && data.child('submitted').val() != true",
+     ".write": "false",
      ".validate": "newData.hasChildren(['cls','seat','name','ts']) && newData.child('cls').isString() && newData.child('cls').val().length <= 10 && newData.child('seat').isNumber() && newData.child('name').isString() && newData.child('name').val().length <= 12"
     }
    }
@@ -1482,10 +1523,10 @@ fp/
    "$uid": {
     ".read": "auth != null && auth.uid === $uid",
     ".write": "auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (auth.uid === $uid && newData.exists()))",
-    ".validate": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || ((!data.exists() || data.child('status').val() === 'pending') && newData.hasChildren(['email','name','school','purpose','want','at','status']) && newData.child('status').val() === 'pending' && !newData.child('apps').exists() && newData.child('email').val() === auth.token.email && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && newData.child('purpose').isString() && newData.child('purpose').val().length >= 1 && newData.child('purpose').val().length <= 200 && newData.child('at').isNumber()) || ((!data.exists() || data.child('status').val() === 'pending') && auth.token.email_verified === true && root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')).exists() && newData.child('status').val() === 'approved' && newData.child('email').val() === auth.token.email && newData.hasChildren(['email','name','school','at','status','apps']) && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && (!newData.child('apps/excel').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/excel').val() === true) && (!newData.child('apps/gps').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/gps').val() === true) && (!newData.child('apps/seat').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/seat').val() === true)) || (data.exists() && newData.child('status').val() === data.child('status').val() && newData.child('email').val() === data.child('email').val() && newData.child('note').val() === data.child('note').val() && newData.child('apps/excel').val() === data.child('apps/excel').val() && newData.child('apps/gps').val() === data.child('apps/gps').val() && newData.child('apps/seat').val() === data.child('apps/seat').val() && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30)",
+    ".validate": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || ((!data.exists() || data.child('status').val() === 'pending') && newData.hasChildren(['email','name','school','purpose','want','at','status']) && newData.child('status').val() === 'pending' && !newData.child('apps').exists() && newData.child('email').val() === auth.token.email && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && newData.child('purpose').isString() && newData.child('purpose').val().length >= 1 && newData.child('purpose').val().length <= 200 && newData.child('at').isNumber()) || ((!data.exists() || data.child('status').val() === 'pending') && auth.token.email_verified === true && root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')).exists() && newData.child('status').val() === 'approved' && newData.child('email').val() === auth.token.email && newData.hasChildren(['email','name','school','at','status','apps']) && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && (!newData.child('apps/excel').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/excel').val() === true) && (!newData.child('apps/gps').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/gps').val() === true) && (!newData.child('apps/seat').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/seat').val() === true) && (!newData.child('apps/src').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/src').val() === true) && (!newData.child('apps/lab').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/lab').val() === true)) || (data.exists() && newData.child('status').val() === data.child('status').val() && newData.child('email').val() === data.child('email').val() && newData.child('note').val() === data.child('note').val() && newData.child('apps/excel').val() === data.child('apps/excel').val() && newData.child('apps/gps').val() === data.child('apps/gps').val() && newData.child('apps/seat').val() === data.child('apps/seat').val() && newData.child('apps/src').val() === data.child('apps/src').val() && newData.child('apps/lab').val() === data.child('apps/lab').val() && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30)",
     "apps": {
      "$app": {
-      ".validate": "$app.matches(/^(excel|gps|seat|src)$/) && newData.val() === true"
+      ".validate": "$app.matches(/^(excel|gps|seat|src|lab)$/) && newData.val() === true"
      }
     }
    }
@@ -1498,7 +1539,7 @@ fp/
     ".validate": "newData.hasChildren(['email','apps','at']) && newData.child('email').isString() && newData.child('email').val().toLowerCase().replace('.', ',') === $key",
     "apps": {
      "$app": {
-      ".validate": "$app.matches(/^(excel|gps|seat|src)$/) && newData.val() === true"
+      ".validate": "$app.matches(/^(excel|gps|seat|src|lab)$/) && newData.val() === true"
      }
     }
    }
@@ -1718,6 +1759,117 @@ fp/
        },
        "c": {
         ".validate": true
+       }
+      }
+     }
+    }
+   }
+  },
+  "lab223": {
+   "owners": {
+    "$uid": {
+     ".read": "auth != null && auth.uid === $uid",
+     ".write": "auth != null && auth.uid === $uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/lab').val() === true)))",
+     "$code": {
+      ".validate": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && newData.hasChildren(['sys','term','item','at'])"
+     }
+    }
+   },
+   "m": {
+    "$code": {
+     ".read": "auth != null && data.child('meta/owner').val() === auth.uid",
+     ".write": "auth != null && !newData.exists() && data.child('meta/owner').val() === auth.uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/lab').val() === true)))",
+     "meta": {
+      ".read": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/)",
+      ".write": "auth != null && $code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/lab').val() === true))) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)",
+      ".validate": "newData.hasChildren(['owner','sys','term','item','open','at','set']) && (!newData.child('admin').exists() || (auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true))",
+      "owner": {
+       ".validate": "newData.isString() && (!data.exists() || newData.val() === data.val())"
+      },
+      "sys": {
+       ".validate": "newData.isString() && newData.val().matches(/^(eq|ph|unit)$/) && (!data.exists() || newData.val() === data.val())"
+      },
+      "term": {
+       ".validate": "newData.isString() && newData.val().matches(/^[0-9]{2,3}-[12]$/)"
+      },
+      "item": {
+       ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 99"
+      },
+      "name": {
+       ".validate": "newData.isString() && newData.val().length <= 30"
+      },
+      "open": {
+       ".validate": "newData.isBoolean()"
+      },
+      "at": {
+       ".validate": "newData.isNumber()"
+      },
+      "set": {
+       ".validate": "newData.isString() && newData.val().length <= 80 && (!data.exists() || newData.val() === data.val())"
+      },
+      "admin": {
+       ".validate": "newData.isBoolean()"
+      },
+      "$other": {
+       ".validate": false
+      }
+     },
+     "r": {
+      "$id": {
+       ".read": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $id.matches(/^[A-Z0-9]{1,8}_[0-9]{1,2}$/)",
+       ".write": "(newData.exists() && $code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $id.matches(/^[A-Z0-9]{1,8}_[0-9]{1,2}$/) && root.child('lab223/m/'+$code+'/meta').child('open').val() === true && (root.child('lab223/m/'+$code+'/meta').child('admin').val() === true || (root.child('staff/'+root.child('lab223/m/'+$code+'/meta').child('owner').val()+'/status').val() === 'approved' && root.child('staff/'+root.child('lab223/m/'+$code+'/meta').child('owner').val()+'/apps/lab').val() === true)) && data.child('submitted').val() !== true) || (!newData.exists() && auth != null && root.child('lab223/m/'+$code+'/meta').child('owner').val() === auth.uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/lab').val() === true))))",
+       ".validate": "newData.hasChildren(['cls','seat','no','name','use','ts'])",
+       "cls": {
+        ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 8"
+       },
+       "seat": {
+        ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 99"
+       },
+       "no": {
+        ".validate": "newData.isString() && newData.val().matches(/^[A-Z0-9]{3,12}$/)"
+       },
+       "name": {
+        ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 12"
+       },
+       "use": {
+        ".validate": "newData.isString() && newData.val().matches(/^(正式進度|考試複習|重補修)$/)"
+       },
+       "ts": {
+        ".validate": "newData.isNumber()"
+       }
+      }
+     },
+     "lb": {
+      ".read": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/)",
+      "$id": {
+       ".write": "(newData.exists() && $code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $id.matches(/^[A-Z0-9]{1,8}_[0-9]{1,2}$/) && root.child('lab223/m/'+$code+'/meta').child('open').val() === true && (root.child('lab223/m/'+$code+'/meta').child('admin').val() === true || (root.child('staff/'+root.child('lab223/m/'+$code+'/meta').child('owner').val()+'/status').val() === 'approved' && root.child('staff/'+root.child('lab223/m/'+$code+'/meta').child('owner').val()+'/apps/lab').val() === true))) || (!newData.exists() && auth != null && root.child('lab223/m/'+$code+'/meta').child('owner').val() === auth.uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/lab').val() === true))))",
+       ".validate": "newData.hasChildren(['cls','seat','name','score','correct','total','seconds','at']) && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 3000 && newData.child('correct').isNumber() && newData.child('correct').val() <= newData.child('total').val() && newData.child('total').isNumber() && newData.child('total').val() <= 40 && newData.child('seconds').isNumber() && newData.child('at').isNumber() && newData.child('cls').isString() && newData.child('cls').val().length <= 8 && newData.child('seat').isNumber() && newData.child('name').isString() && newData.child('name').val().length <= 12",
+       "$other": {
+        ".validate": "$other === 'cleared' && newData.isBoolean()"
+       },
+       "cls": {
+        ".validate": "true"
+       },
+       "seat": {
+        ".validate": "true"
+       },
+       "name": {
+        ".validate": "true"
+       },
+       "score": {
+        ".validate": "true"
+       },
+       "correct": {
+        ".validate": "true"
+       },
+       "total": {
+        ".validate": "true"
+       },
+       "seconds": {
+        ".validate": "true"
+       },
+       "at": {
+        ".validate": "true"
        }
       }
      }
