@@ -2,7 +2,7 @@
 
 > 給未來的自己（和 Claude）看的說明書：這個網站怎麼組成、資料放哪裡、要新增工具時怎麼接進來。
 > **每次開發的過程與決定記在 [CHANGELOG.md](CHANGELOG.md)（開發歷程）**，每次開發結束都要同步更新本檔與 CHANGELOG。
-> 最後更新：2026-10-21
+> 最後更新：2026-10-23
 
 ---
 
@@ -34,7 +34,7 @@ wuyutzu-tools/
 ├── firebase/                     # 🔐 Firebase 規則原始檔與工具（2026-10-13）
 │   ├── rules.src.json            #   規則原始檔：用縮寫 {{ADMIN}}、{{STAFF:app}}、{{EKEY}}，改規則改這裡
 │   ├── build_rules.py            #   展開縮寫 → 產生 firebase-rules.json
-│   └── rules.test.js             #   規則自動測試（targaryen 模擬 Firebase，118 項）
+│   └── rules.test.js             #   規則自動測試（targaryen 模擬 Firebase，255 項）
 ├── .github/workflows/firebase.yml # 🤖 推上 main 自動測試＋部署規則、每週一回報用量（2026-10-18）
 ├── tools/health/                 # 🩺 全站連線健檢（2026-10-18，見 7-14）
 │   ├── check.py                  #   掃即時連線／輪詢頁有沒有背景讓位、大節點筆數、規則字數
@@ -116,6 +116,14 @@ wuyutzu-tools/
 │   ├── system.html               # 舊版選人＋詛咒（首頁已不連結，保留備查）
 │   └── poke-game.html            # 戳戳樂
 │
+├── game-design/                  # 🎮 遊戲設計思考（首頁抽屜「遊戲研究室」；巴圖測驗仍在 classroom/bartle.html）
+│   └── exam/                     # 🎲 線上檢定所：線上測驗系統（2026-10-23 第一階段）
+│       ├── index.html            #   老師後台（會員中心登入 app=exam：📝 測驗、📚 題庫；不連回事務所首頁）
+│       ├── teacher.js            #   老師後台程式：Quill 題目編輯器、Word／Excel／JSON 匯入、建立測驗、自動閱卷官、成績、名單、公布
+│       ├── take.html             #   學生作答頁（take.html?code=測驗代碼，手機／平板用，不連回首頁；REST，不載 SDK）
+│       ├── core.js               #   共用核心：計分、採計方式、依學號打亂、Word 考卷解析、Excel 範本解析、圖片壓縮、REST
+│       └── exam.css              #   兩頁共用樣式（含 Quill 格式 class）
+│
 ├── inquiry/                      # 🔬 探究與實作課程
 │   ├── excel-rescue-core.js      # 📊 消失的實驗數據：共用核心（學號→專屬數據、標準答案、對答案、結案代碼）
 │   ├── excel-rescue-checker.js   # 📊 消失的實驗數據：Excel 鑑識核心（拆開 .xlsx 檢查圖表／函數／格式化條件）
@@ -155,7 +163,8 @@ wuyutzu-tools/
 | ⚗️ 化學實驗室 No.223 | No.223 懸案系列 | 消失的實驗器材、消失的指示劑（pH）、失落的配方（單位換算）（三者都連到老師頁，2026-10-22 起用活動）、時光手稿：科學史大冒險、隱秘的鍵結社（2026-10-17 從「科學史」「化學鍵」小分類併入） |
 | | 課程經營 | 案件委託公告欄、科普閱讀測驗（**外部連結**，不在本倉庫：`https://reading-quiz-system.vercel.app/`，Vercel＋Supabase，原始碼在 `puff0223-chwu/reading-quiz-system`；2026-10-17 從「探究與實作」搬來） |
 | | 🎲 課堂遊戲化 | 選人系統（`picker.html`）、陣亡詛咒（`curse.html`）、戳戳樂、真心話大冒險 |
-| 🎮 遊戲設計思考 | — | 巴圖玩家類型 |
+| 🎮 遊戲研究室（遊戲設計思考） | 玩家研究 | 巴圖玩家類型 |
+| | 課程評量 | 線上檢定所（連到老師後台 `game-design/exam/`，2026-10-23） |
 | 🔬 探究與實作 | Excel 數據處理 | 消失的實驗數據（連到老師頁） |
 | | 校園定向越野 | 遺落的地點（連到老師後台 `inquiry/orienteering/`） |
 | | 文獻與小論文 | 出處失傳的秘文（連到老師卷宗 `inquiry/secret-source/teacher.html`） |
@@ -271,6 +280,7 @@ wuyutzu-tools/
 - **`seating/` 抽屜（座位大作戰，2026-10-09）**：老師用 Email 登入（座位系統專用帳號），每個班級記錄 `owner`，規則只讓擁有者讀寫；未來分享給其他老師只要幫對方開帳號。
 - **`fp/` 抽屜（集點小金庫，2026-10-06）**：使用 Firebase Authentication（登入）的工具，規則依登入身分判斷（admins／users／kids／config／ledger），詳見第 6 節「集點小金庫」與附錄規則。
 - **`orienteering/` 抽屜（遺落的地點，2026-10-12）**：老師用專用帳號 `puff0223+gps@gmail.com` 登入；照片代號 `r:<id>` 是網站 `p/` 資料夾裡的內建照片、`f:<id>` 是老師後來上傳存在 Firebase 的照片
+- **`exam/` 抽屜（線上檢定所，2026-10-23）**：會員中心登入（app `exam`）。題庫 `bk/<uid>/<題庫>`、圖片 `img/<亂數>`（dataURL，知道代號才讀得到）、測驗 `m/<代碼>`（meta、paper 題目快照、key 正解、roster 名單、s 學生作答、mg 簡答給分、g 成績）、老師清單 `owners/<uid>`。**正確答案只在 `key`，只有出題老師讀得到**（公布正解後學生才讀得到）。詳見第 6 節
 - 與「科學任務偵探所」的 Supabase 完全分開：**Supabase 給大系統、Firebase 給輕量小工具**。
 
 ---
@@ -825,9 +835,38 @@ wuyutzu-tools/
 - **規則**：`secret-source` 抽屜（見第 4 節資料樹與附錄）。`g/<學號>`：任務擁有者（且仍開通 src）寫、單筆公開讀、g 只能 S/A/B/C、評語 ≤ 300 字。紀錄多了 `dos`（at、ok 必填，p ≤ 2500、r ≤ 3500、ai ≤ 500 字，不能有其他欄位）；紀錄多了 `arc`（q 小寫字母＋數字、g 只能 S／A／B、n 0～9999、p 最多 4 篇）、`clue`（at 必填、topic ≤ 60 字、c 最多 6 張，每個欄位有長度上限、不能有其他欄位）。學生寫入要求任務存在、沒關閉，而且擁有者仍是核准且開通 src 的老師（或 meta.admin）
 - **測試**：4,400 筆（11 類 × 400 學號）標準答案自我批改全部通過；常見錯誤各有對應訊息；500 個學號的找錯題每筆都有正確答案、英文排序不重複；瀏覽器實測學生用 B 按鈕打出粗體、全部關卡過關、換裝置接回 9 關；老師頁＋3 位學生一起跑，每一次讀寫都用真正的 Firebase 規則（targaryen）檢查，0 次被拒；規則測試新增 28 項；第二階段：16 題用前兩個關鍵字 AND 搜尋都找得到 5 篇正解、不會混進別題；瀏覽器實測（電腦＋手機寬度）拆解表擋搜尋、收論壇被擋＋調查員筆記、換成書拿 S、線索卡逐欄提示到完成、換裝置接回線索卡；老師頁指定主題驗證、即時進度、線索卡分頁、Excel 兩張表、答案查詢，0 次被規則拒絕；規則測試再加 7 項（共 104 項）
 
+### 🎲 線上檢定所（game-design/exam/，2026-10-23 第一階段）
+- **用途**：遊戲設計思考選修的線上測驗（其實是通用的，化學課也能用）。完整規格見專案文件「線上檢定所_開發規格書.md」
+- **登入**：會員中心共用帳號，系統代號 `exam`，其他老師可以申請；老師頁**不連回事務所首頁**（分享給其他老師的系統），只連會員中心。管理員開的測驗 `meta.admin = true`（管理員沒有 staff 紀錄，學生寫入靠這個旗標放行）
+- **題型**（老師 2026-10-23 指定）：🔘 單選、☑️ **多重選擇題**（每錯一個選項——該選沒選、不該選卻選——扣該題配分 **1/5**，扣到 0 分為止；沒作答 0 分；4 個選項全錯會剩 1/5）、✏️ 簡答（老師批閱，沒寫自動 0 分）。舊考卷的「複選題」匯入時一律轉成多重選擇題。計分程式在 `core.js` 的 `scoreOne`，扣分比例 `MULTI_PENALTY = 0.2`
+- **📚 題庫**：`exam/bk/<uid>/<題庫id>` = { name, at, q: { 題目id: { t(s/m/a), s 題幹HTML, o[選項HTML], a[正解位置], r 簡答參考答案, e 解析, d 易/中/難, tags[], l 鎖定選項順序, p 配分, i 排序, at, src 來源檔名 } } }
+  - 編輯器：Quill 2.0.3（CDN），工具列 字級／粗斜底刪／顏色／上下標／對齊／清單／連結／圖片；選項用精簡工具列。圖片：工具列上傳、貼上、拖曳都會**壓縮（最長邊 1000px、JPEG 0.72）→ 存 `exam/img/<亂數14碼>` → 題目裡只寫 `<img data-img="代號">`**（自訂 Quill 圖片格式 `ExImg` 保留 data-img 與寬度）；點圖片可選小／中／大／原始寬度。從 Word、網頁貼上的 data: 圖片也會自動上傳
+  - 已存過的題目自動儲存（停 1.2 秒），另有「💾 儲存」「儲存並新增下一題」、Ctrl+S；批次：加／移除標籤、改難易度、改配分、複製到其他題庫、刪除；↑↓ 調整順序
+  - **Word 匯入**（mammoth 1.8.0，`styleMap: ['u => u']` 保留底線）：`ExamCore.parseDocHtml` 依舊考卷格式解析——題號「1.」**必須在段落開頭**才算新題目（解析裡的「1. 2.」不會被誤判，而且後面幾行內要看得到題型或選項）；「單選題（難易度:中）」；選項「A.」～「H.」（選項文字跑到下一行會接回去）；「正確答案：A C」；「正確答案解釋：」或「答案解釋：」，「暫無」＝空白。匯入前有預覽表（警告列標黃）、選題庫、加標籤、各題型配分；老師的舊考卷實測 62 題（單選 39、複選→多重選擇 23）、23 張圖全部正確（圖片原本約 5MB，壓縮後 2.3MB）
+  - Excel 匯入／範本：欄位 題型、題幹、A～H、答案、解析、難易度、標籤、配分（`ExamCore.parseRows`）；JSON 備份含圖片，匯回時圖片換新代號
+- **📝 測驗**：`exam/m/<6碼代碼>/`
+  - `meta`：owner, at, title, desc, open（老師開關）, openAt（0＝手動）, closeAt（0＝不設）, mins, tries（1～10，不限＝20）, policy（max/first/last/avg）, gap（分鐘，0＝關閉）, draw（每人隨機抽幾題，0＝全部）, shufQ, shufO, reshuf, showNeed, rosterOnly, guard{on,max,idle,blur}, n, total, bank, pub, pubPaper, pubKey, admin
+  - 開放狀態 `ExamCore.stateOf`：open＝false →「未開放」；open 且還沒到 openAt →「尚未開始」；過了 closeAt →「已結束」。排程模式就是 open＝true＋openAt
+  - `paper/<題目id>`：題目**快照**（建立時從題庫複製；之後改題庫不影響，要更新按「修改題目與配分」重新選題，已交的考卷自動重新計分）＝ { i, t, s, o, l, p, need }，**沒有答案**；開放期間學生才讀得到（公布題目後也讀得到）
+  - `key/<題目id>`：{ a, r, e }，只有出題老師讀得到；勾「公布正解與解析」後學生才讀得到
+  - `roster/<學號>`：{ cls, seat, name }，只有老師讀寫；rosterOnly＝true 時規則要求開始作答的班級、座號、姓名都和名單一樣
+  - `s/<學號>/<第幾次>`：{ info{cls,seat,name}, st（**伺服器時間**，規則要求 `=== now`）, dev（裝置鎖）, ans{題目id: 單選數字／多重選擇 "0,2"／簡答文字}, ev{push: {t, k: v 違規/resume/idle, d 原因}}, end{t, by: self/time/guard/teacher, why} }
+  - `mg/<學號>/<第幾次>/<題目id>`：老師給的簡答（或調整）分數
+  - `g/<學號>`：自動閱卷官算好的成績 { k: { a1: { s, full, p 待批數, by, d{題目id: 分數，-1＝待批} } }, f 採計分數, fp 有沒有待批, n, policy, at }，**key 用 a1、a2**（純數字 key 會被 Firebase 變成陣列，簽章比對會一直不一樣而重寫）；公布（meta.pub）後學生讀得到自己那筆
+- **規則重點**（`firebase/rules.src.json` 的 `exam`）：開始第 k 次要「開放中、擁有者帳號有效、k ≤ 可作答次數、第 k−1 次已交卷、過了間隔時間、（名單限定時）名單吻合、st＝伺服器時間」——規則不能把數字轉字串，所以 1～20 次是**逐次寫出來**的（產生程式見 CHANGELOG 2026-10-23）；答案只能在「已開始、未交卷、開始時間＋作答時間＋15 秒以內、測驗開放中」寫入；交卷 `end` 寫一次就鎖住，學生不能寫 `by: teacher`、時間要等於伺服器時間；學生讀得到自己的 `s/<學號>`，讀不到全班
+- **學生頁**（`take.html?code=`）：輸入班級、座號、姓名、學號（存在這台裝置下次自動帶入）→ 大廳顯示各次紀錄與交卷方式、能不能開始（未開放／次數用完／要等間隔）→ 作答規則＋誠信宣言 → 開始（進全螢幕，`PUT …/<k>` 寫伺服器時間，讀回來算時間差）→ 一題一頁、題號導覽（已答深色、🚩 標記）、每選一個答案就 PUT（失敗每 4 秒重試，上方顯示存檔狀態）、浮水印（班級座號姓名學號）、停用複製／右鍵／拖曳、簡答不能貼上、作答中題目裡的連結不能點 → 交卷前列出沒作答與標記的題號
+  - 時間到自動交卷（by time）；每 20 秒看一次 meta 與自己的 end（背景不輪詢）：老師關閉 → 顯示「老師已收卷」（老師頁會寫 by teacher）
+  - **重新整理／當機**：同一台裝置回到大廳按「▶ 繼續作答」（時間照算、答案都在，記一筆 resume）；別台裝置用同一個學號會看到「🔒 正在另一台裝置作答」，要老師在學生明細按「🔓 解除裝置鎖」（dev 設成空字串，新裝置就能接手）
+- **🛡️ 反作弊**（meta.guard）：`visibilitychange`（切換頁面／App／回主畫面）、`fullscreenchange`（離開全螢幕；要先成功進過全螢幕才算）、`blur` 超過 guard.blur 秒（分割畫面、浮動視窗）都記違規；3 秒內的多個事件只算一次（切 App 時常同時離開全螢幕）。違規次數＝作答紀錄裡 k＝v 的事件數（重新整理不會歸零）。未達上限 → 紅色警告「再違規 N 次會代結」＋「回到考試」（重新要求全螢幕）；達上限（預設 2）→ 用已存的答案交卷 by guard、why＝原因。閒置 guard.idle 分鐘 →「你還在嗎？」30 秒倒數，沒按直接代結（why idle，不算次數）。iPhone 的 Safari 不支援網頁全螢幕（只偵測切換與閒置，進場會提醒建議用平板）
+- **老師頁的自動閱卷官**（`teacher.js` 的 `regrade`）：打開某份測驗時監聽 `s`、`mg`、`g`、`meta`，每 5 秒也跑一次：① 時間到還沒交卷的 → 代寫 end（by time，t＝期限）② 老師按「⏹ 關閉並收卷」→ 作答中的全部 end by teacher ③ 算每次分數、採計分數 → 跟上次寫的簽章不同才寫 `g`。老師頁沒開時學生照樣能考，下次打開會一次補算。老師頁開 `FB.idle(60000)`（背景 60 秒讓出連線，回來自動補同步）
+- **📋 成績**：統計（名單人數、未進入、作答中、已交卷、平均最高最低、系統代結、簡答待批）、成績表（狀態即時：作答中 x/n＋剩餘時間；各次分數＋交卷方式圖示；採計；違規次數；名單外的人標示）。點一列 → 每次作答的事件時間軸、每題答案與正解（題庫原始字母）、簡答給分（輸入就存）、⏹ 收卷、🔓 解除裝置鎖、🗑 刪除最後一次作答（讓學生重考那一次）。⬇ Excel：成績總表、作答明細、每題分析（答對率、平均得分）
+- **📣 公布成績**：成績一定公布；可勾「題目（看得到題目、自己的作答、每題對錯與得分）」與「正解與解析」（要先勾題目）；可以撤回。學生用同一個連結輸入學號 → 大廳下方看採計分數、各次分數與交卷方式，按「看題目」看每題
+- **其他**：🔗 分享（連結、QR、全螢幕投影：代碼＋QR＋作答中／已交卷人數）、🧾 題目（快照預覽含答案）、👥 名單（貼上四欄或 Excel，取代／加入）、⚙️ 設定（修改、⧉ 複製成新測驗、🗑 刪除要輸入代碼）
+- **還沒做（第二階段、第三階段）**：簡答「依題目批閱」畫面與匿名閱卷、常用評語、老師延長單一學生時間、「再給一次機會」（目前用刪除最後一次作答代替）、考場投影看板的進度牆、選項分布與鑑別度分析、依標籤分析
+
 ### 👥 會員中心（account/，2026-10-13 新增）
-- **用途**：其他老師自己申請帳號 → 管理員核准並勾選可用的系統（excel／gps／seat／src），不用到 Firebase 控制台一個一個建帳號
-- **新增系統（2026-10-18 加 src；2026-10-22 加 lab＝⚗️ 化學實驗室 No.223，同時補上「核准的老師不能自己加開 src／lab」的規則檢查）**：`account/staff.js` 的 `APPS` 加一筆、規則裡三處 app 名單（staff／staffpre 的 `$app`）加上代號；各頁 `staff.js?v=` 版本號一起更新。會員中心的申請、核准、加開畫面都是讀 `APPS` 自動產生，不用另外改
+- **用途**：其他老師自己申請帳號 → 管理員核准並勾選可用的系統（excel／gps／seat／src／lab／exam），不用到 Firebase 控制台一個一個建帳號
+- **新增系統（2026-10-18 加 src；2026-10-22 加 lab＝⚗️ 化學實驗室 No.223，同時補上「核准的老師不能自己加開 src／lab」的規則檢查；2026-10-23 加 exam＝🎲 線上檢定所）**：`account/staff.js` 的 `APPS` 加一筆、規則裡三處 app 名單（staff／staffpre 的 `$app`）加上代號；各頁 `staff.js?v=` 版本號一起更新。會員中心的申請、核准、加開畫面都是讀 `APPS` 自動產生，不用另外改
 - **管理員＝主帳號 `puff0223@gmail.com`**（規則同時要求信箱已驗證 `email_verified`；Google 登入一定是已驗證，所以別人沒辦法冒名註冊同一個 Email 拿到管理權）。主帳號可以用全部系統，不用申請
 - **登入方式**：Email＋密碼，或「使用 Google 帳號登入」（popup；被瀏覽器擋就改整頁跳轉）。Google 新使用者第一次登入沒有申請資料 → 會員中心自動顯示「補填申請資料」
 - **流程**：會員中心申請（姓名、學校、想用的系統、用途）→ Email 申請者收驗證信 → `staff/<uid>` 狀態 pending → 管理員在「待核准」分頁勾系統按核准 → 老師重新整理各系統頁面就能用
@@ -1124,6 +1163,14 @@ fp/
 - **測試要經過真正的規則**：本機 Node 伺服器同時提供網站和假的 Firebase REST，每一次讀寫都用 targaryen 照 `firebase-rules.json` 判斷，老師頁的 SDK 用假的 `fb.js` 也送到這台伺服器；測試結束看「拒絕清單」，只能出現預期中的拒絕（例如停止後學生寫入）
 - **舊資料要讓老師「看得到」，不只是「沒被刪」**：器材舊成績雖然留在名人堂，但名人堂只出現在學生頁，老師頁要選活動才有畫面，等於老師看不到。保留舊資料時，要確認老師頁有一個不用選活動就能進去的入口
 
+### 7-23 線上檢定所・第一階段（2026-10-23）
+- **規則不能做「數字轉字串」**：想寫「第 k 次要等第 k−1 次交卷」時，`$k` 是字串、沒辦法減 1 再拿去找路徑 → 改成把 1～20 次每一種情況寫出來（`($k === '2' && … data.parent().child('1/end').exists() …) || …`），用產生程式寫進 rules.src.json。規則因此從 35 KB 變 71 KB（上限 256 KB），之後還有很多空間，但新系統不要再這樣大量展開
+- **純數字的 key 會變陣列**：Firebase 讀回 `{1: …, 2: …}` 時會變成 `[null, …, …]`。學生作答 `s/<學號>/1` 讀取時用 `Object.keys` 再過濾就好；但閱卷官要「跟上次寫的比對」的 `g` 如果用數字 key，讀回來永遠跟本機算的不一樣 → 每 5 秒重寫一次浪費額度。**比對用的資料一律用 a1、a2 這種 key**
+- **多路徑 update 的規則看的是「寫入前」的 root**：建立測驗時如果 meta、paper、key 一次 update，paper 的規則查不到 meta 的擁有者 → 被拒。改成先寫 meta 再寫其他
+- **Quill 的按鈕會被 querySelector 先抓到**：選項列裡 `$('button', row)` 抓到的是 Quill 工具列的第一個按鈕，不是 ✕ 刪除鍵 → 自己的按鈕一律加 class 再選
+- **Word 解析的兩個陷阱**（老師的舊考卷）：解析裡的「1. 「注意力」…」看起來像題號 → 新題目必須是段落第一行；第 33 題選項「B.」後面換行才接文字 → 選項內容要把後面的行接回去。另外 mammoth 預設會丟掉底線，要加 `styleMap: ['u => u']`（老師的考卷大量用底線標「不」「非」）
+- **測試方式**：Playwright 開老師頁＋學生頁，用假的 Firebase（攔截 REST 請求、用記憶體當資料庫、會把數字 key 轉陣列）＋假的 `account/fb.js`（輪詢模擬 onValue），CDN 改讀本機 npm 套件。跑過：Word 匯入 62 題、編輯器載入圖片、加選項存檔、新增簡答題、建立測驗、開放、學生作答、違規 1 次警告、第 2 次系統代結、重考答對、交卷、老師給簡答分、公布、學生看成績與題目、重新整理繼續作答、換裝置被擋、老師關閉並收卷（兩位作答中的學生都收到）、時間到自動收卷、名單（未進入）、Excel 三張表。規則另外用 targaryen 測 86 項
+
 ## 8. 已知注意事項
 
 - **Firebase 免費額度（Spark，2026-10-06 查）**：儲存 1 GB、每月下載 10 GB、同時連線 100 條。估計每月下載不到 1 GB；要留意的是同時連線。pH、單位換算、器材都是「問完就走」的一次性請求（學生頁每 15 秒看一次活動有沒有停止），不長期佔連線（老師頁開著時 1 條）；**長期佔連線的只有公告欄（SSE 即時同步）和集點小金庫**（2026-10-18 起都會背景讓位，見 7-14）。公告欄學生頁切到背景超過 60 秒或關閉分頁就自動斷線、回到畫面自動重連（2026-10-06）。用量看 Firebase 控制台 → Realtime Database →「用量」
@@ -1142,7 +1189,7 @@ fp/
 
 ---
 
-## 附錄：Firebase 安全規則全文（2026-10-22：化學實驗室 No.223 活動 lab223、舊題組碼抽屜唯讀、搬移改版前紀錄）
+## 附錄：Firebase 安全規則全文（2026-10-23：線上檢定所 exam、會員中心加 exam）
 
 > 由 `firebase/build_rules.py` 從 `firebase/rules.src.json` 產生，和根目錄 `firebase-rules.json` 相同。要改規則請改原始檔再重新產生，不要直接改這裡。推上 main 後 GitHub Action 會自動部署。
 
@@ -1525,10 +1572,10 @@ fp/
    "$uid": {
     ".read": "auth != null && auth.uid === $uid",
     ".write": "auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (auth.uid === $uid && newData.exists()))",
-    ".validate": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || ((!data.exists() || data.child('status').val() === 'pending') && newData.hasChildren(['email','name','school','purpose','want','at','status']) && newData.child('status').val() === 'pending' && !newData.child('apps').exists() && newData.child('email').val() === auth.token.email && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && newData.child('purpose').isString() && newData.child('purpose').val().length >= 1 && newData.child('purpose').val().length <= 200 && newData.child('at').isNumber()) || ((!data.exists() || data.child('status').val() === 'pending') && auth.token.email_verified === true && root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')).exists() && newData.child('status').val() === 'approved' && newData.child('email').val() === auth.token.email && newData.hasChildren(['email','name','school','at','status','apps']) && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && (!newData.child('apps/excel').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/excel').val() === true) && (!newData.child('apps/gps').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/gps').val() === true) && (!newData.child('apps/seat').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/seat').val() === true) && (!newData.child('apps/src').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/src').val() === true) && (!newData.child('apps/lab').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/lab').val() === true)) || (data.exists() && newData.child('status').val() === data.child('status').val() && newData.child('email').val() === data.child('email').val() && newData.child('note').val() === data.child('note').val() && newData.child('apps/excel').val() === data.child('apps/excel').val() && newData.child('apps/gps').val() === data.child('apps/gps').val() && newData.child('apps/seat').val() === data.child('apps/seat').val() && newData.child('apps/src').val() === data.child('apps/src').val() && newData.child('apps/lab').val() === data.child('apps/lab').val() && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30)",
+    ".validate": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || ((!data.exists() || data.child('status').val() === 'pending') && newData.hasChildren(['email','name','school','purpose','want','at','status']) && newData.child('status').val() === 'pending' && !newData.child('apps').exists() && newData.child('email').val() === auth.token.email && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && newData.child('purpose').isString() && newData.child('purpose').val().length >= 1 && newData.child('purpose').val().length <= 200 && newData.child('at').isNumber()) || ((!data.exists() || data.child('status').val() === 'pending') && auth.token.email_verified === true && root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')).exists() && newData.child('status').val() === 'approved' && newData.child('email').val() === auth.token.email && newData.hasChildren(['email','name','school','at','status','apps']) && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && (!newData.child('apps/excel').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/excel').val() === true) && (!newData.child('apps/gps').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/gps').val() === true) && (!newData.child('apps/seat').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/seat').val() === true) && (!newData.child('apps/src').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/src').val() === true) && (!newData.child('apps/lab').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/lab').val() === true) && (!newData.child('apps/exam').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/exam').val() === true)) || (data.exists() && newData.child('status').val() === data.child('status').val() && newData.child('email').val() === data.child('email').val() && newData.child('note').val() === data.child('note').val() && newData.child('apps/excel').val() === data.child('apps/excel').val() && newData.child('apps/gps').val() === data.child('apps/gps').val() && newData.child('apps/seat').val() === data.child('apps/seat').val() && newData.child('apps/src').val() === data.child('apps/src').val() && newData.child('apps/lab').val() === data.child('apps/lab').val() && newData.child('apps/exam').val() === data.child('apps/exam').val() && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30)",
     "apps": {
      "$app": {
-      ".validate": "$app.matches(/^(excel|gps|seat|src|lab)$/) && newData.val() === true"
+      ".validate": "$app.matches(/^(excel|gps|seat|src|lab|exam)$/) && newData.val() === true"
      }
     }
    }
@@ -1541,7 +1588,7 @@ fp/
     ".validate": "newData.hasChildren(['email','apps','at']) && newData.child('email').isString() && newData.child('email').val().toLowerCase().replace('.', ',') === $key",
     "apps": {
      "$app": {
-      ".validate": "$app.matches(/^(excel|gps|seat|src|lab)$/) && newData.val() === true"
+      ".validate": "$app.matches(/^(excel|gps|seat|src|lab|exam)$/) && newData.val() === true"
      }
     }
    }
@@ -1876,6 +1923,337 @@ fp/
        "at": {
         ".validate": "true"
        }
+      }
+     }
+    }
+   }
+  },
+  "exam": {
+   "owners": {
+    "$uid": {
+     ".read": "auth != null && auth.uid === $uid",
+     ".write": "auth != null && auth.uid === $uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true)))",
+     "$code": {
+      ".validate": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && newData.hasChildren(['title','at']) && newData.child('title').isString() && newData.child('title').val().length <= 60"
+     }
+    }
+   },
+   "bk": {
+    "$uid": {
+     ".read": "auth != null && auth.uid === $uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true)))",
+     ".write": "auth != null && auth.uid === $uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true)))",
+     "$bank": {
+      ".validate": "$bank.matches(/^[a-z0-9]{6,16}$/) && newData.hasChildren(['name','at'])",
+      "name": {
+       ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 40"
+      },
+      "at": {
+       ".validate": "newData.isNumber()"
+      },
+      "tags": {
+       "$t": {
+        ".validate": "newData.isString() && newData.val().length <= 20"
+       }
+      },
+      "q": {
+       "$q": {
+        ".validate": "$q.matches(/^[a-z0-9]{4,16}$/) && newData.hasChildren(['t','s'])",
+        "t": {
+         ".validate": "newData.isString() && newData.val().matches(/^[sma]$/)"
+        },
+        "s": {
+         ".validate": "newData.isString() && newData.val().length <= 30000"
+        },
+        "o": {
+         "$i": {
+          ".validate": "$i.matches(/^[0-7]$/) && newData.isString() && newData.val().length <= 30000"
+         }
+        },
+        "a": {
+         "$i": {
+          ".validate": "$i.matches(/^[0-7]$/) && newData.isNumber() && newData.val() >= 0 && newData.val() <= 7"
+         }
+        },
+        "r": {
+         ".validate": "newData.isString() && newData.val().length <= 30000"
+        },
+        "e": {
+         ".validate": "newData.isString() && newData.val().length <= 30000"
+        },
+        "d": {
+         ".validate": "newData.isString() && newData.val().matches(/^[易中難]$/)"
+        },
+        "tags": {
+         "$i": {
+          ".validate": "newData.isString() && newData.val().length <= 20"
+         }
+        },
+        "l": {
+         ".validate": "newData.isBoolean()"
+        },
+        "p": {
+         ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+        },
+        "i": {
+         ".validate": "newData.isNumber()"
+        },
+        "at": {
+         ".validate": "newData.isNumber()"
+        },
+        "src": {
+         ".validate": "newData.isString() && newData.val().length <= 60"
+        },
+        "$other": {
+         ".validate": false
+        }
+       }
+      },
+      "$other": {
+       ".validate": false
+      }
+     }
+    }
+   },
+   "img": {
+    "$id": {
+     ".read": "$id.matches(/^[a-z0-9]{8,24}$/)",
+     ".write": "(auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true))) && auth != null && $id.matches(/^[a-z0-9]{8,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)",
+     ".validate": "newData.hasChildren(['owner','data']) && newData.child('owner').val() === auth.uid && newData.child('data').isString() && newData.child('data').val().matches(/^data:image\\//) && newData.child('data').val().length < 700000"
+    }
+   },
+   "m": {
+    "$code": {
+     ".read": "auth != null && data.child('meta/owner').val() === auth.uid",
+     ".write": "auth != null && !newData.exists() && data.child('meta/owner').val() === auth.uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true)))",
+     "meta": {
+      ".read": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/)",
+      ".write": "auth != null && $code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true))) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)",
+      ".validate": "newData.hasChildren(['owner','at','title','open','openAt','closeAt','mins','tries','policy','gap']) && (!newData.child('admin').exists() || (auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true))",
+      "owner": {
+       ".validate": "newData.isString() && (!data.exists() || newData.val() === data.val())"
+      },
+      "at": {
+       ".validate": "newData.isNumber()"
+      },
+      "title": {
+       ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 60"
+      },
+      "desc": {
+       ".validate": "newData.isString() && newData.val().length <= 1000"
+      },
+      "open": {
+       ".validate": "newData.isBoolean()"
+      },
+      "openAt": {
+       ".validate": "newData.isNumber() && newData.val() >= 0"
+      },
+      "closeAt": {
+       ".validate": "newData.isNumber() && newData.val() >= 0"
+      },
+      "mins": {
+       ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 600"
+      },
+      "tries": {
+       ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 20"
+      },
+      "policy": {
+       ".validate": "newData.isString() && newData.val().matches(/^(max|first|last|avg)$/)"
+      },
+      "gap": {
+       ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10080"
+      },
+      "draw": {
+       ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 500"
+      },
+      "shufQ": {
+       ".validate": "newData.isBoolean()"
+      },
+      "shufO": {
+       ".validate": "newData.isBoolean()"
+      },
+      "reshuf": {
+       ".validate": "newData.isBoolean()"
+      },
+      "rosterOnly": {
+       ".validate": "newData.isBoolean()"
+      },
+      "showNeed": {
+       ".validate": "newData.isBoolean()"
+      },
+      "n": {
+       ".validate": "newData.isNumber()"
+      },
+      "total": {
+       ".validate": "newData.isNumber()"
+      },
+      "bank": {
+       ".validate": "newData.isString() && newData.val().length <= 30"
+      },
+      "pub": {
+       ".validate": "newData.isBoolean()"
+      },
+      "pubPaper": {
+       ".validate": "newData.isBoolean()"
+      },
+      "pubKey": {
+       ".validate": "newData.isBoolean()"
+      },
+      "admin": {
+       ".validate": "newData.isBoolean()"
+      },
+      "guard": {
+       "on": {
+        ".validate": "newData.isBoolean()"
+       },
+       "max": {
+        ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 5"
+       },
+       "idle": {
+        ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 60"
+       },
+       "blur": {
+        ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 60"
+       },
+       "$other": {
+        ".validate": false
+       }
+      },
+      "$other": {
+       ".validate": false
+      }
+     },
+     "paper": {
+      ".read": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && ((root.child('exam/m/'+$code+'/meta').child('open').val() === true && (root.child('exam/m/'+$code+'/meta').child('openAt').val() === 0 || now >= root.child('exam/m/'+$code+'/meta').child('openAt').val()) && (root.child('exam/m/'+$code+'/meta').child('closeAt').val() === 0 || now < root.child('exam/m/'+$code+'/meta').child('closeAt').val())) || (root.child('exam/m/'+$code+'/meta').child('pub').val() === true && root.child('exam/m/'+$code+'/meta').child('pubPaper').val() === true))",
+      ".write": "(auth != null && root.child('exam/m/'+$code+'/meta').child('owner').val() === auth.uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true))))",
+      "$q": {
+       ".validate": "$q.matches(/^[a-z0-9]{4,16}$/) && newData.hasChildren(['t','s','p'])",
+       "i": {
+        ".validate": "newData.isNumber()"
+       },
+       "t": {
+        ".validate": "newData.isString() && newData.val().matches(/^[sma]$/)"
+       },
+       "s": {
+        ".validate": "newData.isString() && newData.val().length <= 30000"
+       },
+       "o": {
+        "$i": {
+         ".validate": "$i.matches(/^[0-7]$/) && newData.isString() && newData.val().length <= 30000"
+        }
+       },
+       "l": {
+        ".validate": "newData.isBoolean()"
+       },
+       "p": {
+        ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+       },
+       "need": {
+        ".validate": "newData.isNumber()"
+       },
+       "$other": {
+        ".validate": false
+       }
+      }
+     },
+     "key": {
+      ".read": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && root.child('exam/m/'+$code+'/meta').child('pub').val() === true && root.child('exam/m/'+$code+'/meta').child('pubKey').val() === true",
+      ".write": "(auth != null && root.child('exam/m/'+$code+'/meta').child('owner').val() === auth.uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true))))"
+     },
+     "roster": {
+      ".write": "(auth != null && root.child('exam/m/'+$code+'/meta').child('owner').val() === auth.uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true))))",
+      "$sid": {
+       ".validate": "$sid.matches(/^[A-Z0-9]{3,12}$/) && newData.hasChildren(['cls','seat','name']) && newData.child('cls').isString() && newData.child('cls').val().length <= 8 && newData.child('seat').isNumber() && newData.child('name').isString() && newData.child('name').val().length <= 12"
+      }
+     },
+     "s": {
+      ".write": "(auth != null && root.child('exam/m/'+$code+'/meta').child('owner').val() === auth.uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true))))",
+      "$sid": {
+       ".read": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $sid.matches(/^[A-Z0-9]{3,12}$/)",
+       "$k": {
+        ".write": "(!data.exists() && newData.exists() && $code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $sid.matches(/^[A-Z0-9]{3,12}$/) && (root.child('exam/m/'+$code+'/meta').child('open').val() === true && (root.child('exam/m/'+$code+'/meta').child('openAt').val() === 0 || now >= root.child('exam/m/'+$code+'/meta').child('openAt').val()) && (root.child('exam/m/'+$code+'/meta').child('closeAt').val() === 0 || now < root.child('exam/m/'+$code+'/meta').child('closeAt').val())) && (root.child('exam/m/'+$code+'/meta').child('admin').val() === true || (root.child('staff/'+root.child('exam/m/'+$code+'/meta').child('owner').val()+'/status').val() === 'approved' && root.child('staff/'+root.child('exam/m/'+$code+'/meta').child('owner').val()+'/apps/exam').val() === true)) && (($k === '1' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 1) || ($k === '2' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 2 && data.parent().child('1/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('1/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '3' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 3 && data.parent().child('2/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('2/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '4' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 4 && data.parent().child('3/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('3/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '5' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 5 && data.parent().child('4/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('4/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '6' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 6 && data.parent().child('5/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('5/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '7' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 7 && data.parent().child('6/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('6/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '8' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 8 && data.parent().child('7/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('7/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '9' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 9 && data.parent().child('8/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('8/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '10' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 10 && data.parent().child('9/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('9/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '11' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 11 && data.parent().child('10/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('10/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '12' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 12 && data.parent().child('11/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('11/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '13' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 13 && data.parent().child('12/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('12/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '14' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 14 && data.parent().child('13/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('13/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '15' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 15 && data.parent().child('14/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('14/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '16' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 16 && data.parent().child('15/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('15/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '17' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 17 && data.parent().child('16/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('16/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '18' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 18 && data.parent().child('17/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('17/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '19' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 19 && data.parent().child('18/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('18/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '20' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 20 && data.parent().child('19/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('19/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000))) && (root.child('exam/m/'+$code+'/meta').child('rosterOnly').val() !== true || (root.child('exam/m/'+$code+'/roster/'+$sid+'/name').val() === newData.child('info/name').val() && root.child('exam/m/'+$code+'/roster/'+$sid+'/cls').val() === newData.child('info/cls').val() && root.child('exam/m/'+$code+'/roster/'+$sid+'/seat').val() === newData.child('info/seat').val())) && newData.child('st').val() === now) || (auth != null && root.child('exam/m/'+$code+'/meta').child('owner').val() === auth.uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true))))",
+        ".validate": "newData.hasChildren(['info','st'])",
+        "info": {
+         ".validate": "newData.hasChildren(['cls','seat','name'])",
+         "cls": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 8"
+         },
+         "seat": {
+          ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 99"
+         },
+         "name": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 12"
+         },
+         "$other": {
+          ".validate": false
+         }
+        },
+        "st": {
+         ".validate": "newData.isNumber()"
+        },
+        "dev": {
+         ".write": "(data.parent().exists() && !data.parent().child('end').exists() && (root.child('exam/m/'+$code+'/meta').child('open').val() === true && (root.child('exam/m/'+$code+'/meta').child('openAt').val() === 0 || now >= root.child('exam/m/'+$code+'/meta').child('openAt').val()) && (root.child('exam/m/'+$code+'/meta').child('closeAt').val() === 0 || now < root.child('exam/m/'+$code+'/meta').child('closeAt').val())) && (root.child('exam/m/'+$code+'/meta').child('admin').val() === true || (root.child('staff/'+root.child('exam/m/'+$code+'/meta').child('owner').val()+'/status').val() === 'approved' && root.child('staff/'+root.child('exam/m/'+$code+'/meta').child('owner').val()+'/apps/exam').val() === true)) && now <= data.parent().child('st').val() + root.child('exam/m/'+$code+'/meta').child('mins').val() * 60000 + 15000) && data.val() === ''",
+         ".validate": "newData.isString() && newData.val().length <= 24"
+        },
+        "ans": {
+         "$q": {
+          ".write": "(data.parent().parent().exists() && !data.parent().parent().child('end').exists() && (root.child('exam/m/'+$code+'/meta').child('open').val() === true && (root.child('exam/m/'+$code+'/meta').child('openAt').val() === 0 || now >= root.child('exam/m/'+$code+'/meta').child('openAt').val()) && (root.child('exam/m/'+$code+'/meta').child('closeAt').val() === 0 || now < root.child('exam/m/'+$code+'/meta').child('closeAt').val())) && (root.child('exam/m/'+$code+'/meta').child('admin').val() === true || (root.child('staff/'+root.child('exam/m/'+$code+'/meta').child('owner').val()+'/status').val() === 'approved' && root.child('staff/'+root.child('exam/m/'+$code+'/meta').child('owner').val()+'/apps/exam').val() === true)) && now <= data.parent().parent().child('st').val() + root.child('exam/m/'+$code+'/meta').child('mins').val() * 60000 + 15000)",
+          ".validate": "$q.matches(/^[a-z0-9]{4,16}$/) && ((newData.isNumber() && newData.val() >= 0 && newData.val() <= 7) || (newData.isString() && newData.val().length <= 3000))"
+         }
+        },
+        "ev": {
+         "$e": {
+          ".write": "!data.exists() && (data.parent().parent().exists() && !data.parent().parent().child('end').exists() && (root.child('exam/m/'+$code+'/meta').child('open').val() === true && (root.child('exam/m/'+$code+'/meta').child('openAt').val() === 0 || now >= root.child('exam/m/'+$code+'/meta').child('openAt').val()) && (root.child('exam/m/'+$code+'/meta').child('closeAt').val() === 0 || now < root.child('exam/m/'+$code+'/meta').child('closeAt').val())) && (root.child('exam/m/'+$code+'/meta').child('admin').val() === true || (root.child('staff/'+root.child('exam/m/'+$code+'/meta').child('owner').val()+'/status').val() === 'approved' && root.child('staff/'+root.child('exam/m/'+$code+'/meta').child('owner').val()+'/apps/exam').val() === true)) && now <= data.parent().parent().child('st').val() + root.child('exam/m/'+$code+'/meta').child('mins').val() * 60000 + 15000)",
+          ".validate": "newData.hasChildren(['t','k']) && ((auth != null && root.child('exam/m/'+$code+'/meta').child('owner').val() === auth.uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true)))) || newData.child('t').val() === now)",
+          "t": {
+           ".validate": "newData.isNumber()"
+          },
+          "k": {
+           ".validate": "newData.isString() && newData.val().matches(/^[a-z]{1,12}$/)"
+          },
+          "d": {
+           ".validate": "newData.isString() && newData.val().length <= 80"
+          },
+          "$other": {
+           ".validate": false
+          }
+         }
+        },
+        "end": {
+         ".write": "!data.exists() && data.parent().exists() && data.parent().child('st').exists()",
+         ".validate": "newData.hasChildren(['t','by']) && ((auth != null && root.child('exam/m/'+$code+'/meta').child('owner').val() === auth.uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true)))) || (newData.child('t').val() === now && newData.child('by').val() !== 'teacher'))",
+         "t": {
+          ".validate": "newData.isNumber()"
+         },
+         "by": {
+          ".validate": "newData.isString() && newData.val().matches(/^(self|time|guard|teacher)$/)"
+         },
+         "why": {
+          ".validate": "newData.isString() && newData.val().length <= 40"
+         },
+         "$other": {
+          ".validate": false
+         }
+        },
+        "$other": {
+         ".validate": false
+        }
+       }
+      }
+     },
+     "mg": {
+      ".write": "(auth != null && root.child('exam/m/'+$code+'/meta').child('owner').val() === auth.uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true))))",
+      "$sid": {
+       "$k": {
+        "$q": {
+         ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+        }
+       }
+      }
+     },
+     "g": {
+      ".write": "(auth != null && root.child('exam/m/'+$code+'/meta').child('owner').val() === auth.uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true))))",
+      "$sid": {
+       ".read": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $sid.matches(/^[A-Z0-9]{3,12}$/) && root.child('exam/m/'+$code+'/meta').child('pub').val() === true"
       }
      }
     }

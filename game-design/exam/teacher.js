@@ -1,0 +1,1096 @@
+/* 🎲 線上檢定所：老師後台（ES module）
+   - 登入：會員中心共用帳號（app＝exam）
+   - 📚 題庫：Quill 編輯器（貼圖、拖曳、連結）、Word／Excel／JSON 匯入、備份
+   - 📝 測驗：建立（選題、時間、次數、計分方式、打亂、反作弊、名單）、分享 QR、成績、名單、公布
+   - 自動閱卷官：打開某份測驗時，監聽學生作答 → 時間到的自動收卷、算分、寫 g/<學號>（公布後學生讀得到） */
+const X = window.ExamCore, W = window.WuStaff;
+const $ = (s, el = document) => el.querySelector(s), $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
+const esc = X.escapeHtml;
+const LIB = {
+  mammoth: 'https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js',
+  xlsx: 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
+};
+let FB = null, authErr = (e) => String((e && (e.code || e.message)) || e), gBtn = () => '';
+try {
+  const M = await import('../../account/fb.js?v=20261020a');
+  FB = await M.openFirebase('exam'); FB.idle(60000); authErr = M.authErr; gBtn = M.googleButtonHTML;
+} catch (e) { console.warn(e); }
+
+/* ---------- 小工具 ---------- */
+const toast = (t, ms) => { const d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), ms || 2400); };
+const loaded = {};
+const loadScript = (url) => loaded[url] || (loaded[url] = new Promise((ok, bad) => { const s = document.createElement('script'); s.src = url; s.onload = ok; s.onerror = () => { delete loaded[url]; bad(new Error('載入失敗：' + url)); }; document.head.appendChild(s); }));
+function modal(html, opt) {
+  opt = opt || {};
+  const m = document.createElement('div'); m.className = 'modal';
+  m.innerHTML = `<div class="box ${opt.wide ? 'wide' : ''}"><button class="x" title="關閉">×</button>${html}</div>`;
+  $('#modals').appendChild(m);
+  const close = () => { if (opt.onClose && opt.onClose() === false) return; m.remove(); };
+  m.close = () => m.remove();
+  $('.x', m).onclick = close;
+  m.addEventListener('mousedown', (e) => { if (e.target === m && !opt.sticky) close(); });
+  return m;
+}
+const download = (name, text, type) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: type || 'application/json' })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); };
+const letterList = (arr) => (arr || []).map((i) => X.LETTERS[i]).join(' ') || '—';
+const typeChip = (t) => `<span class="chip ${t === 's' ? 'blue' : t === 'm' ? '' : 'warn'}">${X.TYPE_ICON[t]} ${X.TYPES[t]}</span>`;
+const toLocalInput = (ms) => { if (!ms) return ''; const d = new Date(ms - new Date(ms).getTimezoneOffset() * 60000); return d.toISOString().slice(0, 16); };
+const fromLocalInput = (v) => v ? new Date(v).getTime() : 0;
+const clean = (o) => { const out = {}; Object.keys(o).forEach((k) => { const v = o[k]; if (v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length)) return; out[k] = v; }); return out; };
+const arr = (v) => Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.keys(v).sort((a, b) => a - b).map((k) => v[k]) : []);
+
+/* ---------- 圖片 ---------- */
+const IMG = {};
+async function getImg(id) {
+  if (IMG[id] !== undefined) return IMG[id];
+  try { const r = await FB.get('exam/img/' + id); IMG[id] = (r && r.data) || ''; } catch (e) { IMG[id] = ''; }
+  return IMG[id];
+}
+async function hydrate(html) {
+  const ids = X.imgIds(html); await Promise.all(ids.map(getImg));
+  return String(html || '').replace(/<img data-img="([a-z0-9]+)"/g, (m, id) => `<img src="${IMG[id] || ''}" data-img="${id}"`);
+}
+function sanitize(html, noLinks) {
+  let h = window.DOMPurify ? DOMPurify.sanitize(String(html || ''), { ADD_ATTR: ['data-img', 'target'], FORBID_TAGS: ['style', 'script', 'iframe', 'form', 'input'] }) : esc(X.plain(html));
+  if (noLinks) h = h.replace(/<a\b[^>]*>/gi, '<span class="nolink">').replace(/<\/a>/gi, '</span>');
+  else h = h.replace(/<a\b/gi, '<a target="_blank" rel="noopener"');
+  return h;
+}
+function renderInto(el, html, noLinks) {
+  el.innerHTML = sanitize(html, noLinks);
+  $$('img[data-img]', el).forEach(async (img) => { img.src = await getImg(img.getAttribute('data-img')); });
+}
+async function uploadImg(src) {
+  const c = await X.compressImage(src, 1000, 0.72);
+  const id = X.newId(14);
+  await FB.set('exam/img/' + id, { owner: ME.uid, data: c.data, w: c.w, h: c.h, at: Date.now() });
+  IMG[id] = c.data;
+  return { id, data: c.data, w: c.w };
+}
+// HTML 裡還是 data: 開頭的圖片 → 壓縮、上傳、換成 <img data-img="代號">
+async function uploadHtmlImages(html, onOne) {
+  const tags = String(html || '').match(/<img\b[^>]*src="data:image\/[^"]+"[^>]*>/gi) || [];
+  let out = String(html || '');
+  for (const tag of tags) {
+    const src = /src="([^"]+)"/.exec(tag)[1];
+    try { const r = await uploadImg(src); out = out.replace(tag, `<img data-img="${r.id}">`); } catch (e) { console.warn(e); out = out.replace(tag, ''); }
+    if (onOne) onOne();
+  }
+  return out;
+}
+const countDataImgs = (html) => (String(html || '').match(/<img\b[^>]*src="data:image\/[^"]+"/gi) || []).length;
+
+/* ---------- Quill 編輯器 ---------- */
+let quillReady = false;
+function setupQuill() {
+  if (quillReady || !window.Quill) return; quillReady = true;
+  const Base = Quill.import('formats/image');
+  class ExImg extends Base {
+    static create(v) {
+      const src = typeof v === 'string' ? v : (v && v.src) || '';
+      const n = super.create(src);
+      if (v && typeof v === 'object') { if (v.id) n.setAttribute('data-img', v.id); if (v.w) n.setAttribute('width', v.w); }
+      return n;
+    }
+    static value(n) { const id = n.getAttribute('data-img'); return id ? { src: n.getAttribute('src') || '', id, w: n.getAttribute('width') || '' } : n.getAttribute('src'); }
+    static sanitize(u) { return /^(data:image\/|https?:)/.test(String(u)) || u === '' ? u : ''; }
+  }
+  ExImg.blotName = 'image'; ExImg.tagName = 'IMG';
+  Quill.register(ExImg, true);
+}
+const TB_FULL = [[{ size: ['small', false, 'large'] }], ['bold', 'italic', 'underline', 'strike'], [{ color: [] }, { background: [] }], [{ script: 'sub' }, { script: 'super' }], [{ align: [] }], [{ list: 'ordered' }, { list: 'bullet' }], ['link', 'image'], ['clean']];
+const TB_MINI = [['bold', 'italic', 'underline'], [{ color: [] }], [{ script: 'sub' }, { script: 'super' }], ['link', 'image'], ['clean']];
+async function makeEditor(host, html, opt) {
+  setupQuill();
+  opt = opt || {};
+  host.classList.add('ed'); if (opt.mini) host.classList.add('mini');
+  const box = document.createElement('div'); host.appendChild(box);
+  const tools = document.createElement('div'); tools.className = 'imgtools';
+  tools.innerHTML = '🖼️ 圖片寬度：<button type="button" class="btn ghost sm" data-w="25">小</button><button type="button" class="btn ghost sm" data-w="50">中</button><button type="button" class="btn ghost sm" data-w="80">大</button><button type="button" class="btn ghost sm" data-w="0">原始</button>';
+  host.appendChild(tools);
+  const q = new Quill(box, { theme: 'snow', placeholder: opt.placeholder || '', modules: {
+    toolbar: { container: opt.mini ? TB_MINI : TB_FULL, handlers: { image: () => pickImage(q) } },
+    uploader: { mimetypes: ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/bmp'], handler: (range, files) => insertFiles(q, range, files) }
+  } });
+  if (html) q.clipboard.dangerouslyPasteHTML(await hydrate(html), 'silent');
+  let selImg = null;
+  q.root.addEventListener('click', (e) => {
+    $$('img.sel', q.root).forEach((i) => i.classList.remove('sel'));
+    if (e.target.tagName === 'IMG') { selImg = e.target; selImg.classList.add('sel'); tools.classList.add('on'); } else { selImg = null; tools.classList.remove('on'); }
+  });
+  tools.onclick = (e) => {
+    const b = e.target.closest('[data-w]'); if (!b || !selImg) return;
+    const pct = +b.dataset.w;
+    const blot = Quill.find(selImg); if (!blot) return;
+    const w = pct ? Math.round(q.root.clientWidth * pct / 100) : '';
+    blot.format('width', w ? String(w) : null);
+    if (opt.onChange) opt.onChange();
+  };
+  const fixing = new Set();
+  q.on('text-change', () => {
+    if (opt.onChange) opt.onChange();
+    // 從 Word、網頁貼上的圖片（還沒有代號）→ 壓縮上傳
+    $$('img', q.root).forEach(async (img) => {
+      if (img.getAttribute('data-img') || fixing.has(img)) return;
+      const src = img.getAttribute('src') || '';
+      if (!/^data:image\//.test(src)) return;
+      fixing.add(img);
+      try { const r = await uploadImg(src); img.setAttribute('data-img', r.id); img.setAttribute('src', r.data); if (opt.onChange) opt.onChange(); } catch (e) { toast('圖片上傳失敗：' + e.message); }
+      fixing.delete(img);
+    });
+  });
+  q.getHtml = () => {
+    let h = X.stripImgSrc(q.root.innerHTML).replace(/(<p><br><\/p>)+$/, '').replace(/^(<p><br><\/p>)+/, '');
+    if (X.isEmptyHtml(h)) return '';
+    return h;
+  };
+  q.busy = () => fixing.size > 0;
+  return q;
+}
+function pickImage(q) {
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; inp.multiple = true;
+  inp.onchange = () => insertFiles(q, q.getSelection(true), Array.from(inp.files));
+  inp.click();
+}
+async function insertFiles(q, range, files) {
+  files = Array.from(files || []).filter((f) => /^image\//.test(f.type));
+  if (!files.length) return;
+  let at = range ? range.index : q.getLength();
+  for (const f of files) {
+    try {
+      toast('🖼️ 圖片壓縮上傳中…', 1200);
+      const r = await uploadImg(f);
+      q.insertEmbed(at, 'image', { src: r.data, id: r.id }, 'user'); at++;
+      q.setSelection(at, 0, 'silent');
+    } catch (e) { toast('圖片上傳失敗：' + e.message); }
+  }
+}
+
+/* ---------- 登入 ---------- */
+const gate = $('#gate');
+const gbox = (inner) => `<div class="card" style="max-width:460px;margin:9vh auto">${inner}</div>`;
+function renderLogin(msg) {
+  $('#main').classList.add('hidden');
+  gate.innerHTML = gbox(`<h1 style="font-size:1.45rem">🎲 線上檢定所｜老師登入</h1>
+    <p class="muted small">老師後台有題庫與學生成績，需要登入。各系統共用同一個老師帳號。</p>
+    ${msg ? `<p class="small" style="color:var(--bad)">${esc(msg)}</p>` : ''}${!FB ? '<p class="small" style="color:var(--bad)">雲端服務載入失敗，請確認網路後重新整理。</p>' : ''}
+    <div style="margin-top:14px">${gBtn('gG')}</div>
+    <label class="f">Email</label><input type="email" id="gE" autocomplete="username">
+    <label class="f">密碼</label><input type="password" id="gP" autocomplete="current-password">
+    <div class="row" style="margin-top:14px"><button class="btn" id="gGo">🔓 登入</button><span class="sp"></span><button class="linkbtn" id="gReset">忘記密碼</button></div>
+    <p class="small muted" style="margin-top:14px">還沒有帳號？<a href="${W.centerURL('../../', 'exam')}" style="font-weight:800;color:var(--ink)">👥 到會員中心申請使用</a>（巫魚子老師核准後就能用）</p>`);
+  if (!FB) return;
+  const go = async () => { const e = $('#gE').value.trim(), p = $('#gP').value; if (!e || !p) return; $('#gGo').disabled = true; try { await FB.login(e, p); } catch (err) { renderLogin(authErr(err)); } };
+  const gg = $('#gG'); if (gg) gg.onclick = async () => { gg.disabled = true; try { await FB.google(); } catch (err) { renderLogin(authErr(err)); } };
+  $('#gGo').onclick = go; $('#gP').onkeydown = (ev) => { if (ev.key === 'Enter') go(); };
+  $('#gReset').onclick = async () => { const e = $('#gE').value.trim(); if (!e) return toast('先輸入 Email'); try { await FB.reset(e); toast('重設密碼的信已寄出'); } catch (err) { toast('寄送失敗：' + (err.code || err.message)); } };
+}
+
+let ME = null, ADMIN = false;
+let BANKS = {}, CURB = '', FILTER = { t: '', d: '', tag: '', kw: '' }, SEL = new Set();
+let EXAMS = {}, CUR = null;
+
+if (!FB) renderLogin();
+else FB.onUser(async (u) => {
+  if (!u) { ME = null; return renderLogin(); }
+  gate.innerHTML = gbox('<p class="muted">檢查帳號中…</p>');
+  const res = await W.check(FB.get, u, 'exam');
+  if (!res.ok) { gate.innerHTML = W.blockedHTML(res, 'exam', '../../', u.email); const b = gate.querySelector('[data-staff-logout]'); if (b) b.onclick = () => FB.logout(); return; }
+  ME = u; ADMIN = !!res.admin;
+  gate.innerHTML = ''; $('#main').classList.remove('hidden');
+  $('#who').textContent = u.email;
+  $('#logout').onclick = () => FB.logout();
+  await loadBanks();
+  await loadExams();
+  const m = /#e=([A-HJ-NP-Z2-9]{6})/.exec(location.hash);
+  if (m && EXAMS[m[1]]) openExam(m[1]); else renderExams();
+});
+
+$('#tabs').onclick = (e) => {
+  const b = e.target.closest('button[data-t]'); if (!b) return;
+  $$('#tabs button').forEach((x) => x.classList.toggle('on', x === b));
+  $('#t-exams').classList.toggle('hidden', b.dataset.t !== 'exams');
+  $('#t-bank').classList.toggle('hidden', b.dataset.t !== 'bank');
+  if (b.dataset.t === 'bank') renderBank(); else if (!CUR) renderExams();
+};
+const showTab = (t) => $(`#tabs button[data-t="${t}"]`).click();
+
+/* =====================================================================
+   📚 題庫
+   ===================================================================== */
+async function loadBanks() {
+  try { BANKS = (await FB.get('exam/bk/' + ME.uid)) || {}; } catch (e) { BANKS = {}; toast('讀取題庫失敗：' + e.message); }
+  Object.values(BANKS).forEach((b) => { b.q = b.q || {}; Object.values(b.q).forEach(normQ); });
+  if (!BANKS[CURB]) CURB = Object.keys(BANKS).sort((a, b) => (BANKS[b].at || 0) - (BANKS[a].at || 0))[0] || '';
+}
+function normQ(q) { q.o = arr(q.o); q.a = arr(q.a); q.tags = arr(q.tags); q.d = q.d || '中'; q.p = q.p == null ? (q.t === 'a' ? 5 : 2) : q.p; return q; }
+const qOrder = (b) => Object.keys(b.q || {}).sort((x, y) => ((b.q[x].i || 0) - (b.q[y].i || 0)) || ((b.q[x].at || 0) - (b.q[y].at || 0)) || (x < y ? -1 : 1));
+const bankTags = (b) => { const s = new Set(); Object.values((b && b.q) || {}).forEach((q) => (q.tags || []).forEach((t) => s.add(t))); return Array.from(s).sort(); };
+function matchQ(q, f) {
+  if (f.t && q.t !== f.t) return false;
+  if (f.d && q.d !== f.d) return false;
+  if (f.tag && !(q.tags || []).includes(f.tag)) return false;
+  if (f.kw) { const k = f.kw.toLowerCase(); const txt = (X.plain(q.s) + ' ' + q.o.map(X.plain).join(' ') + ' ' + (q.tags || []).join(' ')).toLowerCase(); if (!txt.includes(k)) return false; }
+  return true;
+}
+async function newBank(name) {
+  const id = X.newId(10);
+  const b = { name: String(name || '新題庫').slice(0, 40), at: Date.now() };
+  await FB.set(`exam/bk/${ME.uid}/${id}`, b);
+  BANKS[id] = Object.assign(b, { q: {} }); CURB = id;
+  return id;
+}
+function renderBank() {
+  const el = $('#t-bank'), b = BANKS[CURB];
+  const ids = Object.keys(BANKS).sort((x, y) => (BANKS[y].at || 0) - (BANKS[x].at || 0));
+  if (!ids.length) {
+    el.innerHTML = `<div class="card empty"><div style="font-size:3rem">📚</div><h2>還沒有題庫</h2><p>先建立一個題庫，就可以新增題目，或直接把 Word 考卷匯入。</p>
+      <div class="row" style="justify-content:center;margin-top:10px"><button class="btn" id="bNew">＋ 建立題庫</button><button class="btn ghost" id="bWord0">📥 直接匯入 Word 考卷</button></div></div>`;
+    $('#bNew').onclick = async () => { const n = prompt('題庫名稱', '遊戲設計思考'); if (!n) return; await newBank(n); renderBank(); };
+    $('#bWord0').onclick = () => pickFile('.docx', importWord);
+    return;
+  }
+  const all = qOrder(b), list = all.filter((id) => matchQ(b.q[id], FILTER));
+  const cnt = { s: 0, m: 0, a: 0 }; all.forEach((id) => cnt[b.q[id].t]++);
+  SEL.forEach((id) => { if (!b.q[id]) SEL.delete(id); });
+  const tags = bankTags(b);
+  el.innerHTML = `<div class="card">
+    <div class="bankbar">
+      <b>題庫</b><select id="bSel">${ids.map((id) => `<option value="${id}" ${id === CURB ? 'selected' : ''}>${esc(BANKS[id].name)}（${Object.keys(BANKS[id].q || {}).length}）</option>`).join('')}</select>
+      <button class="btn ghost sm" id="bNew">＋ 新題庫</button><button class="btn ghost sm" id="bRen">✏️ 改名</button><button class="btn danger sm" id="bDel">🗑 刪除題庫</button>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn" id="qNew">＋ 新增題目</button>
+      <button class="btn ghost" id="bWord">📥 匯入 Word 考卷</button>
+      <button class="btn ghost" id="bXls">📥 匯入 Excel</button>
+      <button class="linkbtn small" id="bTpl">⬇ Excel 範本</button>
+      <span class="sp"></span>
+      <button class="btn ghost sm" id="bOut">💾 備份下載</button><button class="btn ghost sm" id="bIn">📂 匯入備份</button>
+    </div>
+    <div class="filters">
+      <select id="fT"><option value="">全部題型</option>${Object.keys(X.TYPES).map((t) => `<option value="${t}" ${FILTER.t === t ? 'selected' : ''}>${X.TYPES[t]}</option>`).join('')}</select>
+      <select id="fD"><option value="">全部難易度</option>${X.DIFFS.map((d) => `<option ${FILTER.d === d ? 'selected' : ''}>${d}</option>`).join('')}</select>
+      <select id="fG"><option value="">全部標籤</option>${tags.map((t) => `<option ${FILTER.tag === t ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select>
+      <input type="text" id="fK" placeholder="🔍 搜尋題目、選項、標籤" value="${esc(FILTER.kw)}">
+    </div>
+    <div class="row small" style="margin-top:10px"><label class="ck"><input type="checkbox" id="selAll" ${list.length && list.every((id) => SEL.has(id)) ? 'checked' : ''}>全選目前列出的題目</label>
+      <span class="muted">共 ${all.length} 題（單選 ${cnt.s}・多重選擇 ${cnt.m}・簡答 ${cnt.a}）${list.length !== all.length ? `｜篩選後 ${list.length} 題` : ''}</span></div>
+    <div class="qlist" id="qList">${list.length ? list.map((id) => qRow(b, id, all.indexOf(id) + 1)).join('') : `<div class="empty">${all.length ? '沒有符合篩選的題目' : '這個題庫還沒有題目。按「＋ 新增題目」或「📥 匯入 Word 考卷」開始。'}</div>`}</div>
+    <div class="batch ${SEL.size ? '' : 'hidden'}" id="batch">已選 <b>${SEL.size}</b> 題
+      <button class="btn sm" data-b="tag">🏷️ 加標籤</button><button class="btn sm" data-b="untag">🏷️ 移除標籤</button>
+      <button class="btn sm" data-b="diff">⭐ 改難易度</button><button class="btn sm" data-b="pts">💯 改配分</button>
+      <button class="btn sm" data-b="copy">⧉ 複製到其他題庫</button><button class="btn danger sm" data-b="del">🗑 刪除</button>
+      <span class="sp"></span><button class="btn ghost sm" data-b="none">取消選取</button></div>
+  </div>`;
+  $('#bSel').onchange = (e) => { CURB = e.target.value; SEL.clear(); renderBank(); };
+  $('#bNew').onclick = async () => { const n = prompt('新題庫名稱'); if (!n) return; await newBank(n); SEL.clear(); renderBank(); };
+  $('#bRen').onclick = async () => { const n = prompt('題庫新名稱', b.name); if (!n) return; b.name = n.slice(0, 40); await FB.set(`exam/bk/${ME.uid}/${CURB}/name`, b.name); renderBank(); };
+  $('#bDel').onclick = async () => {
+    const n = prompt(`確定要刪除題庫「${b.name}」和裡面 ${all.length} 題嗎？\n（已經建立的測驗不受影響）\n請輸入題庫名稱確認：`);
+    if (n !== b.name) { if (n != null) toast('名稱不一樣，沒有刪除'); return; }
+    await FB.remove(`exam/bk/${ME.uid}/${CURB}`); delete BANKS[CURB]; CURB = Object.keys(BANKS)[0] || ''; SEL.clear(); renderBank(); toast('已刪除題庫');
+  };
+  $('#qNew').onclick = () => openEditor(CURB, null);
+  $('#bWord').onclick = () => pickFile('.docx', importWord);
+  $('#bXls').onclick = () => pickFile('.xlsx,.xls,.csv', importExcel);
+  $('#bTpl').onclick = downloadTemplate;
+  $('#bOut').onclick = () => exportBank(CURB);
+  $('#bIn').onclick = () => pickFile('.json', importBackup);
+  $('#fT').onchange = (e) => { FILTER.t = e.target.value; renderBank(); };
+  $('#fD').onchange = (e) => { FILTER.d = e.target.value; renderBank(); };
+  $('#fG').onchange = (e) => { FILTER.tag = e.target.value; renderBank(); };
+  let kt = null; $('#fK').oninput = (e) => { clearTimeout(kt); kt = setTimeout(() => { FILTER.kw = e.target.value.trim(); renderBank(); const k = $('#fK'); k.focus(); k.setSelectionRange(k.value.length, k.value.length); }, 350); };
+  $('#selAll').onchange = (e) => { list.forEach((id) => e.target.checked ? SEL.add(id) : SEL.delete(id)); renderBank(); };
+  $('#qList').onclick = (e) => {
+    const r = e.target.closest('[data-q]'); if (!r) return;
+    const id = r.dataset.q, act = e.target.closest('[data-a]');
+    if (e.target.matches('input[type=checkbox]')) { e.target.checked ? SEL.add(id) : SEL.delete(id); $('#batch').classList.toggle('hidden', !SEL.size); $('#batch b').textContent = SEL.size; return; }
+    if (!act) return openEditor(CURB, id);
+    const a = act.dataset.a;
+    if (a === 'edit') openEditor(CURB, id);
+    else if (a === 'view') previewQ(b.q[id]);
+    else if (a === 'dup') dupQ(CURB, id);
+    else if (a === 'up' || a === 'down') moveQ(CURB, id, a === 'up' ? -1 : 1);
+    else if (a === 'del') delQs(CURB, [id]);
+  };
+  $('#batch').onclick = (e) => { const x = e.target.closest('[data-b]'); if (x) batchOp(x.dataset.b); };
+}
+function qRow(b, id, no) {
+  const q = b.q[id];
+  return `<div class="qrow" data-q="${id}"><input type="checkbox" ${SEL.has(id) ? 'checked' : ''}><div class="no">${no}</div>
+    <div class="txt"><div class="stem">${esc(X.plain(q.s).slice(0, 160)) || '<span class="muted">（題幹空白）</span>'}${X.hasImg(q.s) ? ' 🖼️' : ''}</div>
+      <div class="meta">${typeChip(q.t)}<span class="chip gray">${esc(q.d)}</span>${q.t !== 'a' ? `<span class="chip ok">答 ${letterList(q.a)}</span><span class="chip gray">${q.o.length} 選項</span>` : ''}<span class="chip gray">${q.p} 分</span>${(q.tags || []).map((t) => `<span class="chip">#${esc(t)}</span>`).join('')}</div></div>
+    <div class="acts"><button class="btn ghost sm" data-a="view" title="預覽">👁</button><button class="btn ghost sm" data-a="edit">✏️ 編輯</button><button class="btn ghost sm" data-a="dup" title="複製">⧉</button><button class="btn ghost sm" data-a="up" title="上移">↑</button><button class="btn ghost sm" data-a="down" title="下移">↓</button><button class="btn danger sm" data-a="del" title="刪除">🗑</button></div></div>`;
+}
+async function saveQ(bank, id, q) {
+  const data = clean({ t: q.t, s: q.s, o: q.t === 'a' ? [] : q.o, a: q.t === 'a' ? [] : q.a, r: q.t === 'a' ? q.r : '', e: q.e, d: q.d, tags: q.tags, l: q.l ? true : null, p: q.p, i: q.i, at: q.at || Date.now(), src: q.src });
+  await FB.set(`exam/bk/${ME.uid}/${bank}/q/${id}`, data);
+  BANKS[bank].q[id] = normQ(Object.assign({}, data));
+}
+const nextI = (bank) => Object.values(BANKS[bank].q || {}).reduce((m, q) => Math.max(m, q.i || 0), 0) + 1;
+async function dupQ(bank, id) { const q = Object.assign({}, BANKS[bank].q[id]); const nid = X.newId(10); q.i = (q.i || 0) + 0.5; q.at = Date.now(); await saveQ(bank, nid, q); await renumber(bank); renderBank(); toast('已複製一題'); }
+async function renumber(bank) {
+  const b = BANKS[bank], ids = qOrder(b), up = {};
+  ids.forEach((id, k) => { if (b.q[id].i !== k + 1) { b.q[id].i = k + 1; up[id + '/i'] = k + 1; } });
+  if (Object.keys(up).length) await FB.update(`exam/bk/${ME.uid}/${bank}/q`, up);
+}
+async function moveQ(bank, id, dir) {
+  const b = BANKS[bank], ids = qOrder(b), k = ids.indexOf(id), j = k + dir;
+  if (j < 0 || j >= ids.length) return;
+  [ids[k], ids[j]] = [ids[j], ids[k]];
+  const up = {}; ids.forEach((x, n) => { if (b.q[x].i !== n + 1) { b.q[x].i = n + 1; up[x + '/i'] = n + 1; } });
+  await FB.update(`exam/bk/${ME.uid}/${bank}/q`, up); renderBank();
+}
+async function delQs(bank, ids) {
+  if (!confirm(`確定要刪除 ${ids.length} 題嗎？（已經建立的測驗不受影響）`)) return;
+  const up = {}; ids.forEach((id) => { up[id] = null; delete BANKS[bank].q[id]; SEL.delete(id); });
+  await FB.update(`exam/bk/${ME.uid}/${bank}/q`, up); renderBank(); toast(`已刪除 ${ids.length} 題`);
+}
+async function batchOp(op) {
+  const b = BANKS[CURB], ids = Array.from(SEL).filter((id) => b.q[id]);
+  if (op === 'none') { SEL.clear(); return renderBank(); }
+  if (!ids.length) return;
+  if (op === 'del') return delQs(CURB, ids);
+  const up = {};
+  if (op === 'tag' || op === 'untag') {
+    const t = (prompt(op === 'tag' ? '要加上的標籤（多個用逗號分開）' : '要移除的標籤') || '').split(/[,，、]/).map((x) => x.trim().slice(0, 20)).filter(Boolean);
+    if (!t.length) return;
+    ids.forEach((id) => { const q = b.q[id]; let tg = q.tags || []; tg = op === 'tag' ? Array.from(new Set(tg.concat(t))) : tg.filter((x) => !t.includes(x)); q.tags = tg; up[id + '/tags'] = tg.length ? tg : null; });
+  } else if (op === 'diff') {
+    const d = prompt('難易度（易／中／難）', '中'); if (!X.DIFFS.includes(d)) return d && toast('只能填 易、中、難');
+    ids.forEach((id) => { b.q[id].d = d; up[id + '/d'] = d; });
+  } else if (op === 'pts') {
+    const p = +prompt('每題配分（0～100）', '2'); if (!(p >= 0 && p <= 100)) return;
+    ids.forEach((id) => { b.q[id].p = p; up[id + '/p'] = p; });
+  } else if (op === 'copy') {
+    const others = Object.keys(BANKS).filter((x) => x !== CURB);
+    const names = others.map((x, k) => `${k + 1}. ${BANKS[x].name}`).join('\n');
+    const ans = prompt(`複製 ${ids.length} 題到哪一個題庫？輸入編號，或輸入新名稱建立新題庫：\n${names}`);
+    if (!ans) return;
+    let target = others[+ans - 1];
+    if (!target) target = await newBank(ans);
+    let i = nextI(target);
+    const add = {}; ids.forEach((id) => { const q = Object.assign({}, b.q[id], { i: i++, at: Date.now() }); add[X.newId(10)] = clean(Object.assign({}, q, { l: q.l || null })); });
+    await FB.update(`exam/bk/${ME.uid}/${target}/q`, add);
+    Object.keys(add).forEach((k) => { BANKS[target].q[k] = normQ(add[k]); });
+    toast(`已複製 ${ids.length} 題到「${BANKS[target].name}」`);
+    const keep = CURB; CURB = keep; return renderBank();
+  }
+  await FB.update(`exam/bk/${ME.uid}/${CURB}/q`, up); renderBank(); toast('已更新 ' + ids.length + ' 題');
+}
+
+/* ---------- 題目預覽（學生看到的樣子＋答案） ---------- */
+function qViewHTML(q, no, opt) {
+  opt = opt || {};
+  return `<div class="qview"><div class="head"><b>${no ? '第 ' + no + ' 題' : '預覽'}</b>${typeChip(q.t)}<span class="chip gray">${esc(q.d || '')}</span><span class="chip gray">${q.p} 分</span>${q.l ? '<span class="chip gray">🔒 選項順序固定</span>' : ''}</div>
+    <div class="qhtml" data-h="s"></div>
+    ${q.t !== 'a' ? q.o.map((o, i) => `<div class="op ${(q.a || []).includes(i) ? 'right' : ''}"><b>${X.LETTERS[i]}.</b><div class="qhtml" data-h="o${i}"></div>${(q.a || []).includes(i) ? ' ✅' : ''}</div>`).join('') : `<div class="small muted" style="margin-top:6px">✏️ 學生在這裡打字作答</div>${q.r ? '<div class="exp"><b>參考答案：</b><div class="qhtml" data-h="r"></div></div>' : ''}`}
+    ${q.e && !opt.noExp ? '<div class="exp"><b>💡 解析：</b><div class="qhtml" data-h="e"></div></div>' : ''}</div>`;
+}
+function fillQView(el, q) {
+  const s = $('[data-h="s"]', el); if (s) renderInto(s, q.s);
+  (q.o || []).forEach((o, i) => { const x = $(`[data-h="o${i}"]`, el); if (x) renderInto(x, o); });
+  const r = $('[data-h="r"]', el); if (r) renderInto(r, q.r);
+  const e = $('[data-h="e"]', el); if (e) renderInto(e, q.e);
+}
+function previewQ(q) { const m = modal(`<h2>👁 題目預覽</h2>${qViewHTML(q)}`); fillQView($('.qview', m), q); }
+
+/* ---------- 題目編輯器 ---------- */
+async function openEditor(bank, id, preset) {
+  const b = BANKS[bank], isNew = !id;
+  const q0 = id ? JSON.parse(JSON.stringify(b.q[id])) : Object.assign({ t: 's', s: '', o: ['', '', '', ''], a: [], e: '', d: '中', tags: [], p: 2 }, preset || {});
+  if (isNew && q0.t === 'm' && q0.o.length < 5) while (q0.o.length < 5) q0.o.push('');
+  if (isNew && q0.t === 'a') q0.p = 5;
+  const qid = id || X.newId(10);
+  let saved = !isNew, dirty = false, autoT = null, lastSaved = '';
+  const m = modal(`<h2>${isNew ? '＋ 新增題目' : '✏️ 編輯題目'}<span class="small muted" id="eNo" style="font-weight:500;margin-left:8px"></span></h2>
+    <div class="typepick" id="eType">${Object.keys(X.TYPES).map((t) => `<label class="${q0.t === t ? 'on' : ''}"><input type="radio" name="et" value="${t}" ${q0.t === t ? 'checked' : ''}>${X.TYPE_ICON[t]} ${X.TYPES[t]}</label>`).join('')}</div>
+    <p class="small muted" id="eRule" style="margin:6px 0 0"></p>
+    <label class="f">題目（可直接貼上圖片、截圖，或把圖片拖進來）</label><div id="eStem"></div>
+    <div id="eOptsBox"><label class="f">選項 <span class="small muted" id="eOptHint"></span></label><div id="eOpts"></div>
+      <div class="row"><button type="button" class="btn ghost sm" id="eAdd">＋ 選項</button><label class="ck small"><input type="checkbox" id="eLock" ${q0.l ? 'checked' : ''}>🔒 選項順序固定（例如有「以上皆是」時）</label></div></div>
+    <div id="eRefBox"><label class="f">參考答案（只有老師閱卷時看得到，可以空白）</label><div id="eRef"></div></div>
+    <label class="f">💡 解析（成績公布時，老師可以選擇讓學生看）</label><div id="eExp"></div>
+    <div class="grid3" style="margin-top:6px">
+      <div><label class="f">難易度</label><select id="eDiff">${X.DIFFS.map((d) => `<option ${q0.d === d ? 'selected' : ''}>${d}</option>`).join('')}</select></div>
+      <div><label class="f">預設配分</label><input type="number" id="ePts" min="0" max="100" step="0.5" value="${q0.p}"></div>
+      <div style="grid-column:span 2"><label class="f">標籤（按 Enter 加入）</label><div class="tagbox" id="eTags"><input list="eTagList" id="eTagIn" placeholder="例如：BGG 機制"></div><datalist id="eTagList">${bankTags(b).map((t) => `<option>${esc(t)}</option>`).join('')}</datalist></div>
+    </div>
+    <div class="row" style="margin-top:16px"><button class="btn" id="eSave">💾 儲存</button><button class="btn ghost" id="eSaveNext">💾 儲存並新增下一題</button><button class="btn ghost" id="ePrev">👁 預覽</button><span class="sp"></span><span class="small muted" id="eMsg"></span></div>`,
+    { wide: true, sticky: true, onClose: () => { if (dirty && !confirm('還有沒儲存的修改，確定要關閉嗎？')) return false; renderBank(); } });
+  let t = q0.t, tags = (q0.tags || []).slice(), right = new Set(q0.a || []);
+  const onChange = () => { dirty = true; $('#eMsg', m).textContent = '✏️ 修改中…'; if (saved) { clearTimeout(autoT); autoT = setTimeout(() => doSave(false, true), 1200); } };
+  const stemQ = await makeEditor($('#eStem', m), q0.s, { placeholder: '輸入題目…', onChange });
+  const expQ = await makeEditor($('#eExp', m), q0.e, { placeholder: '（選填）答案的說明', onChange });
+  const refQ = await makeEditor($('#eRef', m), q0.r || '', { mini: true, placeholder: '（選填）', onChange });
+  let opts = []; // { q, row }
+  async function addOpt(html) {
+    const row = document.createElement('div'); row.className = 'optrow';
+    row.innerHTML = `<label class="mark"><span class="L"></span><input type="checkbox"></label><div class="oed"></div><button type="button" class="btn ghost sm odel" title="刪除這個選項">✕</button>`;
+    $('#eOpts', m).appendChild(row);
+    const o = { row, q: await makeEditor($('.oed', row), html, { mini: true, placeholder: '選項內容', onChange }) };
+    opts.push(o);
+    $('.mark input', row).onchange = (e) => { const k = opts.indexOf(o); if (t === 's') { right = new Set(e.target.checked ? [k] : []); } else { e.target.checked ? right.add(k) : right.delete(k); } paintOpts(); onChange(); };
+    $('.odel', row).onclick = () => {
+      if (opts.length <= 2) return toast('至少要有 2 個選項');
+      const k = opts.indexOf(o); opts.splice(k, 1); row.remove();
+      right = new Set(Array.from(right).filter((x) => x !== k).map((x) => x > k ? x - 1 : x)); paintOpts(); onChange();
+    };
+    paintOpts();
+  }
+  function paintOpts() {
+    opts.forEach((o, k) => { $('.L', o.row).textContent = X.LETTERS[k]; const c = $('.mark input', o.row); c.type = t === 's' ? 'radio' : 'checkbox'; c.name = 'eright'; c.checked = right.has(k); o.row.classList.toggle('right', right.has(k)); });
+    $('#eAdd', m).disabled = opts.length >= 8;
+  }
+  for (const o of q0.o) await addOpt(o);
+  function paintType() {
+    $$('#eType label', m).forEach((l) => l.classList.toggle('on', $('input', l).value === t));
+    $('#eOptsBox', m).classList.toggle('hidden', t === 'a');
+    $('#eRefBox', m).classList.toggle('hidden', t !== 'a');
+    $('#eOptHint', m).textContent = t === 's' ? '（點左邊的圓圈標出正確答案）' : t === 'm' ? '（勾選所有正確答案，可以不只一個）' : '';
+    $('#eRule', m).textContent = t === 's' ? '🔘 單選：答對得全部配分。' : t === 'm' ? '☑️ 多重選擇題：每錯一個選項（該選沒選、不該選卻選）扣該題配分 1/5，扣到 0 分為止；沒作答 0 分。建議 5 個選項。' : '✏️ 簡答：學生打字作答，由老師批閱給分。';
+    if (t === 's' && right.size > 1) right = new Set([Math.min(...right)]);
+    paintOpts();
+  }
+  $('#eType', m).onchange = async (e) => {
+    const nt = e.target.value; if (nt === t) return;
+    t = nt;
+    if (t === 'm') while (opts.length < 5) await addOpt('');
+    if (t === 'a' && +$('#ePts', m).value === 2) $('#ePts', m).value = 5;
+    if (t !== 'a' && +$('#ePts', m).value === 5) $('#ePts', m).value = 2;
+    paintType(); onChange();
+  };
+  $('#eAdd', m).onclick = async () => { await addOpt(''); onChange(); opts[opts.length - 1].q.focus(); };
+  $('#eLock', m).onchange = onChange; $('#eDiff', m).onchange = onChange; $('#ePts', m).oninput = onChange;
+  function paintTags() {
+    $$('#eTags .chip', m).forEach((c) => c.remove());
+    tags.forEach((tg, k) => { const c = document.createElement('span'); c.className = 'chip'; c.innerHTML = `#${esc(tg)}<button type="button" data-k="${k}">×</button>`; $('#eTagIn', m).before(c); });
+  }
+  $('#eTags', m).onclick = (e) => { const x = e.target.closest('[data-k]'); if (x) { tags.splice(+x.dataset.k, 1); paintTags(); onChange(); } else $('#eTagIn', m).focus(); };
+  const addTag = () => { const v = $('#eTagIn', m).value.split(/[,，、]/).map((x) => x.trim().slice(0, 20)).filter(Boolean); v.forEach((x) => { if (!tags.includes(x)) tags.push(x); }); $('#eTagIn', m).value = ''; paintTags(); if (v.length) onChange(); };
+  $('#eTagIn', m).onkeydown = (e) => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTag(); } };
+  $('#eTagIn', m).onblur = addTag;
+  paintTags(); paintType();
+  $('#eNo', m).textContent = isNew ? '' : `（第 ${qOrder(b).indexOf(id) + 1} 題）`;
+  function collect() {
+    const q = { t, s: stemQ.getHtml(), e: expQ.getHtml(), d: $('#eDiff', m).value, tags: tags.slice(), p: Math.max(0, Math.min(100, +$('#ePts', m).value || 0)), l: $('#eLock', m).checked, i: q0.i, at: q0.at, src: q0.src };
+    if (t === 'a') { q.r = refQ.getHtml(); q.o = []; q.a = []; }
+    else { q.o = opts.map((o) => o.q.getHtml()); q.a = Array.from(right).filter((k) => k < q.o.length).sort((x, y) => x - y); }
+    return q;
+  }
+  function check(q) {
+    if (!q.s) return '題目還沒有內容';
+    if (q.t !== 'a') {
+      if (q.o.length < 2) return '至少要有 2 個選項';
+      const empty = q.o.findIndex((o) => !o); if (empty >= 0) return `選項 ${X.LETTERS[empty]} 是空的（不需要的選項按 ✕ 刪掉）`;
+      if (!q.a.length) return q.t === 's' ? '請點選正確答案' : '請勾選正確答案';
+      if (q.t === 's' && q.a.length !== 1) return '單選題只能有 1 個正確答案';
+    }
+    return '';
+  }
+  async function doSave(close, auto) {
+    const busy = [stemQ, expQ, refQ].concat(opts.map((o) => o.q)).some((x) => x.busy());
+    if (busy) { if (!auto) toast('圖片還在上傳，請稍等一下'); else { clearTimeout(autoT); autoT = setTimeout(() => doSave(false, true), 1200); } return false; }
+    const q = collect(), err = check(q);
+    if (err) { if (!auto) toast('⚠️ ' + err); else $('#eMsg', m).textContent = '⚠️ ' + err + '（還沒自動儲存）'; return false; }
+    if (!q.i) q.i = nextI(bank);
+    const sig = JSON.stringify(q);
+    if (sig === lastSaved && auto) return true;
+    try {
+      await saveQ(bank, qid, q); q0.i = q.i; q0.at = BANKS[bank].q[qid].at; saved = true; dirty = false; lastSaved = sig;
+      $('#eMsg', m).textContent = (auto ? '☁️ 已自動儲存 ' : '✅ 已儲存 ') + X.fmtClock(Date.now());
+      $('#eNo', m).textContent = `（第 ${qOrder(b).indexOf(qid) + 1} 題）`;
+      return true;
+    } catch (e) { toast('儲存失敗：' + e.message); return false; }
+  }
+  $('#eSave', m).onclick = async () => { if (await doSave(true)) { m.close(); renderBank(); toast('✅ 已儲存'); } };
+  $('#eSaveNext', m).onclick = async () => { if (await doSave(true)) { m.close(); renderBank(); openEditor(bank, null, { t, d: $('#eDiff', m).value, tags: tags.slice(), p: +$('#ePts', m).value || 0, o: t === 'a' ? [] : (t === 'm' ? ['', '', '', '', ''] : ['', '', '', '']) }); } };
+  $('#ePrev', m).onclick = () => { const q = collect(); q.p = q.p || 0; previewQ(q); };
+  m.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); doSave(false); } });
+  setTimeout(() => stemQ.focus(), 50);
+}
+
+/* ---------- 匯入 ---------- */
+function pickFile(accept, fn) { const inp = document.createElement('input'); inp.type = 'file'; inp.accept = accept; inp.onchange = () => inp.files[0] && fn(inp.files[0]); inp.click(); }
+async function importWord(file) {
+  const t = toast('📄 讀取 Word 檔中…', 4000); void t;
+  try {
+    await loadScript(LIB.mammoth);
+    const ab = await file.arrayBuffer();
+    const res = await window.mammoth.convertToHtml({ arrayBuffer: ab }, { styleMap: ['u => u', 'strike => s'] });
+    const p = X.parseDocHtml(res.value);
+    if (!p.qs.length) return toast('⚠️ 這個檔案裡找不到題目，請確認格式（題號「1.」開頭、選項「A.」、正確答案：B）', 5000);
+    importPreview(p, file.name.replace(/\.docx$/i, ''), 'Word');
+  } catch (e) { console.error(e); toast('讀取失敗：' + e.message, 4000); }
+}
+async function importExcel(file) {
+  try {
+    await loadScript(LIB.xlsx);
+    const wb = window.XLSX.read(await file.arrayBuffer(), { type: 'array' });
+    const rows = window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' });
+    const p = X.parseRows(rows);
+    if (!p.qs.length) return toast('⚠️ ' + (p.warn[0] || '找不到題目'), 5000);
+    importPreview(p, file.name.replace(/\.(xlsx|xls|csv)$/i, ''), 'Excel');
+  } catch (e) { console.error(e); toast('讀取失敗：' + e.message, 4000); }
+}
+async function downloadTemplate() {
+  await loadScript(LIB.xlsx);
+  const XL = window.XLSX;
+  const rows = [X.SHEET_HEAD,
+    ['單選', '《哆寶》最主要的遊戲機制為何？', '圖像辨識', '競速', '動作', '快速配對', '', '', '', '', 'A', 'BGG 上的分類是 Speed Matching', '中', 'BGG 機制', 2],
+    ['多重選擇', '下列哪些是巴圖理論的玩家類型？', '殺手型', '成就型', '探索型', '封閉型', '社交型', '', '', '', 'A B C E', '四種類型：成就、探索、社交、殺手', '中', '巴圖理論', 2],
+    ['簡答', '請說明你的桌遊最想帶給玩家的感受，並舉一個機制說明。', '', '', '', '', '', '', '', '', '參考：成就感／新奇感…', '', '難', '期末作品', 5]];
+  const ws = XL.utils.aoa_to_sheet(rows); ws['!cols'] = [{ wch: 8 }, { wch: 40 }].concat(new Array(8).fill({ wch: 14 })).concat([{ wch: 10 }, { wch: 30 }, { wch: 6 }, { wch: 12 }, { wch: 6 }]);
+  const wb = XL.utils.book_new(); XL.utils.book_append_sheet(wb, ws, '題目'); XL.writeFile(wb, '線上檢定所_題目範本.xlsx');
+}
+function importPreview(p, name, kind) {
+  const qs = p.qs, cnt = { s: 0, m: 0, a: 0 }; let imgs = 0, conv = 0;
+  qs.forEach((q) => { cnt[q.t]++; imgs += countDataImgs(q.s) + q.o.reduce((a, o) => a + countDataImgs(o), 0) + countDataImgs(q.e); if (q.conv) conv++; });
+  const banks = Object.keys(BANKS);
+  const m = modal(`<h2>📥 匯入 ${kind}：${esc(name)}</h2>
+    <div class="stats"><div class="stat"><b>${qs.length}</b><span>題目</span></div><div class="stat"><b>${cnt.s}</b><span>單選</span></div><div class="stat"><b>${cnt.m}</b><span>多重選擇</span></div><div class="stat"><b>${cnt.a}</b><span>簡答</span></div><div class="stat"><b>${imgs}</b><span>張圖片</span></div></div>
+    ${conv ? `<p class="small" style="background:var(--soft);border-radius:10px;padding:8px 12px">☑️ 有 <b>${conv}</b> 題原本寫「複選題」，已改成<b>多重選擇題</b>（每錯一個選項扣 1/5 題分）。${qs.some((q) => q.conv && q.o.length < 5) ? '這些題目多半只有 4 個選項，全錯會剩 1/5 題分；需要的話可以匯入後再加第 5 個選項。' : ''}</p>` : ''}
+    ${p.warn.length ? `<div class="small" style="background:var(--warnbg);border-radius:10px;padding:8px 12px;margin-bottom:10px"><b>⚠️ 有 ${p.warn.length} 題需要檢查（黃色列）：</b><br>${p.warn.slice(0, 12).map(esc).join('<br>')}${p.warn.length > 12 ? '<br>…' : ''}</div>` : '<p class="small" style="color:var(--ok);font-weight:700">✅ 全部題目都讀得懂</p>'}
+    <div class="scroll"><table class="t"><thead><tr><th class="num">#</th><th>題型</th><th>難</th><th>題目</th><th>選項</th><th>答案</th><th>解析</th></tr></thead><tbody>
+      ${qs.map((q) => `<tr class="${q.warn && q.warn.length ? 'warn' : ''}"><td class="num">${q.num}</td><td>${X.TYPES[q.t]}</td><td>${q.d}</td><td>${esc(X.plain(q.s).slice(0, 60))}${countDataImgs(q.s) ? ' 🖼️' : ''}</td><td>${q.o.length || '—'}</td><td>${q.t === 'a' ? '—' : letterList(q.a)}</td><td>${q.e ? '✔' : ''}</td></tr>`).join('')}
+    </tbody></table></div>
+    <div class="grid2" style="margin-top:10px">
+      <div><label class="f">匯入到哪個題庫</label><select id="iBank">${banks.map((id) => `<option value="${id}" ${id === CURB ? 'selected' : ''}>${esc(BANKS[id].name)}</option>`).join('')}<option value="__new" ${banks.length ? '' : 'selected'}>＋ 新題庫：${esc(name)}</option></select></div>
+      <div><label class="f">幫這批題目加標籤（選填）</label><input type="text" id="iTag" value="${esc(name.slice(0, 20))}"></div>
+    </div>
+    <div class="grid3"><div><label class="f">單選配分</label><input type="number" id="iPs" value="2" min="0" max="100" step="0.5"></div><div><label class="f">多重選擇配分</label><input type="number" id="iPm" value="2" min="0" max="100" step="0.5"></div><div><label class="f">簡答配分</label><input type="number" id="iPa" value="5" min="0" max="100" step="0.5"></div></div>
+    <div id="iProg" class="hidden" style="margin-top:12px"><div class="prog"><i></i></div><p class="small muted" id="iProgT"></p></div>
+    <div class="row" style="margin-top:14px"><button class="btn" id="iGo">📥 匯入 ${qs.length} 題</button><span class="small muted">圖片會自動壓縮（最長邊 1000px）再存到雲端</span></div>`, { wide: true, sticky: true });
+  $('#iGo', m).onclick = async () => {
+    const btn = $('#iGo', m); btn.disabled = true; $('.x', m).disabled = true;
+    try {
+      let bank = $('#iBank', m).value;
+      if (bank === '__new') bank = await newBank(name);
+      const tag = $('#iTag', m).value.trim().slice(0, 20), pts = { s: +$('#iPs', m).value || 0, m: +$('#iPm', m).value || 0, a: +$('#iPa', m).value || 0 };
+      $('#iProg', m).classList.remove('hidden');
+      let done = 0; const bar = $('#iProg i', m), txt = $('#iProgT', m);
+      const tick = () => { done++; bar.style.width = Math.round(done / Math.max(1, imgs) * 100) + '%'; txt.textContent = `🖼️ 圖片壓縮上傳 ${done}／${imgs}`; };
+      if (!imgs) txt.textContent = '寫入題目中…';
+      let i = nextI(bank); const add = {};
+      for (const q of qs) {
+        const s = await uploadHtmlImages(q.s, tick), o = []; for (const x of q.o) o.push(await uploadHtmlImages(x, tick));
+        const e = await uploadHtmlImages(q.e, tick);
+        const tags = (q.tags || []).slice(); if (tag && !tags.includes(tag)) tags.push(tag);
+        add[X.newId(10)] = clean({ t: q.t, s, o: q.t === 'a' ? [] : o, a: q.t === 'a' ? [] : q.a, r: q.r || '', e, d: q.d || '中', tags, p: q.p || pts[q.t], i: i++, at: Date.now(), src: name.slice(0, 60) });
+      }
+      txt.textContent = '寫入題目中…';
+      const keys = Object.keys(add);
+      for (let k = 0; k < keys.length; k += 40) { const part = {}; keys.slice(k, k + 40).forEach((x) => { part[x] = add[x]; }); await FB.update(`exam/bk/${ME.uid}/${bank}/q`, part); }
+      keys.forEach((x) => { BANKS[bank].q[x] = normQ(add[x]); });
+      CURB = bank; SEL.clear(); m.close(); showTab('bank'); toast(`✅ 已匯入 ${keys.length} 題`, 3500);
+    } catch (e) { console.error(e); toast('匯入失敗：' + e.message, 5000); btn.disabled = false; $('.x', m).disabled = false; }
+  };
+}
+async function exportBank(bank) {
+  const b = BANKS[bank]; if (!b) return;
+  const img = {};
+  for (const q of Object.values(b.q)) { const h = [q.s, q.e, q.r].concat(q.o || []).join(' '); for (const id of X.imgIds(h)) img[id] = await getImg(id); }
+  download(`線上檢定所題庫_${b.name}_${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify({ app: 'wuyutzu-exam', v: 1, name: b.name, at: Date.now(), q: b.q, img }));
+  toast(`💾 已下載（${Object.keys(b.q).length} 題、${Object.keys(img).length} 張圖）`);
+}
+async function importBackup(file) {
+  let d; try { d = JSON.parse(await file.text()); } catch (e) { return toast('這不是題庫備份檔'); }
+  if (!d || d.app !== 'wuyutzu-exam' || !d.q) return toast('這不是線上檢定所的題庫備份檔');
+  const n = Object.keys(d.q).length;
+  if (!confirm(`要把「${d.name}」（${n} 題）匯入成一個新題庫嗎？`)) return;
+  toast('匯入中…', 5000);
+  const bank = await newBank(d.name + '（匯入）'), map = {};
+  for (const id of Object.keys(d.img || {})) { if (!d.img[id]) continue; try { const r = await uploadImg(d.img[id]); map[id] = r.id; } catch (e) { console.warn(e); } }
+  const fix = (h) => String(h || '').replace(/data-img="([a-z0-9]+)"/g, (m0, id) => map[id] ? `data-img="${map[id]}"` : m0);
+  const add = {}; let i = 1;
+  Object.keys(d.q).sort((a, b) => (d.q[a].i || 0) - (d.q[b].i || 0)).forEach((id) => { const q = normQ(Object.assign({}, d.q[id])); add[X.newId(10)] = clean({ t: q.t, s: fix(q.s), o: q.t === 'a' ? [] : q.o.map(fix), a: q.t === 'a' ? [] : q.a, r: fix(q.r), e: fix(q.e), d: q.d, tags: q.tags, l: q.l || null, p: q.p, i: i++, at: Date.now(), src: q.src }); });
+  await FB.update(`exam/bk/${ME.uid}/${bank}/q`, add);
+  Object.keys(add).forEach((x) => { BANKS[bank].q[x] = normQ(add[x]); });
+  CURB = bank; renderBank(); toast(`✅ 已匯入 ${n} 題`);
+}
+
+/* =====================================================================
+   📝 測驗
+   ===================================================================== */
+async function loadExams() {
+  let own = {}; try { own = (await FB.get('exam/owners/' + ME.uid)) || {}; } catch (e) { toast('讀取測驗清單失敗'); }
+  EXAMS = {};
+  await Promise.all(Object.keys(own).map(async (code) => { try { const meta = await FB.get(`exam/m/${code}/meta`); if (meta) EXAMS[code] = meta; } catch (e) { } }));
+}
+const stChip = (meta) => { const s = X.stateOf(meta); return `<span class="chip ${s === 'open' ? 'ok' : s === 'closed' ? 'gray' : 'warn'}">${X.STATE[s]}</span>`; };
+function renderExams() {
+  CUR = null; stopGrader(); history.replaceState(null, '', location.pathname + location.search);
+  const codes = Object.keys(EXAMS).sort((a, b) => (EXAMS[b].at || 0) - (EXAMS[a].at || 0));
+  $('#t-exams').innerHTML = `<div class="card"><div class="row"><h2>📝 我的測驗</h2><span class="sp"></span><button class="btn" id="xNew">＋ 新測驗</button></div>
+    ${codes.length ? `<div class="elist" style="margin-top:14px">${codes.map((c) => { const e = EXAMS[c]; return `<button class="ecard" data-c="${c}"><div class="row" style="gap:6px"><span class="code">${c}</span>${stChip(e)}${e.pub ? '<span class="chip ok">📣 已公布</span>' : ''}</div>
+      <b style="margin-top:6px">${esc(e.title)}</b><div class="small muted">${e.n || 0} 題・滿分 ${e.total || 0}・${e.mins} 分鐘・${e.tries >= 20 ? '不限次數' : e.tries + ' 次'}</div>
+      <div class="small muted">${e.openAt ? '開放 ' + X.fmtTime(e.openAt) : '手動開放'}${e.closeAt ? '｜截止 ' + X.fmtTime(e.closeAt) : ''}</div></button>`; }).join('')}</div>`
+    : `<div class="empty"><div style="font-size:3rem">📝</div><p>還沒有測驗。${Object.keys(BANKS).length ? '按「＋ 新測驗」從題庫挑題目。' : '先到「📚 題庫」建立題目（可以直接匯入 Word 考卷），再回來建立測驗。'}</p></div>`}</div>`;
+  $('#xNew').onclick = () => { if (!Object.keys(BANKS).some((id) => Object.keys(BANKS[id].q || {}).length)) { toast('題庫裡還沒有題目，先去建題庫吧'); return showTab('bank'); } examForm(null); };
+  $$('#t-exams .ecard').forEach((b) => { b.onclick = () => openExam(b.dataset.c); });
+}
+
+/* ---------- 建立／修改測驗 ---------- */
+async function examForm(code) {
+  const old = code ? EXAMS[code] : null;
+  const meta = JSON.parse(JSON.stringify(Object.assign({}, X.DEFAULT_META, old || {})));
+  meta.guard = Object.assign({}, X.DEFAULT_META.guard, meta.guard || {});
+  let paper = {}, picked = new Set(), ptsMode = 'bank', uni = { s: 2, m: 2, a: 5 }, attempts = 0;
+  if (code) {
+    paper = (await FB.get(`exam/m/${code}/paper`)) || {};
+    Object.keys(paper).forEach((id) => picked.add(id));
+    try { attempts = Object.keys((await FB.get(`exam/m/${code}/s`)) || {}).length; } catch (e) { }
+  }
+  let bank = (old && old.bank && BANKS[old.bank]) ? old.bank : (BANKS[CURB] && Object.keys(BANKS[CURB].q).length ? CURB : Object.keys(BANKS).find((id) => Object.keys(BANKS[id].q || {}).length));
+  const f = { t: '', d: '', tag: '', kw: '' };
+  const missing = code ? Object.keys(paper).filter((id) => !(BANKS[bank] && BANKS[bank].q[id])) : [];
+  const m = modal(`<h2>${code ? '⚙️ 修改測驗設定' : '＋ 新測驗'}</h2>
+    ${attempts ? `<p class="small" style="background:var(--warnbg);border-radius:10px;padding:8px 12px">⚠️ 已經有 ${attempts} 位學生作答。改時間、次數不影響已交的考卷；<b>改題目或配分會重新計分</b>。</p>` : ''}
+    <div class="card" style="box-shadow:none;border-width:1.5px"><h3>① 基本資料</h3>
+      <label class="f">測驗名稱</label><input type="text" id="fTitle" maxlength="60" value="${esc(meta.title)}" placeholder="例如：遊戲設計思考 期末檢定">
+      <label class="f">說明（學生進場前會看到，選填）</label><textarea id="fDesc" rows="2" maxlength="1000" placeholder="例如：範圍是第 1～8 週，可以用平板作答。">${esc(meta.desc || '')}</textarea></div>
+    <div class="card" style="box-shadow:none;border-width:1.5px"><h3>② 題目</h3>
+      ${missing.length ? `<p class="small" style="color:var(--warn)">有 ${missing.length} 題在題庫裡找不到（可能被刪掉或換了題庫），會保留原本的題目。</p>` : ''}
+      <div class="row"><b>題庫</b><select id="fBank" style="width:auto">${Object.keys(BANKS).map((id) => `<option value="${id}" ${id === bank ? 'selected' : ''}>${esc(BANKS[id].name)}（${Object.keys(BANKS[id].q || {}).length}）</option>`).join('')}</select></div>
+      <div class="filters"><select id="pT"><option value="">全部題型</option>${Object.keys(X.TYPES).map((t) => `<option value="${t}">${X.TYPES[t]}</option>`).join('')}</select>
+        <select id="pD"><option value="">全部難易度</option>${X.DIFFS.map((d) => `<option>${d}</option>`).join('')}</select><select id="pG"></select><input type="text" id="pK" placeholder="🔍 搜尋"></div>
+      <div class="row small" style="margin:8px 0"><button type="button" class="btn ghost sm" id="pAll">☑ 全選列出的題目</button><button type="button" class="btn ghost sm" id="pNone">☐ 取消列出的題目</button></div>
+      <div class="pick" id="pList"></div>
+      <div class="sumbar" id="pSum"></div>
+      <div class="row" style="margin-top:10px"><b>配分</b><label class="ck"><input type="radio" name="pm" value="bank" checked>用題庫裡每題的配分</label><label class="ck"><input type="radio" name="pm" value="uni">依題型統一</label>
+        <span id="pUni" class="row hidden" style="gap:6px">單選<input type="number" id="uS" value="2" min="0" max="100" step="0.5" style="width:74px">多重選擇<input type="number" id="uM" value="2" min="0" max="100" step="0.5" style="width:74px">簡答<input type="number" id="uA" value="5" min="0" max="100" step="0.5" style="width:74px"></span></div>
+      <div class="row" style="margin-top:8px"><b>每位學生隨機抽</b><input type="number" id="fDraw" min="0" max="500" value="${meta.draw || 0}" style="width:90px">題<span class="small muted">（0＝全部都考；抽題時每個人拿到的題目不同）</span></div>
+    </div>
+    <div class="card" style="box-shadow:none;border-width:1.5px"><h3>③ 時間</h3>
+      <div class="row"><label class="ck"><input type="radio" name="om" value="manual" ${!meta.openAt ? 'checked' : ''}>手動開放（建立後在測驗頁按「▶ 開放」）</label><label class="ck"><input type="radio" name="om" value="time" ${meta.openAt ? 'checked' : ''}>排程：到時間自動開放</label></div>
+      <div class="grid2"><div id="oaBox"><label class="f">開放時間</label><input type="datetime-local" id="fOpenAt" value="${toLocalInput(meta.openAt)}"></div>
+        <div><label class="f"><label class="ck" style="margin:0"><input type="checkbox" id="fHasClose" ${meta.closeAt ? 'checked' : ''}>截止時間（時間到自動關閉）</label></label><input type="datetime-local" id="fCloseAt" value="${toLocalInput(meta.closeAt)}"></div>
+        <div><label class="f">作答時間（分鐘，按「開始作答」起算）</label><input type="number" id="fMins" min="1" max="600" value="${meta.mins}"></div></div>
+      <p class="small muted">不論設定哪一種，老師都可以隨時在測驗頁按「⏹ 關閉並收卷」。離截止時間不到作答時間時，以截止時間為準。</p></div>
+    <div class="card" style="box-shadow:none;border-width:1.5px"><h3>④ 作答次數與計分</h3>
+      <div class="grid2"><div><label class="f">可以作答幾次</label><select id="fTries">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => `<option value="${n}" ${meta.tries === n ? 'selected' : ''}>${n} 次</option>`).join('')}<option value="20" ${meta.tries >= 20 ? 'selected' : ''}>不限（最多 20 次）</option></select></div>
+        <div id="polBox"><label class="f">多次作答怎麼採計</label><select id="fPolicy">${Object.keys(X.POLICY).map((k) => `<option value="${k}" ${meta.policy === k ? 'selected' : ''}>${X.POLICY[k].name}：${X.POLICY[k].desc}</option>`).join('')}</select></div></div>
+      <div id="gapBox" class="row" style="margin-top:8px"><label class="ck"><input type="checkbox" id="fGapOn" ${meta.gap ? 'checked' : ''}>⏳ 兩次作答之間至少間隔</label><input type="number" id="fGap" min="1" max="10080" value="${meta.gap || 10}" style="width:90px">分鐘
+        <label class="ck"><input type="checkbox" id="fReshuf" ${meta.reshuf ? 'checked' : ''}>🔀 每次重考都重新抽題／打亂</label></div></div>
+    <div class="card" style="box-shadow:none;border-width:1.5px"><h3>⑤ 打亂與提示</h3>
+      <label class="ck"><input type="checkbox" id="fShufQ" ${meta.shufQ ? 'checked' : ''}>題目順序打亂</label><label class="ck"><input type="checkbox" id="fShufO" ${meta.shufO ? 'checked' : ''}>選項順序打亂（標「🔒 選項順序固定」的題目不會打亂）</label>
+      <label class="ck"><input type="checkbox" id="fNeed" ${meta.showNeed ? 'checked' : ''}>多重選擇題顯示「本題應選幾項」</label>
+      <p class="small muted">打亂依學號固定：同一個人重新整理，順序不會變。</p></div>
+    <div class="card" style="box-shadow:none;border-width:1.5px"><h3>⑥ 反作弊</h3>
+      <label class="ck"><input type="checkbox" id="gOn" ${meta.guard.on ? 'checked' : ''}>開啟反作弊（作答時全螢幕，離開畫面就記違規）</label>
+      <div class="grid3" id="gBox"><div><label class="f">違規幾次就由系統代結</label><select id="gMax">${[1, 2, 3, 4, 5].map((n) => `<option value="${n}" ${meta.guard.max === n ? 'selected' : ''}>${n} 次${n === 1 ? '（一違規就代結）' : n === 2 ? '（預設：第 1 次警告）' : ''}</option>`).join('')}</select></div>
+        <div><label class="f">幾分鐘沒動作算閒置</label><input type="number" id="gIdle" min="0" max="60" value="${meta.guard.idle}"><span class="small muted">0＝不偵測</span></div>
+        <div><label class="f">失焦幾秒算違規</label><input type="number" id="gBlur" min="0" max="60" value="${meta.guard.blur}"><span class="small muted">分割畫面、浮動視窗；0＝不偵測</span></div></div>
+      <p class="small muted">會偵測：離開全螢幕、切換分頁或 App、視窗失去焦點、太久沒動作（「你還在嗎？」30 秒沒回應直接代結）。iPhone 的 Safari 不支援網頁全螢幕，只偵測切換頁面與閒置。</p></div>
+    <div class="card" style="box-shadow:none;border-width:1.5px"><h3>⑦ 學生名單</h3>
+      <label class="ck"><input type="checkbox" id="fRoster" ${meta.rosterOnly ? 'checked' : ''}>只限名單內的學生進入（班級、座號、姓名、學號都要對得上）</label>
+      <p class="small muted">名單在測驗頁的「👥 名單」分頁匯入。不勾也可以匯入名單，用來核對誰還沒考。</p></div>
+    <div class="row"><button class="btn lg" id="fSave">${code ? '💾 儲存修改' : '✅ 建立測驗'}</button><span class="small muted" id="fMsg"></span></div>`, { wide: true, sticky: true });
+  const B = () => BANKS[bank] || { q: {} };
+  const effPts = (id) => { const q = B().q[id] || paperQ(id); if (!q) return 0; return ptsMode === 'uni' ? uni[q.t] : (q.p || 0); };
+  const paperQ = (id) => paper[id] ? { t: paper[id].t, p: paper[id].p, s: paper[id].s } : null;
+  function paintPick() {
+    const b = B(), ids = qOrder(b).filter((id) => matchQ(b.q[id], f));
+    $('#pG', m).innerHTML = `<option value="">全部標籤</option>${bankTags(b).map((t) => `<option ${f.tag === t ? 'selected' : ''}>${esc(t)}</option>`).join('')}`;
+    $('#pList', m).innerHTML = ids.length ? ids.map((id) => { const q = b.q[id]; return `<label><input type="checkbox" data-id="${id}" ${picked.has(id) ? 'checked' : ''}><span class="small muted mono">${qOrder(b).indexOf(id) + 1}</span><span>${esc(X.plain(q.s).slice(0, 120))}${X.hasImg(q.s) ? ' 🖼️' : ''}</span><span class="row" style="gap:4px">${typeChip(q.t)}<span class="chip gray">${q.d}</span></span></label>`; }).join('') : '<div class="empty small">沒有符合的題目</div>';
+    paintSum();
+  }
+  function paintSum() {
+    const ids = Array.from(picked), c = { s: 0, m: 0, a: 0 }; let tot = 0;
+    ids.forEach((id) => { const q = B().q[id] || paperQ(id); if (!q) return; c[q.t]++; tot += effPts(id); });
+    const draw = +$('#fDraw', m).value || 0;
+    $('#pSum', m).innerHTML = `已選 <span class="chip">${ids.length} 題</span> 單選 ${c.s}・多重選擇 ${c.m}・簡答 ${c.a}<span class="sp"></span>${draw > 0 && draw < ids.length ? `每人抽 ${draw} 題（滿分依抽到的題目計算）` : `滿分 <span class="chip ok">${X.round2(tot)} 分</span>`}`;
+  }
+  $('#fBank', m).onchange = (e) => { bank = e.target.value; paintPick(); };
+  $('#pT', m).onchange = (e) => { f.t = e.target.value; paintPick(); };
+  $('#pD', m).onchange = (e) => { f.d = e.target.value; paintPick(); };
+  $('#pG', m).onchange = (e) => { f.tag = e.target.value; paintPick(); };
+  $('#pK', m).oninput = (e) => { f.kw = e.target.value.trim(); paintPick(); };
+  $('#pList', m).onchange = (e) => { const id = e.target.dataset.id; if (!id) return; e.target.checked ? picked.add(id) : picked.delete(id); paintSum(); };
+  $('#pAll', m).onclick = () => { qOrder(B()).filter((id) => matchQ(B().q[id], f)).forEach((id) => picked.add(id)); paintPick(); };
+  $('#pNone', m).onclick = () => { qOrder(B()).filter((id) => matchQ(B().q[id], f)).forEach((id) => picked.delete(id)); paintPick(); };
+  $$('input[name=pm]', m).forEach((r) => { r.onchange = () => { ptsMode = r.value; $('#pUni', m).classList.toggle('hidden', ptsMode !== 'uni'); paintSum(); }; });
+  ['uS', 'uM', 'uA'].forEach((k, j) => { $('#' + k, m).oninput = (e) => { uni['sma'[j]] = +e.target.value || 0; paintSum(); }; });
+  $('#fDraw', m).oninput = paintSum;
+  const paintTime = () => {
+    $('#oaBox', m).classList.toggle('hidden', $('input[name=om]:checked', m).value !== 'time');
+    $('#fCloseAt', m).disabled = !$('#fHasClose', m).checked;
+    const tr = +$('#fTries', m).value; $('#polBox', m).classList.toggle('hidden', tr < 2); $('#gapBox', m).classList.toggle('hidden', tr < 2);
+    $('#fGap', m).disabled = !$('#fGapOn', m).checked;
+    $('#gBox', m).classList.toggle('hidden', !$('#gOn', m).checked);
+  };
+  ['fHasClose', 'fTries', 'fGapOn', 'gOn'].forEach((id) => { $('#' + id, m).onchange = paintTime; });
+  $$('input[name=om]', m).forEach((r) => { r.onchange = paintTime; });
+  paintPick(); paintTime();
+  $('#fSave', m).onclick = async () => {
+    const msg = (t) => { $('#fMsg', m).textContent = t; toast(t); };
+    const title = $('#fTitle', m).value.trim();
+    if (!title) return msg('⚠️ 請輸入測驗名稱');
+    const ids = Array.from(picked).filter((id) => B().q[id] || paper[id]);
+    if (!ids.length) return msg('⚠️ 請至少選一題');
+    const om = $('input[name=om]:checked', m).value;
+    const openAt = om === 'time' ? fromLocalInput($('#fOpenAt', m).value) : 0;
+    const closeAt = $('#fHasClose', m).checked ? fromLocalInput($('#fCloseAt', m).value) : 0;
+    if (om === 'time' && !openAt) return msg('⚠️ 請設定開放時間');
+    if ($('#fHasClose', m).checked && !closeAt) return msg('⚠️ 請設定截止時間');
+    if (closeAt && openAt && closeAt <= openAt) return msg('⚠️ 截止時間要比開放時間晚');
+    const mins = Math.round(+$('#fMins', m).value);
+    if (!(mins >= 1 && mins <= 600)) return msg('⚠️ 作答時間要 1～600 分鐘');
+    const tries = +$('#fTries', m).value;
+    // 題目快照（照題庫順序）
+    const order = qOrder(B()).filter((id) => picked.has(id)).concat(ids.filter((id) => !B().q[id]));
+    const np = {}, nk = {}; let total = 0;
+    const need = $('#fNeed', m).checked;
+    order.forEach((id, i) => {
+      const q = B().q[id];
+      if (!q) { np[id] = Object.assign({}, paper[id], { i, p: ptsMode === 'uni' ? uni[paper[id].t] : paper[id].p }); total += np[id].p || 0; return; }
+      const p = effPts(id); total += p;
+      np[id] = clean({ i, t: q.t, s: q.s, o: q.t === 'a' ? [] : q.o, l: q.l ? true : null, p, need: need && q.t === 'm' ? q.a.length : null });
+      nk[id] = clean({ a: q.t === 'a' ? [] : q.a, r: q.r || '', e: q.e || '' });
+    });
+    const draw = Math.max(0, Math.min(500, Math.round(+$('#fDraw', m).value || 0)));
+    const nm = Object.assign({}, meta, {
+      title: title.slice(0, 60), desc: $('#fDesc', m).value.trim().slice(0, 1000), openAt, closeAt, mins, tries,
+      policy: $('#fPolicy', m).value, gap: tries > 1 && $('#fGapOn', m).checked ? Math.max(1, Math.round(+$('#fGap', m).value || 0)) : 0,
+      reshuf: $('#fReshuf', m).checked, draw: draw >= order.length ? 0 : draw, shufQ: $('#fShufQ', m).checked, shufO: $('#fShufO', m).checked, showNeed: need,
+      rosterOnly: $('#fRoster', m).checked, n: order.length, total: X.round2(total), bank: bank || '',
+      guard: { on: $('#gOn', m).checked, max: +$('#gMax', m).value, idle: Math.max(0, Math.min(60, Math.round(+$('#gIdle', m).value || 0))), blur: Math.max(0, Math.min(60, Math.round(+$('#gBlur', m).value || 0))) }
+    });
+    if (!code) { nm.owner = ME.uid; nm.at = Date.now(); nm.open = om === 'time'; if (ADMIN) nm.admin = true; }
+    else if (om === 'time' && !old.openAt) nm.open = true;                       // 改成排程 → 到時間自動開放
+    else if (om === 'manual' && old.openAt && Date.now() < old.openAt) nm.open = false; // 排程還沒到就改回手動 → 先不開放
+    $('#fSave', m).disabled = true;
+    try {
+      let c = code;
+      if (!c) { for (let k = 0; k < 8; k++) { const t = X.newCode(); if (!(await FB.get(`exam/m/${t}/meta`))) { c = t; break; } } if (!c) throw new Error('產生代碼失敗，請再試一次'); }
+      // 順序很重要：先寫 meta（規則要看得到擁有者），再寫題目與答案
+      await FB.set(`exam/m/${c}/meta`, nm);
+      // 只有 Key 有內容的才寫（舊題目找不到時沿用原本的答案）
+      if (code) { const ok = (await FB.get(`exam/m/${c}/key`)) || {}; order.forEach((id) => { if (!nk[id] && ok[id]) nk[id] = ok[id]; }); }
+      await FB.set(`exam/m/${c}/paper`, np);
+      await FB.set(`exam/m/${c}/key`, nk);
+      await FB.set(`exam/owners/${ME.uid}/${c}`, { title: nm.title, at: nm.at });
+      EXAMS[c] = nm; m.close();
+      toast(code ? '✅ 已儲存' : `✅ 測驗建立好了！代碼 ${c}`, 3500);
+      if (code && CUR === code) { PAPER = np; KEY = nk; META = nm; regrade(); renderExam(); } else openExam(c, 'share');
+    } catch (e) { console.error(e); msg('儲存失敗：' + e.message); $('#fSave', m).disabled = false; }
+  };
+}
+
+/* ---------- 測驗頁 ---------- */
+let META = null, PAPER = {}, KEY = {}, SUBS = {}, MG = {}, GRADES = {}, ROSTER = {}, unsub = [], gradeT = null, sub = 'share', lastG = {}, endsSent = {};
+const studentLink = (code) => new URL('take.html?code=' + code, location.href).href;
+function stopGrader() { unsub.forEach((f) => { try { f(); } catch (e) { } }); unsub = []; clearInterval(gradeT); gradeT = null; }
+async function openExam(code, tab) {
+  stopGrader();
+  CUR = code; META = EXAMS[code]; sub = tab || (X.stateOf(META) === 'open' ? 'grade' : 'share');
+  history.replaceState(null, '', '#e=' + code);
+  showTab('exams'); CUR = code;
+  $('#t-exams').innerHTML = '<div class="card"><p class="muted">讀取中…</p></div>';
+  try { [PAPER, KEY, ROSTER] = await Promise.all([FB.get(`exam/m/${code}/paper`), FB.get(`exam/m/${code}/key`), FB.get(`exam/m/${code}/roster`)]); } catch (e) { toast('讀取失敗：' + e.message); }
+  PAPER = PAPER || {}; KEY = KEY || {}; ROSTER = ROSTER || {}; SUBS = {}; MG = {}; GRADES = {}; lastG = {}; endsSent = {};
+  Object.values(PAPER).forEach((q) => { q.o = arr(q.o); });
+  Object.values(KEY).forEach((k) => { k.a = arr(k.a); });
+  // 🧑‍⚖️ 自動閱卷官：這份測驗打開時一直聽學生作答
+  unsub.push(FB.listen(`exam/m/${code}/s`, (v) => { SUBS = v || {}; regrade(); paintLive(); }));
+  unsub.push(FB.listen(`exam/m/${code}/mg`, (v) => { MG = v || {}; regrade(); paintLive(); }));
+  unsub.push(FB.listen(`exam/m/${code}/g`, (v) => { GRADES = v || {}; Object.keys(GRADES).forEach((sid) => { lastG[sid] = sigG(GRADES[sid]); }); }));
+  unsub.push(FB.listen(`exam/m/${code}/meta`, (v) => { if (v && CUR === code) { META = EXAMS[code] = v; paintHead(); } }));
+  gradeT = setInterval(() => { regrade(); paintLive(); paintHead(); }, 5000);
+  renderExam();
+}
+const sigG = (g) => { if (!g) return ''; const c = Object.assign({}, g); delete c.at; return JSON.stringify(c); };
+function attemptsOf(sid) { const s = SUBS[sid] || {}; return Object.keys(s).filter((k) => /^\d+$/.test(k) && s[k] && s[k].st).sort((a, b) => a - b).map((k) => Object.assign({ k: +k }, s[k])); }
+function infoOf(sid) { const at = attemptsOf(sid); const last = at[at.length - 1]; return (last && last.info) || ROSTER[sid] || {}; }
+function gradeOf(sid, a) { return X.gradeAttempt(PAPER, KEY, META, CUR, sid, a.k, a, (MG[sid] || {})[a.k]); }
+function violations(a) { return Object.values(a.ev || {}).filter((e) => e.k === 'v').length; }
+function regrade() {
+  if (!CUR || !META) return;
+  const now = Date.now();
+  Object.keys(SUBS).forEach((sid) => {
+    const list = attemptsOf(sid); if (!list.length) return;
+    const ks = {}, done = [];
+    list.forEach((a) => {
+      if (!a.end) {
+        // 時間到還沒交卷 → 閱卷官代收（交卷時間記成期限）
+        const dl = X.deadlineOf(META, a), late = now > dl + X.CONFIG.GRACE, shut = META.open === false;
+        if ((late || shut) && !endsSent[sid + '/' + a.k]) {
+          endsSent[sid + '/' + a.k] = 1;
+          const by = late ? 'time' : 'teacher';
+          FB.set(`exam/m/${CUR}/s/${sid}/${a.k}/end`, { t: by === 'time' ? dl : now, by }).catch((e) => { delete endsSent[sid + '/' + a.k]; console.warn(e); });
+        }
+        return;
+      }
+      const g = gradeOf(sid, a);
+      const d = {}; Object.keys(g.detail).forEach((id) => { const r = g.detail[id]; d[id] = r.s == null ? -1 : r.s; });
+      ks['a' + a.k] = { s: g.s, full: g.full, p: g.pend, by: a.end.by, d }; // key 用 a1、a2（純數字 key 會被 Firebase 變成陣列）
+      done.push({ s: g.s });
+    });
+    if (!done.length) return;
+    const gr = { k: ks, f: X.finalScore(done, META.policy), fp: Object.values(ks).some((x) => x.p > 0), n: done.length, policy: META.policy, at: now };
+    const sig = sigG(gr);
+    if (sig !== lastG[sid]) { lastG[sid] = sig; FB.set(`exam/m/${CUR}/g/${sid}`, gr).catch((e) => { lastG[sid] = ''; console.warn(e); }); }
+  });
+}
+function rows() {
+  const sids = new Set(Object.keys(ROSTER).concat(Object.keys(SUBS)));
+  const now = Date.now();
+  return Array.from(sids).map((sid) => {
+    const info = infoOf(sid), list = attemptsOf(sid), last = list[list.length - 1];
+    const graded = list.filter((a) => a.end).map((a) => Object.assign({ a }, gradeOf(sid, a)));
+    let st = 'none', left = 0, prog = '';
+    if (last && !last.end) { st = 'doing'; left = X.deadlineOf(META, last) - now; const sh = X.sheetFor(PAPER, META, CUR, sid, last.k); prog = sh.ids.filter((id) => X.answered(PAPER[id].t, (last.ans || {})[id])).length + '/' + sh.ids.length; }
+    else if (last) st = last.end.by;
+    return { sid, info, list, last, graded, st, left, prog, inRoster: !!ROSTER[sid], f: X.finalScore(graded, META.policy), pend: graded.reduce((a, g) => a + g.pend, 0), viol: list.reduce((a, x) => a + violations(x), 0) };
+  }).sort((a, b) => String(a.info.cls || '').localeCompare(String(b.info.cls || '')) || (a.info.seat || 0) - (b.info.seat || 0) || a.sid.localeCompare(b.sid));
+}
+function renderExam() {
+  const c = CUR;
+  $('#t-exams').innerHTML = `<div class="card"><div class="ehead" id="eHead"></div>
+    <div class="tabs subtabs" id="subT" style="margin:14px 0 0">${[['share', '🔗 分享'], ['grade', '📋 成績'], ['paper', '🧾 題目'], ['roster', '👥 名單'], ['set', '⚙️ 設定']].map(([k, n]) => `<button data-s="${k}" class="${sub === k ? 'on' : ''}">${n}</button>`).join('')}</div></div>
+    <div id="subBody"></div>`;
+  $('#subT').onclick = (e) => { const b = e.target.closest('[data-s]'); if (!b) return; sub = b.dataset.s; $$('#subT button').forEach((x) => x.classList.toggle('on', x === b)); paintSub(); };
+  paintHead(); paintSub();
+  void c;
+}
+function paintHead() {
+  const el = $('#eHead'); if (!el || !META) return;
+  const s = X.stateOf(META);
+  el.innerHTML = `<button class="btn ghost sm" id="hBack">← 我的測驗</button><h2>${esc(META.title)}</h2><span class="bigcode" style="font-size:1.25rem">${CUR}</span>${stChip(META)}${META.pub ? '<span class="chip ok">📣 成績已公布</span>' : ''}
+    <span class="sp"></span>
+    ${s === 'open' || s === 'wait' ? '<button class="btn danger" id="hClose">⏹ 關閉並收卷</button>' : '<button class="btn" id="hOpen">▶ 開放作答</button>'}
+    <div class="small muted" style="flex-basis:100%">${META.n} 題・滿分 ${META.total}・作答 ${META.mins} 分鐘・${META.tries >= 20 ? '不限次數' : '可作答 ' + META.tries + ' 次'}${META.tries > 1 ? '（' + X.POLICY[META.policy].name + '）' : ''}・${META.openAt ? '開放 ' + X.fmtTime(META.openAt) : '手動開放'}${META.closeAt ? '・截止 ' + X.fmtTime(META.closeAt) : ''}・反作弊${META.guard && META.guard.on ? '開（違規 ' + META.guard.max + ' 次代結）' : '關'}</div>`;
+  $('#hBack').onclick = () => renderExams();
+  const op = $('#hOpen'); if (op) op.onclick = async () => {
+    const up = { open: true };
+    if (META.closeAt && Date.now() >= META.closeAt) { if (!confirm('截止時間已經過了。要取消截止時間並重新開放嗎？')) return; up.closeAt = 0; }
+    if (META.openAt && Date.now() < META.openAt) { if (confirm('還沒到排程的開放時間。要現在就開放嗎？')) up.openAt = 0; }
+    await FB.update(`exam/m/${CUR}/meta`, up); Object.assign(META, up); paintHead(); toast('▶ 已開放');
+  };
+  const cl = $('#hClose'); if (cl) cl.onclick = async () => {
+    const doing = rows().filter((r) => r.st === 'doing').length;
+    if (!confirm(doing ? `還有 ${doing} 位學生正在作答，關閉後會由老師收卷（用他們已經存下的答案）。確定關閉嗎？` : '確定要關閉這份測驗嗎？')) return;
+    await FB.update(`exam/m/${CUR}/meta`, { open: false }); META.open = false;
+    const now = Date.now();
+    await Promise.all(rows().filter((r) => r.st === 'doing').map((r) => { endsSent[r.sid + '/' + r.last.k] = 1; return FB.set(`exam/m/${CUR}/s/${r.sid}/${r.last.k}/end`, { t: now, by: 'teacher' }).catch(() => { }); }));
+    paintHead(); toast('⏹ 已關閉並收卷');
+  };
+}
+function paintSub() {
+  const el = $('#subBody'); if (!el) return;
+  if (sub === 'share') paintShare(el);
+  else if (sub === 'grade') paintGrade(el);
+  else if (sub === 'paper') paintPaper(el);
+  else if (sub === 'roster') paintRoster(el);
+  else if (sub === 'set') paintSet(el);
+}
+function paintLive() { if (sub === 'grade' && $('#gTable')) paintGrade($('#subBody'), true); }
+
+/* 🔗 分享 */
+function qrInto(el, text, size) { el.innerHTML = ''; if (window.QRCode) new QRCode(el, { text, width: size, height: size, correctLevel: QRCode.CorrectLevel.M }); else el.textContent = text; }
+function paintShare(el) {
+  const link = studentLink(CUR);
+  el.innerHTML = `<div class="card"><div class="share"><div class="qr" id="sQr"></div><div>
+    <h3>學生作答連結</h3><div class="link" id="sLink">${esc(link)}</div>
+    <div class="row" style="margin-top:10px"><button class="btn" id="sCopy">📋 複製連結</button><button class="btn purple" id="sProj">📺 全螢幕投影</button><a class="btn ghost" href="${esc(link)}" target="_blank" rel="noopener">👀 用學生畫面看看</a></div>
+    <p class="small muted" style="margin-top:10px">學生掃 QR Code 或開連結 → 輸入班級、座號、姓名、學號 → 看規則、勾誠信宣言 → 開始作答。<br>測驗代碼：<b class="mono">${CUR}</b>（學生也可以在連結後面看到）</p></div></div></div>`;
+  qrInto($('#sQr'), link, 200);
+  $('#sCopy').onclick = async () => { try { await navigator.clipboard.writeText(link); toast('📋 已複製'); } catch (e) { prompt('複製這個連結', link); } };
+  $('#sProj').onclick = () => {
+    const p = document.createElement('div'); p.className = 'proj';
+    p.innerHTML = `<button class="x">✕ 關閉</button><div class="badge" style="font-size:1.1rem">🎲 線上檢定所</div><h1>${esc(META.title)}</h1><div class="qrbox" id="pQr"></div><div class="bigcode">${CUR}</div><div id="pInfo" style="font-size:1.3rem;font-weight:700"></div>`;
+    document.body.appendChild(p); qrInto($('#pQr', p), link, Math.min(420, Math.round(window.innerHeight * 0.45)));
+    const info = () => { const r = rows(); $('#pInfo', p).textContent = `${X.STATE[X.stateOf(META)]}｜作答中 ${r.filter((x) => x.st === 'doing').length} 人・已交卷 ${r.filter((x) => x.graded.length).length} 人`; };
+    info(); const t = setInterval(info, 3000);
+    $('.x', p).onclick = () => { clearInterval(t); p.remove(); if (document.fullscreenElement) document.exitFullscreen().catch(() => { }); };
+    if (p.requestFullscreen) p.requestFullscreen().catch(() => { });
+  };
+}
+
+/* 📋 成績 */
+const byChip = (by, why) => by ? `<span class="chip ${by === 'self' ? 'ok' : by === 'guard' ? 'bad' : by === 'time' ? 'blue' : 'warn'}" title="${esc(why ? X.WHY[why] || why : '')}">${X.BY[by].icon} ${X.BY[by].name}</span>` : '';
+function paintGrade(el, live) {
+  const R = rows(), done = R.filter((r) => r.f != null), sc = done.map((r) => r.f);
+  const avg = sc.length ? X.round2(sc.reduce((a, b) => a + b, 0) / sc.length) : '—';
+  const pend = R.reduce((a, r) => a + r.pend, 0);
+  const html = `<div class="stats">
+      ${Object.keys(ROSTER).length ? `<div class="stat"><b>${Object.keys(ROSTER).length}</b><span>名單人數</span></div><div class="stat"><b>${R.filter((r) => r.inRoster && !r.list.length).length}</b><span>⚪ 未進入</span></div>` : ''}
+      <div class="stat"><b>${R.filter((r) => r.st === 'doing').length}</b><span>🔵 作答中</span></div><div class="stat"><b>${done.length}</b><span>已交卷人數</span></div>
+      <div class="stat"><b>${avg}</b><span>平均（滿分 ${META.total}）</span></div><div class="stat"><b>${sc.length ? Math.max(...sc) : '—'}</b><span>最高</span></div><div class="stat"><b>${sc.length ? Math.min(...sc) : '—'}</b><span>最低</span></div>
+      <div class="stat"><b>${R.filter((r) => r.graded.some((g) => g.a.end.by === 'guard')).length}</b><span>🚨 系統代結</span></div>${pend ? `<div class="stat"><b>${pend}</b><span>✏️ 簡答待批</span></div>` : ''}</div>
+    <div class="row" style="margin-bottom:10px"><button class="btn ghost" id="gXls">⬇ 匯出 Excel</button><button class="btn purple" id="gPub">📣 公布成績…</button><span class="sp"></span><span class="small muted">點一列看作答明細、批閱簡答 ✏️ ｜ 採計：${X.POLICY[META.policy].name}</span></div>
+    <div class="tscroll" id="gTable"><table class="t"><thead><tr><th>班級</th><th class="num">座號</th><th>姓名</th><th>學號</th><th>狀態</th><th>各次成績</th><th class="num">採計</th><th class="num">違規</th></tr></thead><tbody>
+    ${R.length ? R.map((r) => `<tr class="click" data-sid="${r.sid}"><td>${esc(r.info.cls || '')}</td><td class="num">${r.info.seat || ''}</td><td>${esc(r.info.name || '')}${r.inRoster || !Object.keys(ROSTER).length ? '' : ' <span class="chip warn" title="不在名單裡">名單外</span>'}</td><td class="mono">${r.sid}</td>
+      <td>${r.st === 'none' ? '<span class="chip gray">⚪ 未進入</span>' : r.st === 'doing' ? `<span class="chip blue">🔵 作答中 ${r.prog}・剩 ${X.fmtLeft(r.left)}</span>` : byChip(r.st, r.last.end.why)}</td>
+      <td>${r.graded.map((g) => `<span class="chip gray" title="第 ${g.a.k} 次・${X.BY[g.a.end.by].name}">${g.a.k}️⃣ ${g.s}${g.pend ? '<b style="color:var(--warn)">＋✏️' + g.pend + '</b>' : ''} ${X.BY[g.a.end.by].icon}</span>`).join(' ') || '—'}</td>
+      <td class="num"><b>${r.f == null ? '—' : r.f}</b>${r.pend ? '<span class="small" style="color:var(--warn)"> 暫定</span>' : ''}</td><td class="num">${r.viol ? `<b style="color:var(--bad)">${r.viol}</b>` : '0'}</td></tr>`).join('') : '<tr><td colspan="8" class="empty">還沒有學生作答。到「🔗 分享」把連結或 QR Code 給學生。</td></tr>'}
+    </tbody></table></div>`;
+  if (live) { const keep = $('#gTable') ? $('#gTable').scrollTop : 0; el.innerHTML = html; $('#gTable').scrollTop = keep; } else el.innerHTML = html;
+  $('#gXls').onclick = exportXls;
+  $('#gPub').onclick = publishDlg;
+  $('#gTable').onclick = (e) => { const tr = e.target.closest('tr[data-sid]'); if (tr) studentDlg(tr.dataset.sid); };
+}
+function ansText(q, v, opt) {
+  if (q.t === 's') return typeof v === 'number' ? X.LETTERS[v] : '（未作答）';
+  if (q.t === 'm') { const s = Object.keys(X.multiToSet(v)).map(Number).sort((a, b) => a - b); return s.length ? s.map((i) => X.LETTERS[i]).join(' ') : '（未作答）'; }
+  return v ? (opt && opt.html ? esc(v).replace(/\n/g, '<br>') : v) : '（未作答）';
+}
+function studentDlg(sid) {
+  const info = infoOf(sid);
+  const m = modal(`<h2>🧑‍🎓 ${esc(info.cls || '')} ${info.seat || ''} 號 ${esc(info.name || '')} <span class="mono small muted">${sid}</span></h2><div id="sdBody"></div>`, { wide: true });
+  const paint = () => {
+    const list = attemptsOf(sid);
+    if (!list.length) { $('#sdBody', m).innerHTML = '<p class="muted">還沒有作答紀錄。</p>'; return; }
+    $('#sdBody', m).innerHTML = list.map((a) => {
+      const g = gradeOf(sid, a), sh = X.sheetFor(PAPER, META, CUR, sid, a.k), ev = Object.values(a.ev || {}).sort((x, y) => x.t - y.t);
+      const isLast = a.k === list[list.length - 1].k;
+      return `<div class="card" style="box-shadow:none;border-width:1.5px"><div class="row"><h3>第 ${a.k} 次</h3>${a.end ? byChip(a.end.by, a.end.why) : '<span class="chip blue">🔵 作答中</span>'}
+        <span class="chip ${a.end ? 'ok' : 'gray'}">${g.s} / ${g.full} 分${g.pend ? `（簡答 ${g.pend} 題待批）` : ''}</span><span class="sp"></span>
+        ${!a.end ? `<button class="btn danger sm" data-act="end" data-k="${a.k}">⏹ 收卷</button>${a.dev ? `<button class="btn ghost sm" data-act="unlock" data-k="${a.k}" title="學生換平板繼續作答時使用">🔓 解除裝置鎖</button>` : '<span class="chip gray">已解除裝置鎖</span>'}` : ''}
+        ${isLast ? `<button class="btn danger sm" data-act="del" data-k="${a.k}" title="刪除後學生可以重新作答這一次">🗑 刪除這次作答</button>` : ''}</div>
+        <div class="tl"><div>▶ ${X.fmtClock(a.st)} 開始作答</div>${ev.map((e) => `<div class="${e.k === 'v' ? 'v' : ''}">${e.k === 'v' ? '⚠️' : 'ℹ️'} ${X.fmtClock(e.t)} ${e.k === 'v' ? '違規：' + esc(X.WHY[e.d] || e.d || '') : e.k === 'resume' ? '重新進入作答頁' : e.k === 'idle' ? '閒置提醒' : esc(e.k + ' ' + (e.d || ''))}</div>`).join('')}
+          ${a.end ? `<div>${X.BY[a.end.by].icon} ${X.fmtClock(a.end.t)} ${X.BY[a.end.by].name}${a.end.why ? '：' + esc(X.WHY[a.end.why] || a.end.why) : ''}（作答 ${Math.max(0, Math.round((a.end.t - a.st) / 60000))} 分鐘）</div>` : ''}</div>
+        <div class="tscroll" style="margin-top:10px;max-height:none"><table class="t"><thead><tr><th class="num">#</th><th>題目</th><th>學生答案</th><th>正解</th><th class="num">得分</th></tr></thead><tbody>
+        ${sh.ids.map((id, n) => { const q = PAPER[id], r = g.detail[id], v = (a.ans || {})[id], key = KEY[id] || {};
+          return `<tr><td class="num">${n + 1}</td><td style="max-width:420px">${typeChip(q.t)} ${esc(X.plain(q.s).slice(0, 80))}</td>
+            <td>${q.t === 'a' ? `<div style="white-space:pre-wrap;max-width:360px">${ansText(q, v, { html: true })}</div>` : `<b style="color:${r.ok ? 'var(--ok)' : 'var(--bad)'}">${ansText(q, v)}</b>`}</td>
+            <td>${q.t === 'a' ? (key.r ? '<span class="small muted">見題目</span>' : '—') : letterList(key.a)}</td>
+            <td class="num">${q.t === 'a' ? `<input type="number" min="0" max="${q.p}" step="0.5" style="width:76px" data-mg="${a.k}/${id}" value="${((MG[sid] || {})[a.k] || {})[id] != null ? MG[sid][a.k][id] : ''}" placeholder="／${q.p}">` : `${r.s} <span class="small muted">/ ${q.p}</span>`}</td></tr>`; }).join('')}
+        </tbody></table></div></div>`;
+    }).join('') + `<p class="small muted">字母是題庫裡的原始順序（學生看到的選項可能被打亂過）。</p>`;
+  };
+  paint();
+  $('#sdBody', m).onclick = async (e) => {
+    const b = e.target.closest('[data-act]'); if (!b) return;
+    const k = b.dataset.k;
+    if (b.dataset.act === 'end') { if (!confirm('用學生目前存下的答案收卷？')) return; endsSent[sid + '/' + k] = 1; await FB.set(`exam/m/${CUR}/s/${sid}/${k}/end`, { t: Date.now(), by: 'teacher' }); toast('已收卷'); }
+    else if (b.dataset.act === 'unlock') { await FB.set(`exam/m/${CUR}/s/${sid}/${k}/dev`, ''); toast('🔓 已解除，學生可以在新裝置輸入同樣的資料繼續作答'); }
+    else if (b.dataset.act === 'del') { if (!confirm(`確定要刪除第 ${k} 次作答嗎？刪除後學生可以重新作答這一次（紀錄無法復原）。`)) return; await FB.remove(`exam/m/${CUR}/s/${sid}/${k}`); await FB.remove(`exam/m/${CUR}/mg/${sid}/${k}`).catch(() => { }); toast('已刪除'); }
+    setTimeout(paint, 400);
+  };
+  $('#sdBody', m).onchange = async (e) => {
+    const x = e.target.closest('[data-mg]'); if (!x) return;
+    const [k, id] = x.dataset.mg.split('/'), q = PAPER[id];
+    const v = x.value === '' ? null : Math.max(0, Math.min(q.p, +x.value));
+    await FB.set(`exam/m/${CUR}/mg/${sid}/${k}/${id}`, v);
+    x.value = v == null ? '' : v; toast('✅ 已給分');
+  };
+}
+async function publishDlg() {
+  const R = rows(), pend = R.reduce((a, r) => a + r.pend, 0);
+  const m = modal(`<h2>📣 公布成績</h2>
+    ${pend ? `<p class="small" style="background:var(--warnbg);border-radius:10px;padding:8px 12px">⚠️ 還有 <b>${pend}</b> 份簡答沒批完。現在公布的話，學生會看到「批閱中」，總分標「暫定」。</p>` : '<p class="small" style="color:var(--ok);font-weight:700">✅ 全部都批完了</p>'}
+    <p>學生用同一個連結，輸入學號＋姓名就能查詢。要公布哪些內容？</p>
+    <label class="ck" style="display:flex"><input type="checkbox" checked disabled>成績：採計分數、各次分數、交卷方式（一定公布）</label>
+    <label class="ck" style="display:flex"><input type="checkbox" id="pPaper" ${META.pubPaper ? 'checked' : ''}>題目：學生看得到題目、自己的作答、每題對錯與得分</label>
+    <label class="ck" style="display:flex"><input type="checkbox" id="pKey" ${META.pubKey ? 'checked' : ''}>正解與解析（要先勾「題目」）</label>
+    <div class="row" style="margin-top:14px"><button class="btn purple" id="pGo">📣 ${META.pub ? '更新公布內容' : '公布'}</button>${META.pub ? '<button class="btn danger" id="pOff">撤回公布</button>' : ''}</div>`);
+  const sync = () => { if (!$('#pPaper', m).checked) $('#pKey', m).checked = false; $('#pKey', m).disabled = !$('#pPaper', m).checked; };
+  $('#pPaper', m).onchange = sync; sync();
+  $('#pGo', m).onclick = async () => {
+    regrade();
+    const up = { pub: true, pubPaper: $('#pPaper', m).checked, pubKey: $('#pKey', m).checked };
+    await FB.update(`exam/m/${CUR}/meta`, up); Object.assign(META, up); m.close(); paintHead(); toast('📣 已公布');
+  };
+  const off = $('#pOff', m); if (off) off.onclick = async () => { await FB.update(`exam/m/${CUR}/meta`, { pub: false }); META.pub = false; m.close(); paintHead(); toast('已撤回公布'); };
+}
+async function exportXls() {
+  await loadScript(LIB.xlsx);
+  const XL = window.XLSX, R = rows();
+  const maxK = Math.max(1, ...R.map((r) => r.list.length));
+  const head = ['班級', '座號', '姓名', '學號', '狀態'].concat(Array.from({ length: maxK }, (_, i) => `第${i + 1}次`), Array.from({ length: maxK }, (_, i) => `第${i + 1}次交卷方式`), ['採計分數', '滿分', '簡答待批', '違規次數']);
+  const sheet1 = [head].concat(R.map((r) => [r.info.cls || '', r.info.seat || '', r.info.name || '', r.sid, r.st === 'none' ? '未進入' : r.st === 'doing' ? '作答中' : '已交卷']
+    .concat(Array.from({ length: maxK }, (_, i) => { const g = r.graded.find((x) => x.a.k === i + 1); return g ? g.s : ''; }),
+      Array.from({ length: maxK }, (_, i) => { const a = r.list.find((x) => x.k === i + 1); return a && a.end ? X.BY[a.end.by].name + (a.end.why ? '：' + (X.WHY[a.end.why] || a.end.why) : '') : ''; }),
+      [r.f == null ? '' : r.f, META.total, r.pend || '', r.viol])));
+  const sheet2 = [['班級', '座號', '姓名', '學號', '第幾次', '題號（學生看到的）', '題庫順序', '題型', '題目', '作答', '正解', '得分', '配分']];
+  R.forEach((r) => r.graded.forEach((g) => { const sh = X.sheetFor(PAPER, META, CUR, r.sid, g.a.k); sh.ids.forEach((id, n) => { const q = PAPER[id], d = g.detail[id]; sheet2.push([r.info.cls || '', r.info.seat || '', r.info.name || '', r.sid, g.a.k, n + 1, (q.i || 0) + 1, X.TYPES[q.t], X.plain(q.s).slice(0, 200), ansText(q, (g.a.ans || {})[id]), q.t === 'a' ? '' : letterList((KEY[id] || {}).a), d.s == null ? '待批' : d.s, q.p]); }); }));
+  const ids = Object.keys(PAPER).sort((a, b) => PAPER[a].i - PAPER[b].i);
+  const sheet3 = [['題庫順序', '題型', '題目', '作答人次', '答對人次', '答對率', '平均得分', '配分']].concat(ids.map((id) => {
+    const q = PAPER[id]; let n = 0, ok = 0, sum = 0;
+    R.forEach((r) => r.graded.forEach((g) => { const d = g.detail[id]; if (!d || d.s == null) return; n++; sum += d.s; if (d.ok) ok++; }));
+    return [(q.i || 0) + 1, X.TYPES[q.t], X.plain(q.s).slice(0, 200), n, ok, n ? Math.round(ok / n * 100) + '%' : '', n ? X.round2(sum / n) : '', q.p];
+  }));
+  const wb = XL.utils.book_new();
+  XL.utils.book_append_sheet(wb, XL.utils.aoa_to_sheet(sheet1), '成績總表');
+  XL.utils.book_append_sheet(wb, XL.utils.aoa_to_sheet(sheet2), '作答明細');
+  XL.utils.book_append_sheet(wb, XL.utils.aoa_to_sheet(sheet3), '每題分析');
+  XL.writeFile(wb, `線上檢定所_${META.title}_${CUR}.xlsx`);
+}
+
+/* 🧾 題目 */
+function paintPaper(el) {
+  const ids = Object.keys(PAPER).sort((a, b) => PAPER[a].i - PAPER[b].i);
+  el.innerHTML = `<div class="card"><div class="row"><h3>🧾 這份測驗的題目（${ids.length} 題・滿分 ${META.total}）</h3><span class="sp"></span><button class="btn ghost sm" id="ppEdit">✏️ 修改題目與配分</button></div>
+    <p class="small muted">這是建立測驗時的「快照」：之後改題庫不會影響這份測驗。要更新請按「修改題目與配分」重新選題。${META.shufQ ? '學生看到的題目順序會打亂。' : ''}${META.draw ? `每位學生隨機抽 ${META.draw} 題。` : ''}</p>
+    <div id="ppList">${ids.map((id, n) => qViewHTML(Object.assign({}, PAPER[id], { a: (KEY[id] || {}).a || [], r: (KEY[id] || {}).r, e: (KEY[id] || {}).e }), n + 1)).join('')}</div></div>`;
+  $$('#ppList .qview').forEach((v, n) => { const id = ids[n]; fillQView(v, Object.assign({}, PAPER[id], { a: (KEY[id] || {}).a || [], r: (KEY[id] || {}).r, e: (KEY[id] || {}).e })); });
+  $('#ppEdit').onclick = () => examForm(CUR);
+}
+
+/* 👥 名單 */
+function parseRoster(text) {
+  const out = {}, bad = [];
+  String(text || '').split(/\r?\n/).forEach((line, n) => {
+    const t = line.trim(); if (!t) return;
+    const p = t.split(/[\t,，;；]+|\s{1,}/).map((x) => x.trim()).filter(Boolean);
+    if (p.length < 4) { if (!/班級|座號|姓名|學號/.test(t)) bad.push(`第 ${n + 1} 行欄位不夠`); return; }
+    const [cls, seat, name, no] = p, sid = X.normId(no);
+    if (/班級/.test(cls)) return;
+    if (!X.validId(sid) || !(+seat >= 1 && +seat <= 99)) { bad.push(`第 ${n + 1} 行：${t}`); return; }
+    out[sid] = { cls: String(cls).slice(0, 8), seat: +seat, name: String(name).slice(0, 12) };
+  });
+  return { out, bad };
+}
+function paintRoster(el) {
+  const sids = Object.keys(ROSTER).sort((a, b) => String(ROSTER[a].cls).localeCompare(String(ROSTER[b].cls)) || ROSTER[a].seat - ROSTER[b].seat);
+  el.innerHTML = `<div class="card"><h3>👥 學生名單（${sids.length} 人）</h3>
+    <p class="small muted">${META.rosterOnly ? '🔒 這份測驗<b>只限名單內的學生</b>進入（班級、座號、姓名、學號都要對得上）。' : '目前不限名單，任何人都能進入；名單用來核對誰還沒考（成績頁會出現「⚪ 未進入」）。'}要改請到「⚙️ 設定」。</p>
+    <label class="f">貼上名單：一行一位，依序「班級 座號 姓名 學號」（從 Excel 直接複製四欄貼上即可）</label>
+    <textarea id="rTxt" rows="6" placeholder="201	1	林小華	1150001&#10;201	2	王小明	1150002"></textarea>
+    <div class="row" style="margin-top:8px"><button class="btn" id="rSave">💾 取代成這份名單</button><button class="btn ghost" id="rAdd">＋ 加到現有名單</button><button class="btn ghost" id="rXls">📂 從 Excel 匯入</button><span class="sp"></span>${sids.length ? '<button class="btn danger sm" id="rClear">🗑 清空名單</button>' : ''}</div>
+    <p class="small" id="rMsg"></p>
+    ${sids.length ? `<div class="tscroll" style="margin-top:8px"><table class="t"><thead><tr><th>班級</th><th class="num">座號</th><th>姓名</th><th>學號</th><th>作答</th></tr></thead><tbody>${sids.map((sid) => { const n = attemptsOf(sid).length; return `<tr><td>${esc(ROSTER[sid].cls)}</td><td class="num">${ROSTER[sid].seat}</td><td>${esc(ROSTER[sid].name)}</td><td class="mono">${sid}</td><td>${n ? `<span class="chip ok">${n} 次</span>` : '<span class="chip gray">⚪ 未進入</span>'}</td></tr>`; }).join('')}</tbody></table></div>` : ''}</div>`;
+  const save = async (mode, text) => {
+    const { out, bad } = parseRoster(text != null ? text : $('#rTxt').value);
+    if (!Object.keys(out).length) { $('#rMsg').textContent = '⚠️ 沒有讀到任何學生' + (bad.length ? '：' + bad.slice(0, 3).join('；') : ''); return; }
+    const next = mode === 'add' ? Object.assign({}, ROSTER, out) : out;
+    await FB.set(`exam/m/${CUR}/roster`, next); ROSTER = next;
+    paintRoster(el); $('#rMsg').textContent = `✅ 已儲存 ${Object.keys(out).length} 位${bad.length ? `；有 ${bad.length} 行看不懂：` + bad.slice(0, 3).join('；') : ''}`;
+  };
+  $('#rSave').onclick = () => save('replace');
+  $('#rAdd').onclick = () => save('add');
+  $('#rXls').onclick = () => pickFile('.xlsx,.xls,.csv', async (file) => {
+    await loadScript(LIB.xlsx);
+    const wb = window.XLSX.read(await file.arrayBuffer(), { type: 'array' });
+    const rws = window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' });
+    const head = (rws[0] || []).map(String), col = (k) => head.findIndex((h) => h.includes(k));
+    const ix = [col('班級'), col('座號'), col('姓名'), col('學號')];
+    const body = ix.every((i) => i >= 0) ? rws.slice(1).map((r) => ix.map((i) => r[i]).join('\t')) : rws.map((r) => r.slice(0, 4).join('\t'));
+    $('#rTxt').value = body.join('\n'); $('#rMsg').textContent = '已讀入，確認後按「取代」或「加到現有名單」';
+  });
+  const cl = $('#rClear'); if (cl) cl.onclick = async () => { if (!confirm('確定清空名單？（不影響學生作答紀錄）')) return; await FB.remove(`exam/m/${CUR}/roster`); ROSTER = {}; paintRoster(el); };
+}
+
+/* ⚙️ 設定 */
+function paintSet(el) {
+  el.innerHTML = `<div class="card"><h3>⚙️ 設定</h3><div class="row" style="margin-top:10px"><button class="btn" id="stEdit">✏️ 修改測驗設定與題目</button><button class="btn ghost" id="stCopy">⧉ 複製成新測驗</button><span class="sp"></span><button class="btn danger" id="stDel">🗑 刪除這份測驗</button></div>
+    <p class="small muted" style="margin-top:10px">刪除會連同所有學生作答與成績一起刪掉，無法復原（建議先在「📋 成績」匯出 Excel）。</p></div>`;
+  $('#stEdit').onclick = () => examForm(CUR);
+  $('#stCopy').onclick = async () => {
+    const nm = Object.assign({}, META, { title: (META.title + '（複製）').slice(0, 60), at: Date.now(), owner: ME.uid, open: false, openAt: 0, closeAt: 0, pub: false, pubPaper: false, pubKey: false });
+    if (!ADMIN) delete nm.admin;
+    let c = null; for (let k = 0; k < 8; k++) { const t = X.newCode(); if (!(await FB.get(`exam/m/${t}/meta`))) { c = t; break; } }
+    await FB.set(`exam/m/${c}/meta`, nm); await FB.set(`exam/m/${c}/paper`, PAPER); await FB.set(`exam/m/${c}/key`, KEY);
+    if (Object.keys(ROSTER).length) await FB.set(`exam/m/${c}/roster`, ROSTER);
+    await FB.set(`exam/owners/${ME.uid}/${c}`, { title: nm.title, at: nm.at });
+    EXAMS[c] = nm; toast(`⧉ 已複製成新測驗 ${c}（未開放）`); openExam(c, 'set');
+  };
+  $('#stDel').onclick = async () => {
+    const t = prompt(`確定要刪除「${META.title}」和所有作答紀錄嗎？\n請輸入測驗代碼 ${CUR} 確認：`);
+    if ((t || '').toUpperCase() !== CUR) { if (t != null) toast('代碼不對，沒有刪除'); return; }
+    stopGrader();
+    await FB.remove(`exam/m/${CUR}`); await FB.remove(`exam/owners/${ME.uid}/${CUR}`);
+    delete EXAMS[CUR]; toast('已刪除'); renderExams();
+  };
+}

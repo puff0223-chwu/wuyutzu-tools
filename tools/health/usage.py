@@ -28,7 +28,7 @@ NAMES = {
     'case-board': '📌 案件委託公告欄', 'excel-rescue': '📊 消失的實驗數據（舊連結）', 'excel-rescue-t': '📊 消失的實驗數據',
     'excel-rescue-owners': '📊 消失的實驗數據（老師清單）', 'fp': '🪙 集點小金庫', 'sci-history': '📖 時光手稿',
     'bond-society': '🕯️ 隱秘的鍵結社', 'bond-mp': '🕯️ 鍵結社多人連線', 'seating': '🪑 座位大作戰', 'orienteering': '🧭 遺落的地點',
-    'secret-source': '📜 出處失傳的秘文', 'staff': '👥 會員中心', 'staffpre': '👥 會員中心（預先開通）', 'staffmemo': '👥 會員中心（備註）',
+    'secret-source': '📜 出處失傳的秘文', 'exam': '🎲 線上檢定所', 'staff': '👥 會員中心', 'staffpre': '👥 會員中心（預先開通）', 'staffmemo': '👥 會員中心（備註）',
     'staffv': '👥 會員中心（驗證）', 'staffreq': '👥 會員中心（加開申請）',
 }
 HEAVY = {'orienteering'}  # 照片很多：只在每週報告／手動執行時秤重

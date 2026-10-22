@@ -376,10 +376,10 @@
    "$uid": {
     ".read": "auth != null && auth.uid === $uid",
     ".write": "auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (auth.uid === $uid && newData.exists()))",
-    ".validate": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || ((!data.exists() || data.child('status').val() === 'pending') && newData.hasChildren(['email','name','school','purpose','want','at','status']) && newData.child('status').val() === 'pending' && !newData.child('apps').exists() && newData.child('email').val() === auth.token.email && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && newData.child('purpose').isString() && newData.child('purpose').val().length >= 1 && newData.child('purpose').val().length <= 200 && newData.child('at').isNumber()) || ((!data.exists() || data.child('status').val() === 'pending') && auth.token.email_verified === true && root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')).exists() && newData.child('status').val() === 'approved' && newData.child('email').val() === auth.token.email && newData.hasChildren(['email','name','school','at','status','apps']) && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && (!newData.child('apps/excel').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/excel').val() === true) && (!newData.child('apps/gps').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/gps').val() === true) && (!newData.child('apps/seat').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/seat').val() === true) && (!newData.child('apps/src').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/src').val() === true) && (!newData.child('apps/lab').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/lab').val() === true)) || (data.exists() && newData.child('status').val() === data.child('status').val() && newData.child('email').val() === data.child('email').val() && newData.child('note').val() === data.child('note').val() && newData.child('apps/excel').val() === data.child('apps/excel').val() && newData.child('apps/gps').val() === data.child('apps/gps').val() && newData.child('apps/seat').val() === data.child('apps/seat').val() && newData.child('apps/src').val() === data.child('apps/src').val() && newData.child('apps/lab').val() === data.child('apps/lab').val() && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30)",
+    ".validate": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || ((!data.exists() || data.child('status').val() === 'pending') && newData.hasChildren(['email','name','school','purpose','want','at','status']) && newData.child('status').val() === 'pending' && !newData.child('apps').exists() && newData.child('email').val() === auth.token.email && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && newData.child('purpose').isString() && newData.child('purpose').val().length >= 1 && newData.child('purpose').val().length <= 200 && newData.child('at').isNumber()) || ((!data.exists() || data.child('status').val() === 'pending') && auth.token.email_verified === true && root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')).exists() && newData.child('status').val() === 'approved' && newData.child('email').val() === auth.token.email && newData.hasChildren(['email','name','school','at','status','apps']) && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30 && (!newData.child('apps/excel').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/excel').val() === true) && (!newData.child('apps/gps').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/gps').val() === true) && (!newData.child('apps/seat').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/seat').val() === true) && (!newData.child('apps/src').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/src').val() === true) && (!newData.child('apps/lab').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/lab').val() === true) && (!newData.child('apps/exam').exists() || root.child('staffpre/'+auth.token.email.toLowerCase().replace('.', ',')+'/apps/exam').val() === true)) || (data.exists() && newData.child('status').val() === data.child('status').val() && newData.child('email').val() === data.child('email').val() && newData.child('note').val() === data.child('note').val() && newData.child('apps/excel').val() === data.child('apps/excel').val() && newData.child('apps/gps').val() === data.child('apps/gps').val() && newData.child('apps/seat').val() === data.child('apps/seat').val() && newData.child('apps/src').val() === data.child('apps/src').val() && newData.child('apps/lab').val() === data.child('apps/lab').val() && newData.child('apps/exam').val() === data.child('apps/exam').val() && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 20 && newData.child('school').isString() && newData.child('school').val().length >= 1 && newData.child('school').val().length <= 30)",
     "apps": {
      "$app": {
-      ".validate": "$app.matches(/^(excel|gps|seat|src|lab)$/) && newData.val() === true"
+      ".validate": "$app.matches(/^(excel|gps|seat|src|lab|exam)$/) && newData.val() === true"
      }
     }
    }
@@ -392,7 +392,7 @@
     ".validate": "newData.hasChildren(['email','apps','at']) && newData.child('email').isString() && newData.child('email').val().toLowerCase().replace('.', ',') === $key",
     "apps": {
      "$app": {
-      ".validate": "$app.matches(/^(excel|gps|seat|src|lab)$/) && newData.val() === true"
+      ".validate": "$app.matches(/^(excel|gps|seat|src|lab|exam)$/) && newData.val() === true"
      }
     }
    }
@@ -727,6 +727,337 @@
        "at": {
         ".validate": "true"
        }
+      }
+     }
+    }
+   }
+  },
+  "exam": {
+   "owners": {
+    "$uid": {
+     ".read": "auth != null && auth.uid === $uid",
+     ".write": "auth != null && auth.uid === $uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true)))",
+     "$code": {
+      ".validate": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && newData.hasChildren(['title','at']) && newData.child('title').isString() && newData.child('title').val().length <= 60"
+     }
+    }
+   },
+   "bk": {
+    "$uid": {
+     ".read": "auth != null && auth.uid === $uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true)))",
+     ".write": "auth != null && auth.uid === $uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true)))",
+     "$bank": {
+      ".validate": "$bank.matches(/^[a-z0-9]{6,16}$/) && newData.hasChildren(['name','at'])",
+      "name": {
+       ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 40"
+      },
+      "at": {
+       ".validate": "newData.isNumber()"
+      },
+      "tags": {
+       "$t": {
+        ".validate": "newData.isString() && newData.val().length <= 20"
+       }
+      },
+      "q": {
+       "$q": {
+        ".validate": "$q.matches(/^[a-z0-9]{4,16}$/) && newData.hasChildren(['t','s'])",
+        "t": {
+         ".validate": "newData.isString() && newData.val().matches(/^[sma]$/)"
+        },
+        "s": {
+         ".validate": "newData.isString() && newData.val().length <= 30000"
+        },
+        "o": {
+         "$i": {
+          ".validate": "$i.matches(/^[0-7]$/) && newData.isString() && newData.val().length <= 30000"
+         }
+        },
+        "a": {
+         "$i": {
+          ".validate": "$i.matches(/^[0-7]$/) && newData.isNumber() && newData.val() >= 0 && newData.val() <= 7"
+         }
+        },
+        "r": {
+         ".validate": "newData.isString() && newData.val().length <= 30000"
+        },
+        "e": {
+         ".validate": "newData.isString() && newData.val().length <= 30000"
+        },
+        "d": {
+         ".validate": "newData.isString() && newData.val().matches(/^[易中難]$/)"
+        },
+        "tags": {
+         "$i": {
+          ".validate": "newData.isString() && newData.val().length <= 20"
+         }
+        },
+        "l": {
+         ".validate": "newData.isBoolean()"
+        },
+        "p": {
+         ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+        },
+        "i": {
+         ".validate": "newData.isNumber()"
+        },
+        "at": {
+         ".validate": "newData.isNumber()"
+        },
+        "src": {
+         ".validate": "newData.isString() && newData.val().length <= 60"
+        },
+        "$other": {
+         ".validate": false
+        }
+       }
+      },
+      "$other": {
+       ".validate": false
+      }
+     }
+    }
+   },
+   "img": {
+    "$id": {
+     ".read": "$id.matches(/^[a-z0-9]{8,24}$/)",
+     ".write": "(auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true))) && auth != null && $id.matches(/^[a-z0-9]{8,24}$/) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)",
+     ".validate": "newData.hasChildren(['owner','data']) && newData.child('owner').val() === auth.uid && newData.child('data').isString() && newData.child('data').val().matches(/^data:image\\//) && newData.child('data').val().length < 700000"
+    }
+   },
+   "m": {
+    "$code": {
+     ".read": "auth != null && data.child('meta/owner').val() === auth.uid",
+     ".write": "auth != null && !newData.exists() && data.child('meta/owner').val() === auth.uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true)))",
+     "meta": {
+      ".read": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/)",
+      ".write": "auth != null && $code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true))) && (data.exists() ? data.child('owner').val() === auth.uid : newData.child('owner').val() === auth.uid)",
+      ".validate": "newData.hasChildren(['owner','at','title','open','openAt','closeAt','mins','tries','policy','gap']) && (!newData.child('admin').exists() || (auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true))",
+      "owner": {
+       ".validate": "newData.isString() && (!data.exists() || newData.val() === data.val())"
+      },
+      "at": {
+       ".validate": "newData.isNumber()"
+      },
+      "title": {
+       ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 60"
+      },
+      "desc": {
+       ".validate": "newData.isString() && newData.val().length <= 1000"
+      },
+      "open": {
+       ".validate": "newData.isBoolean()"
+      },
+      "openAt": {
+       ".validate": "newData.isNumber() && newData.val() >= 0"
+      },
+      "closeAt": {
+       ".validate": "newData.isNumber() && newData.val() >= 0"
+      },
+      "mins": {
+       ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 600"
+      },
+      "tries": {
+       ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 20"
+      },
+      "policy": {
+       ".validate": "newData.isString() && newData.val().matches(/^(max|first|last|avg)$/)"
+      },
+      "gap": {
+       ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10080"
+      },
+      "draw": {
+       ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 500"
+      },
+      "shufQ": {
+       ".validate": "newData.isBoolean()"
+      },
+      "shufO": {
+       ".validate": "newData.isBoolean()"
+      },
+      "reshuf": {
+       ".validate": "newData.isBoolean()"
+      },
+      "rosterOnly": {
+       ".validate": "newData.isBoolean()"
+      },
+      "showNeed": {
+       ".validate": "newData.isBoolean()"
+      },
+      "n": {
+       ".validate": "newData.isNumber()"
+      },
+      "total": {
+       ".validate": "newData.isNumber()"
+      },
+      "bank": {
+       ".validate": "newData.isString() && newData.val().length <= 30"
+      },
+      "pub": {
+       ".validate": "newData.isBoolean()"
+      },
+      "pubPaper": {
+       ".validate": "newData.isBoolean()"
+      },
+      "pubKey": {
+       ".validate": "newData.isBoolean()"
+      },
+      "admin": {
+       ".validate": "newData.isBoolean()"
+      },
+      "guard": {
+       "on": {
+        ".validate": "newData.isBoolean()"
+       },
+       "max": {
+        ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 5"
+       },
+       "idle": {
+        ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 60"
+       },
+       "blur": {
+        ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 60"
+       },
+       "$other": {
+        ".validate": false
+       }
+      },
+      "$other": {
+       ".validate": false
+      }
+     },
+     "paper": {
+      ".read": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && ((root.child('exam/m/'+$code+'/meta').child('open').val() === true && (root.child('exam/m/'+$code+'/meta').child('openAt').val() === 0 || now >= root.child('exam/m/'+$code+'/meta').child('openAt').val()) && (root.child('exam/m/'+$code+'/meta').child('closeAt').val() === 0 || now < root.child('exam/m/'+$code+'/meta').child('closeAt').val())) || (root.child('exam/m/'+$code+'/meta').child('pub').val() === true && root.child('exam/m/'+$code+'/meta').child('pubPaper').val() === true))",
+      ".write": "(auth != null && root.child('exam/m/'+$code+'/meta').child('owner').val() === auth.uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true))))",
+      "$q": {
+       ".validate": "$q.matches(/^[a-z0-9]{4,16}$/) && newData.hasChildren(['t','s','p'])",
+       "i": {
+        ".validate": "newData.isNumber()"
+       },
+       "t": {
+        ".validate": "newData.isString() && newData.val().matches(/^[sma]$/)"
+       },
+       "s": {
+        ".validate": "newData.isString() && newData.val().length <= 30000"
+       },
+       "o": {
+        "$i": {
+         ".validate": "$i.matches(/^[0-7]$/) && newData.isString() && newData.val().length <= 30000"
+        }
+       },
+       "l": {
+        ".validate": "newData.isBoolean()"
+       },
+       "p": {
+        ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+       },
+       "need": {
+        ".validate": "newData.isNumber()"
+       },
+       "$other": {
+        ".validate": false
+       }
+      }
+     },
+     "key": {
+      ".read": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && root.child('exam/m/'+$code+'/meta').child('pub').val() === true && root.child('exam/m/'+$code+'/meta').child('pubKey').val() === true",
+      ".write": "(auth != null && root.child('exam/m/'+$code+'/meta').child('owner').val() === auth.uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true))))"
+     },
+     "roster": {
+      ".write": "(auth != null && root.child('exam/m/'+$code+'/meta').child('owner').val() === auth.uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true))))",
+      "$sid": {
+       ".validate": "$sid.matches(/^[A-Z0-9]{3,12}$/) && newData.hasChildren(['cls','seat','name']) && newData.child('cls').isString() && newData.child('cls').val().length <= 8 && newData.child('seat').isNumber() && newData.child('name').isString() && newData.child('name').val().length <= 12"
+      }
+     },
+     "s": {
+      ".write": "(auth != null && root.child('exam/m/'+$code+'/meta').child('owner').val() === auth.uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true))))",
+      "$sid": {
+       ".read": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $sid.matches(/^[A-Z0-9]{3,12}$/)",
+       "$k": {
+        ".write": "(!data.exists() && newData.exists() && $code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $sid.matches(/^[A-Z0-9]{3,12}$/) && (root.child('exam/m/'+$code+'/meta').child('open').val() === true && (root.child('exam/m/'+$code+'/meta').child('openAt').val() === 0 || now >= root.child('exam/m/'+$code+'/meta').child('openAt').val()) && (root.child('exam/m/'+$code+'/meta').child('closeAt').val() === 0 || now < root.child('exam/m/'+$code+'/meta').child('closeAt').val())) && (root.child('exam/m/'+$code+'/meta').child('admin').val() === true || (root.child('staff/'+root.child('exam/m/'+$code+'/meta').child('owner').val()+'/status').val() === 'approved' && root.child('staff/'+root.child('exam/m/'+$code+'/meta').child('owner').val()+'/apps/exam').val() === true)) && (($k === '1' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 1) || ($k === '2' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 2 && data.parent().child('1/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('1/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '3' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 3 && data.parent().child('2/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('2/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '4' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 4 && data.parent().child('3/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('3/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '5' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 5 && data.parent().child('4/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('4/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '6' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 6 && data.parent().child('5/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('5/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '7' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 7 && data.parent().child('6/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('6/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '8' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 8 && data.parent().child('7/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('7/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '9' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 9 && data.parent().child('8/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('8/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '10' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 10 && data.parent().child('9/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('9/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '11' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 11 && data.parent().child('10/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('10/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '12' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 12 && data.parent().child('11/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('11/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '13' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 13 && data.parent().child('12/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('12/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '14' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 14 && data.parent().child('13/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('13/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '15' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 15 && data.parent().child('14/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('14/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '16' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 16 && data.parent().child('15/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('15/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '17' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 17 && data.parent().child('16/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('16/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '18' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 18 && data.parent().child('17/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('17/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '19' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 19 && data.parent().child('18/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('18/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000)) || ($k === '20' && root.child('exam/m/'+$code+'/meta').child('tries').val() >= 20 && data.parent().child('19/end').exists() && (root.child('exam/m/'+$code+'/meta').child('gap').val() === 0 || now >= data.parent().child('19/end/t').val() + root.child('exam/m/'+$code+'/meta').child('gap').val() * 60000))) && (root.child('exam/m/'+$code+'/meta').child('rosterOnly').val() !== true || (root.child('exam/m/'+$code+'/roster/'+$sid+'/name').val() === newData.child('info/name').val() && root.child('exam/m/'+$code+'/roster/'+$sid+'/cls').val() === newData.child('info/cls').val() && root.child('exam/m/'+$code+'/roster/'+$sid+'/seat').val() === newData.child('info/seat').val())) && newData.child('st').val() === now) || (auth != null && root.child('exam/m/'+$code+'/meta').child('owner').val() === auth.uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true))))",
+        ".validate": "newData.hasChildren(['info','st'])",
+        "info": {
+         ".validate": "newData.hasChildren(['cls','seat','name'])",
+         "cls": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 8"
+         },
+         "seat": {
+          ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 99"
+         },
+         "name": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 12"
+         },
+         "$other": {
+          ".validate": false
+         }
+        },
+        "st": {
+         ".validate": "newData.isNumber()"
+        },
+        "dev": {
+         ".write": "(data.parent().exists() && !data.parent().child('end').exists() && (root.child('exam/m/'+$code+'/meta').child('open').val() === true && (root.child('exam/m/'+$code+'/meta').child('openAt').val() === 0 || now >= root.child('exam/m/'+$code+'/meta').child('openAt').val()) && (root.child('exam/m/'+$code+'/meta').child('closeAt').val() === 0 || now < root.child('exam/m/'+$code+'/meta').child('closeAt').val())) && (root.child('exam/m/'+$code+'/meta').child('admin').val() === true || (root.child('staff/'+root.child('exam/m/'+$code+'/meta').child('owner').val()+'/status').val() === 'approved' && root.child('staff/'+root.child('exam/m/'+$code+'/meta').child('owner').val()+'/apps/exam').val() === true)) && now <= data.parent().child('st').val() + root.child('exam/m/'+$code+'/meta').child('mins').val() * 60000 + 15000) && data.val() === ''",
+         ".validate": "newData.isString() && newData.val().length <= 24"
+        },
+        "ans": {
+         "$q": {
+          ".write": "(data.parent().parent().exists() && !data.parent().parent().child('end').exists() && (root.child('exam/m/'+$code+'/meta').child('open').val() === true && (root.child('exam/m/'+$code+'/meta').child('openAt').val() === 0 || now >= root.child('exam/m/'+$code+'/meta').child('openAt').val()) && (root.child('exam/m/'+$code+'/meta').child('closeAt').val() === 0 || now < root.child('exam/m/'+$code+'/meta').child('closeAt').val())) && (root.child('exam/m/'+$code+'/meta').child('admin').val() === true || (root.child('staff/'+root.child('exam/m/'+$code+'/meta').child('owner').val()+'/status').val() === 'approved' && root.child('staff/'+root.child('exam/m/'+$code+'/meta').child('owner').val()+'/apps/exam').val() === true)) && now <= data.parent().parent().child('st').val() + root.child('exam/m/'+$code+'/meta').child('mins').val() * 60000 + 15000)",
+          ".validate": "$q.matches(/^[a-z0-9]{4,16}$/) && ((newData.isNumber() && newData.val() >= 0 && newData.val() <= 7) || (newData.isString() && newData.val().length <= 3000))"
+         }
+        },
+        "ev": {
+         "$e": {
+          ".write": "!data.exists() && (data.parent().parent().exists() && !data.parent().parent().child('end').exists() && (root.child('exam/m/'+$code+'/meta').child('open').val() === true && (root.child('exam/m/'+$code+'/meta').child('openAt').val() === 0 || now >= root.child('exam/m/'+$code+'/meta').child('openAt').val()) && (root.child('exam/m/'+$code+'/meta').child('closeAt').val() === 0 || now < root.child('exam/m/'+$code+'/meta').child('closeAt').val())) && (root.child('exam/m/'+$code+'/meta').child('admin').val() === true || (root.child('staff/'+root.child('exam/m/'+$code+'/meta').child('owner').val()+'/status').val() === 'approved' && root.child('staff/'+root.child('exam/m/'+$code+'/meta').child('owner').val()+'/apps/exam').val() === true)) && now <= data.parent().parent().child('st').val() + root.child('exam/m/'+$code+'/meta').child('mins').val() * 60000 + 15000)",
+          ".validate": "newData.hasChildren(['t','k']) && ((auth != null && root.child('exam/m/'+$code+'/meta').child('owner').val() === auth.uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true)))) || newData.child('t').val() === now)",
+          "t": {
+           ".validate": "newData.isNumber()"
+          },
+          "k": {
+           ".validate": "newData.isString() && newData.val().matches(/^[a-z]{1,12}$/)"
+          },
+          "d": {
+           ".validate": "newData.isString() && newData.val().length <= 80"
+          },
+          "$other": {
+           ".validate": false
+          }
+         }
+        },
+        "end": {
+         ".write": "!data.exists() && data.parent().exists() && data.parent().child('st').exists()",
+         ".validate": "newData.hasChildren(['t','by']) && ((auth != null && root.child('exam/m/'+$code+'/meta').child('owner').val() === auth.uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true)))) || (newData.child('t').val() === now && newData.child('by').val() !== 'teacher'))",
+         "t": {
+          ".validate": "newData.isNumber()"
+         },
+         "by": {
+          ".validate": "newData.isString() && newData.val().matches(/^(self|time|guard|teacher)$/)"
+         },
+         "why": {
+          ".validate": "newData.isString() && newData.val().length <= 40"
+         },
+         "$other": {
+          ".validate": false
+         }
+        },
+        "$other": {
+         ".validate": false
+        }
+       }
+      }
+     },
+     "mg": {
+      ".write": "(auth != null && root.child('exam/m/'+$code+'/meta').child('owner').val() === auth.uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true))))",
+      "$sid": {
+       "$k": {
+        "$q": {
+         ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+        }
+       }
+      }
+     },
+     "g": {
+      ".write": "(auth != null && root.child('exam/m/'+$code+'/meta').child('owner').val() === auth.uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true))))",
+      "$sid": {
+       ".read": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $sid.matches(/^[A-Z0-9]{3,12}$/) && root.child('exam/m/'+$code+'/meta').child('pub').val() === true"
       }
      }
     }

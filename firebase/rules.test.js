@@ -273,5 +273,120 @@ expect('會員申請可以選 lab', labBase, STRANGER, W, '/staff/BAD', { email:
 expect('核准的老師不能自己加開 lab', labBase, TEA, W, '/staff/TEA', Object.assign({}, base.staff.TEA, { apps: Object.assign({}, base.staff.TEA.apps, { lab: true }) }), false);
 expect('核准的老師不能自己加開 src（補洞）', labBase, TEA, W, '/staff/TEA', Object.assign({}, base.staff.TEA, { apps: Object.assign({}, base.staff.TEA.apps, { src: true }) }), false);
 expect('核准的老師可以改自己的姓名學校', labBase, TEA, W, '/staff/TEA', Object.assign({}, base.staff.TEA, { name: '新名字' }), true);
+// 🎲 線上檢定所（2026-10-23）：exam
+console.log('— 🎲 線上檢定所 —');
+const EX_TEA = U('EXT', 'ext@school.edu.tw', true);
+const NOW_ = Date.now(), SV = { '.sv': 'timestamp' };
+const emeta = (o) => Object.assign({ owner: 'EXT', at: 1, title: '期中檢定', open: true, openAt: 0, closeAt: 0, mins: 40, tries: 2, policy: 'max', gap: 0, guard: { on: true, max: 2, idle: 5, blur: 3 } }, o || {});
+const info = { cls: '201', seat: 7, name: '王小明' };
+const exBase = Object.assign({}, base, {
+  staff: Object.assign({}, base.staff, { EXT: { email: 'ext@school.edu.tw', name: 'E', school: 'S', purpose: 'p', want: { exam: true }, at: 1, status: 'approved', apps: { exam: true } } }),
+  exam: {
+    bk: { EXT: { bank0001: { name: '遊戲設計思考', at: 1 } } },
+    m: {
+      KPENAA: { meta: emeta(), paper: { q0000001: { i: 0, t: 's', s: '題目', o: ['a', 'b'], p: 2 } }, key: { q0000001: { a: [1] } },
+        s: { S1150007: { '1': { info, st: NOW_ - 60000, dev: 'd1', ans: { q0000001: 0 } } },
+             S1150008: { '1': { info, st: NOW_ - 3600000, dev: 'd1' } },
+             S1150009: { '1': { info, st: NOW_ - 600000, dev: 'd1', end: { t: NOW_ - 300000, by: 'self' } } },
+             S1150010: { '1': { info, st: NOW_ - 600000, dev: '' } } } },
+      SHUTAA: { meta: emeta({ open: false }), paper: { q0000001: { i: 0, t: 's', s: '題目', o: ['a', 'b'], p: 2 } } },
+      LATEAA: { meta: emeta({ closeAt: NOW_ - 1000 }) },
+      SXXNAA: { meta: emeta({ openAt: NOW_ + 3600000 }) },
+      GAPAAA: { meta: emeta({ gap: 30 }), s: { S1150009: { '1': { info, st: NOW_ - 600000, dev: 'd', end: { t: NOW_ - 300000, by: 'self' } } } } },
+      RXSTER: { meta: emeta({ rosterOnly: true }), roster: { S1150007: { cls: '201', seat: 7, name: '王小明' } } },
+      PUBLAA: { meta: emeta({ open: false, pub: true, pubPaper: true, pubKey: false }), paper: { q0000001: { i: 0, t: 's', s: '題目', o: ['a', 'b'], p: 2 } }, key: { q0000001: { a: [1] } }, g: { S1150007: { f: 2 } } },
+      XFFTEA: { meta: emeta({ owner: 'OFF' }) }
+    }
+  }
+});
+const start = { info, st: SV, dev: 'abc123' };
+expect('開通 exam 的老師建立測驗', exBase, EX_TEA, W, '/exam/m/NEWEXM/meta', emeta(), true);
+expect('沒開通 exam 的老師不能建立測驗', exBase, TEA, W, '/exam/m/NEWEXM/meta', emeta({ owner: 'TEA' }), false);
+expect('測驗 owner 不能寫成別人', exBase, EX_TEA, W, '/exam/m/NEWEXM/meta', emeta({ owner: 'TEA' }), false);
+expect('計分方式只能四種', exBase, EX_TEA, W, '/exam/m/NEWEXM/meta', emeta({ policy: 'best' }), false);
+expect('作答次數最多 20 次', exBase, EX_TEA, W, '/exam/m/NEWEXM/meta', emeta({ tries: 21 }), false);
+expect('違規上限 1～5 次', exBase, EX_TEA, W, '/exam/m/NEWEXM/meta', emeta({ guard: { on: true, max: 0, idle: 5, blur: 3 } }), false);
+expect('一般老師不能自己加 admin 旗標', exBase, EX_TEA, W, '/exam/m/NEWEXM/meta', emeta({ admin: true }), false);
+expect('meta 不能塞奇怪欄位', exBase, EX_TEA, W, '/exam/m/NEWEXM/meta', emeta({ hack: 1 }), false);
+expect('老師手動開放／關閉', exBase, EX_TEA, W, '/exam/m/SHUTAA/meta/open', true, true);
+expect('學生不能開放測驗', exBase, null, W, '/exam/m/SHUTAA/meta/open', true, false);
+expect('任何人讀得到測驗資訊', exBase, null, R, '/exam/m/KPENAA/meta', null, true);
+expect('開放中學生讀得到題目', exBase, null, R, '/exam/m/KPENAA/paper', null, true);
+expect('未開放時學生讀不到題目', exBase, null, R, '/exam/m/SHUTAA/paper', null, false);
+expect('截止後學生讀不到題目', exBase, null, R, '/exam/m/LATEAA/paper', null, false);
+expect('還沒到開放時間讀不到題目', exBase, null, R, '/exam/m/SXXNAA/paper', null, false);
+expect('學生讀不到正確答案', exBase, null, R, '/exam/m/KPENAA/key', null, false);
+expect('出題老師讀得到正確答案', exBase, EX_TEA, R, '/exam/m/KPENAA/key', null, true);
+expect('公布題目後學生讀得到題目', exBase, null, R, '/exam/m/PUBLAA/paper', null, true);
+expect('沒勾公布正解時讀不到答案', exBase, null, R, '/exam/m/PUBLAA/key', null, false);
+expect('公布後學生讀得到自己的成績', exBase, null, R, '/exam/m/PUBLAA/g/S1150007', null, true);
+expect('還沒公布讀不到成績', exBase, null, R, '/exam/m/KPENAA/g/S1150007', null, false);
+expect('學生讀不到全班成績', exBase, null, R, '/exam/m/PUBLAA/g', null, false);
+expect('學生開始第 1 次作答（伺服器時間）', exBase, null, W, '/exam/m/KPENAA/s/S1150001/1', start, true);
+expect('開始時間不能自己填', exBase, null, W, '/exam/m/KPENAA/s/S1150001/1', Object.assign({}, start, { st: NOW_ + 999999 }), false);
+expect('未開放不能開始', exBase, null, W, '/exam/m/SHUTAA/s/S1150001/1', start, false);
+expect('截止後不能開始', exBase, null, W, '/exam/m/LATEAA/s/S1150001/1', start, false);
+expect('不能跳過第 1 次直接第 2 次', exBase, null, W, '/exam/m/KPENAA/s/S1150001/2', start, false);
+expect('第 1 次還沒交卷不能開第 2 次', exBase, null, W, '/exam/m/KPENAA/s/S1150007/2', start, false);
+expect('第 1 次交卷後可以開第 2 次', exBase, null, W, '/exam/m/KPENAA/s/S1150009/2', start, true);
+expect('超過可作答次數不行', exBase, null, W, '/exam/m/KPENAA/s/S1150009/3', start, false);
+expect('不能覆蓋已經開始的作答', exBase, null, W, '/exam/m/KPENAA/s/S1150007/1', start, false);
+expect('間隔時間還沒到不能重考', exBase, null, W, '/exam/m/GAPAAA/s/S1150009/2', start, false);
+expect('名單限定：資料吻合才能開始', exBase, null, W, '/exam/m/RXSTER/s/S1150007/1', start, true);
+expect('名單限定：姓名不對不行', exBase, null, W, '/exam/m/RXSTER/s/S1150007/1', Object.assign({}, start, { info: { cls: '201', seat: 7, name: '王大明' } }), false);
+expect('名單限定：不在名單不行', exBase, null, W, '/exam/m/RXSTER/s/S1150099/1', start, false);
+expect('學號格式要對', exBase, null, W, '/exam/m/KPENAA/s/abc/1', start, false);
+expect('停用帳號老師的測驗學生不能考', exBase, null, W, '/exam/m/XFFTEA/s/S1150001/1', start, false);
+expect('作答中寫答案（單選）', exBase, null, W, '/exam/m/KPENAA/s/S1150007/1/ans/q0000001', 1, true);
+expect('作答中寫答案（複選字串）', exBase, null, W, '/exam/m/KPENAA/s/S1150007/1/ans/q0000001', '0,2', true);
+expect('作答中清掉答案', exBase, null, W, '/exam/m/KPENAA/s/S1150007/1/ans/q0000001', null, true);
+expect('簡答太長不行', exBase, null, W, '/exam/m/KPENAA/s/S1150007/1/ans/q0000001', 'x'.repeat(3001), false);
+expect('時間到了不能再寫答案', exBase, null, W, '/exam/m/KPENAA/s/S1150008/1/ans/q0000001', 1, false);
+expect('交卷後不能再改答案', exBase, null, W, '/exam/m/KPENAA/s/S1150009/1/ans/q0000001', 1, false);
+expect('還沒開始不能寫答案', exBase, null, W, '/exam/m/KPENAA/s/S1150001/1/ans/q0000001', 1, false);
+expect('學生不能改開始時間', exBase, null, W, '/exam/m/KPENAA/s/S1150007/1/st', NOW_, false);
+expect('學生不能改自己的班級座號姓名', exBase, null, W, '/exam/m/KPENAA/s/S1150007/1/info/name', '別人', false);
+expect('本人交卷', exBase, null, W, '/exam/m/KPENAA/s/S1150007/1/end', { t: SV, by: 'self' }, true);
+expect('系統代結（附原因）', exBase, null, W, '/exam/m/KPENAA/s/S1150007/1/end', { t: SV, by: 'guard', why: '切換到其他頁面' }, true);
+expect('時間到之後還是可以交卷（答案已經鎖住）', exBase, null, W, '/exam/m/KPENAA/s/S1150008/1/end', { t: SV, by: 'time' }, true);
+expect('學生不能冒充老師收卷', exBase, null, W, '/exam/m/KPENAA/s/S1150007/1/end', { t: SV, by: 'teacher' }, false);
+expect('交卷時間不能自己填', exBase, null, W, '/exam/m/KPENAA/s/S1150007/1/end', { t: 1, by: 'self' }, false);
+expect('已交卷不能再改交卷方式', exBase, null, W, '/exam/m/KPENAA/s/S1150009/1/end', { t: SV, by: 'self' }, false);
+expect('老師收卷', exBase, EX_TEA, W, '/exam/m/KPENAA/s/S1150007/1/end', { t: NOW_, by: 'teacher' }, true);
+expect('記錄違規事件', exBase, null, W, '/exam/m/KPENAA/s/S1150007/1/ev/e1', { t: SV, k: 'v', d: 'hide' }, true);
+expect('記錄第二個事件', exBase, null, W, '/exam/m/KPENAA/s/S1150007/1/ev/e1', { t: SV, k: 'v' }, true);
+expect('交卷後不能再記事件', exBase, null, W, '/exam/m/KPENAA/s/S1150009/1/ev/e1', { t: SV, k: 'v' }, false);
+expect('裝置被老師解除後可以重新認領', exBase, null, W, '/exam/m/KPENAA/s/S1150010/1/dev', 'newdev', true);
+expect('作答中的裝置不能被搶走', exBase, null, W, '/exam/m/KPENAA/s/S1150007/1/dev', 'other', false);
+expect('老師解除裝置鎖', exBase, EX_TEA, W, '/exam/m/KPENAA/s/S1150007/1/dev', '', true);
+expect('學生讀得到自己的作答', exBase, null, R, '/exam/m/KPENAA/s/S1150007', null, true);
+expect('學生讀不到全班作答', exBase, null, R, '/exam/m/KPENAA/s', null, false);
+expect('出題老師讀得到全班作答', exBase, EX_TEA, R, '/exam/m/KPENAA/s', null, true);
+expect('別的老師讀不到全班作答', exBase, TEA, R, '/exam/m/KPENAA/s', null, false);
+expect('老師寫成績', exBase, EX_TEA, W, '/exam/m/KPENAA/g/S1150007', { f: 2, k: { '1': { s: 2 } } }, true);
+expect('學生不能寫成績', exBase, null, W, '/exam/m/KPENAA/g/S1150007', { f: 100 }, false);
+expect('老師給簡答分數', exBase, EX_TEA, W, '/exam/m/KPENAA/mg/S1150007/1/q0000001', 4, true);
+expect('學生不能給自己簡答分數', exBase, null, W, '/exam/m/KPENAA/mg/S1150007/1/q0000001', 4, false);
+expect('老師匯入名單', exBase, EX_TEA, W, '/exam/m/KPENAA/roster/S1150001', { cls: '201', seat: 1, name: '林一' }, true);
+expect('學生讀不到名單', exBase, null, R, '/exam/m/RXSTER/roster', null, false);
+expect('老師寫題目快照', exBase, EX_TEA, W, '/exam/m/KPENAA/paper/q0000002', { i: 1, t: 'm', s: '<b>題</b>', o: ['a', 'b', 'c'], p: 2 }, true);
+expect('學生不能改題目', exBase, null, W, '/exam/m/KPENAA/paper/q0000002', { i: 1, t: 'm', s: 'x', o: ['a'], p: 2 }, false);
+expect('老師刪除整份測驗', exBase, EX_TEA, W, '/exam/m/KPENAA', null, true);
+expect('別的老師不能刪測驗', exBase, TEA, W, '/exam/m/KPENAA', null, false);
+expect('老師寫自己的題庫', exBase, EX_TEA, W, '/exam/bk/EXT/bank0001/q/q0000009', { t: 's', s: '題', o: ['a', 'b'], a: [0], d: '中', tags: ['機制'], p: 2, i: 1, at: 1 }, true);
+expect('題庫難易度只能易中難', exBase, EX_TEA, W, '/exam/bk/EXT/bank0001/q/q0000009', { t: 's', s: '題', d: '超難' }, false);
+expect('讀不到別人的題庫', exBase, TEA, R, '/exam/bk/EXT', null, false);
+expect('沒開通 exam 不能建題庫', exBase, TEA, W, '/exam/bk/TEA/bank0001', { name: 'x', at: 1 }, false);
+expect('老師上傳題目圖片', exBase, EX_TEA, W, '/exam/img/abcdefgh1234', { owner: 'EXT', data: 'data:image/jpeg;base64,xx' }, true);
+expect('圖片只能是 data:image', exBase, EX_TEA, W, '/exam/img/abcdefgh1234', { owner: 'EXT', data: 'javascript:alert(1)' }, false);
+expect('學生讀得到題目圖片（知道代號）', exBase, null, R, '/exam/img/abcdefgh1234', null, true);
+expect('學生不能列出全部圖片', exBase, null, R, '/exam/img', null, false);
+expect('學生不能上傳圖片', exBase, null, W, '/exam/img/abcdefgh1234', { owner: 'x', data: 'data:image/png;base64,xx' }, false);
+expect('老師寫自己的測驗清單', exBase, EX_TEA, W, '/exam/owners/EXT/NEWEXM', { title: '期中', at: 1 }, true);
+expect('不能讀別人的測驗清單', exBase, EX_TEA, R, '/exam/owners/TEA', null, false);
+expect('會員申請可以選 exam', exBase, STRANGER, W, '/staff/BAD', { email: 'bad@evil.com', name: 'B', school: 'S', purpose: 'p', want: { exam: true }, at: 1, status: 'pending' }, true);
+expect('核准的老師不能自己加開 exam', exBase, TEA, W, '/staff/TEA', Object.assign({}, base.staff.TEA, { apps: Object.assign({}, base.staff.TEA.apps, { exam: true }) }), false);
+expect('管理員可以開通 exam', exBase, MAIN, W, '/staff/NOAPP/apps/exam', true, true);
+expect('預先開通可以勾 exam', exBase, MAIN, W, '/staffpre/new@school,edu,tw', { email: 'new@school.edu.tw', apps: { exam: true }, at: 1 }, true);
 console.log(`\n${fail ? '❌' : '✅'} 通過 ${pass} 項，失敗 ${fail} 項`);
 process.exit(fail ? 1 : 0);
