@@ -414,6 +414,8 @@ expect('心跳時間不能自己填', exBase, null, W, '/exam/m/KPENAA/s/S115000
 expect('交卷後不能再回報心跳', exBase, null, W, '/exam/m/KPENAA/s/S1150009/1/hb', SV, false);
 expect('老師存常用評語', exBase, EX_TEA, W, '/exam/pref/EXT/cmts', ['很好', '再具體一點'], true);
 expect('不能讀別人的常用評語', exBase, TEA, R, '/exam/pref/EXT', null, false);
+expect('題目快照可以帶標籤（統計用）', exBase, EX_TEA, W, '/exam/m/KPENAA/paper/q0000003', { i: 2, t: 's', s: '題', o: ['a', 'b'], p: 2, tg: ['BGG 機制', '遊戲元素'] }, true);
+expect('快照標籤太長不行', exBase, EX_TEA, W, '/exam/m/KPENAA/paper/q0000003', { i: 2, t: 's', s: '題', o: ['a', 'b'], p: 2, tg: ['x'.repeat(21)] }, false);
 expect('會員申請可以選 exam', exBase, STRANGER, W, '/staff/BAD', { email: 'bad@evil.com', name: 'B', school: 'S', purpose: 'p', want: { exam: true }, at: 1, status: 'pending' }, true);
 expect('核准的老師不能自己加開 exam', exBase, TEA, W, '/staff/TEA', Object.assign({}, base.staff.TEA, { apps: Object.assign({}, base.staff.TEA.apps, { exam: true }) }), false);
 expect('管理員可以開通 exam', exBase, MAIN, W, '/staff/NOAPP/apps/exam', true, true);

@@ -869,7 +869,7 @@ async function examForm(code) {
       const q = B().q[id];
       if (!q) { np[id] = Object.assign({}, paper[id], { i, p: pts[paper[id].t] }); total += np[id].p; return; }
       const p = pts[q.t]; total += p;
-      np[id] = clean({ i, t: q.t, s: q.s, o: q.t === 'a' ? [] : q.o, l: q.l ? true : null, p, need: need && q.t === 'm' ? q.a.length : null });
+      np[id] = clean({ i, t: q.t, s: q.s, o: q.t === 'a' ? [] : q.o, l: q.l ? true : null, p, need: need && q.t === 'm' ? q.a.length : null, tg: (q.tags || []).slice(0, 8).map((x) => String(x).slice(0, 20)) });
       nk[id] = clean({ a: q.t === 'a' ? [] : q.a, r: q.r || '', e: q.e || '' });
     });
     const draw = Math.max(0, Math.min(500, Math.round(+$('#fDraw', m).value || 0)));
@@ -980,7 +980,7 @@ function rows() {
 function renderExam() {
   const c = CUR;
   $('#t-exams').innerHTML = `<div class="card"><div class="ehead" id="eHead"></div>
-    <div class="tabs subtabs" id="subT" style="margin:14px 0 0">${[['share', '🔗 分享'], ['mon', '📡 監控'], ['grade', '📋 成績'], ['mark', '✏️ 閱卷'], ['paper', '🧾 題目'], ['roster', '👥 名單'], ['set', '⚙️ 設定']].map(([k, n]) => `<button data-s="${k}" class="${sub === k ? 'on' : ''}">${n}</button>`).join('')}</div></div>
+    <div class="tabs subtabs" id="subT" style="margin:14px 0 0">${[['share', '🔗 分享'], ['mon', '📡 監控'], ['grade', '📋 成績'], ['mark', '✏️ 閱卷'], ['stat', '📊 統計'], ['paper', '🧾 題目'], ['roster', '👥 名單'], ['set', '⚙️ 設定']].map(([k, n]) => `<button data-s="${k}" class="${sub === k ? 'on' : ''}">${n}</button>`).join('')}</div></div>
     <div id="subBody"></div>`;
   $('#subT').onclick = (e) => { const b = e.target.closest('[data-s]'); if (!b) return; sub = b.dataset.s; $$('#subT button').forEach((x) => x.classList.toggle('on', x === b)); paintSub(); };
   paintHead(); paintSub();
@@ -1016,6 +1016,7 @@ function paintSub() {
   else if (sub === 'grade') paintGrade(el);
   else if (sub === 'mon') paintMon(el);
   else if (sub === 'mark') paintMark(el);
+  else if (sub === 'stat') paintStats(el);
   else if (sub === 'paper') paintPaper(el);
   else if (sub === 'roster') paintRoster(el);
   else if (sub === 'set') paintSet(el);
@@ -1149,11 +1150,14 @@ async function exportXls() {
   const sheet2 = [['班級', '座號', '姓名', '學號', '第幾次', '題號（學生看到的）', '題庫順序', '題型', '題目', '作答', '正解', '得分', '配分']];
   R.forEach((r) => r.graded.forEach((g) => { const sh = X.sheetFor(PAPER, META, CUR, r.sid, g.a.k); sh.ids.forEach((id, n) => { const q = PAPER[id], d = g.detail[id]; sheet2.push([r.info.cls || '', r.info.seat || '', r.info.name || '', r.sid, g.a.k, n + 1, (q.i || 0) + 1, X.TYPES[q.t], X.plain(q.s).slice(0, 200), ansText(q, (g.a.ans || {})[id]), q.t === 'a' ? '' : letterList((KEY[id] || {}).a), d.s == null ? '待批' : d.s, q.p]); }); }));
   const ids = Object.keys(PAPER).sort((a, b) => PAPER[a].i - PAPER[b].i);
-  const sheet3 = [['題庫順序', '題型', '題目', '作答人次', '答對人次', '答對率', '平均得分', '配分']].concat(ids.map((id) => {
-    const q = PAPER[id]; let n = 0, ok = 0, sum = 0;
-    R.forEach((r) => r.graded.forEach((g) => { const d = g.detail[id]; if (!d || d.s == null) return; n++; sum += d.s; if (d.ok) ok++; }));
-    return [(q.i || 0) + 1, X.TYPES[q.t], X.plain(q.s).slice(0, 200), n, ok, n ? Math.round(ok / n * 100) + '%' : '', n ? X.round2(sum / n) : '', q.p];
+  // 每題分析（第三階段：加鑑別度、標籤）——跟「📊 統計」分頁同一套算法
+  const SA = X.analyze(statEntries({ cls: '' }), PAPER, KEY, tagsOfQ); // Excel 一律用全部班級
+  const sheet3 = [['題庫順序', '題型', '題目', '標籤', '作答人次', '答對率', '平均得分率', '高分組答對率', '低分組答對率', '鑑別度', '鑑別度判讀', '難易判讀', '配分']].concat(ids.map((id) => {
+    const q = PAPER[id], it = SA.items[id] || {};
+    const f = (x) => x == null ? '' : Math.round(x * 1000) / 10 + '%';
+    return [(q.i || 0) + 1, X.TYPES[q.t], X.plain(q.s).slice(0, 200), tagsOfQ(id).join('、'), it.n || 0, f(it.p), f(it.r), f(it.ph), f(it.pl), it.d == null ? '' : Math.round(it.d * 100) / 100, X.dLevel(it.d).t, X.pLevel(it.p).t, q.p];
   }));
+  const sheet4 = [['標籤', '題數', '平均得分率', '答對率', '題號']].concat(Object.keys(SA.tags).sort((a, b) => (SA.tags[a].r || 0) - (SA.tags[b].r || 0)).map((t) => { const x = SA.tags[t]; return [t, x.nq, x.r == null ? '' : Math.round(x.r * 1000) / 10 + '%', x.p == null ? '' : Math.round(x.p * 1000) / 10 + '%', x.ids.map((id) => PAPER[id].i + 1).join('、')]; }));
   const info = [['測驗名稱', META.title], ['測驗代碼', CUR], ['學期', META.term ? X.termName(META.term) + '（' + META.term + '）' : ''], ['科目', META.subj || ''], ['用途', META.use || ''], ['測驗日期時間', examWhen(META) ? new Date(examWhen(META)).toLocaleString('zh-TW') : ''],
     ['題數', META.n], ['滿分', META.total], ['配分', META.pts ? `單選 ${META.pts.s}、多重選擇 ${META.pts.m}、簡答 ${META.pts.a}` : ''], ['作答時間（分鐘）', META.mins], ['可作答次數', META.tries >= 20 ? '不限' : META.tries], ['採計方式', X.POLICY[META.policy].name], ['匯出時間', new Date().toLocaleString('zh-TW')]];
   const wb = XL.utils.book_new();
@@ -1161,6 +1165,7 @@ async function exportXls() {
   XL.utils.book_append_sheet(wb, XL.utils.aoa_to_sheet(sheet1), '成績總表');
   XL.utils.book_append_sheet(wb, XL.utils.aoa_to_sheet(sheet2), '作答明細');
   XL.utils.book_append_sheet(wb, XL.utils.aoa_to_sheet(sheet3), '每題分析');
+  if (sheet4.length > 1) XL.utils.book_append_sheet(wb, XL.utils.aoa_to_sheet(sheet4), '標籤分析');
   XL.writeFile(wb, `線上檢定所_${[META.term, META.subj, META.use, META.title].filter(Boolean).join('_')}_${CUR}.xlsx`.replace(/[\\/:*?"<>|]/g, ''));
 }
 
@@ -1330,21 +1335,31 @@ function paintMon(el, live) {
   };
 }
 
-/* 📺 考場投影看板：只有人數、狀態顏色（座號），不顯示姓名、分數、答案 */
+/* 📺 考場投影看板（2026-10-23 改版：清單）
+   - 每位學生一行「309 班 37 號｜狀態文字｜進度｜剩餘時間」，狀態同時用文字＋顏色（不靠顏色辨認）
+   - 預設不顯示姓名、絕不顯示分數與答案；老師可按「👤 顯示姓名」
+   - 字級跟著畫面大小，人多時自動分成 2～4 欄 */
+let PROJ_NAME = false;
 function projBoard() {
   const p = document.createElement('div'); p.className = 'proj projb';
   document.body.appendChild(p);
+  const ST = { doing: ['🔵', '作答中'], off: ['🟠', '失聯'], none: ['⚪', '未進入'], done: ['✅', '已交卷'], guard: ['🚨', '系統代結'] };
+  const order = { guard: 0, off: 1, doing: 2, none: 3, done: 4 };
   const paint = () => {
     const R = rows(), c = monCount(R), now = Date.now();
-    const byCls = {}; R.forEach((r) => { const k = r.info.cls || '—'; (byCls[k] = byCls[k] || []).push(r); });
     const col = (r) => r.st === 'doing' ? (r.off > OFFLINE_MS ? 'off' : 'doing') : r.st === 'none' ? 'none' : r.st === 'guard' ? 'guard' : 'done';
-    p.innerHTML = `<button class="x">✕ 關閉</button>
-      <div class="row" style="gap:14px;justify-content:center"><span class="badge" style="font-size:1rem">🎲 線上檢定所</span><h1 style="margin:0">${esc(META.title)}</h1><span class="bigcode" style="font-size:2rem">${CUR}</span></div>
-      <div style="font-size:1.25rem;font-weight:700">${X.STATE[X.stateOf(META)]}・現在 <span class="mono">${X.fmtClock(now)}</span>${META.closeAt ? `・截止 <span class="mono">${X.fmtTime(META.closeAt)}</span>` : ''}・作答 ${META.mins} 分鐘</div>
-      <div class="pstats">${c.roster ? `<div><b>${c.none}</b>⚪ 未進入</div>` : ''}<div><b>${c.doing}</b>🔵 作答中</div><div><b>${c.done}</b>✅ 已交卷</div><div><b>${c.guard}</b>🚨 系統代結</div>${c.off ? `<div><b>${c.off}</b>📴 失聯</div>` : ''}</div>
-      <div class="pseats">${Object.keys(byCls).sort().map((k) => `<div class="pcls"><span>${esc(k)}</span>${byCls[k].map((r) => `<i class="${col(r)}" title="${esc(k)}-${r.info.seat || ''}">${r.info.seat || '?'}</i>`).join('')}</div>`).join('')}</div>
-      <div class="small" style="opacity:.75">⚪ 未進入　🔵 作答中　🟢 已交卷　🔴 系統代結　🟠 失聯｜畫面不顯示姓名與分數</div>`;
-    $('.x', p).onclick = () => { PROJ = null; clearInterval(t); p.remove(); if (document.fullscreenElement) document.exitFullscreen().catch(() => { }); };
+    const list = R.slice().sort((a, b) => String(a.info.cls || '').localeCompare(String(b.info.cls || '')) || (a.info.seat || 0) - (b.info.seat || 0));
+    const ncol = list.length > 45 ? 4 : list.length > 24 ? 3 : list.length > 10 ? 2 : 1;
+    p.innerHTML = `<div class="pbar0"><span class="badge">🎲 線上檢定所</span><b class="ptitle">${esc(META.title)}</b><span class="pcode">${CUR}</span><span class="sp"></span>
+        <button class="pbtn" data-pn>${PROJ_NAME ? '🙈 隱藏姓名' : '👤 顯示姓名'}</button><button class="pbtn" data-px>✕ 關閉</button></div>
+      <div class="pinfo"><span>${X.STATE[X.stateOf(META)]}</span><span>🕒 現在 <b class="mono">${X.fmtClock(now)}</b></span>${META.closeAt ? `<span>⏹ 截止 <b class="mono">${X.fmtTime(META.closeAt)}</b></span>` : ''}<span>⏱ 每人作答 <b>${META.mins}</b> 分鐘</span></div>
+      <div class="pstats">${c.roster ? `<div class="s-none"><b>${c.none}</b>⚪ 未進入</div>` : ''}<div class="s-doing"><b>${c.doing - c.off}</b>🔵 作答中</div>${c.off ? `<div class="s-off"><b>${c.off}</b>🟠 失聯</div>` : ''}<div class="s-done"><b>${c.done - c.guard}</b>✅ 已交卷</div><div class="s-guard"><b>${c.guard}</b>🚨 系統代結</div></div>
+      <div class="plist" style="column-count:${ncol}">${list.map((r) => { const k = col(r), [ic, tx] = ST[k]; return `<div class="prow p-${k}"><span class="pseat"><b>${esc(r.info.cls || '—')}</b> 班 <b>${r.info.seat || '?'}</b> 號${PROJ_NAME ? ` <span class="pname">${esc(r.info.name || '')}</span>` : ''}</span>
+          <span class="pst">${ic} ${tx}</span><span class="pprog">${r.st === 'doing' ? `${r.prog}・剩 <b class="mono">${X.fmtLeft(r.left)}</b>` : ''}</span></div>`; }).join('') || '<div class="prow">還沒有學生</div>'}</div>
+      <div class="pfoot">畫面不顯示分數與答案</div>`;
+    $('[data-px]', p).onclick = () => { PROJ = null; clearInterval(t); p.remove(); if (document.fullscreenElement) document.exitFullscreen().catch(() => { }); };
+    $('[data-pn]', p).onclick = () => { PROJ_NAME = !PROJ_NAME; paint(); };
+    void order;
   };
   PROJ = paint; paint();
   const t = setInterval(paint, 2000);
@@ -1426,4 +1441,76 @@ async function paintMark(el) {
     const g1 = $('#mkGift', body); if (g1) g1.onclick = async () => { if (!confirm(`第 ${q.i + 1} 題全體送分：${n} 份作答這題都給滿分 ${q.p} 分？`)) return; await set(q.p); toast('🎁 已全體送分'); };
     const g2 = $('#mkUngift', body); if (g2) g2.onclick = async () => { if (!confirm('取消送分，恢復系統原本的判分？')) return; await set(null); toast('↩️ 已取消送分'); };
   }
+}
+
+/* =====================================================================
+   第三階段（2026-10-23）：📊 統計分析——分數分布、每題答對率與鑑別度、選項誘答力、標籤（單元）分析、交卷方式
+   ===================================================================== */
+let SF = { cls: '', all: false, sort: 'no', open: '' };
+const pct = (x) => x == null ? '—' : Math.round(x * 100) + '%';
+const tagsOfQ = (id) => { const q = PAPER[id] || {}; if (q.tg) return arr(q.tg); const b = BANKS[META.bank]; return (b && b.q[id] && b.q[id].tags) || []; };
+// 每位學生取一次作答：最高分→分數最高那次；第一次→第一次；最後一次／平均→最後一次（勾「全部作答」則每次都算）
+function statEntries(opt) {
+  const out = [], cls = opt && 'cls' in opt ? opt.cls : SF.cls;
+  rows().forEach((r) => {
+    if (cls && r.info.cls !== cls) return;
+    const g = r.graded; if (!g.length) return;
+    let pick = g;
+    if (!SF.all) { let one = g[g.length - 1]; if (META.policy === 'max') one = g.reduce((a, b) => (b.s > a.s ? b : a)); else if (META.policy === 'first') one = g[0]; pick = [one]; }
+    pick.forEach((x) => { const sh = X.sheetFor(PAPER, META, CUR, r.sid, x.a.k); out.push({ sid: r.sid, info: r.info, k: x.a.k, s: x.s, full: x.full, detail: x.detail, ans: x.a.ans || {}, ids: sh.ids, by: x.a.end.by, why: x.a.end.why, secs: Math.max(0, (x.a.end.t - x.a.st) / 1000), pend: x.pend }); });
+  });
+  return out;
+}
+function paintStats(el) {
+  const classes = Array.from(new Set(rows().map((r) => r.info.cls).filter(Boolean))).sort();
+  const E = statEntries(), A = X.analyze(E, PAPER, KEY, tagsOfQ);
+  const ids = Object.keys(PAPER).sort((a, b) => PAPER[a].i - PAPER[b].i);
+  const full = E.length ? Math.max(...E.map((e) => e.full)) : META.total;
+  const pend = E.reduce((a, e) => a + e.pend, 0);
+  const maxH = Math.max(1, ...A.hist);
+  const byCnt = {}; E.forEach((e) => { const k = e.by === 'guard' ? 'guard:' + (e.why || '') : e.by; byCnt[k] = (byCnt[k] || 0) + 1; });
+  const avgMin = E.length ? E.reduce((a, e) => a + e.secs, 0) / E.length / 60 : null;
+  let list = ids.slice();
+  if (SF.sort === 'p') list.sort((a, b) => (A.items[a].p ?? 2) - (A.items[b].p ?? 2));
+  if (SF.sort === 'd') list.sort((a, b) => (A.items[a].d ?? 2) - (A.items[b].d ?? 2));
+  const tags = Object.keys(A.tags).sort((a, b) => (A.tags[a].r ?? 2) - (A.tags[b].r ?? 2));
+  const lvl = (o) => `<span class="chip ${o.k === 'ok' ? 'ok' : o.k === 'warn' ? 'warn' : o.k === 'bad' ? 'bad' : 'gray'}">${o.k === 'ok' ? '✅' : o.k === 'warn' ? '⚠️' : o.k === 'bad' ? '❗' : ''} ${o.t}</span>`;
+  el.innerHTML = `<div class="card">
+    <div class="row"><h3>📊 統計分析</h3><span class="sp"></span>
+      <select id="sfCls" style="width:auto"><option value="">全部班級</option>${classes.map((c) => `<option ${SF.cls === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>
+      <label class="ck"><input type="checkbox" id="sfAll" ${SF.all ? 'checked' : ''}>每次作答都算</label>${tip(`沒勾時每位學生只算一次作答（依採計方式「${X.POLICY[META.policy].name}」挑那一次）；勾了每一次作答都會算進來。`)}</div>
+    ${!E.length ? '<div class="empty">還沒有交卷的作答，交卷後這裡就會出現統計。</div>' : `
+    ${pend ? `<p class="small" style="background:var(--warnbg);border-radius:10px;padding:6px 12px">⚠️ 還有 ${pend} 份簡答沒批完，總分與簡答題的統計會先不含這些。</p>` : ''}
+    <div class="stats"><div class="stat"><b>${E.length}</b><span>${SF.all ? '作答份數' : '人數'}</span></div><div class="stat"><b>${X.round2(A.mean)}</b><span>平均（滿分 ${full}）</span></div><div class="stat"><b>${X.round2(A.median)}</b><span>中位數</span></div>
+      <div class="stat"><b>${X.round2(A.sd)}</b><span>標準差</span></div><div class="stat"><b>${A.max}</b><span>最高</span></div><div class="stat"><b>${A.min}</b><span>最低</span></div><div class="stat"><b>${pct(A.pass)}</b><span>及格率（≥60%）</span></div>${avgMin != null ? `<div class="stat"><b>${X.round2(avgMin)}</b><span>平均作答分鐘</span></div>` : ''}</div>
+    <div class="grid2" style="align-items:start">
+      <div><h3 style="font-size:1rem">分數分布（得分率）</h3><div class="hist">${A.hist.map((h, i) => `<div class="hb" title="${i * 10}～${i === 9 ? 100 : i * 10 + 9}%：${h} 人"><span class="hv">${h || ''}</span><i style="height:${Math.round(h / maxH * 100)}%"></i><span class="hl">${i * 10}</span></div>`).join('')}</div><div class="small muted" style="text-align:center">得分率（%）</div></div>
+      <div><h3 style="font-size:1rem">交卷方式</h3><table class="t"><tbody>${Object.keys(byCnt).sort().map((k) => { const [by, why] = k.split(':'); return `<tr><td>${byChip(by, why)}${why ? ` <span class="small muted">${esc(X.WHY[why] || why)}</span>` : ''}</td><td class="num">${byCnt[k]}</td><td style="width:45%"><div class="pbar"><i style="width:${Math.round(byCnt[k] / E.length * 100)}%;background:var(--purple)"></i></div></td></tr>`; }).join('')}</tbody></table></div>
+    </div>
+    ${tags.length ? `<h3 style="font-size:1rem;margin-top:16px">🏷️ 依標籤（單元）分析 ${tip('用題庫的標籤把題目分組，算每個單元的平均得分率；排在最上面的是全班最弱、最需要回頭教的單元。')}</h3>
+      <div class="tscroll" style="max-height:none"><table class="t"><thead><tr><th>標籤</th><th class="num">題數</th><th class="num">平均得分率</th><th style="width:40%"></th><th class="num">答對率</th></tr></thead><tbody>${tags.map((t) => { const x = A.tags[t]; return `<tr title="${esc(t)}：${x.ids.map((id) => '第' + (PAPER[id].i + 1) + '題').join('、')}"><td><span class="chip">#${esc(t)}</span></td><td class="num">${x.nq}</td><td class="num"><b>${pct(x.r)}</b></td><td><div class="pbar"><i style="width:${Math.round((x.r || 0) * 100)}%;background:var(--purple)"></i></div></td><td class="num">${pct(x.p)}</td></tr>`; }).join('')}</tbody></table></div>` : ''}
+    <div class="row" style="margin-top:16px"><h3 style="font-size:1rem">🧪 每題分析（試題分析）</h3>${tip(`答對率 P：答對的比例（簡答＝拿滿分的比例）。鑑別度 D：分數前 27%（高分組 ${A.gsize} 人）的答對率減掉後 27%（低分組 ${A.gsize} 人）的答對率；D ≥ 0.4 非常好、0.3～0.4 良好、0.2～0.3 尚可、< 0.2 需檢討（可能題意不清或答案有問題）。點一題看各選項的選答分布。`)}<span class="sp"></span>
+      <select id="sfSort" style="width:auto"><option value="no" ${SF.sort === 'no' ? 'selected' : ''}>依題號</option><option value="p" ${SF.sort === 'p' ? 'selected' : ''}>答對率低→高</option><option value="d" ${SF.sort === 'd' ? 'selected' : ''}>鑑別度低→高</option></select></div>
+    ${E.length < 8 ? '<p class="small muted">⚠️ 作答人數少於 8 人，鑑別度只供參考。</p>' : ''}
+    <div class="tscroll" style="max-height:none"><table class="t item"><thead><tr><th class="num">題號</th><th>題型</th><th>題目</th><th class="num">作答</th><th class="num">答對率 P</th><th>難易</th><th class="num">高分組</th><th class="num">低分組</th><th class="num">鑑別度 D</th><th>判讀</th></tr></thead><tbody>
+    ${list.map((id) => { const q = PAPER[id], it = A.items[id]; return `<tr class="click" data-q="${id}"><td class="num">${q.i + 1}</td><td>${typeChip(q.t)}</td><td style="max-width:360px">${esc(X.plain(q.s).slice(0, 50))}</td><td class="num">${it.n}</td>
+      <td class="num"><b>${pct(it.p)}</b>${q.t === 'a' ? `<div class="small muted">得分率 ${pct(it.r)}</div>` : ''}</td><td>${lvl(X.pLevel(it.p))}</td><td class="num">${pct(it.ph)}</td><td class="num">${pct(it.pl)}</td><td class="num"><b>${it.d == null ? '—' : it.d.toFixed(2)}</b></td><td>${lvl(X.dLevel(it.d))}</td></tr>
+      ${SF.open === id ? `<tr><td colspan="10" style="background:#faf8f3">${optDetail(id, it)}</td></tr>` : ''}`; }).join('')}
+    </tbody></table></div>`}
+  </div>`;
+  const sc = $('#sfCls', el); if (sc) sc.onchange = (e) => { SF.cls = e.target.value; paintStats(el); };
+  const sa = $('#sfAll', el); if (sa) sa.onchange = (e) => { SF.all = e.target.checked; paintStats(el); };
+  const so = $('#sfSort', el); if (so) so.onchange = (e) => { SF.sort = e.target.value; paintStats(el); };
+  $$('table.item tr[data-q]', el).forEach((tr) => { tr.onclick = () => { SF.open = SF.open === tr.dataset.q ? '' : tr.dataset.q; paintStats(el); }; });
+}
+function optDetail(id, it) {
+  const q = PAPER[id], key = KEY[id] || {}, right = key.a || [];
+  if (q.t === 'a') return `<div class="small">✏️ 簡答：平均得分率 ${pct(it.r)}、高分組 ${pct(it.ph)}、低分組 ${pct(it.pl)}。要看每份答案請到「✏️ 閱卷」。</div>`;
+  const n = it.n || 1, nh = it.nh || 1, nl = it.nl || 1;
+  return `<div class="small" style="margin-bottom:6px"><b>第 ${q.i + 1} 題各選項的選答比例</b>（✅＝正解；錯誤選項「低分組比高分組選得多」代表誘答力好；正解卻是低分組選得多，題目可能有問題）</div>
+    <table class="t"><thead><tr><th>選項</th><th>內容</th><th class="num">全體</th><th style="width:22%"></th><th class="num">高分組</th><th class="num">低分組</th><th>提示</th></tr></thead><tbody>
+    ${q.o.map((o, i) => { const all = it.opt.all[i] / n, hi = it.opt.hi[i] / nh, lo = it.opt.lo[i] / nl, ok = right.includes(i);
+      const hint = ok ? (lo > hi ? '<span class="chip bad">❗ 正解卻是低分組選得多</span>' : '') : (all === 0 ? '<span class="chip gray">沒人選，誘答力低</span>' : lo > hi ? '<span class="chip ok">誘答力好</span>' : hi > lo ? '<span class="chip warn">高分組也被騙，題意要再確認</span>' : '');
+      return `<tr><td><b>${X.LETTERS[i]}</b>${ok ? ' ✅' : ''}</td><td>${esc(X.plain(o).slice(0, 50))}</td><td class="num">${pct(all)}</td><td><div class="pbar ${ok ? 'ok' : ''}"><i style="width:${Math.round(all * 100)}%"></i></div></td><td class="num">${pct(hi)}</td><td class="num">${pct(lo)}</td><td>${hint}</td></tr>`; }).join('')}
+    </tbody></table><div class="small muted">字母是題庫原始順序；「沒作答」${it.blank} 人次。</div>`;
 }

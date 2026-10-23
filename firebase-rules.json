@@ -986,6 +986,11 @@
        "need": {
         ".validate": "newData.isNumber()"
        },
+       "tg": {
+        "$i": {
+         ".validate": "$i.matches(/^[0-9]$/) && newData.isString() && newData.val().length <= 20"
+        }
+       },
        "$other": {
         ".validate": false
        }

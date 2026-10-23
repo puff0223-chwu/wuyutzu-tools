@@ -162,6 +162,58 @@
     return Math.max.apply(null, list.map(function (x) { return x.s; }));
   }
 
+  /* ---------- 📊 統計分析（第三階段） ----------
+     entries：[{ s 總分, full 滿分, detail{題目id:{s,ok}}, ans{題目id:答案}, ids[這份考卷有的題目] }]（每位學生一份）
+     回傳：整體統計、10 段分數分布、每題答對率 P／得分率／鑑別度 D（高分組、低分組各 27%）、選項分布、標籤分析 */
+  function median(a) { if (!a.length) return null; var b = a.slice().sort(function (x, y) { return x - y; }), m = Math.floor(b.length / 2); return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; }
+  function analyze(entries, paper, key, tagsOf) {
+    var n = entries.length, rates = entries.map(function (e) { return e.full ? e.s / e.full : 0; });
+    var scores = entries.map(function (e) { return e.s; });
+    var mean = n ? scores.reduce(function (a, b) { return a + b; }, 0) / n : null;
+    var sd = n ? Math.sqrt(scores.reduce(function (a, b) { return a + (b - mean) * (b - mean); }, 0) / n) : null;
+    var hist = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    rates.forEach(function (r) { hist[Math.min(9, Math.floor(r * 10 + 1e-9))]++; });
+    var order = entries.map(function (e, i) { return i; }).sort(function (a, b) { return rates[b] - rates[a]; });
+    var gsize = Math.max(1, Math.round(n * 0.27));
+    var hiSet = {}, loSet = {};
+    order.slice(0, gsize).forEach(function (i) { hiSet[i] = 1; }); order.slice(-gsize).forEach(function (i) { loSet[i] = 1; });
+    var items = {}, tags = {};
+    Object.keys(paper || {}).forEach(function (id) {
+      var q = paper[id], pts = +q.p || 0, nOpt = (q.o || []).length;
+      var it = { n: 0, ok: 0, sum: 0, blank: 0, hi: [0, 0], lo: [0, 0], opt: { all: [], hi: [], lo: [] }, nh: 0, nl: 0 };
+      for (var k = 0; k < nOpt; k++) { it.opt.all.push(0); it.opt.hi.push(0); it.opt.lo.push(0); }
+      entries.forEach(function (e, i) {
+        if (e.ids.indexOf(id) < 0) return;
+        var d = e.detail[id] || {}, v = (e.ans || {})[id];
+        var score = d.s == null ? null : d.s, val = q.t === 'a' ? (score == null || !pts ? null : score / pts) : (d.ok ? 1 : 0);
+        if (val == null) return; // 簡答還沒批
+        it.n++; it.sum += pts ? (score || 0) / pts : 0; if (d.ok) it.ok++;
+        if (!answered(q.t, v)) it.blank++;
+        if (hiSet[i]) { it.hi[0] += val; it.hi[1]++; } if (loSet[i]) { it.lo[0] += val; it.lo[1]++; }
+        if (q.t !== 'a') {
+          var sel = q.t === 's' ? (typeof v === 'number' ? [v] : []) : Object.keys(multiToSet(v)).map(Number);
+          sel.forEach(function (o) { if (o < nOpt) { it.opt.all[o]++; if (hiSet[i]) it.opt.hi[o]++; if (loSet[i]) it.opt.lo[o]++; } });
+          if (hiSet[i]) it.nh++; if (loSet[i]) it.nl++;
+        }
+      });
+      it.p = it.n ? it.ok / it.n : null;            // 答對率（簡答＝拿滿分的比例）
+      it.r = it.n ? it.sum / it.n : null;           // 平均得分率
+      it.ph = it.hi[1] ? it.hi[0] / it.hi[1] : null; it.pl = it.lo[1] ? it.lo[0] / it.lo[1] : null;
+      it.d = it.ph != null && it.pl != null ? it.ph - it.pl : null; // 鑑別度
+      items[id] = it;
+      (tagsOf ? tagsOf(id) : (q.tg || [])).forEach(function (t) {
+        var x = tags[t] = tags[t] || { nq: 0, n: 0, sum: 0, ok: 0, ids: [] };
+        x.nq++; x.ids.push(id); x.n += it.n; x.sum += it.sum; x.ok += it.ok;
+      });
+    });
+    Object.keys(tags).forEach(function (t) { var x = tags[t]; x.r = x.n ? x.sum / x.n : null; x.p = x.n ? x.ok / x.n : null; });
+    return { n: n, mean: mean, median: median(scores), sd: sd, max: n ? Math.max.apply(null, scores) : null, min: n ? Math.min.apply(null, scores) : null,
+      pass: n ? rates.filter(function (r) { return r >= 0.6; }).length / n : null, hist: hist, gsize: gsize, items: items, tags: tags };
+  }
+  // 鑑別度判讀（Ebel 的常用標準）、難易度判讀
+  function dLevel(d) { if (d == null) return { k: 'na', t: '—' }; if (d >= 0.4) return { k: 'ok', t: '非常好' }; if (d >= 0.3) return { k: 'ok', t: '良好' }; if (d >= 0.2) return { k: 'warn', t: '尚可，可修改' }; return { k: 'bad', t: '需檢討' }; }
+  function pLevel(p) { if (p == null) return { k: 'na', t: '—' }; if (p > 0.9) return { k: 'warn', t: '太簡單' }; if (p < 0.3) return { k: 'warn', t: '太難' }; return { k: 'ok', t: '適中' }; }
+
   /* 作答期限：開始時間＋作答時間（＋老師延長的分鐘 ext），但不超過截止時間 */
   function deadlineOf(meta, att, ext) {
     var d = (+att.st || 0) + ((+meta.mins || 0) + (+ext || 0)) * 60000;
@@ -423,7 +475,7 @@
     escapeHtml: escapeHtml, plain: plain, hasImg: hasImg, isEmptyHtml: isEmptyHtml, normId: normId, validId: validId, validCode: validCode, newCode: newCode, newId: newId,
     round2: round2, fmtTime: fmtTime, fmtClock: fmtClock, fmtLeft: fmtLeft, hashStr: hashStr, makeRng: makeRng, shuffle: shuffle,
     sheetFor: sheetFor, multiToSet: multiToSet, setToMulti: setToMulti, answered: answered, scoreOne: scoreOne, gradeAttempt: gradeAttempt, finalScore: finalScore,
-    deadlineOf: deadlineOf, stateOf: stateOf,
+    deadlineOf: deadlineOf, stateOf: stateOf, analyze: analyze, dLevel: dLevel, pLevel: pLevel, median: median,
     parseDocHtml: parseDocHtml, parseRows: parseRows, SHEET_HEAD: SHEET_HEAD, imgIds: imgIds, stripImgSrc: stripImgSrc, compressImage: compressImage,
     cloudFetch: cloudFetch, REST: REST, NOW: NOW
   };
