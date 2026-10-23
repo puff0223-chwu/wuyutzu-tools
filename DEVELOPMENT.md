@@ -162,7 +162,7 @@ wuyutzu-tools/
 | | 🧠 認識學生 | DISC、貝爾賓 |
 | | 🎉 班級氣氛 | 金曲歌王、詩籤、聖誕抽籤、形容詞產生器 |
 | ⚗️ 化學實驗室 No.223 | No.223 懸案系列 | 消失的實驗器材、消失的指示劑（pH）、失落的配方（單位換算）（三者都連到老師頁，2026-10-22 起用活動）、時光手稿：科學史大冒險、隱秘的鍵結社（2026-10-17 從「科學史」「化學鍵」小分類併入） |
-| | 課程經營 | 案件委託公告欄、科普閱讀測驗（**外部連結**，不在本倉庫：`https://reading-quiz-system.vercel.app/`，Vercel＋Supabase，原始碼在 `puff0223-chwu/reading-quiz-system`；2026-10-17 從「探究與實作」搬來） |
+| | 課程經營 | 案件委託公告欄、成績調閱室（**外部連結**：`https://grade-query-system-coral.vercel.app/`，Vercel＋Supabase，原始碼在 `puff0223-chwu/grade-query-system`，2026-10-24 新增）、科普閱讀測驗（**外部連結**，不在本倉庫：`https://reading-quiz-system.vercel.app/`，Vercel＋Supabase，原始碼在 `puff0223-chwu/reading-quiz-system`；2026-10-17 從「探究與實作」搬來） |
 | | 🎲 課堂遊戲化 | 選人系統（`picker.html`）、陣亡詛咒（`curse.html`）、戳戳樂、真心話大冒險 |
 | 🎮 遊戲研究室（遊戲設計思考） | 玩家研究 | 巴圖玩家類型 |
 | | 課程評量 | 線上檢定所（連到老師後台 `game-design/exam/`，2026-10-23） |
@@ -173,7 +173,7 @@ wuyutzu-tools/
 
 > 首頁是老師專用的工具箱，不會提供給學生；學生只會拿到各工具的「學生頁」連結（學生頁不連回首頁）。
 
-> **外部系統（資料庫不是 Firebase）**：首頁的 `TOOLS` 也可以放連到別的網站的卡片。目前有「科普閱讀測驗」（`readingquiz`）：只是一張連結卡，點了在新分頁開啟，**資料與登入都獨立**——資料庫是 Supabase（`reading-quiz-system` 專案，用學校信箱註冊的獨立帳號）、老師後台用 Supabase Auth 登入（不是會員中心），所以不受 `firebase-rules.json` 管，也不吃 Firebase 免費額度。Supabase 免費專案連續 7 天沒有資料庫查詢會被暫停，目前由 cron-job.org 每週一、四打 `/api/assignments` 保活，**不要刪那個排程**。
+> **外部系統（資料庫不是 Firebase）**：首頁的 `TOOLS` 也可以放連到別的網站的卡片。另有「成績調閱室」（`gradequery`，老師頁；Supabase 專案 grade-query-system，個人信箱帳號；保活打 `/api/health`）。目前有「科普閱讀測驗」（`readingquiz`）：只是一張連結卡，點了在新分頁開啟，**資料與登入都獨立**——資料庫是 Supabase（`reading-quiz-system` 專案，用學校信箱註冊的獨立帳號）、老師後台用 Supabase Auth 登入（不是會員中心），所以不受 `firebase-rules.json` 管，也不吃 Firebase 免費額度。Supabase 免費專案連續 7 天沒有資料庫查詢會被暫停，目前由 cron-job.org 每週一、四打 `/api/assignments` 保活，**不要刪那個排程**。
 
 ---
 

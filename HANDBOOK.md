@@ -206,6 +206,9 @@
 - **免費專案連續 7 天沒有資料庫查詢會被暫停** → cron-job.org 每 3～4 天打一支「真的會查資料庫」的 API（打首頁沒用）。**保活排程不要刪**
 - PostgREST 批次 insert 每筆欄位要一樣，沒值填 null
 - 偶發 522 重試即可；次要寫入（學習紀錄）fire-and-forget，不要擋住學生
+- **欄位名稱不要用 Postgres 保留字**（`values`、`order`、`user`…），建表會直接失敗。交給老師貼 SQL 前，先在本機用 PGlite（WASM 版 Postgres，自己建 `auth.uid()` 與 anon／authenticated 角色）把 schema、RLS、GRANT 跑過一次（成績調閱室）
+- 老師從「Data API」頁複製的 Project URL 常常帶 `/rest/v1/` → 前端登入會出現「Invalid path specified in request URL」。程式裡一律用 `new URL(網址).origin` 只留網域（成績調閱室）
+- 想讓老師看到學生帳號、但不能看到密碼雜湊：用**欄位層級 GRANT**（`grant select (id, sid, name, …) on students to authenticated`）
 
 ### 2-G Vercel／部署
 
@@ -214,6 +217,8 @@
 - 分支預覽網址要看得到畫面：環境變數也要勾 Preview，設完 Redeploy
 - 換分支交付時一定要給**該分支的預覽網址**，不然老師看舊網址會以為沒更新
 - SPA 深層網址 404 → `vercel.json` rewrite 到 `/index.html`
+- 專案名稱如果已經被別人用掉，網址會自動加尾巴（例：`grade-query-system-coral.vercel.app`）→ 部署後一定要請老師給**實際網址**，不要用猜的（猜的那個可能是別人的網站）
+- `api/` 裡檔名開頭是底線（`_lib.js`）的檔案不會變成 API，適合放共用程式；Hobby 方案每個專案最多 12 支 API
 - 新增 API 只加新檔、不改原本流程；推上去前先本機 `vite build`，部署後用 GET 健康檢查
 - CORS 只擋瀏覽器讀結果、不擋請求本身 → 伺服器端也要檢查 Origin，再加驗證與限流
 
@@ -430,6 +435,17 @@
 - AI 用量頁（`ai_usage_logs`）；出處失傳的秘文也借它的 API
 - cron-job.org 每週一、四打 `/api/assignments` 保活
 - 學校信箱帳號：暫不做個人信箱備援（調校前要記得搬，做法在「後台帳號清單」）
+
+### 4-6b 🗂️ 成績調閱室（Supabase＋Vercel，2026-10-24）
+
+- 取代「Google 試算表＋VLOOKUP」：老師頁像 Excel 管成績（公式、小計、總分、群組收合、縮放、從 Excel 貼上、匯出），學生用**班級＋座號＋姓名＋密碼（預設學號）**登入，只看自己的、老師設為可見的欄位
+- 網址 `https://grade-query-system-coral.vercel.app/`；repo `puff0223-chwu/grade-query-system`（private）；Supabase 用個人信箱帳號（和科學任務偵探所同帳號、不同專案）
+- 公式引擎 `src/lib/formula.js`：`{欄位名稱}` 引用、`{A}:{B}` 範圍、和 Excel 一樣空白＝0；`npm test` 用老師真實的 311、211 表格（已匿名）逐列比對
+- 學生密碼：`password_hash` 空字串＝仍是預設密碼（學號）→ 匯入幾百位學生不用一個個算雜湊；老師「還原」也只是清成空字串
+- 篩選在伺服器做：學生 API 只回傳「開放中課程」的「學生可見欄位」，老師頁的「用學生的眼睛看」用同一份 `studentView.js`
+- 伺服器 API 用本機的「假 Supabase」（`test/fakeSupabase.js`）跑完整流程測試（登入、鎖定、改密碼、還原、跨學期）
+- 分享給其他老師 → 不連回事務所首頁；其他老師帳號在 Supabase Authentication 新增
+- 保活：cron-job.org 打 `/api/health`
 
 ### 4-7 🔬 科學任務偵探所（Supabase＋Vercel）
 
