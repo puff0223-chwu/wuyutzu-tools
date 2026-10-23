@@ -11,7 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link href="exam.css?v=20261023b" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
-<script src="core.js?v=20261023d"></script>
+<script src="core.js?v=20261023e"></script>
 <style>
 body{background:var(--bg)}
 .wrap{max-width:760px;margin:0 auto;padding:18px 16px 90px}
@@ -22,6 +22,14 @@ body{background:var(--bg)}
 .fact{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:8px 12px}
 .fact span{display:block;font-size:.78rem;color:var(--muted);font-weight:700}
 .fact b{font-size:1.02rem}
+.info{margin:10px 0 4px;border:1.5px solid var(--line);border-radius:12px;background:#fff}
+.info summary{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 12px;cursor:pointer;list-style:none;font-size:.92rem}
+.info summary::-webkit-details-marker{display:none}
+.info summary .sum{flex:1;min-width:0}
+.info summary .more{color:var(--purple);font-weight:800;font-size:.85rem;white-space:nowrap}
+.info[open] summary .more{font-size:0}.info[open] summary .more::after{content:"收起 ▴";font-size:.85rem}
+.info ul{margin:0;padding:4px 14px 10px 30px;font-size:.92rem;line-height:1.85;border-top:1px dashed var(--line)}
+.info li span{display:inline-block;min-width:5.5em;color:var(--muted);font-weight:700}
 .form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .form .full{grid-column:1/-1}
 .rules{background:#fff;border:2px dashed var(--line);border-radius:12px;padding:10px 14px;margin:10px 0;font-size:.94rem}
@@ -116,25 +124,20 @@ textarea.ans{min-height:170px;font-size:1.02rem;line-height:1.6;margin-top:12px;
     META = m; document.title = m.title + '｜線上檢定所'; landing();
   }, function (e) { card('<div class="card"><h1>📴 連不上</h1><p>' + errText(e) + '，請確認網路後重新整理。</p><button class="btn" onclick="location.reload()">🔄 重新整理</button></div>'); });
 
+  // 測驗資訊：平常只顯示一行重點，點開才看完整清單（畫面留給學生輸入資料）
   function facts() {
-    var g = G();
-    return '<div class="facts">' +
-      (META.subj ? '<div class="fact"><span>科目</span><b>' + esc(META.subj) + '</b></div>' : '') +
-      (META.use ? '<div class="fact"><span>用途</span><b>' + esc(META.use) + '</b></div>' : '') +
-      (META.term ? '<div class="fact"><span>學期</span><b>' + esc(X.termName(META.term)) + '</b></div>' : '') +
-      ((META.date || META.openAt) ? '<div class="fact"><span>測驗日期</span><b>' + X.fmtTime(META.date || META.openAt) + '</b></div>' : '') +
-      '<div class="fact"><span>狀態</span><b>' + X.STATE[X.stateOf(META, now())] + '</b></div>' +
-      '<div class="fact"><span>題數</span><b>' + (META.draw || META.n) + ' 題</b></div>' +
-      '<div class="fact"><span>作答時間</span><b>' + META.mins + ' 分鐘</b></div>' +
-      '<div class="fact"><span>可作答次數</span><b>' + (META.tries >= 20 ? '不限' : META.tries + ' 次') + '</b></div>' +
-      (META.tries > 1 ? '<div class="fact"><span>成績採計</span><b>' + X.POLICY[META.policy].name + '</b></div>' : '') +
-      (META.openAt ? '<div class="fact"><span>開放時間</span><b>' + X.fmtTime(META.openAt) + '</b></div>' : '') +
-      (META.closeAt ? '<div class="fact"><span>截止時間</span><b>' + X.fmtTime(META.closeAt) + '</b></div>' : '') +
-      (g ? '<div class="fact"><span>反作弊</span><b>🛡️ 開啟（違規 ' + g.max + ' 次代結）</b></div>' : '') + '</div>';
+    var g = G(), st = X.stateOf(META, now()), li = function (k, v) { return '<li><span>' + k + '</span>' + v + '</li>'; };
+    return '<details class="info"><summary><span class="sum">📋 <b>' + X.STATE[st] + '</b>・' + (META.draw || META.n) + ' 題・' + META.mins + ' 分鐘・' + (META.tries >= 20 ? '不限次數' : '可作答 ' + META.tries + ' 次') + (META.closeAt ? '・截止 ' + X.fmtTime(META.closeAt) : '') + '</span><span class="more">測驗資訊 ▾</span></summary><ul>' +
+      (META.subj ? li('科目', esc(META.subj)) : '') + (META.use ? li('用途', esc(META.use)) : '') + (META.term ? li('學期', esc(X.termName(META.term))) : '') +
+      ((META.date || META.openAt) ? li('測驗日期', X.fmtTime(META.date || META.openAt)) : '') +
+      li('狀態', X.STATE[st]) + li('題數', (META.draw || META.n) + ' 題') + li('作答時間', META.mins + ' 分鐘') + li('可作答次數', META.tries >= 20 ? '不限' : META.tries + ' 次') +
+      (META.tries > 1 ? li('成績採計', X.POLICY[META.policy].name) : '') +
+      (META.openAt ? li('開放時間', X.fmtTime(META.openAt)) : '') + (META.closeAt ? li('截止時間', X.fmtTime(META.closeAt)) : '') +
+      li('反作弊', g ? '🛡️ 開啟（違規 ' + g.max + ' 次由系統代結）' : '關閉') + '</ul></details>';
   }
   function landing(msg) {
     var me = store.get('exam:me') || {};
-    card('<div class="card"><h1>' + esc(META.title) + '</h1>' + (META.desc ? '<p style="white-space:pre-wrap;margin:8px 0 0">' + esc(META.desc) + '</p>' : '') + facts() +
+    card('<div class="card"><h1>' + esc(META.title) + '</h1>' + (META.desc ? '<p class="small" style="white-space:pre-wrap;margin:6px 0 0">' + esc(META.desc) + '</p>' : '') + facts() +
       (msg ? '<div class="msg bad">' + msg + '</div>' : '') +
       '<div class="form"><div><label class="f">班級</label><input type="text" id="iCls" maxlength="8" placeholder="例如 201" value="' + esc(me.cls || '') + '"></div>' +
       '<div><label class="f">座號</label><input type="number" id="iSeat" min="1" max="99" inputmode="numeric" value="' + esc(me.seat || '') + '"></div>' +
@@ -154,13 +157,15 @@ textarea.ans{min-height:170px;font-size:1.02rem;line-height:1.6;margin-top:12px;
     };
   }
 
+  // 登出：忘記這台裝置記住的學生資料（平板輪流用時，下一位不會看到上一位的姓名學號）
+  function logout() { try { localStorage.removeItem('exam:me'); } catch (e) { } ME = null; REC = null; landing(); }
   /* ---------- 大廳：看自己的作答紀錄、決定能不能開始 ---------- */
   function lobby(note) {
     card('<div class="card"><p class="muted">讀取中…</p></div>');
     Promise.all([R.meta(code), R.student(code, ME.no), R.ext(code, ME.no).catch(function () { return null; }), R.bonus(code, ME.no).catch(function () { return 0; })]).then(function (r) {
       META = r[0] || META; REC = r[1] || {}; EXT = r[2] || {}; BONUS = +r[3] || 0;
       var list = attempts(REC), last = list[list.length - 1], st = X.stateOf(META, now()), html = '';
-      html += '<div class="card"><div class="row"><h1 style="font-size:1.25rem">' + esc(META.title) + '</h1><span class="sp"></span><button class="btn ghost sm" id="lBack">換人</button></div>' +
+      html += '<div class="card"><div class="row"><h1 style="font-size:1.25rem">' + esc(META.title) + '</h1><span class="sp"></span><button class="btn ghost sm" id="lBack" title="清除這台裝置記住的班級座號姓名學號">🚪 登出</button></div>' +
         '<p style="margin:6px 0 0"><b>' + esc(ME.cls) + ' 班 ' + ME.seat + ' 號 ' + esc(ME.name) + '</b> <span class="mono muted">' + esc(ME.no) + '</span></p>';
       if (last && last.info && last.info.name !== ME.name) html += '<div class="msg warn">⚠️ 這個學號之前登記的姓名是「' + esc(last.info.name) + '」，請確認學號沒有打錯。</div>';
       if (note) html += '<div class="msg ' + (note.cls || 'info') + '">' + note.t + '</div>';
@@ -205,7 +210,7 @@ textarea.ans{min-height:170px;font-size:1.02rem;line-height:1.6;margin-top:12px;
       html += '<div class="row" style="margin-top:14px">' + action + '</div></div>';
       if (META.pub && list.some(function (a) { return a.end; })) html += '<div class="card" id="resBox"><p class="muted">讀取成績中…</p></div>';
       card(html);
-      $('#lBack').onclick = function () { landing(); };
+      $('#lBack').onclick = function () { logout(); };
       var re = $('#lRe'); if (re) re.onclick = function () { lobby(); };
       var pl = $('#lPledge'); if (pl) pl.onchange = function () { $('#lStart').disabled = !pl.checked; };
       var sb = $('#lStart'); if (sb) sb.onclick = function () { start(list.length + 1); };
@@ -438,8 +443,9 @@ textarea.ans{min-height:170px;font-size:1.02rem;line-height:1.6;margin-top:12px;
       (by === 'guard' ? '<div class="msg bad" style="text-align:left">🛡️ 系統偵測到作答期間' + esc(X.WHY[why] || '離開作答畫面') + '，依照規則代為交卷。老師會看到完整的紀錄；如果是誤判，請找老師說明。</div>' : '') +
       '<div class="msg info" style="text-align:left">📣 成績要等老師批閱、公布後才看得到。到時候用同一個連結，輸入你的學號就能查詢。</div>' +
       (left > 0 && META.tries < 20 ? '<p class="small muted">你還有 ' + left + ' 次作答機會。</p>' : META.tries >= 20 ? '<p class="small muted">這份測驗可以重複作答。</p>' : '') +
-      '<div class="row" style="justify-content:center;margin-top:8px"><button class="btn ghost" id="dBack">回到測驗首頁</button></div></div>');
+      '<div class="row" style="justify-content:center;margin-top:8px"><button class="btn ghost" id="dBack">回到測驗首頁</button><button class="btn ghost" id="dOut">🚪 登出</button></div></div>');
     $('#dBack').onclick = function () { lobby(); };
+    $('#dOut').onclick = function () { logout(); };
   }
 
   /* ---------- 反作弊 ---------- */

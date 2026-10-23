@@ -1249,6 +1249,7 @@ async function deleteExam(code) {
    第二階段（2026-10-23）：📡 監控牆、📺 考場投影看板、✏️ 依題目閱卷、送分、延長時間、再給一次機會、違規即時提醒
    ===================================================================== */
 const extOf = (sid, k) => +(((XT[sid] || {})[k])) || 0;
+let MZ = (() => { try { return Math.max(0.7, Math.min(1.5, +localStorage.getItem('exam:monZoom') || 1)); } catch (e) { return 1; } })(); // 監控清單縮放（記在這台電腦）
 let CMTS = null, PROJ = null, MF = 'all', MK = { qid: '', anon: false, todo: false };
 const OFFLINE_MS = 75000; // 學生頁每 30 秒回報一次心跳；超過 75 秒沒消息＝失聯（可能斷網、螢幕關掉）
 const who = (info) => `${esc(info.cls || '')}${info.seat ? '-' + info.seat : ''} ${esc(info.name || '')}`;
@@ -1297,21 +1298,26 @@ function paintMon(el, live) {
   const html = `<div class="stats">${c.roster ? `<div class="stat"><b>${c.roster}</b><span>名單人數</span></div><div class="stat"><b>${c.none}</b><span>⚪ 未進入</span></div>` : ''}
       <div class="stat"><b>${c.doing}</b><span>🔵 作答中</span></div><div class="stat"><b>${c.done}</b><span>✅ 已交卷</span></div><div class="stat"><b>${c.guard}</b><span>🚨 系統代結</span></div><div class="stat"><b>${c.off}</b><span>📴 失聯</span></div></div>
     <div class="row" style="margin-bottom:10px"><div class="tabs subtabs" id="monF" style="margin:0">${[['all', '全部'], ['doing', '🔵 作答中'], ['none', '⚪ 未進入'], ['done', '✅ 已交卷'], ['viol', '⚠️ 有違規'], ['off', '📴 失聯']].map(([k, n]) => `<button data-f="${k}" class="${MF === k ? 'on' : ''}">${n}</button>`).join('')}</div><span class="sp"></span><button class="btn purple" id="monProj">📺 考場投影看板</button></div>
-    <div class="monwrap"><div class="mongrid" id="monGrid">${show.length ? show.map((r) => `<div class="mcard ${cls(r)}" data-sid="${r.sid}">
-        <div class="row" style="gap:6px"><b>${who(r.info)}</b><span class="sp"></span>${r.viol ? `<span class="chip bad">⚠️ ${r.viol}</span>` : ''}</div>
-        <div class="small muted mono">${r.sid}${r.list.length ? `・第 ${r.last.k} 次` : ''}</div>
-        ${r.st === 'doing' ? `<div class="pbar"><i style="width:${(() => { const [a, b] = r.prog.split('/').map(Number); return b ? Math.round(a / b * 100) : 0; })()}%"></i></div>
-          <div class="small"><b>已答 ${r.prog}</b>・剩 <b class="mono">${X.fmtLeft(r.left)}</b>${r.ext ? `（＋${r.ext} 分）` : ''}${r.off > OFFLINE_MS ? `<br><span class="chip warn">📴 失聯 ${Math.floor(r.off / 60000)} 分</span>` : ''}</div>
-          <div class="row mact"><button class="btn ghost sm" data-m="ext">⏱ 延長</button><button class="btn danger sm" data-m="end">⏹ 收卷</button>${r.last.dev ? '<button class="btn ghost sm" data-m="unlock" title="換裝置繼續作答">🔓</button>' : ''}</div>`
-        : r.st === 'none' ? '<div class="small muted">還沒進入</div>'
-        : `<div class="small">${byChip(r.st, r.last.end.why)}</div><div class="small">採計 <b>${r.f == null ? '—' : r.f}</b>${r.pend ? ' <span class="chip warn">✏️ 待批</span>' : ''}</div>
-          ${META.tries < 20 && used(r) >= allow(r) ? '<div class="row mact"><button class="btn ghost sm" data-m="bonus">🔄 再給一次機會</button></div>' : used(r) < allow(r) && X.stateOf(META) === 'open' ? `<div class="small muted">還可以再考 ${allow(r) - used(r)} 次</div>` : ''}`}
-      </div>`).join('') : '<div class="empty small">沒有符合的學生</div>'}</div>
+    <div class="monwrap"><div><div class="row small" style="margin-bottom:6px"><span class="muted">點一列看作答明細</span><span class="sp"></span>🔍 縮放<button class="btn ghost sm" data-z="-1" title="縮小">－</button><b class="mono" style="min-width:44px;text-align:center">${Math.round(MZ * 100)}%</b><button class="btn ghost sm" data-z="1" title="放大">＋</button><button class="btn ghost sm" data-z="0" title="恢復 100%">↺</button></div>
+      <div class="tscroll" id="monGrid" style="font-size:${MZ * 100}%"><table class="t mon"><thead><tr><th>狀態</th><th>班級</th><th class="num">座號</th><th>姓名</th><th>學號</th><th class="num">次</th><th>進度</th><th class="num">剩餘</th><th class="num">違規</th><th>連線</th><th class="num">採計</th><th>操作</th></tr></thead><tbody>
+      ${show.length ? show.map((r) => `<tr class="click mrow ${cls(r)}" data-sid="${r.sid}">
+        <td>${r.st === 'doing' ? '<span class="chip blue">🔵 作答中</span>' : r.st === 'none' ? '<span class="chip gray">⚪ 未進入</span>' : byChip(r.st, r.last.end.why)}</td>
+        <td>${esc(r.info.cls || '')}</td><td class="num">${r.info.seat || ''}</td><td><b>${esc(r.info.name || '')}</b></td><td class="mono">${r.sid}</td>
+        <td class="num">${r.list.length ? r.last.k + (r.bonus ? `<span class="small muted">／${allow(r)}</span>` : '') : '—'}</td>
+        <td>${r.st === 'doing' ? `<div class="row" style="gap:6px;flex-wrap:nowrap"><div class="pbar" style="width:80px;margin:0"><i style="width:${(() => { const [a, b] = r.prog.split('/').map(Number); return b ? Math.round(a / b * 100) : 0; })()}%"></i></div><span class="mono">${r.prog}</span></div>` : r.graded.length ? '<span class="muted">—</span>' : ''}</td>
+        <td class="num mono">${r.st === 'doing' ? X.fmtLeft(r.left) + (r.ext ? `<div class="small muted">＋${r.ext} 分</div>` : '') : ''}</td>
+        <td class="num">${r.viol ? `<b style="color:var(--bad)">⚠️ ${r.viol}</b>` : '0'}</td>
+        <td>${r.st !== 'doing' ? '' : r.off > OFFLINE_MS ? `<span class="chip warn">📴 失聯 ${Math.floor(r.off / 60000)} 分</span>` : '<span class="chip ok">🟢 連線中</span>'}</td>
+        <td class="num"><b>${r.f == null ? '—' : r.f}</b>${r.pend ? '<div class="small" style="color:var(--warn)">✏️ 待批</div>' : ''}</td>
+        <td><div class="row" style="gap:4px;flex-wrap:nowrap">${r.st === 'doing' ? `<button class="btn ghost sm" data-m="ext">⏱ 延長</button><button class="btn danger sm" data-m="end">⏹ 收卷</button>${r.last.dev ? '<button class="btn ghost sm" data-m="unlock" title="解除裝置鎖（換裝置繼續作答）">🔓</button>' : ''}`
+          : r.st !== 'none' && META.tries < 20 && used(r) >= allow(r) ? '<button class="btn ghost sm" data-m="bonus">🔄 再給一次</button>' : r.st !== 'none' && used(r) < allow(r) ? `<span class="small muted">還可再考 ${allow(r) - used(r)} 次</span>` : ''}</div></td></tr>`).join('') : '<tr><td colspan="12" class="empty small">沒有符合的學生</td></tr>'}
+      </tbody></table></div></div>
       <div class="feed"><b>📰 即時動態</b>${FEED.length ? FEED.slice(0, 40).map((f) => `<div class="${f.bad ? 'bad' : ''}"><span class="mono muted">${X.fmtClock(f.t)}</span> ${f.text}</div>`).join('') : '<div class="muted small">學生開始作答後，違規、交卷會即時出現在這裡。</div>'}</div></div>`;
   const keep = $('#monGrid') ? $('#monGrid').scrollTop : 0;
   el.innerHTML = html; if (live && $('#monGrid')) $('#monGrid').scrollTop = keep;
   $('#monF').onclick = (e) => { const b = e.target.closest('[data-f]'); if (!b) return; MF = b.dataset.f; paintMon(el); };
   $('#monProj').onclick = projBoard;
+  $$('[data-z]', el).forEach((b) => { b.onclick = () => { const d = +b.dataset.z; MZ = d ? Math.max(0.7, Math.min(1.5, Math.round((MZ + d * 0.1) * 10) / 10)) : 1; try { localStorage.setItem('exam:monZoom', MZ); } catch (e) { } paintMon(el); }; });
   $('#monGrid').onclick = async (e) => {
     const card = e.target.closest('[data-sid]'); if (!card) return;
     const sid = card.dataset.sid, b = e.target.closest('[data-m]'), r = rows().find((x) => x.sid === sid);

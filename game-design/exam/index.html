@@ -14,7 +14,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="../../account/staff.js?v=20261023a"></script>
-<script src="core.js?v=20261023d"></script>
+<script src="core.js?v=20261023e"></script>
 <style>
 .wrap{max-width:1180px;margin:0 auto;padding:18px 16px 70px}
 .top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
@@ -131,13 +131,19 @@ tr.click{cursor:pointer} tr.click:hover td{background:#fbf8f1}
 .proj .x{position:absolute;right:20px;top:14px;color:#fff;background:none;border:2px solid #fff;border-radius:10px;padding:4px 12px;font:inherit;font-weight:800;cursor:pointer}
 
 /* 第二階段：監控牆、投影看板、閱卷 */
-.monwrap{display:grid;grid-template-columns:1fr 300px;gap:14px;align-items:start}
+.monwrap{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:14px;align-items:start}
+#monGrid{max-height:72vh}
 .mongrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;max-height:72vh;overflow:auto;padding:2px}
 .mcard{background:#fff;border:2px solid var(--line);border-left-width:7px;border-radius:12px;padding:9px 11px;cursor:pointer;font-size:.92rem}
 .mcard:hover{box-shadow:2px 2px 0 var(--ink)}
 .mcard.doing{border-color:var(--blue)} .mcard.off{border-color:var(--gold);background:#fffaf0} .mcard.self{border-color:var(--ok)} .mcard.time{border-color:#6c8fc7}
 .mcard.teacher{border-color:var(--warn)} .mcard.guard{border-color:var(--bad);background:#fff6f4} .mcard.none{opacity:.7}
 .mact{margin-top:6px;gap:4px}
+table.mon td,table.mon th{white-space:nowrap;vertical-align:middle}
+table.mon tr.mrow td:first-child{border-left:5px solid transparent}
+table.mon tr.doing td:first-child{border-left-color:var(--blue)} table.mon tr.off td:first-child{border-left-color:var(--gold)} table.mon tr.off td{background:#fffaf0}
+table.mon tr.guard td:first-child{border-left-color:var(--bad)} table.mon tr.guard td{background:#fff6f4} table.mon tr.self td:first-child{border-left-color:var(--ok)}
+table.mon tr.none td{color:var(--muted)}
 .pbar{height:9px;background:#eee8dc;border-radius:999px;overflow:hidden;margin:6px 0 3px}
 .pbar i{display:block;height:100%;background:var(--blue)} .pbar.ok i{background:var(--ok)}
 .feed{background:#fff;border:2px solid var(--ink);border-radius:12px;padding:10px 12px;max-height:72vh;overflow:auto;font-size:.86rem}
@@ -188,6 +194,6 @@ tr.click{cursor:pointer} tr.click:hover td{background:#fbf8f1}
   <section id="t-bank" class="hidden"></section>
 </div>
 <div id="modals"></div>
-<script type="module" src="teacher.js?v=20261023d"></script>
+<script type="module" src="teacher.js?v=20261023e"></script>
 </body>
 </html>
