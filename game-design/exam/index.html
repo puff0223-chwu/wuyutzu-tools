@@ -92,6 +92,16 @@ table.t td.num,table.t th.num{text-align:right;font-family:"JetBrains Mono",mono
 .elist{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
 .ecard{background:#fff;border:2px solid var(--ink);border-radius:14px;padding:14px;cursor:pointer;text-align:left;font:inherit;color:inherit;box-shadow:3px 3px 0 var(--ink)}
 .ecard:hover{background:#fffaf0}
+.ecard{position:relative}
+.cardx{position:absolute;top:8px;right:8px;border:1.5px solid var(--line);background:#fff;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:.95rem;opacity:.7;line-height:1}
+.cardx:hover,.cardx:focus{opacity:1;border-color:var(--bad);background:var(--badbg)}
+/* ❓ 說明小圖示 */
+.ckt{display:inline-flex;align-items:center;gap:2px}
+.ckt .ck{margin-right:2px}
+.tip{position:relative;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:1.5px solid var(--muted);background:#fff;color:var(--muted);font:inherit;font-size:.75rem;font-weight:900;cursor:help;padding:0;vertical-align:middle;flex:none}
+.tip:hover,.tip:focus{border-color:var(--purple);color:#fff;background:var(--purple);outline:none}
+.tip::after{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);width:max-content;max-width:min(320px,80vw);background:var(--ink);color:#fff;font-size:.84rem;font-weight:500;line-height:1.55;text-align:left;padding:8px 11px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.25);white-space:normal;opacity:0;pointer-events:none;transition:opacity .15s;z-index:20}
+.tip:hover::after,.tip:focus::after{opacity:1}
 .ecard b{font-size:1.08rem;display:block}
 .ecard .code{font-family:"JetBrains Mono",monospace;color:var(--red);font-weight:800}
 .ehead{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
@@ -146,6 +156,6 @@ tr.click{cursor:pointer} tr.click:hover td{background:#fbf8f1}
   <section id="t-bank" class="hidden"></section>
 </div>
 <div id="modals"></div>
-<script type="module" src="teacher.js?v=20261023b"></script>
+<script type="module" src="teacher.js?v=20261023c"></script>
 </body>
 </html>

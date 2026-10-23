@@ -33,6 +33,8 @@ function modal(html, opt) {
 }
 const download = (name, text, type) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: type || 'application/json' })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); };
 const letterList = (arr) => (arr || []).map((i) => X.LETTERS[i]).join(' ') || '—';
+// ❓ 說明小圖示：滑鼠移過去（手機點一下）才顯示說明，畫面保持乾淨
+const tip = (text) => `<button type="button" class="tip" aria-label="說明" data-tip="${esc(text)}">?</button>`;
 const typeChip = (t) => `<span class="chip ${t === 's' ? 'blue' : t === 'm' ? '' : 'warn'}">${X.TYPE_ICON[t]} ${X.TYPES[t]}</span>`;
 const toLocalInput = (ms) => { if (!ms) return ''; const d = new Date(ms - new Date(ms).getTimezoneOffset() * 60000); return d.toISOString().slice(0, 16); };
 const fromLocalInput = (v) => v ? new Date(v).getTime() : 0;
@@ -257,19 +259,20 @@ function renderBankHome() {
   el.innerHTML = `<div class="card"><div class="row"><h2>📚 我的題庫</h2><span class="sp"></span><button class="btn" id="bNew">＋ 新題庫</button></div>
     <div class="row" style="margin-top:12px"><button class="btn ghost" id="bWord">📥 匯入 Word 考卷</button><button class="btn ghost" id="bXls">📥 匯入 Excel</button><button class="linkbtn small" id="bTpl">⬇ Excel 範本</button><span class="sp"></span><button class="btn ghost sm" id="bIn">📂 匯入備份</button></div>
     <p class="small muted" style="margin:8px 0 0">匯入時可以選擇建立新題庫，或加到已經有的題庫。題庫只記錄題目；配分在建立測驗時依題型設定。</p>
-    ${ids.length ? `<div class="elist" style="margin-top:14px">${ids.map((id) => { const b = BANKS[id], c = bankCnt(b), tags = bankTags(b); return `<button class="ecard" data-b="${id}">
+    ${ids.length ? `<div class="elist" style="margin-top:14px">${ids.map((id) => { const b = BANKS[id], c = bankCnt(b), tags = bankTags(b); return `<div class="ecard" role="button" tabindex="0" data-b="${id}"><button type="button" class="cardx" data-del="${id}" title="刪除這個題庫">🗑</button>
       <div class="row" style="gap:6px">${b.subj ? `<span class="chip">${esc(b.subj)}</span>` : ''}<span class="chip gray">${c.n} 題</span></div>
       <b style="margin-top:6px">${esc(b.name)}</b>${b.desc ? `<div class="small muted">${esc(b.desc)}</div>` : ''}
       <div class="small muted">單選 ${c.s}・多重選擇 ${c.m}・簡答 ${c.a}</div>
       ${tags.length ? `<div class="row small" style="gap:4px;margin-top:4px">${tags.slice(0, 5).map((t) => `<span class="chip gray">#${esc(t)}</span>`).join('')}${tags.length > 5 ? `<span class="muted">…等 ${tags.length} 個標籤</span>` : ''}</div>` : ''}
-      <div class="small muted" style="margin-top:4px">最後更新 ${X.fmtTime(c.last)}</div></button>`; }).join('')}</div>`
+      <div class="small muted" style="margin-top:4px">最後更新 ${X.fmtTime(c.last)}</div></div>`; }).join('')}</div>`
     : `<div class="empty"><div style="font-size:3rem">📚</div><h3>還沒有題庫</h3><p>按「＋ 新題庫」自己出題，或直接匯入 Word 考卷、Excel 題目檔。</p></div>`}</div>`;
   $('#bNew').onclick = () => bankSettings(null);
   $('#bWord').onclick = () => { IMPORT_TO = ''; pickFile('.docx', importWord); };
   $('#bXls').onclick = () => { IMPORT_TO = ''; pickFile('.xlsx,.xls,.csv', importExcel); };
   $('#bTpl').onclick = downloadTemplate;
   $('#bIn').onclick = () => pickFile('.json', importBackup);
-  $$('#t-bank .ecard').forEach((b) => { b.onclick = () => openBank(b.dataset.b); });
+  $$('#t-bank .ecard').forEach((b) => { b.onclick = (e) => { if (e.target.closest('[data-del]')) return; openBank(b.dataset.b); }; b.onkeydown = (e) => { if (e.key === 'Enter') openBank(b.dataset.b); }; });
+  $$('#t-bank [data-del]').forEach((x) => { x.onclick = (e) => { e.stopPropagation(); deleteBank(x.dataset.del); }; });
 }
 function bankSettings(id) {
   const b = id ? BANKS[id] : { name: '', subj: lastUsed().subj || '', desc: '' };
@@ -286,6 +289,16 @@ function bankSettings(id) {
     if (id) { await FB.update(`exam/bk/${ME.uid}/${id}`, { name: name.slice(0, 40), subj: subj || null, desc: desc || null }); Object.assign(b, { name: name.slice(0, 40), subj, desc }); m.close(); renderBank(); toast('✅ 已儲存'); }
     else { const nid = await newBank(name, subj); if (desc) { await FB.set(`exam/bk/${ME.uid}/${nid}/desc`, desc); BANKS[nid].desc = desc; } m.close(); openBank(nid); }
   };
+}
+// 刪除題庫：空題庫按確定就刪；有題目要輸入題庫名稱確認
+async function deleteBank(id) {
+  const b = BANKS[id]; if (!b) return;
+  const n = Object.keys(b.q || {}).length;
+  if (n) { const x = prompt(`確定要刪除題庫「${b.name}」和裡面 ${n} 題嗎？\n（已經建立的測驗不受影響）\n請輸入題庫名稱確認：`); if (x !== b.name) { if (x != null) toast('名稱不一樣，沒有刪除'); return; } }
+  else if (!confirm(`確定要刪除空的題庫「${b.name}」嗎？`)) return;
+  await FB.remove(`exam/bk/${ME.uid}/${id}`); delete BANKS[id];
+  if (CURB === id) { CURB = ''; BVIEW = 'home'; }
+  SEL.clear(); renderBank(); toast('🗑 已刪除題庫');
 }
 function renderBankDetail() {
   const el = $('#t-bank'), b = BANKS[CURB];
@@ -326,11 +339,7 @@ function renderBankDetail() {
   </div>`;
   $('#bHome').onclick = () => { BVIEW = 'home'; SEL.clear(); renderBank(); };
   $('#bSet').onclick = () => bankSettings(CURB);
-  $('#bDel').onclick = async () => {
-    const n = prompt(`確定要刪除題庫「${b.name}」和裡面 ${all.length} 題嗎？\n（已經建立的測驗不受影響）\n請輸入題庫名稱確認：`);
-    if (n !== b.name) { if (n != null) toast('名稱不一樣，沒有刪除'); return; }
-    await FB.remove(`exam/bk/${ME.uid}/${CURB}`); delete BANKS[CURB]; CURB = ''; BVIEW = 'home'; SEL.clear(); renderBank(); toast('已刪除題庫');
-  };
+  $('#bDel').onclick = () => deleteBank(CURB);
   $('#qNew').onclick = () => openEditor(CURB, null);
   $('#bWord').onclick = () => { IMPORT_TO = CURB; pickFile('.docx', importWord); };
   $('#bXls').onclick = () => { IMPORT_TO = CURB; pickFile('.xlsx,.xls,.csv', importExcel); };
@@ -743,16 +752,18 @@ async function examForm(code) {
       <div id="gapBox" class="row" style="margin-top:8px"><label class="ck"><input type="checkbox" id="fGapOn" ${meta.gap ? 'checked' : ''}>⏳ 兩次作答之間至少間隔</label><input type="number" id="fGap" min="1" max="10080" value="${meta.gap || 10}" style="width:90px">分鐘
         <label class="ck"><input type="checkbox" id="fReshuf" ${meta.reshuf ? 'checked' : ''}>🔀 每次重考都重新抽題／打亂</label></div></section>
     <section data-step="rule">
-      <h3>打亂與提示</h3>
-      <label class="ck"><input type="checkbox" id="fShufQ" ${meta.shufQ ? 'checked' : ''}>題目順序打亂</label><label class="ck"><input type="checkbox" id="fShufO" ${meta.shufO ? 'checked' : ''}>選項順序打亂（標「🔒 選項順序固定」的題目不會打亂）</label>
-      <label class="ck"><input type="checkbox" id="fNeed" ${meta.showNeed ? 'checked' : ''}>多重選擇題顯示「本題應選幾項」</label>
-      <p class="small muted">打亂依學號固定：同一個人重新整理，順序不會變。</p>
-      <h3 style="margin-top:12px">🛡️ 反作弊</h3>
-      <label class="ck"><input type="checkbox" id="gOn" ${meta.guard.on ? 'checked' : ''}>開啟反作弊（作答時全螢幕，離開畫面就記違規）</label>
-      <div class="grid3" id="gBox"><div><label class="f">違規幾次就由系統代結</label><select id="gMax">${[1, 2, 3, 4, 5].map((n) => `<option value="${n}" ${meta.guard.max === n ? 'selected' : ''}>${n} 次${n === 1 ? '（一違規就代結）' : n === 2 ? '（預設：第 1 次警告）' : ''}</option>`).join('')}</select></div>
-        <div><label class="f">幾分鐘沒動作算閒置</label><input type="number" id="gIdle" min="0" max="60" value="${meta.guard.idle}"><span class="small muted">0＝不偵測</span></div>
-        <div><label class="f">失焦幾秒算違規</label><input type="number" id="gBlur" min="0" max="60" value="${meta.guard.blur}"><span class="small muted">分割畫面、浮動視窗；0＝不偵測</span></div></div>
-      <p class="small muted">會偵測：離開全螢幕、切換分頁或 App、視窗失去焦點、太久沒動作（「你還在嗎？」30 秒沒回應直接代結）。iPhone 的 Safari 不支援網頁全螢幕，只偵測切換頁面與閒置。</p></section>
+      <h3>🔀 打亂與提示</h3>
+      <div class="row" style="gap:4px 16px">
+        <span class="ckt"><label class="ck"><input type="checkbox" id="fShufQ" ${meta.shufQ ? 'checked' : ''}>題目順序打亂</label>${tip('依學號固定打亂：同一個人重新整理，順序不會變；不同同學看到的順序不一樣。')}</span>
+        <span class="ckt"><label class="ck"><input type="checkbox" id="fShufO" ${meta.shufO ? 'checked' : ''}>選項順序打亂</label>${tip('題庫裡標「🔒 選項順序固定」的題目（例如有「以上皆是」）不會打亂。')}</span>
+        <span class="ckt"><label class="ck"><input type="checkbox" id="fNeed" ${meta.showNeed ? 'checked' : ''}>多重選擇題提示</label>${tip('學生作答時，在多重選擇題旁邊顯示「本題應選 N 項」。')}</span>
+      </div>
+      <h3 style="margin-top:16px">🛡️ 反作弊</h3>
+      <span class="ckt"><label class="ck"><input type="checkbox" id="gOn" ${meta.guard.on ? 'checked' : ''}>開啟反作弊</label>${tip('作答時進入全螢幕。會偵測：離開全螢幕、切換分頁或 App、視窗失去焦點、太久沒動作（「你還在嗎？」30 秒沒回應直接代結）。iPhone 的 Safari 不支援網頁全螢幕，只偵測切換頁面與閒置。')}</span>
+      <div class="grid3" id="gBox"><div><label class="f">違規幾次就由系統代結 ${tip('第 1 次到上限前一次只會跳警告；達到上限時系統用已存的答案代為交卷，成績單標「🚨 系統代結」。')}</label><select id="gMax">${[1, 2, 3, 4, 5].map((n) => `<option value="${n}" ${meta.guard.max === n ? 'selected' : ''}>${n} 次${n === 1 ? '（一違規就代結）' : n === 2 ? '（預設：第 1 次警告）' : ''}</option>`).join('')}</select></div>
+        <div><label class="f">幾分鐘沒動作算閒置 ${tip('填 0＝不偵測閒置。')}</label><input type="number" id="gIdle" min="0" max="60" value="${meta.guard.idle}"></div>
+        <div><label class="f">失焦幾秒算違規 ${tip('平板開分割畫面、浮動視窗時會失去焦點。填 0＝不偵測失焦。')}</label><input type="number" id="gBlur" min="0" max="60" value="${meta.guard.blur}"></div></div>
+    </section>
     <section data-step="done">
       <h3>👥 學生名單</h3>
       <label class="ck"><input type="checkbox" id="fRoster" ${meta.rosterOnly ? 'checked' : ''}>只限名單內的學生進入（班級、座號、姓名、學號都要對得上）</label>
