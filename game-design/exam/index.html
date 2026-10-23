@@ -14,7 +14,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="../../account/staff.js?v=20261023a"></script>
-<script src="core.js?v=20261023b"></script>
+<script src="core.js?v=20261023d"></script>
 <style>
 .wrap{max-width:1180px;margin:0 auto;padding:18px 16px 70px}
 .top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
@@ -129,6 +129,38 @@ tr.click{cursor:pointer} tr.click:hover td{background:#fbf8f1}
 .proj .qrbox{background:#fff;padding:18px;border-radius:18px}
 .proj .bigcode{color:var(--gold);font-size:clamp(2.4rem,7vw,5rem)}
 .proj .x{position:absolute;right:20px;top:14px;color:#fff;background:none;border:2px solid #fff;border-radius:10px;padding:4px 12px;font:inherit;font-weight:800;cursor:pointer}
+
+/* 第二階段：監控牆、投影看板、閱卷 */
+.monwrap{display:grid;grid-template-columns:1fr 300px;gap:14px;align-items:start}
+.mongrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;max-height:72vh;overflow:auto;padding:2px}
+.mcard{background:#fff;border:2px solid var(--line);border-left-width:7px;border-radius:12px;padding:9px 11px;cursor:pointer;font-size:.92rem}
+.mcard:hover{box-shadow:2px 2px 0 var(--ink)}
+.mcard.doing{border-color:var(--blue)} .mcard.off{border-color:var(--gold);background:#fffaf0} .mcard.self{border-color:var(--ok)} .mcard.time{border-color:#6c8fc7}
+.mcard.teacher{border-color:var(--warn)} .mcard.guard{border-color:var(--bad);background:#fff6f4} .mcard.none{opacity:.7}
+.mact{margin-top:6px;gap:4px}
+.pbar{height:9px;background:#eee8dc;border-radius:999px;overflow:hidden;margin:6px 0 3px}
+.pbar i{display:block;height:100%;background:var(--blue)} .pbar.ok i{background:var(--ok)}
+.feed{background:#fff;border:2px solid var(--ink);border-radius:12px;padding:10px 12px;max-height:72vh;overflow:auto;font-size:.86rem}
+.feed div{padding:4px 0;border-bottom:1px dashed var(--line)} .feed div.bad{color:var(--bad);font-weight:700}
+.projb{justify-content:flex-start;padding-top:50px;overflow:auto}
+.pstats{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+.pstats div{background:rgba(255,255,255,.1);border-radius:14px;padding:8px 18px;font-size:1.1rem;font-weight:700}
+.pstats b{display:block;font-size:2.4rem;font-family:"JetBrains Mono",monospace;line-height:1.1}
+.pseats{display:flex;flex-direction:column;gap:10px;width:min(1100px,96vw)}
+.pcls{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pcls span{min-width:60px;font-weight:900;text-align:right;margin-right:6px}
+.pcls i{font-style:normal;width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:900;font-family:"JetBrains Mono",monospace;background:#59617a;color:#fff}
+.pcls i.doing{background:#2f6db5} .pcls i.done{background:#2f7d4f} .pcls i.guard{background:#c0392b} .pcls i.off{background:#d68a00} .pcls i.none{background:#3b4258;color:#9aa2b8}
+.markwrap{display:grid;grid-template-columns:280px 1fr;gap:14px;align-items:start}
+.marklist{max-height:78vh;overflow:auto;padding:12px}
+.mq{display:grid;grid-template-columns:auto 1fr auto;gap:6px;align-items:center;width:100%;text-align:left;font:inherit;background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:6px 8px;margin-top:6px;cursor:pointer}
+.mq .small{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.mq.on{border-color:var(--purple);background:var(--soft)}
+.mkitem{border:1.5px solid var(--line);border-left:6px solid var(--gold);border-radius:12px;padding:10px 12px;margin-top:10px;background:#fff}
+.mkitem.done{border-left-color:var(--ok)}
+.mkans{white-space:normal;background:#faf8f3;border-radius:8px;padding:8px 10px;margin:6px 0;line-height:1.7}
+.cmts{gap:6px;background:#faf8f3;border-radius:10px;padding:6px 10px}
+@media (max-width:900px){.monwrap,.markwrap{grid-template-columns:1fr}}
 @media (max-width:640px){
   .qrow{grid-template-columns:24px 1fr;}
   .qrow .no{display:none}
@@ -156,6 +188,6 @@ tr.click{cursor:pointer} tr.click:hover td{background:#fbf8f1}
   <section id="t-bank" class="hidden"></section>
 </div>
 <div id="modals"></div>
-<script type="module" src="teacher.js?v=20261023c"></script>
+<script type="module" src="teacher.js?v=20261023d"></script>
 </body>
 </html>

@@ -162,9 +162,9 @@
     return Math.max.apply(null, list.map(function (x) { return x.s; }));
   }
 
-  /* 作答期限：開始時間＋作答時間，但不超過截止時間 */
-  function deadlineOf(meta, att) {
-    var d = (+att.st || 0) + (+meta.mins || 0) * 60000;
+  /* 作答期限：開始時間＋作答時間（＋老師延長的分鐘 ext），但不超過截止時間 */
+  function deadlineOf(meta, att, ext) {
+    var d = (+att.st || 0) + ((+meta.mins || 0) + (+ext || 0)) * 60000;
     if (+meta.closeAt) d = Math.min(d, +meta.closeAt);
     return d;
   }
@@ -412,6 +412,9 @@
     answer: function (code, sid, k, qid, v) { return cloudFetch(P(code) + '/s/' + normId(sid) + '/' + k + '/ans/' + qid, { method: v == null || v === '' ? 'DELETE' : 'PUT', body: v == null || v === '' ? undefined : v }); },
     event: function (code, sid, k, kind, detail) { var b = { t: NOW, k: kind }; if (detail) b.d = String(detail).slice(0, 80); return cloudFetch(P(code) + '/s/' + normId(sid) + '/' + k + '/ev', { method: 'POST', body: b }); },
     end: function (code, sid, k, by, why) { var b = { t: NOW, by: by }; if (why) b.why = String(why).slice(0, 40); return cloudFetch(P(code) + '/s/' + normId(sid) + '/' + k + '/end', { method: 'PUT', body: b }); },
+    ext: function (code, sid) { return cloudFetch(P(code) + '/x/' + normId(sid)); },     // 老師延長的分鐘 { 第幾次: 分鐘 }
+    bonus: function (code, sid) { return cloudFetch(P(code) + '/bt/' + normId(sid)); },   // 老師多給的作答次數
+    hb: function (code, sid, k) { return cloudFetch(P(code) + '/s/' + normId(sid) + '/' + k + '/hb', { method: 'PUT', body: NOW }); }, // 心跳（老師頁看失聯）
     claim: function (code, sid, k, dev) { return cloudFetch(P(code) + '/s/' + normId(sid) + '/' + k + '/dev', { method: 'PUT', body: dev }); }
   };
 

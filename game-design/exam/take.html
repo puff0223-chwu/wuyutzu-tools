@@ -11,7 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link href="exam.css?v=20261023b" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
-<script src="core.js?v=20261023b"></script>
+<script src="core.js?v=20261023d"></script>
 <style>
 body{background:var(--bg)}
 .wrap{max-width:760px;margin:0 auto;padding:18px 16px 90px}
@@ -88,6 +88,8 @@ textarea.ans{min-height:170px;font-size:1.02rem;line-height:1.6;margin-top:12px;
   var app = $('#app'), examEl = $('#exam'), ov = $('#ov');
   var code = (new URLSearchParams(location.search).get('code') || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
   var META = null, ME = null, REC = null, PAPER = null, SHEET = null, K = 0, ATT = null, ANS = {}, FLAG = {}, CUR = 0;
+  var EXT = {}, BONUS = 0, CHECKING = false;
+  var extK = function (k) { return +((EXT || {})[k]) || 0; };
   var OFFSET = 0, DEADLINE = 0, PEND = {}, EVQ = [], ENDING = false, ENDED = false, VIOL = 0, LASTV = 0, WASFS = false, LASTACT = Date.now(), IDLE = false;
   var timers = [];
   var store = { get: function (k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }, set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } } };
@@ -155,8 +157,8 @@ textarea.ans{min-height:170px;font-size:1.02rem;line-height:1.6;margin-top:12px;
   /* ---------- 大廳：看自己的作答紀錄、決定能不能開始 ---------- */
   function lobby(note) {
     card('<div class="card"><p class="muted">讀取中…</p></div>');
-    Promise.all([R.meta(code), R.student(code, ME.no)]).then(function (r) {
-      META = r[0] || META; REC = r[1] || {};
+    Promise.all([R.meta(code), R.student(code, ME.no), R.ext(code, ME.no).catch(function () { return null; }), R.bonus(code, ME.no).catch(function () { return 0; })]).then(function (r) {
+      META = r[0] || META; REC = r[1] || {}; EXT = r[2] || {}; BONUS = +r[3] || 0;
       var list = attempts(REC), last = list[list.length - 1], st = X.stateOf(META, now()), html = '';
       html += '<div class="card"><div class="row"><h1 style="font-size:1.25rem">' + esc(META.title) + '</h1><span class="sp"></span><button class="btn ghost sm" id="lBack">換人</button></div>' +
         '<p style="margin:6px 0 0"><b>' + esc(ME.cls) + ' 班 ' + ME.seat + ' 號 ' + esc(ME.name) + '</b> <span class="mono muted">' + esc(ME.no) + '</span></p>';
@@ -165,7 +167,7 @@ textarea.ans{min-height:170px;font-size:1.02rem;line-height:1.6;margin-top:12px;
       if (list.length) html += '<div class="tries">' + list.map(function (a) { return '<div><b>第 ' + a.k + ' 次</b><span class="small muted">' + X.fmtTime(a.st) + ' 開始</span>' + (a.end ? '<span class="chip ' + (a.end.by === 'guard' ? 'bad' : a.end.by === 'self' ? 'ok' : 'blue') + '">' + X.BY[a.end.by].icon + ' ' + X.BY[a.end.by].name + (a.end.why ? '：' + esc(X.WHY[a.end.why] || a.end.why) : '') + '</span>' : '<span class="chip blue">🔵 作答中</span>') + '</div>'; }).join('') + '</div>';
       var action = '';
       if (last && !last.end) {
-        var dl = X.deadlineOf(META, last);
+        var dl = X.deadlineOf(META, last, extK(last.k));
         if (now() > dl + X.CONFIG.GRACE || META.open === false) {
           html += '<div class="msg warn">⏰ 第 ' + last.k + ' 次作答的時間已經結束，系統會用你已經存下的答案收卷。</div>';
           if (META.open !== false) R.end(code, ME.no, last.k, 'time').catch(function () { });
@@ -177,7 +179,7 @@ textarea.ans{min-height:170px;font-size:1.02rem;line-height:1.6;margin-top:12px;
           action = '<button class="btn lg" id="lResume">▶ 繼續作答</button>';
         }
       } else {
-        var used = list.length, tries = META.tries, why = '';
+        var used = list.length, tries = Math.min(20, META.tries + BONUS), why = '';
         if (st === 'off') why = '⏸ 測驗還沒開放，請等老師開放後再重新整理。';
         else if (st === 'wait') why = '⏳ 測驗將在 ' + X.fmtTime(META.openAt) + ' 開放。';
         else if (st === 'closed') why = '🔒 測驗已經結束了。';
@@ -258,13 +260,16 @@ textarea.ans{min-height:170px;font-size:1.02rem;line-height:1.6;margin-top:12px;
       if (!p) throw new Error('nopaper');
       PAPER = p; Object.keys(PAPER).forEach(function (id) { PAPER[id].o = arr(PAPER[id].o); });
       SHEET = X.sheetFor(PAPER, META, code, ME.no, K);
-      DEADLINE = X.deadlineOf(META, a);
+      DEADLINE = X.deadlineOf(META, a, extK(K));
       CUR = fresh ? 0 : Math.max(0, Math.min(SHEET.ids.length - 1, store.get('exam:cur:' + code + ':' + ME.no + ':' + K) || 0));
       examEl.classList.remove('hidden'); document.body.style.overflow = 'hidden';
       paint(); guardOn(); tick();
       timers.push(setInterval(tick, 250));
       timers.push(setInterval(function () { if (!document.hidden) poll(); }, 20000)); // 背景不輪詢（回到畫面再檢查）
       timers.push(setInterval(flush, 4000));
+      // 💓 心跳：每 30 秒告訴老師「我還在」（老師的監控牆超過 75 秒沒消息會顯示失聯）
+      R.hb(code, ME.no, K).catch(function () { });
+      timers.push(setInterval(function () { if (!document.hidden && !ENDED) R.hb(code, ME.no, K).catch(function () { }); }, 30000));
       SHEET.ids.slice(0, 3).forEach(prefetch);
     }).catch(function (e) { exitFs(); lobby({ t: '❌ 讀不到題目（' + (e.status ? '測驗可能已關閉' : errText(e)) + '）。', cls: 'bad' }); });
   }
@@ -357,17 +362,27 @@ textarea.ans{min-height:170px;font-size:1.02rem;line-height:1.6;margin-top:12px;
     if (ENDED || !SHEET) return;
     var left = DEADLINE - now(), el = $('#xT');
     if (el) { el.textContent = X.fmtLeft(left); el.className = 'timer' + (left <= 60000 ? ' end' : left <= 300000 ? ' warn' : ''); }
-    if (left <= 0) finish('time');
+    if (left <= 0 && !CHECKING && !ENDING) { CHECKING = true; checkExt().then(function (more) { CHECKING = false; if (!more) finish('time'); }); }
     var g = G();
     if (g && g.idle && !IDLE && !ENDING && Date.now() - LASTACT > g.idle * 60000) idleAsk();
+  }
+  // 老師延長時間了嗎？（時間到時先問一次，沒延長才交卷）
+  function checkExt() {
+    var before = extK(K);
+    return R.ext(code, ME.no).then(function (x) {
+      EXT = x || {}; var after = extK(K);
+      if (after !== before) { DEADLINE = X.deadlineOf(META, ATT, after); if (after > before) toast('⏱ 老師幫你延長了 ' + (after - before) + ' 分鐘'); }
+      return DEADLINE - now() > 0;
+    }, function () { return false; });
   }
   function poll() {
     if (ENDED) return;
     R.meta(code).then(function (m) {
       if (!m) return;
-      META = m; DEADLINE = X.deadlineOf(META, ATT);
+      META = m; DEADLINE = X.deadlineOf(META, ATT, extK(K));
       if (m.open === false) finish('teacher-closed');
     }).catch(function () { });
+    checkExt();
     X.cloudFetch(X.CONFIG.DB + '/m/' + code + '/s/' + ME.no + '/' + K + '/end').then(function (e) { if (e && !ENDED) done(e); }).catch(function () { });
   }
 
@@ -416,7 +431,7 @@ textarea.ans{min-height:170px;font-size:1.02rem;line-height:1.6;margin-top:12px;
     timers.forEach(clearInterval); timers = []; guardOff(); exitFs(); hideOv();
     examEl.classList.add('hidden'); examEl.innerHTML = ''; document.body.style.overflow = '';
     var by = (en && en.by) || 'self', info = X.BY[by] || X.BY.self, why = en && en.why;
-    var used = attempts(REC).length, left = META.tries - Math.max(used, K);
+    var used = attempts(REC).length, left = Math.min(20, META.tries + BONUS) - Math.max(used, K);
     card('<div class="card" style="text-align:center"><div style="font-size:3.4rem">' + info.icon + '</div><h1>' + (by === 'self' ? '已交卷' : by === 'time' ? '時間到，已收卷' : by === 'teacher' ? '老師已收卷' : '系統已代為交卷') + '</h1>' +
       '<p style="margin:8px 0"><span class="chip ' + (by === 'guard' ? 'bad' : by === 'self' ? 'ok' : 'blue') + '" style="font-size:.95rem">' + info.icon + ' ' + info.name + (why ? '：' + esc(X.WHY[why] || why) : '') + '</span></p>' +
       '<p>' + esc(ME.cls) + ' 班 ' + ME.seat + ' 號 ' + esc(ME.name) + '・第 ' + K + ' 次作答・已作答 ' + answeredN() + '／' + SHEET.ids.length + ' 題</p>' +
@@ -501,7 +516,7 @@ textarea.ans{min-height:170px;font-size:1.02rem;line-height:1.6;margin-top:12px;
       Object.keys(paper).forEach(function (id) { paper[id].o = arr(paper[id].o); });
       Object.keys(key).forEach(function (id) { key[id].a = arr(key[id].a); });
       var show = function (k) {
-        var a = ended.filter(function (x) { return x.k === k; })[0], d = (ks['a' + k] || {}).d || {}, sh = X.sheetFor(paper, META, code, ME.no, k), ans = a.ans || {};
+        var a = ended.filter(function (x) { return x.k === k; })[0], d = (ks['a' + k] || {}).d || {}, cm = (ks['a' + k] || {}).c || {}, sh = X.sheetFor(paper, META, code, ME.no, k), ans = a.ans || {};
         var el = $('#resQ'); el.className = 'res';
         el.innerHTML = '<h3 style="margin-top:12px">第 ' + k + ' 次的題目</h3>' + sh.ids.map(function (id, n) {
           var q = paper[id], v = ans[id], sc = d[id], kk = key[id] || {}, right = kk.a || [];
@@ -509,7 +524,8 @@ textarea.ans{min-height:170px;font-size:1.02rem;line-height:1.6;margin-top:12px;
           return '<div class="q"><div class="row" style="gap:6px"><b>第 ' + (n + 1) + ' 題</b><span class="chip gray">' + X.TYPES[q.t] + '</span><span class="chip ' + (sc == null ? 'gray' : sc < 0 ? 'warn' : sc >= q.p ? 'ok' : sc > 0 ? 'warn' : 'bad') + '">' + (sc == null ? '—' : sc < 0 ? '批閱中' : sc + ' / ' + q.p + ' 分') + '</span></div><div class="qhtml" data-s="' + id + '"></div>' +
             (q.t === 'a' ? '<div class="op mine" style="white-space:pre-wrap">' + esc(v || '（未作答）') + '</div>' + (kk.r ? '<div class="exp"><b>參考答案：</b><div class="qhtml" data-r="' + id + '"></div></div>' : '') :
               sh.opt[id].map(function (orig, i) { return '<div class="op ' + (mine.indexOf(orig) >= 0 ? 'mine ' : '') + (right.indexOf(orig) >= 0 ? 'right' : '') + '"><b>' + X.LETTERS[i] + '.</b><span class="qhtml" data-o="' + id + '_' + orig + '"></span>' + (mine.indexOf(orig) >= 0 ? '　👈 你的答案' : '') + (right.indexOf(orig) >= 0 ? '　✅' : '') + '</div>'; }).join('')) +
-            (kk.e ? '<div class="exp"><b>💡 解析：</b><div class="qhtml" data-e="' + id + '"></div></div>' : '') + '</div>';
+            (kk.e ? '<div class="exp"><b>💡 解析：</b><div class="qhtml" data-e="' + id + '"></div></div>' : '') +
+            (cm[id] ? '<div class="exp" style="border-left-color:var(--purple)"><b>💬 老師評語：</b>' + esc(cm[id]) + '</div>' : '') + '</div>';
         }).join('');
         sh.ids.forEach(function (id) {
           var q = paper[id], kk = key[id] || {};

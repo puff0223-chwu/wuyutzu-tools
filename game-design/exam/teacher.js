@@ -204,6 +204,7 @@ else FB.onUser(async (u) => {
   $('#logout').onclick = () => FB.logout();
   await loadBanks();
   await loadExams();
+  loadCmts();
   const m = /#e=([A-HJ-NP-Z2-9]{6})/.exec(location.hash);
   if (m && EXAMS[m[1]]) openExam(m[1]); else renderExams();
 });
@@ -429,7 +430,7 @@ async function batchOp(op) {
 /* ---------- 題目預覽（學生看到的樣子＋答案） ---------- */
 function qViewHTML(q, no, opt) {
   opt = opt || {};
-  return `<div class="qview"><div class="head"><b>${no ? '第 ' + no + ' 題' : '預覽'}</b>${typeChip(q.t)}<span class="chip gray">${esc(q.d || '')}</span>${q.p != null ? `<span class="chip gray">${q.p} 分</span>` : ''}${q.l ? '<span class="chip gray">🔒 選項順序固定</span>' : ''}</div>
+  return `<div class="qview"><div class="head"><b>${no ? '第 ' + no + ' 題' : '預覽'}</b>${typeChip(q.t)}${q.d ? `<span class="chip gray">${esc(q.d)}</span>` : ''}${q.p != null ? `<span class="chip gray">${q.p} 分</span>` : ''}${q.l ? '<span class="chip gray">🔒 選項順序固定</span>' : ''}</div>
     <div class="qhtml" data-h="s"></div>
     ${q.t !== 'a' ? q.o.map((o, i) => `<div class="op ${(q.a || []).includes(i) ? 'right' : ''}"><b>${X.LETTERS[i]}.</b><div class="qhtml" data-h="o${i}"></div>${(q.a || []).includes(i) ? ' ✅' : ''}</div>`).join('') : `<div class="small muted" style="margin-top:6px">✏️ 學生在這裡打字作答</div>${q.r ? '<div class="exp"><b>參考答案：</b><div class="qhtml" data-h="r"></div></div>' : ''}`}
     ${q.e && !opt.noExp ? '<div class="exp"><b>💡 解析：</b><div class="qhtml" data-h="e"></div></div>' : ''}</div>`;
@@ -682,16 +683,17 @@ function renderExams() {
       <select id="eU"><option value="">全部用途</option>${uses.map((s) => `<option ${EF.use === s ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select>
       <input type="text" id="eK" placeholder="🔍 搜尋名稱或代碼" value="${esc(EF.kw)}"></div>
       <p class="small muted" style="margin:8px 0 0">共 ${all.length} 份${codes.length !== all.length ? `，篩選後 ${codes.length} 份` : ''}（依測驗日期排序，新的在前）</p>` : ''}
-    ${codes.length ? `<div class="elist" style="margin-top:14px">${codes.map((c) => { const e = EXAMS[c]; return `<button class="ecard" data-c="${c}"><div class="row" style="gap:6px"><span class="code">${c}</span>${stChip(e)}${e.pub ? '<span class="chip ok">📣 已公布</span>' : ''}</div>
+    ${codes.length ? `<div class="elist" style="margin-top:14px">${codes.map((c) => { const e = EXAMS[c]; return `<div class="ecard" role="button" tabindex="0" data-c="${c}"><button type="button" class="cardx" data-del="${c}" title="刪除這份測驗">🗑</button><div class="row" style="gap:6px"><span class="code">${c}</span>${stChip(e)}${e.pub ? '<span class="chip ok">📣 已公布</span>' : ''}</div>
       <b style="margin-top:6px">${esc(e.title)}</b><div class="row" style="gap:4px;margin:4px 0">${tagChips(e)}</div>
       <div class="small muted">📅 ${examWhen(e) ? X.fmtTime(examWhen(e)) : '—'}・${e.n || 0} 題・滿分 ${e.total || 0}・${e.mins} 分鐘・${e.tries >= 20 ? '不限次數' : e.tries + ' 次'}</div>
-      <div class="small muted">${e.openAt ? '開放 ' + X.fmtTime(e.openAt) : '手動開放'}${e.closeAt ? '｜截止 ' + X.fmtTime(e.closeAt) : ''}</div></button>`; }).join('')}</div>`
+      <div class="small muted">${e.openAt ? '開放 ' + X.fmtTime(e.openAt) : '手動開放'}${e.closeAt ? '｜截止 ' + X.fmtTime(e.closeAt) : ''}</div></div>`; }).join('')}</div>`
     : `<div class="empty"><div style="font-size:3rem">📝</div><p>${all.length ? '沒有符合篩選的測驗。' : Object.keys(BANKS).length ? '還沒有測驗。按「＋ 新測驗」從題庫挑題目。' : '先到「📚 題庫」建立題目（可以直接匯入 Word 考卷或 Excel），再回來建立測驗。'}</p></div>`}</div>`;
   $('#xNew').onclick = () => { if (!Object.keys(BANKS).some((id) => Object.keys(BANKS[id].q || {}).length)) { toast('題庫裡還沒有題目，先去建題庫吧'); return showTab('bank'); } examForm(null); };
   const on = (id, k) => { const x = $('#' + id); if (x) x.onchange = (e) => { EF[k] = e.target.value; renderExams(); }; };
   on('eT', 'term'); on('eS', 'subj'); on('eU', 'use');
   const kk = $('#eK'); if (kk) { let t = null; kk.oninput = (e) => { clearTimeout(t); t = setTimeout(() => { EF.kw = e.target.value.trim(); renderExams(); const k = $('#eK'); k.focus(); k.setSelectionRange(k.value.length, k.value.length); }, 350); }; }
-  $$('#t-exams .ecard').forEach((b) => { b.onclick = () => openExam(b.dataset.c); });
+  $$('#t-exams .ecard').forEach((b) => { b.onclick = (e) => { if (e.target.closest('[data-del]')) return; openExam(b.dataset.c); }; b.onkeydown = (e) => { if (e.key === 'Enter') openExam(b.dataset.c); }; });
+  $$('#t-exams [data-del]').forEach((x) => { x.onclick = (e) => { e.stopPropagation(); deleteExam(x.dataset.del); }; });
 }
 
 /* ---------- 建立／修改測驗（分頁精靈） ---------- */
@@ -903,20 +905,25 @@ const ownerRec = (nm) => clean({ title: nm.title, at: nm.at, term: nm.term, subj
 
 /* ---------- 測驗頁 ---------- */
 let META = null, PAPER = {}, KEY = {}, SUBS = {}, MG = {}, GRADES = {}, ROSTER = {}, unsub = [], gradeT = null, sub = 'share', lastG = {}, endsSent = {};
+// 第二階段：XT 延長分鐘 x/<學號>/<次>、BT 再給幾次機會 bt/<學號>、MC 評語 mc/<學號>/<次>/<題>、SEEN 看過的違規事件、FEED 即時動態
+let XT = {}, BT = {}, MC = {}, SEEN = null, FEED = [];
 const studentLink = (code) => new URL('take.html?code=' + code, location.href).href;
 function stopGrader() { unsub.forEach((f) => { try { f(); } catch (e) { } }); unsub = []; clearInterval(gradeT); gradeT = null; }
 async function openExam(code, tab) {
   stopGrader();
-  CUR = code; META = EXAMS[code]; sub = tab || (X.stateOf(META) === 'open' ? 'grade' : 'share');
+  CUR = code; META = EXAMS[code]; sub = tab || (X.stateOf(META) === 'open' ? 'mon' : 'share');
   history.replaceState(null, '', '#e=' + code);
   showTab('exams'); CUR = code;
   $('#t-exams').innerHTML = '<div class="card"><p class="muted">讀取中…</p></div>';
   try { [PAPER, KEY, ROSTER] = await Promise.all([FB.get(`exam/m/${code}/paper`), FB.get(`exam/m/${code}/key`), FB.get(`exam/m/${code}/roster`)]); } catch (e) { toast('讀取失敗：' + e.message); }
-  PAPER = PAPER || {}; KEY = KEY || {}; ROSTER = ROSTER || {}; SUBS = {}; MG = {}; GRADES = {}; lastG = {}; endsSent = {};
+  PAPER = PAPER || {}; KEY = KEY || {}; ROSTER = ROSTER || {}; SUBS = {}; MG = {}; GRADES = {}; lastG = {}; endsSent = {}; XT = {}; BT = {}; MC = {}; SEEN = null; FEED = [];
   Object.values(PAPER).forEach((q) => { q.o = arr(q.o); });
   Object.values(KEY).forEach((k) => { k.a = arr(k.a); });
   // 🧑‍⚖️ 自動閱卷官：這份測驗打開時一直聽學生作答
-  unsub.push(FB.listen(`exam/m/${code}/s`, (v) => { SUBS = v || {}; regrade(); paintLive(); }));
+  unsub.push(FB.listen(`exam/m/${code}/s`, (v) => { SUBS = v || {}; watchEvents(); regrade(); paintLive(); }));
+  unsub.push(FB.listen(`exam/m/${code}/x`, (v) => { XT = v || {}; regrade(); paintLive(); }));
+  unsub.push(FB.listen(`exam/m/${code}/bt`, (v) => { BT = v || {}; paintLive(); }));
+  unsub.push(FB.listen(`exam/m/${code}/mc`, (v) => { MC = v || {}; regrade(); }));
   unsub.push(FB.listen(`exam/m/${code}/mg`, (v) => { MG = v || {}; regrade(); paintLive(); }));
   unsub.push(FB.listen(`exam/m/${code}/g`, (v) => { GRADES = v || {}; Object.keys(GRADES).forEach((sid) => { lastG[sid] = sigG(GRADES[sid]); }); }));
   unsub.push(FB.listen(`exam/m/${code}/meta`, (v) => { if (v && CUR === code) { META = EXAMS[code] = v; paintHead(); } }));
@@ -937,7 +944,7 @@ function regrade() {
     list.forEach((a) => {
       if (!a.end) {
         // 時間到還沒交卷 → 閱卷官代收（交卷時間記成期限）
-        const dl = X.deadlineOf(META, a), late = now > dl + X.CONFIG.GRACE, shut = META.open === false;
+        const dl = X.deadlineOf(META, a, extOf(sid, a.k)), late = now > dl + X.CONFIG.GRACE, shut = META.open === false;
         if ((late || shut) && !endsSent[sid + '/' + a.k]) {
           endsSent[sid + '/' + a.k] = 1;
           const by = late ? 'time' : 'teacher';
@@ -947,7 +954,8 @@ function regrade() {
       }
       const g = gradeOf(sid, a);
       const d = {}; Object.keys(g.detail).forEach((id) => { const r = g.detail[id]; d[id] = r.s == null ? -1 : r.s; });
-      ks['a' + a.k] = { s: g.s, full: g.full, p: g.pend, by: a.end.by, d }; // key 用 a1、a2（純數字 key 會被 Firebase 變成陣列）
+      const cm = ((MC[sid] || {})[a.k]) || null;
+      ks['a' + a.k] = clean({ s: g.s, full: g.full, p: g.pend, by: a.end.by, d, c: cm && Object.keys(cm).length ? cm : null }); // key 用 a1、a2（純數字 key 會被 Firebase 變成陣列）
       done.push({ s: g.s });
     });
     if (!done.length) return;
@@ -963,15 +971,16 @@ function rows() {
     const info = infoOf(sid), list = attemptsOf(sid), last = list[list.length - 1];
     const graded = list.filter((a) => a.end).map((a) => Object.assign({ a }, gradeOf(sid, a)));
     let st = 'none', left = 0, prog = '';
-    if (last && !last.end) { st = 'doing'; left = X.deadlineOf(META, last) - now; const sh = X.sheetFor(PAPER, META, CUR, sid, last.k); prog = sh.ids.filter((id) => X.answered(PAPER[id].t, (last.ans || {})[id])).length + '/' + sh.ids.length; }
+    let off = 0;
+    if (last && !last.end) { st = 'doing'; left = X.deadlineOf(META, last, extOf(sid, last.k)) - now; off = last.hb ? now - last.hb : now - last.st; const sh = X.sheetFor(PAPER, META, CUR, sid, last.k); prog = sh.ids.filter((id) => X.answered(PAPER[id].t, (last.ans || {})[id])).length + '/' + sh.ids.length; }
     else if (last) st = last.end.by;
-    return { sid, info, list, last, graded, st, left, prog, inRoster: !!ROSTER[sid], f: X.finalScore(graded, META.policy), pend: graded.reduce((a, g) => a + g.pend, 0), viol: list.reduce((a, x) => a + violations(x), 0) };
+    return { sid, info, list, last, graded, st, left, prog, off, ext: last ? extOf(sid, last.k) : 0, bonus: +BT[sid] || 0, inRoster: !!ROSTER[sid], f: X.finalScore(graded, META.policy), pend: graded.reduce((a, g) => a + g.pend, 0), viol: list.reduce((a, x) => a + violations(x), 0) };
   }).sort((a, b) => String(a.info.cls || '').localeCompare(String(b.info.cls || '')) || (a.info.seat || 0) - (b.info.seat || 0) || a.sid.localeCompare(b.sid));
 }
 function renderExam() {
   const c = CUR;
   $('#t-exams').innerHTML = `<div class="card"><div class="ehead" id="eHead"></div>
-    <div class="tabs subtabs" id="subT" style="margin:14px 0 0">${[['share', '🔗 分享'], ['grade', '📋 成績'], ['paper', '🧾 題目'], ['roster', '👥 名單'], ['set', '⚙️ 設定']].map(([k, n]) => `<button data-s="${k}" class="${sub === k ? 'on' : ''}">${n}</button>`).join('')}</div></div>
+    <div class="tabs subtabs" id="subT" style="margin:14px 0 0">${[['share', '🔗 分享'], ['mon', '📡 監控'], ['grade', '📋 成績'], ['mark', '✏️ 閱卷'], ['paper', '🧾 題目'], ['roster', '👥 名單'], ['set', '⚙️ 設定']].map(([k, n]) => `<button data-s="${k}" class="${sub === k ? 'on' : ''}">${n}</button>`).join('')}</div></div>
     <div id="subBody"></div>`;
   $('#subT').onclick = (e) => { const b = e.target.closest('[data-s]'); if (!b) return; sub = b.dataset.s; $$('#subT button').forEach((x) => x.classList.toggle('on', x === b)); paintSub(); };
   paintHead(); paintSub();
@@ -1005,11 +1014,13 @@ function paintSub() {
   const el = $('#subBody'); if (!el) return;
   if (sub === 'share') paintShare(el);
   else if (sub === 'grade') paintGrade(el);
+  else if (sub === 'mon') paintMon(el);
+  else if (sub === 'mark') paintMark(el);
   else if (sub === 'paper') paintPaper(el);
   else if (sub === 'roster') paintRoster(el);
   else if (sub === 'set') paintSet(el);
 }
-function paintLive() { if (sub === 'grade' && $('#gTable')) paintGrade($('#subBody'), true); }
+function paintLive() { if (sub === 'grade' && $('#gTable')) paintGrade($('#subBody'), true); else if (sub === 'mon' && $('#monGrid')) paintMon($('#subBody'), true); if (PROJ) PROJ(); }
 
 /* 🔗 分享 */
 function qrInto(el, text, size) { el.innerHTML = ''; if (window.QRCode) new QRCode(el, { text, width: size, height: size, correctLevel: QRCode.CorrectLevel.M }); else el.textContent = text; }
@@ -1062,7 +1073,9 @@ function ansText(q, v, opt) {
 }
 function studentDlg(sid) {
   const info = infoOf(sid);
-  const m = modal(`<h2>🧑‍🎓 ${esc(info.cls || '')} ${info.seat || ''} 號 ${esc(info.name || '')} <span class="mono small muted">${sid}</span></h2><div id="sdBody"></div>`, { wide: true });
+  const m = modal(`<h2>🧑‍🎓 ${esc(info.cls || '')} ${info.seat || ''} 號 ${esc(info.name || '')} <span class="mono small muted">${sid}</span></h2>
+    <div class="row small" id="sdTop"></div><div id="sdBody"></div>`, { wide: true });
+  const paintTop = () => { const used = attemptsOf(sid).length, total = Math.min(20, META.tries + (+BT[sid] || 0)); $('#sdTop', m).innerHTML = `<span class="chip gray">已作答 ${used} 次／可作答 ${META.tries >= 20 ? '不限' : total + ' 次'}${BT[sid] ? `（含老師多給 ${BT[sid]} 次）` : ''}</span>${META.tries < 20 ? `<button class="btn ghost sm" data-act="bonus">🔄 再給一次機會</button>${BT[sid] ? '<button class="btn ghost sm" data-act="unbonus">↩️ 收回一次</button>' : ''}` : ''}`; };
   const paint = () => {
     const list = attemptsOf(sid);
     if (!list.length) { $('#sdBody', m).innerHTML = '<p class="muted">還沒有作答紀錄。</p>'; return; }
@@ -1071,7 +1084,7 @@ function studentDlg(sid) {
       const isLast = a.k === list[list.length - 1].k;
       return `<div class="card" style="box-shadow:none;border-width:1.5px"><div class="row"><h3>第 ${a.k} 次</h3>${a.end ? byChip(a.end.by, a.end.why) : '<span class="chip blue">🔵 作答中</span>'}
         <span class="chip ${a.end ? 'ok' : 'gray'}">${g.s} / ${g.full} 分${g.pend ? `（簡答 ${g.pend} 題待批）` : ''}</span><span class="sp"></span>
-        ${!a.end ? `<button class="btn danger sm" data-act="end" data-k="${a.k}">⏹ 收卷</button>${a.dev ? `<button class="btn ghost sm" data-act="unlock" data-k="${a.k}" title="學生換平板繼續作答時使用">🔓 解除裝置鎖</button>` : '<span class="chip gray">已解除裝置鎖</span>'}` : ''}
+        ${!a.end ? `<span class="chip blue">剩 ${X.fmtLeft(X.deadlineOf(META, a, extOf(sid, a.k)) - Date.now())}${extOf(sid, a.k) ? `（已延長 ${extOf(sid, a.k)} 分）` : ''}</span><button class="btn ghost sm" data-act="ext" data-k="${a.k}">⏱ 延長時間</button><button class="btn danger sm" data-act="end" data-k="${a.k}">⏹ 收卷</button>${a.dev ? `<button class="btn ghost sm" data-act="unlock" data-k="${a.k}" title="學生換平板繼續作答時使用">🔓 解除裝置鎖</button>` : '<span class="chip gray">已解除裝置鎖</span>'}` : ''}
         ${isLast ? `<button class="btn danger sm" data-act="del" data-k="${a.k}" title="刪除後學生可以重新作答這一次">🗑 刪除這次作答</button>` : ''}</div>
         <div class="tl"><div>▶ ${X.fmtClock(a.st)} 開始作答</div>${ev.map((e) => `<div class="${e.k === 'v' ? 'v' : ''}">${e.k === 'v' ? '⚠️' : 'ℹ️'} ${X.fmtClock(e.t)} ${e.k === 'v' ? '違規：' + esc(X.WHY[e.d] || e.d || '') : e.k === 'resume' ? '重新進入作答頁' : e.k === 'idle' ? '閒置提醒' : esc(e.k + ' ' + (e.d || ''))}</div>`).join('')}
           ${a.end ? `<div>${X.BY[a.end.by].icon} ${X.fmtClock(a.end.t)} ${X.BY[a.end.by].name}${a.end.why ? '：' + esc(X.WHY[a.end.why] || a.end.why) : ''}（作答 ${Math.max(0, Math.round((a.end.t - a.st) / 60000))} 分鐘）</div>` : ''}</div>
@@ -1080,20 +1093,25 @@ function studentDlg(sid) {
           return `<tr><td class="num">${n + 1}</td><td style="max-width:420px">${typeChip(q.t)} ${esc(X.plain(q.s).slice(0, 80))}</td>
             <td>${q.t === 'a' ? `<div style="white-space:pre-wrap;max-width:360px">${ansText(q, v, { html: true })}</div>` : `<b style="color:${r.ok ? 'var(--ok)' : 'var(--bad)'}">${ansText(q, v)}</b>`}</td>
             <td>${q.t === 'a' ? (key.r ? '<span class="small muted">見題目</span>' : '—') : letterList(key.a)}</td>
-            <td class="num">${q.t === 'a' ? `<input type="number" min="0" max="${q.p}" step="0.5" style="width:76px" data-mg="${a.k}/${id}" value="${((MG[sid] || {})[a.k] || {})[id] != null ? MG[sid][a.k][id] : ''}" placeholder="／${q.p}">` : `${r.s} <span class="small muted">/ ${q.p}</span>`}</td></tr>`; }).join('')}
+            <td class="num">${q.t === 'a' ? `<input type="number" min="0" max="${q.p}" step="0.5" style="width:76px" data-mg="${a.k}/${id}" value="${((MG[sid] || {})[a.k] || {})[id] != null ? MG[sid][a.k][id] : ''}" placeholder="／${q.p}">` : `${r.s} <span class="small muted">/ ${q.p}</span>`}</td></tr>${q.t === 'a' && X.answered('a', v) ? `<tr><td></td><td colspan="4"><input type="text" maxlength="300" data-mc="${a.k}/${id}" value="${esc(((MC[sid] || {})[a.k] || {})[id] || '')}" placeholder="💬 評語（選填，公布題目時學生看得到）"></td></tr>` : ''}`; }).join('')}
         </tbody></table></div></div>`;
     }).join('') + `<p class="small muted">字母是題庫裡的原始順序（學生看到的選項可能被打亂過）。</p>`;
   };
-  paint();
-  $('#sdBody', m).onclick = async (e) => {
+  paint(); paintTop();
+  const onAct = async (e) => {
     const b = e.target.closest('[data-act]'); if (!b) return;
     const k = b.dataset.k;
+    if (b.dataset.act === 'bonus' || b.dataset.act === 'unbonus') { await giveBonus(sid, b.dataset.act === 'bonus' ? 1 : -1); setTimeout(() => { paintTop(); paint(); }, 400); return; }
+    if (b.dataset.act === 'ext') { await extendTime(sid, +k); setTimeout(paint, 400); return; }
     if (b.dataset.act === 'end') { if (!confirm('用學生目前存下的答案收卷？')) return; endsSent[sid + '/' + k] = 1; await FB.set(`exam/m/${CUR}/s/${sid}/${k}/end`, { t: Date.now(), by: 'teacher' }); toast('已收卷'); }
     else if (b.dataset.act === 'unlock') { await FB.set(`exam/m/${CUR}/s/${sid}/${k}/dev`, ''); toast('🔓 已解除，學生可以在新裝置輸入同樣的資料繼續作答'); }
     else if (b.dataset.act === 'del') { if (!confirm(`確定要刪除第 ${k} 次作答嗎？刪除後學生可以重新作答這一次（紀錄無法復原）。`)) return; await FB.remove(`exam/m/${CUR}/s/${sid}/${k}`); await FB.remove(`exam/m/${CUR}/mg/${sid}/${k}`).catch(() => { }); toast('已刪除'); }
     setTimeout(paint, 400);
   };
+  $('#sdBody', m).onclick = onAct; $('#sdTop', m).onclick = onAct;
   $('#sdBody', m).onchange = async (e) => {
+    const c = e.target.closest('[data-mc]');
+    if (c) { const [k, id] = c.dataset.mc.split('/'); const v = c.value.trim().slice(0, 300); await FB.set(`exam/m/${CUR}/mc/${sid}/${k}/${id}`, v || null); toast('💬 已存評語'); return; }
     const x = e.target.closest('[data-mg]'); if (!x) return;
     const [k, id] = x.dataset.mg.split('/'), q = PAPER[id];
     const v = x.value === '' ? null : Math.max(0, Math.min(q.p, +x.value));
@@ -1214,11 +1232,192 @@ function paintSet(el) {
     await FB.set(`exam/owners/${ME.uid}/${c}`, ownerRec(nm));
     EXAMS[c] = nm; toast(`⧉ 已複製成新測驗 ${c}（未開放）`); openExam(c, 'set');
   };
-  $('#stDel').onclick = async () => {
-    const t = prompt(`確定要刪除「${META.title}」和所有作答紀錄嗎？\n請輸入測驗代碼 ${CUR} 確認：`);
-    if ((t || '').toUpperCase() !== CUR) { if (t != null) toast('代碼不對，沒有刪除'); return; }
-    stopGrader();
-    await FB.remove(`exam/m/${CUR}`); await FB.remove(`exam/owners/${ME.uid}/${CUR}`);
-    delete EXAMS[CUR]; toast('已刪除'); renderExams();
+  $('#stDel').onclick = () => deleteExam(CUR);
+}
+// 刪除測驗：沒有人作答過按確定就刪；有作答紀錄要輸入測驗代碼確認（建議先匯出 Excel）
+async function deleteExam(code) {
+  const e = EXAMS[code]; if (!e) return;
+  let n = 0; try { n = Object.keys((await FB.get(`exam/m/${code}/s`)) || {}).length; } catch (x) { }
+  if (n) { const t = prompt(`「${e.title}」已經有 ${n} 位學生的作答紀錄，刪除後成績一起消失、無法復原（建議先匯出 Excel）。\n確定要刪除的話，請輸入測驗代碼 ${code}：`); if ((t || '').toUpperCase() !== code) { if (t != null) toast('代碼不對，沒有刪除'); return; } }
+  else if (!confirm(`確定要刪除測驗「${e.title}」（${code}）嗎？還沒有學生作答。`)) return;
+  if (CUR === code) stopGrader();
+  await FB.remove(`exam/m/${code}`); await FB.remove(`exam/owners/${ME.uid}/${code}`);
+  delete EXAMS[code]; toast('🗑 已刪除測驗'); renderExams();
+}
+
+/* =====================================================================
+   第二階段（2026-10-23）：📡 監控牆、📺 考場投影看板、✏️ 依題目閱卷、送分、延長時間、再給一次機會、違規即時提醒
+   ===================================================================== */
+const extOf = (sid, k) => +(((XT[sid] || {})[k])) || 0;
+let CMTS = null, PROJ = null, MF = 'all', MK = { qid: '', anon: false, todo: false };
+const OFFLINE_MS = 75000; // 學生頁每 30 秒回報一次心跳；超過 75 秒沒消息＝失聯（可能斷網、螢幕關掉）
+const who = (info) => `${esc(info.cls || '')}${info.seat ? '-' + info.seat : ''} ${esc(info.name || '')}`;
+async function loadCmts() { if (CMTS) return CMTS; try { CMTS = arr(await FB.get(`exam/pref/${ME.uid}/cmts`)); } catch (e) { CMTS = []; } if (!CMTS.length) CMTS = ['說明清楚、有舉例 👍', '方向對，再具體一點', '有寫到重點，但少了機制的說明', '請再對照課堂講義']; return CMTS; }
+const saveCmts = () => FB.set(`exam/pref/${ME.uid}/cmts`, CMTS.slice(0, 40)).catch((e) => toast('常用評語存檔失敗：' + e.message));
+async function extendTime(sid, k) {
+  const now = extOf(sid, k), v = prompt(`幫 ${infoOf(sid).name || sid}（第 ${k} 次）延長幾分鐘？\n（目前已延長 ${now} 分鐘；輸入的分鐘數會加上去，輸入負數可以減少）`, '5');
+  if (v == null || v.trim() === '' || isNaN(+v)) return;
+  const nv = Math.max(0, Math.min(600, now + Math.round(+v)));
+  await FB.set(`exam/m/${CUR}/x/${sid}/${k}`, nv || null);
+  const a = attemptsOf(sid).find((x) => x.k === k), capped = META.closeAt && a && a.st + (META.mins + nv) * 60000 > META.closeAt;
+  toast(`⏱ 已延長，合計 ${nv} 分鐘${capped ? '（⚠️ 延長不能超過截止時間，要更晚請到「⚙️ 設定」改截止時間）' : ''}`, 3500);
+}
+async function giveBonus(sid, d) {
+  const nv = Math.max(0, Math.min(19, (+BT[sid] || 0) + d));
+  await FB.set(`exam/m/${CUR}/bt/${sid}`, nv || null);
+  toast(d > 0 ? `🔄 已多給 ${infoOf(sid).name || sid} 一次作答機會（學生回到測驗首頁就能再考）` : '↩️ 已收回一次機會');
+}
+// 新的違規、交卷事件 → 跳提醒＋記到即時動態
+function watchEvents() {
+  const first = SEEN === null; if (first) SEEN = new Set();
+  Object.keys(SUBS).forEach((sid) => attemptsOf(sid).forEach((a) => {
+    const info = infoOf(sid);
+    let n = 0;
+    Object.keys(a.ev || {}).sort((x, y) => (a.ev[x].t || 0) - (a.ev[y].t || 0)).forEach((id) => {
+      const e = a.ev[id]; if (e.k === 'v') n++;
+      const key = sid + '/' + a.k + '/' + id; if (SEEN.has(key)) return; SEEN.add(key);
+      if (e.k !== 'v' && e.k !== 'resume') return;
+      const text = e.k === 'v' ? `⚠️ ${who(info)}：${esc(X.WHY[e.d] || e.d || '違規')}（第 ${n} 次）` : `ℹ️ ${who(info)}：重新進入作答頁`;
+      FEED.unshift({ t: e.t, text, bad: e.k === 'v' });
+      if (!first && e.k === 'v') toast(text.replace(/<[^>]+>/g, ''), 4000);
+    });
+    const sk = sid + '/' + a.k + '/st'; if (!SEEN.has(sk)) { SEEN.add(sk); FEED.unshift({ t: a.st, text: `▶ ${who(info)}：開始第 ${a.k} 次作答` }); }
+    if (a.end) { const ek = sid + '/' + a.k + '/end'; if (!SEEN.has(ek)) { SEEN.add(ek); FEED.unshift({ t: a.end.t, text: `${X.BY[a.end.by].icon} ${who(info)}：${X.BY[a.end.by].name}${a.end.why ? '（' + esc(X.WHY[a.end.why] || a.end.why) + '）' : ''}`, bad: a.end.by === 'guard' }); if (!first && a.end.by === 'guard') toast(`🚨 ${infoOf(sid).name || sid} 被系統代結（${X.WHY[a.end.why] || ''}）`, 4000); } }
+  }));
+  FEED.sort((x, y) => y.t - x.t); FEED = FEED.slice(0, 80);
+}
+
+/* 📡 監控 */
+function monCount(R) { return { roster: Object.keys(ROSTER).length, none: R.filter((r) => r.st === 'none').length, doing: R.filter((r) => r.st === 'doing').length, done: R.filter((r) => r.graded.length && r.st !== 'doing').length, guard: R.filter((r) => r.st === 'guard').length, off: R.filter((r) => r.st === 'doing' && r.off > OFFLINE_MS).length, viol: R.filter((r) => r.viol).length }; }
+function paintMon(el, live) {
+  const R = rows(), c = monCount(R);
+  const used = (r) => r.list.length, allow = (r) => Math.min(20, META.tries + r.bonus);
+  const show = R.filter((r) => MF === 'all' || (MF === 'doing' && r.st === 'doing') || (MF === 'none' && r.st === 'none') || (MF === 'done' && r.st !== 'doing' && r.st !== 'none') || (MF === 'viol' && r.viol) || (MF === 'off' && r.st === 'doing' && r.off > OFFLINE_MS));
+  const cls = (r) => r.st === 'doing' ? (r.off > OFFLINE_MS ? 'off' : 'doing') : r.st === 'none' ? 'none' : r.st;
+  const html = `<div class="stats">${c.roster ? `<div class="stat"><b>${c.roster}</b><span>名單人數</span></div><div class="stat"><b>${c.none}</b><span>⚪ 未進入</span></div>` : ''}
+      <div class="stat"><b>${c.doing}</b><span>🔵 作答中</span></div><div class="stat"><b>${c.done}</b><span>✅ 已交卷</span></div><div class="stat"><b>${c.guard}</b><span>🚨 系統代結</span></div><div class="stat"><b>${c.off}</b><span>📴 失聯</span></div></div>
+    <div class="row" style="margin-bottom:10px"><div class="tabs subtabs" id="monF" style="margin:0">${[['all', '全部'], ['doing', '🔵 作答中'], ['none', '⚪ 未進入'], ['done', '✅ 已交卷'], ['viol', '⚠️ 有違規'], ['off', '📴 失聯']].map(([k, n]) => `<button data-f="${k}" class="${MF === k ? 'on' : ''}">${n}</button>`).join('')}</div><span class="sp"></span><button class="btn purple" id="monProj">📺 考場投影看板</button></div>
+    <div class="monwrap"><div class="mongrid" id="monGrid">${show.length ? show.map((r) => `<div class="mcard ${cls(r)}" data-sid="${r.sid}">
+        <div class="row" style="gap:6px"><b>${who(r.info)}</b><span class="sp"></span>${r.viol ? `<span class="chip bad">⚠️ ${r.viol}</span>` : ''}</div>
+        <div class="small muted mono">${r.sid}${r.list.length ? `・第 ${r.last.k} 次` : ''}</div>
+        ${r.st === 'doing' ? `<div class="pbar"><i style="width:${(() => { const [a, b] = r.prog.split('/').map(Number); return b ? Math.round(a / b * 100) : 0; })()}%"></i></div>
+          <div class="small"><b>已答 ${r.prog}</b>・剩 <b class="mono">${X.fmtLeft(r.left)}</b>${r.ext ? `（＋${r.ext} 分）` : ''}${r.off > OFFLINE_MS ? `<br><span class="chip warn">📴 失聯 ${Math.floor(r.off / 60000)} 分</span>` : ''}</div>
+          <div class="row mact"><button class="btn ghost sm" data-m="ext">⏱ 延長</button><button class="btn danger sm" data-m="end">⏹ 收卷</button>${r.last.dev ? '<button class="btn ghost sm" data-m="unlock" title="換裝置繼續作答">🔓</button>' : ''}</div>`
+        : r.st === 'none' ? '<div class="small muted">還沒進入</div>'
+        : `<div class="small">${byChip(r.st, r.last.end.why)}</div><div class="small">採計 <b>${r.f == null ? '—' : r.f}</b>${r.pend ? ' <span class="chip warn">✏️ 待批</span>' : ''}</div>
+          ${META.tries < 20 && used(r) >= allow(r) ? '<div class="row mact"><button class="btn ghost sm" data-m="bonus">🔄 再給一次機會</button></div>' : used(r) < allow(r) && X.stateOf(META) === 'open' ? `<div class="small muted">還可以再考 ${allow(r) - used(r)} 次</div>` : ''}`}
+      </div>`).join('') : '<div class="empty small">沒有符合的學生</div>'}</div>
+      <div class="feed"><b>📰 即時動態</b>${FEED.length ? FEED.slice(0, 40).map((f) => `<div class="${f.bad ? 'bad' : ''}"><span class="mono muted">${X.fmtClock(f.t)}</span> ${f.text}</div>`).join('') : '<div class="muted small">學生開始作答後，違規、交卷會即時出現在這裡。</div>'}</div></div>`;
+  const keep = $('#monGrid') ? $('#monGrid').scrollTop : 0;
+  el.innerHTML = html; if (live && $('#monGrid')) $('#monGrid').scrollTop = keep;
+  $('#monF').onclick = (e) => { const b = e.target.closest('[data-f]'); if (!b) return; MF = b.dataset.f; paintMon(el); };
+  $('#monProj').onclick = projBoard;
+  $('#monGrid').onclick = async (e) => {
+    const card = e.target.closest('[data-sid]'); if (!card) return;
+    const sid = card.dataset.sid, b = e.target.closest('[data-m]'), r = rows().find((x) => x.sid === sid);
+    if (!b) return studentDlg(sid);
+    const k = r && r.last && r.last.k;
+    if (b.dataset.m === 'ext') await extendTime(sid, k);
+    else if (b.dataset.m === 'end') { if (!confirm(`用 ${r.info.name || sid} 目前存下的答案收卷？`)) return; endsSent[sid + '/' + k] = 1; await FB.set(`exam/m/${CUR}/s/${sid}/${k}/end`, { t: Date.now(), by: 'teacher' }); toast('已收卷'); }
+    else if (b.dataset.m === 'unlock') { await FB.set(`exam/m/${CUR}/s/${sid}/${k}/dev`, ''); toast('🔓 已解除裝置鎖'); }
+    else if (b.dataset.m === 'bonus') await giveBonus(sid, 1);
   };
+}
+
+/* 📺 考場投影看板：只有人數、狀態顏色（座號），不顯示姓名、分數、答案 */
+function projBoard() {
+  const p = document.createElement('div'); p.className = 'proj projb';
+  document.body.appendChild(p);
+  const paint = () => {
+    const R = rows(), c = monCount(R), now = Date.now();
+    const byCls = {}; R.forEach((r) => { const k = r.info.cls || '—'; (byCls[k] = byCls[k] || []).push(r); });
+    const col = (r) => r.st === 'doing' ? (r.off > OFFLINE_MS ? 'off' : 'doing') : r.st === 'none' ? 'none' : r.st === 'guard' ? 'guard' : 'done';
+    p.innerHTML = `<button class="x">✕ 關閉</button>
+      <div class="row" style="gap:14px;justify-content:center"><span class="badge" style="font-size:1rem">🎲 線上檢定所</span><h1 style="margin:0">${esc(META.title)}</h1><span class="bigcode" style="font-size:2rem">${CUR}</span></div>
+      <div style="font-size:1.25rem;font-weight:700">${X.STATE[X.stateOf(META)]}・現在 <span class="mono">${X.fmtClock(now)}</span>${META.closeAt ? `・截止 <span class="mono">${X.fmtTime(META.closeAt)}</span>` : ''}・作答 ${META.mins} 分鐘</div>
+      <div class="pstats">${c.roster ? `<div><b>${c.none}</b>⚪ 未進入</div>` : ''}<div><b>${c.doing}</b>🔵 作答中</div><div><b>${c.done}</b>✅ 已交卷</div><div><b>${c.guard}</b>🚨 系統代結</div>${c.off ? `<div><b>${c.off}</b>📴 失聯</div>` : ''}</div>
+      <div class="pseats">${Object.keys(byCls).sort().map((k) => `<div class="pcls"><span>${esc(k)}</span>${byCls[k].map((r) => `<i class="${col(r)}" title="${esc(k)}-${r.info.seat || ''}">${r.info.seat || '?'}</i>`).join('')}</div>`).join('')}</div>
+      <div class="small" style="opacity:.75">⚪ 未進入　🔵 作答中　🟢 已交卷　🔴 系統代結　🟠 失聯｜畫面不顯示姓名與分數</div>`;
+    $('.x', p).onclick = () => { PROJ = null; clearInterval(t); p.remove(); if (document.fullscreenElement) document.exitFullscreen().catch(() => { }); };
+  };
+  PROJ = paint; paint();
+  const t = setInterval(paint, 2000);
+  if (p.requestFullscreen) p.requestFullscreen().catch(() => { });
+}
+
+/* ✏️ 閱卷：一題看全班 */
+function markItems(qid) {
+  const out = [];
+  Object.keys(SUBS).forEach((sid) => attemptsOf(sid).forEach((a) => {
+    if (!a.end) return;
+    const sh = X.sheetFor(PAPER, META, CUR, sid, a.k); if (!sh.ids.includes(qid)) return;
+    const v = (a.ans || {})[qid], mg = ((MG[sid] || {})[a.k] || {})[qid], cm = ((MC[sid] || {})[a.k] || {})[qid] || '';
+    out.push({ sid, k: a.k, info: a.info || infoOf(sid), v, mg: mg == null ? null : +mg, cm, opt: sh.opt[qid] });
+  }));
+  return out.sort((x, y) => String(x.info.cls).localeCompare(String(y.info.cls)) || (x.info.seat || 0) - (y.info.seat || 0) || x.k - y.k);
+}
+async function paintMark(el) {
+  await loadCmts();
+  const ids = Object.keys(PAPER).sort((a, b) => PAPER[a].i - PAPER[b].i);
+  const shorts = ids.filter((id) => PAPER[id].t === 'a'), choices = ids.filter((id) => PAPER[id].t !== 'a');
+  if (!MK.qid || !PAPER[MK.qid]) MK.qid = shorts[0] || choices[0] || '';
+  const prog = (id) => { const it = markItems(id).filter((x) => X.answered('a', x.v)); return { n: it.length, done: it.filter((x) => x.mg != null).length }; };
+  const rate = (id) => { const it = markItems(id); if (!it.length) return null; const ok = it.filter((x) => X.scoreOne(PAPER[id], KEY[id] || {}, x.v, x.mg).ok).length; return Math.round(ok / it.length * 100); };
+  el.innerHTML = `<div class="markwrap"><div class="card marklist" style="margin:0">
+      <b>✏️ 簡答題</b>${shorts.length ? shorts.map((id) => { const p = prog(id); return `<button class="mq ${MK.qid === id ? 'on' : ''}" data-q="${id}"><span>第 ${PAPER[id].i + 1} 題</span><span class="muted small">${esc(X.plain(PAPER[id].s).slice(0, 28))}</span><span class="chip ${p.n && p.done === p.n ? 'ok' : p.n ? 'warn' : 'gray'}">${p.done}/${p.n}</span></button>`; }).join('') : '<div class="small muted">這份測驗沒有簡答題</div>'}
+      <b style="display:block;margin-top:12px">🔘 選擇題（看答對率、送分）</b>${choices.map((id) => { const r = rate(id); return `<button class="mq ${MK.qid === id ? 'on' : ''}" data-q="${id}"><span>第 ${PAPER[id].i + 1} 題</span><span class="muted small">${esc(X.plain(PAPER[id].s).slice(0, 28))}</span><span class="chip ${r == null ? 'gray' : r >= 70 ? 'ok' : r >= 40 ? 'warn' : 'bad'}">${r == null ? '—' : r + '%'}</span></button>`; }).join('')}
+    </div><div id="markBody"></div></div>`;
+  $$('.marklist .mq', el).forEach((b) => { b.onclick = () => { MK.qid = b.dataset.q; paintMark(el); }; });
+  const body = $('#markBody', el), q = PAPER[MK.qid];
+  if (!q) { body.innerHTML = '<div class="card empty">還沒有題目</div>'; return; }
+  const items = markItems(MK.qid), key = KEY[MK.qid] || {};
+  if (q.t === 'a') {
+    const ans = items.filter((x) => X.answered('a', x.v)), blank = items.length - ans.length;
+    let list = MK.todo ? ans.filter((x) => x.mg == null) : ans;
+    if (MK.anon) list = list.slice().sort((x, y) => X.hashStr(x.sid + x.k + CUR) - X.hashStr(y.sid + y.k + CUR));
+    body.innerHTML = `<div class="card" style="margin:0"><div class="row"><h3>第 ${q.i + 1} 題・簡答（${q.p} 分）</h3><span class="sp"></span><label class="ck"><input type="checkbox" id="mkAnon" ${MK.anon ? 'checked' : ''}>🙈 匿名閱卷</label>${tip('隱藏班級座號姓名，並把答案順序打亂，避免印象分數。')}<label class="ck"><input type="checkbox" id="mkTodo" ${MK.todo ? 'checked' : ''}>只看未批</label><button class="btn ghost sm" id="mkRe">🔄 重新整理</button></div>
+      <div class="qview" style="margin-top:8px"><div class="qhtml" id="mkStem"></div>${key.r ? '<div class="exp"><b>參考答案：</b><div class="qhtml" id="mkRef"></div></div>' : ''}</div>
+      <div class="row small" style="margin:6px 0"><span class="chip ${ans.filter((x) => x.mg != null).length === ans.length && ans.length ? 'ok' : 'warn'}">已批 ${ans.filter((x) => x.mg != null).length}／${ans.length} 份</span>${blank ? `<span class="chip gray">空白 ${blank} 份（自動 0 分）</span>` : ''}<span class="sp"></span><span class="muted">輸入分數或按快速鍵就會存；評語可以點常用評語加入</span></div>
+      <div class="row small cmts" id="mkCm"><b>💬 常用評語</b>${CMTS.map((t, i) => `<span class="chip"><button type="button" class="linkbtn" data-ci="${i}" style="text-decoration:none;color:inherit">${esc(t)}</button><button type="button" data-cdel="${i}" title="刪掉這個常用評語" style="border:0;background:none;cursor:pointer;color:inherit">×</button></span>`).join('')}<button class="btn ghost sm" id="mkCAdd">＋ 新增</button><span class="muted">（點了會加到你最後點的那份評語）</span></div>
+      <div id="mkList">${list.length ? list.map((x, n) => `<div class="mkitem ${x.mg != null ? 'done' : ''}" data-key="${x.sid}/${x.k}"><div class="row small"><b>${MK.anon ? '答案 #' + (n + 1) : who(x.info) + ` <span class="mono muted">${x.sid}</span>・第 ${x.k} 次`}</b><span class="sp"></span>${x.mg != null ? '<span class="chip ok">✅ 已批</span>' : '<span class="chip warn">未批</span>'}</div>
+        <div class="mkans">${esc(x.v).replace(/\n/g, '<br>')}</div>
+        <div class="row"><input type="number" class="mkscore" min="0" max="${q.p}" step="0.5" value="${x.mg == null ? '' : x.mg}" placeholder="／${q.p}" style="width:90px"><span class="small muted">／${q.p} 分</span><button class="btn ghost sm" data-quick="0">0</button><button class="btn ghost sm" data-quick="${X.round2(q.p / 2)}">${X.round2(q.p / 2)}</button><button class="btn ghost sm" data-quick="${q.p}">滿分 ${q.p}</button>
+          <input type="text" class="mkcm" maxlength="300" value="${esc(x.cm)}" placeholder="💬 評語（選填，公布題目時學生看得到）" style="flex:1;min-width:200px"></div></div>`).join('') : `<div class="empty small">${ans.length ? '這題都批完了 🎉' : '還沒有人作答這題（或都是空白）'}</div>`}</div></div>`;
+    renderInto($('#mkStem', body), q.s, true); if (key.r) renderInto($('#mkRef', body), key.r);
+    $('#mkAnon', body).onchange = (e) => { MK.anon = e.target.checked; paintMark(el); };
+    $('#mkTodo', body).onchange = (e) => { MK.todo = e.target.checked; paintMark(el); };
+    $('#mkRe', body).onclick = () => paintMark(el);
+    let lastCm = null;
+    const saveScore = async (item, v) => {
+      const [sid, k] = item.dataset.key.split('/');
+      const val = v === '' || v == null ? null : Math.max(0, Math.min(q.p, +v));
+      await FB.set(`exam/m/${CUR}/mg/${sid}/${k}/${MK.qid}`, val);
+      $('.mkscore', item).value = val == null ? '' : val; item.classList.toggle('done', val != null);
+      const ch = item.querySelector('.chip'); if (ch) { ch.className = 'chip ' + (val != null ? 'ok' : 'warn'); ch.textContent = val != null ? '✅ 已批' : '未批'; }
+      toast(val == null ? '已清除分數' : `✅ ${val} 分`, 1200);
+    };
+    const saveCm = async (input) => { const item = input.closest('.mkitem'), [sid, k] = item.dataset.key.split('/'); await FB.set(`exam/m/${CUR}/mc/${sid}/${k}/${MK.qid}`, input.value.trim().slice(0, 300) || null); toast('💬 已存評語', 1200); };
+    $('#mkList', body).onchange = (e) => { const it = e.target.closest('.mkitem'); if (!it) return; if (e.target.matches('.mkscore')) saveScore(it, e.target.value); else if (e.target.matches('.mkcm')) saveCm(e.target); };
+    $('#mkList', body).onclick = (e) => { const b = e.target.closest('[data-quick]'); if (b) saveScore(b.closest('.mkitem'), b.dataset.quick); };
+    $('#mkList', body).addEventListener('focusin', (e) => { if (e.target.matches('.mkcm')) lastCm = e.target; });
+    $('#mkCm', body).onclick = async (e) => {
+      const add = e.target.closest('#mkCAdd'), ci = e.target.closest('[data-ci]'), cd = e.target.closest('[data-cdel]');
+      if (add) { const t = (prompt('新增常用評語（最多 120 字）') || '').trim().slice(0, 120); if (!t) return; CMTS.push(t); await saveCmts(); return paintMark(el); }
+      if (cd) { CMTS.splice(+cd.dataset.cdel, 1); await saveCmts(); return paintMark(el); }
+      if (ci) { const tgt = lastCm || $('.mkcm', body); if (!tgt) return; const t = CMTS[+ci.dataset.ci]; tgt.value = tgt.value ? tgt.value + '；' + t : t; await saveCm(tgt); tgt.focus(); }
+    };
+  } else {
+    const n = items.length, cnt = q.o.map(() => 0); let blank = 0, ok = 0;
+    items.forEach((x) => { if (!X.answered(q.t, x.v)) blank++; const sel = q.t === 's' ? (typeof x.v === 'number' ? [x.v] : []) : Object.keys(X.multiToSet(x.v)).map(Number); sel.forEach((i) => { if (cnt[i] != null) cnt[i]++; }); if (X.scoreOne(q, key, x.v).ok) ok++; });
+    const gift = n && items.every((x) => x.mg != null && +x.mg === +q.p);
+    body.innerHTML = `<div class="card" style="margin:0"><div class="row"><h3>第 ${q.i + 1} 題・${X.TYPES[q.t]}（${q.p} 分）</h3><span class="sp"></span>${gift ? '<span class="chip ok">🎁 已全體送分</span><button class="btn ghost sm" id="mkUngift">↩️ 取消送分</button>' : `<button class="btn purple sm" id="mkGift" ${n ? '' : 'disabled'}>🎁 全體送分</button>`}${tip('題目有爭議時使用：每位作答過這題的同學（含空白）這題都給滿分。取消送分會恢復系統原本的判分。')}</div>
+      <div class="qview" style="margin-top:8px" id="mkQ"></div>
+      <div class="stats"><div class="stat"><b>${n}</b><span>作答人次</span></div><div class="stat"><b>${n ? Math.round(ok / n * 100) : '—'}%</b><span>原本的答對率</span></div><div class="stat"><b>${blank}</b><span>沒作答</span></div></div>
+      <table class="t"><thead><tr><th>選項</th><th>內容</th><th class="num">選的人次</th><th style="width:40%">比例</th></tr></thead><tbody>${q.o.map((o, i) => `<tr><td><b>${X.LETTERS[i]}</b>${(key.a || []).includes(i) ? ' ✅' : ''}</td><td>${esc(X.plain(o).slice(0, 60))}</td><td class="num">${cnt[i]}</td><td><div class="pbar ${(key.a || []).includes(i) ? 'ok' : ''}"><i style="width:${n ? Math.round(cnt[i] / n * 100) : 0}%"></i></div></td></tr>`).join('')}</tbody></table>
+      <p class="small muted">字母是題庫原始順序。錯誤選項選的人多，代表誘答力強，可以回頭講解。</p></div>`;
+    $('#mkQ', body).innerHTML = qViewHTML(Object.assign({}, q, { a: key.a || [], e: key.e }), q.i + 1, { noExp: true }); fillQView($('#mkQ .qview', body), Object.assign({}, q, { a: key.a || [] }));
+    const set = async (val) => { const up = {}; items.forEach((x) => { up[`${x.sid}/${x.k}/${MK.qid}`] = val; }); await FB.update(`exam/m/${CUR}/mg`, up); setTimeout(() => paintMark(el), 700); };
+    const g1 = $('#mkGift', body); if (g1) g1.onclick = async () => { if (!confirm(`第 ${q.i + 1} 題全體送分：${n} 份作答這題都給滿分 ${q.p} 分？`)) return; await set(q.p); toast('🎁 已全體送分'); };
+    const g2 = $('#mkUngift', body); if (g2) g2.onclick = async () => { if (!confirm('取消送分，恢復系統原本的判分？')) return; await set(null); toast('↩️ 已取消送分'); };
+  }
 }
