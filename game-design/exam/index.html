@@ -9,12 +9,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
-<link href="exam.css?v=20261023a" rel="stylesheet">
+<link href="exam.css?v=20261023b" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="../../account/staff.js?v=20261023a"></script>
-<script src="core.js?v=20261023a"></script>
+<script src="core.js?v=20261023b"></script>
 <style>
 .wrap{max-width:1180px;margin:0 auto;padding:18px 16px 70px}
 .top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
@@ -40,6 +40,9 @@
 .batch{position:sticky;bottom:10px;z-index:5;background:var(--ink);color:#fff;border-radius:14px;padding:10px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;box-shadow:0 8px 24px rgba(0,0,0,.25);margin-top:12px}
 .batch .btn{box-shadow:none}
 .empty{text-align:center;padding:40px 10px;color:var(--muted)}
+.pager{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:10px 0}
+section[data-step]{min-height:300px}
+#wSteps{position:sticky;top:0;background:var(--paper);z-index:3;padding:8px 0;margin:6px 0 10px}
 /* 對話框 */
 .modal{position:fixed;inset:0;background:rgba(31,42,68,.55);z-index:50;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:24px 12px}
 .modal .box{background:var(--paper);border:2px solid var(--ink);border-radius:18px;box-shadow:6px 6px 0 var(--ink);width:min(920px,100%);padding:20px 22px;position:relative}
@@ -143,6 +146,6 @@ tr.click{cursor:pointer} tr.click:hover td{background:#fbf8f1}
   <section id="t-bank" class="hidden"></section>
 </div>
 <div id="modals"></div>
-<script type="module" src="teacher.js?v=20261023a"></script>
+<script type="module" src="teacher.js?v=20261023b"></script>
 </body>
 </html>

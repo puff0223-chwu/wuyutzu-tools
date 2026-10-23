@@ -384,6 +384,13 @@ expect('學生不能列出全部圖片', exBase, null, R, '/exam/img', null, fal
 expect('學生不能上傳圖片', exBase, null, W, '/exam/img/abcdefgh1234', { owner: 'x', data: 'data:image/png;base64,xx' }, false);
 expect('老師寫自己的測驗清單', exBase, EX_TEA, W, '/exam/owners/EXT/NEWEXM', { title: '期中', at: 1 }, true);
 expect('不能讀別人的測驗清單', exBase, EX_TEA, R, '/exam/owners/TEA', null, false);
+expect('測驗可以記學期、科目、用途、日期、配分', exBase, EX_TEA, W, '/exam/m/NEWEXM/meta', emeta({ term: '115-1', subj: '遊戲設計思考', use: '期末考', date: NOW_, pts: { s: 2, m: 2, a: 5 } }), true);
+expect('學期格式要對', exBase, EX_TEA, W, '/exam/m/NEWEXM/meta', emeta({ term: '2026' }), false);
+expect('配分不能超過 100', exBase, EX_TEA, W, '/exam/m/NEWEXM/meta', emeta({ pts: { s: 200, m: 2, a: 5 } }), false);
+expect('配分不能塞其他題型', exBase, EX_TEA, W, '/exam/m/NEWEXM/meta', emeta({ pts: { s: 2, m: 2, a: 5, x: 1 } }), false);
+expect('測驗清單記學期科目用途', exBase, EX_TEA, W, '/exam/owners/EXT/NEWEXM', { title: '期中', at: 1, term: '115-1', subj: '化學', use: '期中考', date: 1 }, true);
+expect('測驗清單學期格式要對', exBase, EX_TEA, W, '/exam/owners/EXT/NEWEXM', { title: '期中', at: 1, term: 'x' }, false);
+expect('題庫可以記科目與說明', exBase, EX_TEA, W, '/exam/bk/EXT/bank0001', { name: '遊戲設計思考', at: 1, subj: '遊戲設計思考', desc: '115-1 用' }, true);
 expect('會員申請可以選 exam', exBase, STRANGER, W, '/staff/BAD', { email: 'bad@evil.com', name: 'B', school: 'S', purpose: 'p', want: { exam: true }, at: 1, status: 'pending' }, true);
 expect('核准的老師不能自己加開 exam', exBase, TEA, W, '/staff/TEA', Object.assign({}, base.staff.TEA, { apps: Object.assign({}, base.staff.TEA.apps, { exam: true }) }), false);
 expect('管理員可以開通 exam', exBase, MAIN, W, '/staff/NOAPP/apps/exam', true, true);

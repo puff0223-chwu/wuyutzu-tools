@@ -34,7 +34,7 @@ wuyutzu-tools/
 ├── firebase/                     # 🔐 Firebase 規則原始檔與工具（2026-10-13）
 │   ├── rules.src.json            #   規則原始檔：用縮寫 {{ADMIN}}、{{STAFF:app}}、{{EKEY}}，改規則改這裡
 │   ├── build_rules.py            #   展開縮寫 → 產生 firebase-rules.json
-│   └── rules.test.js             #   規則自動測試（targaryen 模擬 Firebase，255 項）
+│   └── rules.test.js             #   規則自動測試（targaryen 模擬 Firebase，262 項）
 ├── .github/workflows/firebase.yml # 🤖 推上 main 自動測試＋部署規則、每週一回報用量（2026-10-18）
 ├── tools/health/                 # 🩺 全站連線健檢（2026-10-18，見 7-14）
 │   ├── check.py                  #   掃即時連線／輪詢頁有沒有背景讓位、大節點筆數、規則字數
@@ -838,14 +838,16 @@ wuyutzu-tools/
 ### 🎲 線上檢定所（game-design/exam/，2026-10-23 第一階段）
 - **用途**：遊戲設計思考選修的線上測驗（其實是通用的，化學課也能用）。完整規格見專案文件「線上檢定所_開發規格書.md」
 - **登入**：會員中心共用帳號，系統代號 `exam`，其他老師可以申請；老師頁**不連回事務所首頁**（分享給其他老師的系統），只連會員中心。管理員開的測驗 `meta.admin = true`（管理員沒有 staff 紀錄，學生寫入靠這個旗標放行）
-- **題型**（老師 2026-10-23 指定）：🔘 單選、☑️ **多重選擇題**（每錯一個選項——該選沒選、不該選卻選——扣該題配分 **1/5**，扣到 0 分為止；沒作答 0 分；4 個選項全錯會剩 1/5）、✏️ 簡答（老師批閱，沒寫自動 0 分）。舊考卷的「複選題」匯入時一律轉成多重選擇題。計分程式在 `core.js` 的 `scoreOne`，扣分比例 `MULTI_PENALTY = 0.2`
-- **📚 題庫**：`exam/bk/<uid>/<題庫id>` = { name, at, q: { 題目id: { t(s/m/a), s 題幹HTML, o[選項HTML], a[正解位置], r 簡答參考答案, e 解析, d 易/中/難, tags[], l 鎖定選項順序, p 配分, i 排序, at, src 來源檔名 } } }
+- **題型**（老師 2026-10-23 指定、當天更正）：🔘 單選、☑️ **多重選擇題**（每錯一個選項——該選沒選、不該選卻選——**倒扣 1/5**：那個選項的 1/5 拿不到、再倒扣 1/5，所以**每錯一個扣 2/5 題分**，扣到 0 分為止；錯 1 個得 3/5、錯 2 個得 1/5、錯 3 個以上 0 分；沒作答 0 分）、✏️ 簡答（老師批閱，沒寫自動 0 分）。舊考卷的「複選題」匯入時一律轉成多重選擇題。計分程式在 `core.js` 的 `scoreOne`，扣分比例 `MULTI_PENALTY = 0.4`
+- **📚 題庫**：`exam/bk/<uid>/<題庫id>` = { name, at, subj 科目, desc 說明, q: { 題目id: { t(s/m/a), s 題幹HTML, o[選項HTML], a[正解位置], r 簡答參考答案, e 解析, d 易/中/難, tags[], l 鎖定選項順序, i 排序, at, src 來源檔名 } } }——**題庫不記配分**（2026-10-23 老師決定；舊資料裡的 p 不再使用）
+  - **題庫小首頁**（2026-10-23）：卡片列出所有題庫（科目、題數、各題型數、標籤、最後更新），首頁就能匯入 Word／Excel／備份（可選建立新題庫或加到現有題庫）；點卡片進題庫，「← 所有題庫」回首頁、「⚙️ 題庫設定」改名稱、科目、說明
+  - **題目分頁**：一頁 20 題（`PAGE_N`），上下都有分頁鈕；篩選後回第 1 頁；「全選」選的是篩選出來的全部題目（不只這一頁）。建立測驗的選題清單同樣分頁，另有「只看已選的題目」
   - 編輯器：Quill 2.0.3（CDN），工具列 字級／粗斜底刪／顏色／上下標／對齊／清單／連結／圖片；選項用精簡工具列。圖片：工具列上傳、貼上、拖曳都會**壓縮（最長邊 1000px、JPEG 0.72）→ 存 `exam/img/<亂數14碼>` → 題目裡只寫 `<img data-img="代號">`**（自訂 Quill 圖片格式 `ExImg` 保留 data-img 與寬度）；點圖片可選小／中／大／原始寬度。從 Word、網頁貼上的 data: 圖片也會自動上傳
-  - 已存過的題目自動儲存（停 1.2 秒），另有「💾 儲存」「儲存並新增下一題」、Ctrl+S；批次：加／移除標籤、改難易度、改配分、複製到其他題庫、刪除；↑↓ 調整順序
+  - 已存過的題目自動儲存（停 1.2 秒），**但改了題型就不自動儲存**（單選改簡答會清掉選項，2026-10-23 老師遇到題目被改成簡答），要按「💾 儲存」；另有「儲存並新增下一題」、Ctrl+S；批次：加／移除標籤、改難易度、複製到其他題庫、刪除；↑↓ 調整順序
   - **Word 匯入**（mammoth 1.8.0，`styleMap: ['u => u']` 保留底線）：`ExamCore.parseDocHtml` 依舊考卷格式解析——題號「1.」**必須在段落開頭**才算新題目（解析裡的「1. 2.」不會被誤判，而且後面幾行內要看得到題型或選項）；「單選題（難易度:中）」；選項「A.」～「H.」（選項文字跑到下一行會接回去）；「正確答案：A C」；「正確答案解釋：」或「答案解釋：」，「暫無」＝空白。匯入前有預覽表（警告列標黃）、選題庫、加標籤、各題型配分；老師的舊考卷實測 62 題（單選 39、複選→多重選擇 23）、23 張圖全部正確（圖片原本約 5MB，壓縮後 2.3MB）
-  - Excel 匯入／範本：欄位 題型、題幹、A～H、答案、解析、難易度、標籤、配分（`ExamCore.parseRows`）；JSON 備份含圖片，匯回時圖片換新代號
+  - Excel 匯入／範本：欄位 題型、題幹、A～H、答案、解析、難易度、標籤（`ExamCore.parseRows`；沒有配分欄）；JSON 備份含圖片，匯回時圖片換新代號
 - **📝 測驗**：`exam/m/<6碼代碼>/`
-  - `meta`：owner, at, title, desc, open（老師開關）, openAt（0＝手動）, closeAt（0＝不設）, mins, tries（1～10，不限＝20）, policy（max/first/last/avg）, gap（分鐘，0＝關閉）, draw（每人隨機抽幾題，0＝全部）, shufQ, shufO, reshuf, showNeed, rosterOnly, guard{on,max,idle,blur}, n, total, bank, pub, pubPaper, pubKey, admin
+  - `meta`：owner, at, title, desc, **term 學期（如 115-1）, subj 科目, use 用途（平時測驗／小考／期中考／期末考／補考／課堂練習／其他）, date 測驗日期時間, pts{s,m,a} 各題型配分**（2026-10-23）, open（老師開關）, openAt（0＝手動）, closeAt（0＝不設）, mins, tries（1～10，不限＝20）, policy（max/first/last/avg）, gap（分鐘，0＝關閉）, draw（每人隨機抽幾題，0＝全部）, shufQ, shufO, reshuf, showNeed, rosterOnly, guard{on,max,idle,blur}, n, total, bank, pub, pubPaper, pubKey, admin
   - 開放狀態 `ExamCore.stateOf`：open＝false →「未開放」；open 且還沒到 openAt →「尚未開始」；過了 closeAt →「已結束」。排程模式就是 open＝true＋openAt
   - `paper/<題目id>`：題目**快照**（建立時從題庫複製；之後改題庫不影響，要更新按「修改題目與配分」重新選題，已交的考卷自動重新計分）＝ { i, t, s, o, l, p, need }，**沒有答案**；開放期間學生才讀得到（公布題目後也讀得到）
   - `key/<題目id>`：{ a, r, e }，只有出題老師讀得到；勾「公布正解與解析」後學生才讀得到
@@ -853,6 +855,8 @@ wuyutzu-tools/
   - `s/<學號>/<第幾次>`：{ info{cls,seat,name}, st（**伺服器時間**，規則要求 `=== now`）, dev（裝置鎖）, ans{題目id: 單選數字／多重選擇 "0,2"／簡答文字}, ev{push: {t, k: v 違規/resume/idle, d 原因}}, end{t, by: self/time/guard/teacher, why} }
   - `mg/<學號>/<第幾次>/<題目id>`：老師給的簡答（或調整）分數
   - `g/<學號>`：自動閱卷官算好的成績 { k: { a1: { s, full, p 待批數, by, d{題目id: 分數，-1＝待批} } }, f 採計分數, fp 有沒有待批, n, policy, at }，**key 用 a1、a2**（純數字 key 會被 Firebase 變成陣列，簽章比對會一直不一樣而重寫）；公布（meta.pub）後學生讀得到自己那筆
+- **建立／修改測驗＝分頁精靈**（2026-10-23）：① 基本資料（名稱、學期、科目、用途、測驗日期時間、說明）② 選題（題庫、篩選、分頁、每人抽幾題）③ 配分（單選／多重選擇／簡答各一個分數，表格算小計與滿分）④ 時間與次數 ⑤ 打亂與反作弊 ⑥ 名單與確認（設定總覽）。上方分頁鈕可直接跳，「✅ 建立測驗」一直在下面；漏填會跳回那一頁。科目、用途、配分記在老師瀏覽器（localStorage `exam:last`）當下次預設；學期預設依今天算（`ExamCore.currentTerm`：8 月～1 月上學期，2～7 月下學期）
+- **我的測驗**：篩選學期（預設本學期）、科目、用途、搜尋；依測驗日期排序；卡片顯示學期、科目、用途。`owners/<uid>/<代碼>` 也存 title, at, term, subj, use, date（以後清單可以不用讀每份 meta）。學生首頁、測驗頁標題列、Excel（多一張「測驗資訊」，檔名含學期科目用途）都會帶上這些分類
 - **規則重點**（`firebase/rules.src.json` 的 `exam`）：開始第 k 次要「開放中、擁有者帳號有效、k ≤ 可作答次數、第 k−1 次已交卷、過了間隔時間、（名單限定時）名單吻合、st＝伺服器時間」——規則不能把數字轉字串，所以 1～20 次是**逐次寫出來**的（產生程式見 CHANGELOG 2026-10-23）；答案只能在「已開始、未交卷、開始時間＋作答時間＋15 秒以內、測驗開放中」寫入；交卷 `end` 寫一次就鎖住，學生不能寫 `by: teacher`、時間要等於伺服器時間；學生讀得到自己的 `s/<學號>`，讀不到全班
 - **學生頁**（`take.html?code=`）：輸入班級、座號、姓名、學號（存在這台裝置下次自動帶入）→ 大廳顯示各次紀錄與交卷方式、能不能開始（未開放／次數用完／要等間隔）→ 作答規則＋誠信宣言 → 開始（進全螢幕，`PUT …/<k>` 寫伺服器時間，讀回來算時間差）→ 一題一頁、題號導覽（已答深色、🚩 標記）、每選一個答案就 PUT（失敗每 4 秒重試，上方顯示存檔狀態）、浮水印（班級座號姓名學號）、停用複製／右鍵／拖曳、簡答不能貼上、作答中題目裡的連結不能點 → 交卷前列出沒作答與標記的題號
   - 時間到自動交卷（by time）；每 20 秒看一次 meta 與自己的 end（背景不輪詢）：老師關閉 → 顯示「老師已收卷」（老師頁會寫 by teacher）
@@ -1170,6 +1174,12 @@ fp/
 - **Quill 的按鈕會被 querySelector 先抓到**：選項列裡 `$('button', row)` 抓到的是 Quill 工具列的第一個按鈕，不是 ✕ 刪除鍵 → 自己的按鈕一律加 class 再選
 - **Word 解析的兩個陷阱**（老師的舊考卷）：解析裡的「1. 「注意力」…」看起來像題號 → 新題目必須是段落第一行；第 33 題選項「B.」後面換行才接文字 → 選項內容要把後面的行接回去。另外 mammoth 預設會丟掉底線，要加 `styleMap: ['u => u']`（老師的考卷大量用底線標「不」「非」）
 - **測試方式**：Playwright 開老師頁＋學生頁，用假的 Firebase（攔截 REST 請求、用記憶體當資料庫、會把數字 key 轉陣列）＋假的 `account/fb.js`（輪詢模擬 onValue），CDN 改讀本機 npm 套件。跑過：Word 匯入 62 題、編輯器載入圖片、加選項存檔、新增簡答題、建立測驗、開放、學生作答、違規 1 次警告、第 2 次系統代結、重考答對、交卷、老師給簡答分、公布、學生看成績與題目、重新整理繼續作答、換裝置被擋、老師關閉並收卷（兩位作答中的學生都收到）、時間到自動收卷、名單（未進入）、Excel 三張表。規則另外用 targaryen 測 86 項
+
+### 7-24 線上檢定所・老師第一輪回饋（2026-10-23）
+- **一行寫完的程式不要在中間加 `//` 註解**：測驗清單的篩選是一整行的箭頭函式，用 sed 在中間插了 `// 註解`，後面的條件全被當成註解 → 整個老師頁打不開（Unexpected token）。要註解就放上一行
+- **自動儲存遇到「破壞性修改」要停**：改題型會改掉資料的形狀（選項、答案被清掉），自動儲存會在老師還在猶豫時就存下去。規則：題型跟上次存的不一樣時只提示、不自動存
+- **配分放在測驗，不放題庫**：同一題在不同測驗配分不同，放題庫反而要一直改；題目快照 `paper.p` 照舊（閱卷用），來源改成 `meta.pts[題型]`
+- **規則**：meta 多 term／subj／use／date／pts，owners 可記 term／subj／use／date，題庫可記 subj／desc；規則測試新增 7 項（共 262 項）
 
 ## 8. 已知注意事項
 
@@ -1934,7 +1944,7 @@ fp/
      ".read": "auth != null && auth.uid === $uid",
      ".write": "auth != null && auth.uid === $uid && (auth != null && ((auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true) || (root.child('staff/'+auth.uid+'/status').val() === 'approved' && root.child('staff/'+auth.uid+'/apps/exam').val() === true)))",
      "$code": {
-      ".validate": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && newData.hasChildren(['title','at']) && newData.child('title').isString() && newData.child('title').val().length <= 60"
+      ".validate": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && newData.hasChildren(['title','at']) && newData.child('title').isString() && newData.child('title').val().length <= 60 && (!newData.child('term').exists() || newData.child('term').val().matches(/^[0-9]{2,3}-[12]$/)) && (!newData.child('subj').exists() || (newData.child('subj').isString() && newData.child('subj').val().length <= 20)) && (!newData.child('use').exists() || (newData.child('use').isString() && newData.child('use').val().length <= 12))"
      }
     }
    },
@@ -2007,6 +2017,12 @@ fp/
          ".validate": false
         }
        }
+      },
+      "subj": {
+       ".validate": "newData.isString() && newData.val().length <= 20"
+      },
+      "desc": {
+       ".validate": "newData.isString() && newData.val().length <= 200"
       },
       "$other": {
        ".validate": false
@@ -2113,6 +2129,32 @@ fp/
        },
        "blur": {
         ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 60"
+       },
+       "$other": {
+        ".validate": false
+       }
+      },
+      "term": {
+       ".validate": "newData.isString() && newData.val().matches(/^[0-9]{2,3}-[12]$/)"
+      },
+      "subj": {
+       ".validate": "newData.isString() && newData.val().length <= 20"
+      },
+      "use": {
+       ".validate": "newData.isString() && newData.val().length <= 12"
+      },
+      "date": {
+       ".validate": "newData.isNumber() && newData.val() >= 0"
+      },
+      "pts": {
+       "s": {
+        ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+       },
+       "m": {
+        ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+       },
+       "a": {
+        ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
        },
        "$other": {
         ".validate": false

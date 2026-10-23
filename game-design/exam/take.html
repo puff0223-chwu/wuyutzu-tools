@@ -9,9 +9,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<link href="exam.css?v=20261023a" rel="stylesheet">
+<link href="exam.css?v=20261023b" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
-<script src="core.js?v=20261023a"></script>
+<script src="core.js?v=20261023b"></script>
 <style>
 body{background:var(--bg)}
 .wrap{max-width:760px;margin:0 auto;padding:18px 16px 90px}
@@ -117,6 +117,10 @@ textarea.ans{min-height:170px;font-size:1.02rem;line-height:1.6;margin-top:12px;
   function facts() {
     var g = G();
     return '<div class="facts">' +
+      (META.subj ? '<div class="fact"><span>科目</span><b>' + esc(META.subj) + '</b></div>' : '') +
+      (META.use ? '<div class="fact"><span>用途</span><b>' + esc(META.use) + '</b></div>' : '') +
+      (META.term ? '<div class="fact"><span>學期</span><b>' + esc(X.termName(META.term)) + '</b></div>' : '') +
+      ((META.date || META.openAt) ? '<div class="fact"><span>測驗日期</span><b>' + X.fmtTime(META.date || META.openAt) + '</b></div>' : '') +
       '<div class="fact"><span>狀態</span><b>' + X.STATE[X.stateOf(META, now())] + '</b></div>' +
       '<div class="fact"><span>題數</span><b>' + (META.draw || META.n) + ' 題</b></div>' +
       '<div class="fact"><span>作答時間</span><b>' + META.mins + ' 分鐘</b></div>' +
@@ -186,7 +190,7 @@ textarea.ans{min-height:170px;font-size:1.02rem;line-height:1.6;margin-top:12px;
             '<div class="rules"><b>作答規則</b><ul style="margin:4px 0 0;padding-left:1.3em">' +
             '<li>按下「開始作答」後立刻開始倒數 <b>' + mins + ' 分鐘</b>' + (mins < META.mins ? '（因為快到截止時間了）' : '') + '，中途<b>不會暫停</b>。</li>' +
             '<li>每選一個答案就會自動存到雲端，時間到系統會自動收卷。</li>' +
-            '<li>多重選擇題：每錯一個選項（該選沒選、不該選卻選）扣該題 1/5 分，扣完為止；沒作答 0 分。</li>' +
+            '<li>多重選擇題：每錯一個選項（該選沒選、不該選卻選）倒扣 1/5（等於扣該題 2/5 分），扣到 0 分為止；沒作答 0 分。</li>' +
             (g ? '<li>🛡️ <b>反作弊開啟</b>：作答時會進入全螢幕。<b>離開全螢幕、切換到其他頁面或 App、開分割畫面</b>都算違規' + (g.idle ? '；' + g.idle + ' 分鐘沒有任何動作也會被視為離開' : '') + '。</li>' +
               '<li>' + (g.max > 1 ? '第 ' + (g.max - 1 > 1 ? '1～' + (g.max - 1) : '1') + ' 次違規會警告，<b>第 ' + g.max + ' 次違規系統會立刻幫你交卷</b>' : '<b>只要違規一次，系統就會立刻幫你交卷</b>') + '，成績單會註明「系統代結」。</li>' +
               '<li>開始前請先關掉通知、音樂，平板請不要滑出控制中心。</li>' : '') +
@@ -282,7 +286,7 @@ textarea.ans{min-height:170px;font-size:1.02rem;line-height:1.6;margin-top:12px;
       '<div class="qhtml stemx" id="xStem"></div>' +
       (q.t === 'a' ? '<textarea class="ans" id="xA" maxlength="3000" placeholder="在這裡輸入你的答案…（會自動儲存）"></textarea><div class="small muted" id="xLen"></div>'
         : '<div class="opts" id="xOpts">' + SHEET.opt[id].map(function (orig, i) { return '<button type="button" class="opt ' + q.t + '" data-o="' + orig + '"><span class="L">' + X.LETTERS[i] + '</span><span class="c qhtml"></span></button>'; }).join('') + '</div>' +
-          (q.t === 'm' ? '<p class="small muted" style="margin:8px 0 0">☑️ 可以選不只一個；每錯一個選項扣 1/5 題分。再點一次可以取消。</p>' : '')) +
+          (q.t === 'm' ? '<p class="small muted" style="margin:8px 0 0">☑️ 可以選不只一個；每錯一個選項倒扣 1/5（等於扣 2/5 題分）。再點一次可以取消。</p>' : '')) +
       '</div><div class="nav"><button class="btn ghost" id="xPrev" ' + (CUR ? '' : 'disabled') + '>← 上一題</button><span class="sp"></span>' +
       (CUR < n - 1 ? '<button class="btn" id="xNext">下一題 →</button>' : '<button class="btn purple" id="xEnd">📤 檢查並交卷</button>') + '</div>' +
       '<div class="card" style="margin-top:16px;padding:12px 14px"><b class="small">題號（深色＝已作答，🚩＝已標記）</b><div class="grid" id="xGrid">' + SHEET.ids.map(function (qid, i) { return '<button data-i="' + i + '" class="' + (X.answered(PAPER[qid].t, ANS[qid]) ? 'done ' : '') + (i === CUR ? 'cur ' : '') + (FLAG[qid] ? 'flag' : '') + '">' + (i + 1) + '</button>'; }).join('') + '</div></div></div></div>';

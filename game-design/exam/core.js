@@ -1,6 +1,6 @@
 /* 🎲 線上檢定所：共用核心（老師頁、學生頁、測試共用）
    - 設定、代碼、學號格式、亂數（依學號固定的題目順序與選項順序）
-   - 計分：單選、多重選擇題（每錯一個選項扣 1/5 題分，扣完為止）、簡答（老師給分）、多次作答採計方式
+   - 計分：單選、多重選擇題（每錯一個選項倒扣 1/5，等於扣 2/5 題分，扣完為止）、簡答（老師給分）、多次作答採計方式
    - Word 考卷解析（mammoth 轉出的 HTML → 題目）、Excel 範本解析
    - 雲端：學生頁用 REST（fetch），問完就走，不長期佔連線
    ⚠ 這個檔案不能放正確答案：答案只存在 Firebase 的 exam/m/<代碼>/key（只有出題老師讀得到） */
@@ -14,7 +14,9 @@
   };
 
   var TYPES = { s: '單選題', m: '多重選擇題', a: '簡答題' };
-  var MULTI_PENALTY = 0.2; // 多重選擇題：每錯一個選項扣該題配分的 1/5，扣到 0 分為止（老師 2026-10-23 指定）
+  // 多重選擇題（老師 2026-10-23 更正）：每錯一個選項「倒扣」1/5——那個選項本身的 1/5 拿不到、再倒扣 1/5，
+  // 所以每錯一個實際扣 2/5 題分，扣到 0 分為止（跟學測多選題一樣：錯 1 個 3/5、錯 2 個 1/5、錯 3 個以上 0）
+  var MULTI_PENALTY = 0.4;
   var TYPE_ICON = { s: '🔘', m: '☑️', a: '✏️' };
   var DIFFS = ['易', '中', '難'];
   var POLICY = {
@@ -36,8 +38,21 @@
     title: '', desc: '', open: false, openAt: 0, closeAt: 0, mins: 40, tries: 1, policy: 'max', gap: 0,
     draw: 0, shufQ: true, shufO: true, reshuf: false, rosterOnly: false, showNeed: false,
     guard: { on: true, max: 2, idle: 5, blur: 3 },
-    pub: false, pubPaper: false, pubKey: false
+    pub: false, pubPaper: false, pubKey: false,
+    term: '', subj: '', use: '平時測驗', date: 0,   // 學期、科目、用途、測驗日期時間（2026-10-23：為了開放給其他老師，測驗要能分類）
+    pts: { s: 2, m: 2, a: 5 }                        // 配分由老師在測驗裡依題型設定（題庫不記配分）
   };
+  var USES = ['平時測驗', '小考', '期中考', '期末考', '補考', '課堂練習', '其他'];
+  var SUBJECTS = ['遊戲設計思考', '化學', '探究與實作', '自然科學', '其他'];
+  // 台灣的學期：8 月～隔年 1 月＝上學期（1），2～7 月＝下學期（2）；學年＝西元－1911（下學期用前一年）
+  function currentTerm(ms) {
+    var d = new Date(ms || Date.now()), y = d.getFullYear(), mo = d.getMonth() + 1;
+    if (mo >= 8) return (y - 1911) + '-1';
+    if (mo === 1) return (y - 1912) + '-1';
+    return (y - 1912) + '-2';
+  }
+  function validTerm(t) { return /^[0-9]{2,3}-[12]$/.test(String(t || '')); }
+  function termName(t) { var m = /^(\d+)-([12])$/.exec(String(t || '')); return m ? m[1] + ' 學年度第' + (m[2] === '1' ? '一' : '二') + '學期' : (t || '未分學期'); }
 
   /* ---------- 小工具 ---------- */
   function escapeHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -115,7 +130,7 @@
     var ans = (key && key.a) || [];
     if (manual != null && manual !== '') return { s: Math.max(0, Math.min(pts, +manual)), ok: +manual >= pts, adj: true };
     if (q.t === 's') { var ok = typeof v === 'number' && ans.indexOf(v) >= 0; return { s: ok ? pts : 0, ok: ok }; }
-    // 多重選擇題：每個選項逐一判斷，「該選沒選」「不該選卻選」各算錯一個；每錯一個扣 1/5 題分，扣完為止；沒作答＝0 分
+    // 多重選擇題：每個選項逐一判斷，「該選沒選」「不該選卻選」各算錯一個；每錯一個扣 2/5 題分（倒扣 1/5），扣完為止；沒作答＝0 分
     var sel = multiToSet(v), n = (q.o || []).length || 1;
     if (!Object.keys(sel).length) return { s: 0, ok: false, wrong: n, blank: true };
     var right = {}; ans.forEach(function (a) { right[a] = 1; });
@@ -307,8 +322,8 @@
   }
 
   /* ---------- Excel／CSV 範本 ----------
-     欄位：題型、題幹、A～H、答案、解析、難易度、標籤、配分 */
-  var SHEET_HEAD = ['題型', '題幹', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', '答案', '解析', '難易度', '標籤', '配分'];
+     欄位：題型、題幹、A～H、答案、解析、難易度、標籤（配分在建立測驗時依題型設定） */
+  var SHEET_HEAD = ['題型', '題幹', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', '答案', '解析', '難易度', '標籤'];
   function parseRows(rows) {
     var qs = [], warn = [];
     if (!rows || !rows.length) return { qs: qs, warn: ['檔案是空的'] };
@@ -327,7 +342,7 @@
       if (!t) t = opts.length ? (a.length > 1 ? 'm' : 's') : 'a';
       var d = get(r, '難易度'); d = DIFFS.indexOf(d) >= 0 ? d : (/難/.test(d) ? '難' : /易|簡單/.test(d) ? '易' : '中');
       var q = { num: ri + 1, t: t, d: d, s: escapeHtml(stem).replace(/\n/g, '<br>'), o: t === 'a' ? [] : opts, a: t === 'a' ? [] : a, e: escapeHtml(get(r, '解析')).replace(/\n/g, '<br>'),
-        tags: get(r, '標籤').split(/[,，、;；]/).map(function (x) { return x.trim(); }).filter(Boolean), p: +get(r, '配分') || 0 };
+        tags: get(r, '標籤').split(/[,，、;；]/).map(function (x) { return x.trim(); }).filter(Boolean) };
       if (t === 'a' && ansText) q.r = escapeHtml(get(r, '答案')).replace(/\n/g, '<br>');
       var w = [];
       if (t !== 'a' && opts.length < 2) w.push('選項少於 2 個');
@@ -401,7 +416,7 @@
   };
 
   root.ExamCore = {
-    CONFIG: CONFIG, TYPES: TYPES, MULTI_PENALTY: MULTI_PENALTY, TYPE_ICON: TYPE_ICON, DIFFS: DIFFS, POLICY: POLICY, BY: BY, WHY: WHY, LETTERS: LETTERS, DEFAULT_META: DEFAULT_META, STATE: STATE,
+    CONFIG: CONFIG, TYPES: TYPES, MULTI_PENALTY: MULTI_PENALTY, TYPE_ICON: TYPE_ICON, DIFFS: DIFFS, POLICY: POLICY, BY: BY, WHY: WHY, LETTERS: LETTERS, DEFAULT_META: DEFAULT_META, STATE: STATE, USES: USES, SUBJECTS: SUBJECTS, currentTerm: currentTerm, validTerm: validTerm, termName: termName,
     escapeHtml: escapeHtml, plain: plain, hasImg: hasImg, isEmptyHtml: isEmptyHtml, normId: normId, validId: validId, validCode: validCode, newCode: newCode, newId: newId,
     round2: round2, fmtTime: fmtTime, fmtClock: fmtClock, fmtLeft: fmtLeft, hashStr: hashStr, makeRng: makeRng, shuffle: shuffle,
     sheetFor: sheetFor, multiToSet: multiToSet, setToMulti: setToMulti, answered: answered, scoreOne: scoreOne, gradeAttempt: gradeAttempt, finalScore: finalScore,
