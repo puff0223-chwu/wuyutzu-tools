@@ -5,7 +5,7 @@ bed.db('DELETE', f'secret-source/m/{code}/r/11500128')
 with sync_playwright() as p:
     b = p.chromium.launch(); c = b.new_context(viewport={'width': 1366, 'height': 860}); bed.setup(c)
     s = c.new_page(); s.on('pageerror', lambda e: print('SERR', e)); s.goto(bed.ORIGIN + f'/inquiry/secret-source/?m={code}'); s.wait_for_timeout(1000)
-    s.fill('#inId', '11500128'); s.fill('#inName', '陳可馨'); s.click('#btnStart'); s.wait_for_timeout(1500)
+    s.fill('#inId', '11500128'); s.fill('#inName', '陳小馨'); s.click('#btnStart'); s.wait_for_timeout(1500)
     s.click('[data-k="archive"]'); s.wait_for_timeout(1000)
     q = s.locator('.panel, #panel').first.inner_text()
     kw = s.locator('input[placeholder="研究「誰」？"]'); kw.fill('維生素C'); s.locator('input[placeholder="實驗中你改變的東西"]').fill('溫度'); s.locator('input[placeholder="你要測量的結果"]').fill('氧化')
