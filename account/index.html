@@ -82,14 +82,14 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92em;min-width:720px}
 <body>
 <div class="top"><div class="brand">👥 會員中心<small>WU YU-ZI TEACHING STUDIO</small></div><span class="sp"></span><span id="who" class="small" style="opacity:.8"></span><button id="out" style="display:none">登出</button><a id="back" href="#" style="display:none"></a></div>
 <div class="wrap" id="app"><p class="muted" style="text-align:center;margin-top:20vh">載入中…</p></div>
-<script src="staff.js?v=20261023a"></script>
+<script src="staff.js?v=20261024a"></script>
 <script type="module">
 const W = window.WuStaff, $ = (s, el) => (el || document).querySelector(s), $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const toast = (m, err) => { const t = document.createElement('div'); t.className = 'toast' + (err ? ' err' : ''); t.textContent = m; document.body.appendChild(t); setTimeout(() => t.remove(), err ? 4200 : 2600); };
 const wantApp = new URLSearchParams(location.search).get('app') || '';
 // 從哪個系統點進來，就放「← 回到那個系統」（會員中心不放回事務所首頁的連結）
-if (W.APPS[wantApp]) { const bk = $('#back'); bk.href = '../' + W.APPS[wantApp].url; bk.textContent = '← 回到' + W.APPS[wantApp].name.replace(/^\S+\s/, ''); bk.style.display = ''; }
+if (W.APPS[wantApp]) { const bk = $('#back'); bk.href = W.href(W.APPS[wantApp].url, '../'); bk.textContent = '← 回到' + W.APPS[wantApp].name.replace(/^\S+\s/, ''); bk.style.display = ''; }
 const S = { user: null, rec: null, unsubs: [], tab: 'pending', all: {}, ver: {}, req: {} };
 let FB, authErr = (e) => String(e && (e.code || e.message) || e), gBtn = () => '';
 
@@ -188,7 +188,7 @@ function renderMe() {
   if (ownerOf.length && !rec) {
     $('#app').innerHTML = `<div class="card narrow" style="max-width:560px"><h1>🔑 舊的系統專用帳號</h1><p class="muted small">${esc(u.email)} 是${W.APPS[ownerOf[0]].name}以前的專用帳號。</p>
       <div class="alert blue">現在所有系統都改用主帳號 <b>${esc(W.ADMIN)}</b>（Google 登入）管理。要把這個帳號的資料搬到主帳號：請登出，用主帳號登入會員中心 →「🚚 舊帳號搬家」。</div>
-      <div class="mylinks"><a href="../${W.APPS[ownerOf[0]].url}"><b>${W.APPS[ownerOf[0]].name}</b><span class="sp"></span>開啟 →</a></div></div>`;
+      <div class="mylinks"><a href="${W.href(W.APPS[ownerOf[0]].url, '../')}"><b>${W.APPS[ownerOf[0]].name}</b><span class="sp"></span>開啟 →</a></div></div>`;
     return;
   }
   // 管理員預先開通了這個 Email：信箱已驗證就自動啟用；還沒驗證就先請他驗證（防止別人冒用同一個 Email）
@@ -216,7 +216,7 @@ function renderMe() {
     ${st === 'rejected' ? `<div class="alert">❌ 申請沒有通過。${rec.note ? '說明：' + esc(rec.note) : ''}</div>` : ''}
     ${st === 'disabled' ? `<div class="alert">⏸ 帳號已暫停使用。${rec.note ? '說明：' + esc(rec.note) : ''}</div>` : ''}
   </div>
-  ${mine.length ? `<div class="card"><h2>🧰 我可以用的系統</h2><div class="mylinks">${mine.map((k) => `<a href="../${W.APPS[k].url}"><b>${W.APPS[k].name}</b><span>${esc(W.APPS[k].desc)}</span><span class="sp"></span>開啟 →</a>`).join('')}</div>
+  ${mine.length ? `<div class="card"><h2>🧰 我可以用的系統</h2><div class="mylinks">${mine.map((k) => `<a href="${W.href(W.APPS[k].url, '../')}"><b>${W.APPS[k].name}</b><span>${esc(W.APPS[k].desc)}</span><span class="sp"></span>開啟 →</a>`).join('')}</div>
     <p class="small muted" style="margin-top:10px">各系統用<b>同一個帳號</b>登入（Google 登入就按 Google 按鈕）。</p></div>` : ''}
   ${st === 'approved' && Object.keys(W.APPS).some((k) => !mine.includes(k)) ? `<div class="card"><h2>➕ 申請加開其他系統</h2><div id="moreBox">${appBoxes({}, 'more', Object.keys(W.APPS).filter((k) => !mine.includes(k)))}</div>
     <button class="btn" id="moreGo" style="margin-top:12px">📨 送出加開申請</button><span class="small muted" id="moreMsg" style="margin-left:8px"></span></div>` : ''}
@@ -307,7 +307,7 @@ function drawAdmin() {
   const body = tab === 'list' ? listHTML() : (tab === 'more' ? groups.more.map(moreCard) : groups.pending.map(card)).join('') || '<p class="muted" style="margin-top:14px">目前沒有資料</p>';
   const total = Object.keys(S.all || {}).length + Object.keys(S.pres || {}).length;
   $('#app').innerHTML = `
-  <div class="card"><div class="row"><h1>👥 會員管理</h1><span class="chip ink">🔑 管理員</span><span class="sp"></span>${Object.values(W.APPS).map((a) => `<a class="btn ghost sm" href="../${a.url}">${a.name}</a>`).join('')}</div>
+  <div class="card"><div class="row"><h1>👥 會員管理</h1><span class="chip ink">🔑 管理員</span><span class="sp"></span>${Object.values(W.APPS).map((a) => `<a class="btn ghost sm" href="${W.href(a.url, '../')}">${a.name}</a>`).join('')}</div>
     <p class="small muted">老師在這個頁面自己申請帳號，你核准時勾選他能用哪些系統；也可以在「📋 會員名單」手動新增、修改、停用。各系統的安全規則會檢查這份名單。</p>
     <div class="tabs">${[['pending', `⏳ 待核准（${groups.pending.length}）`], ['more', `➕ 加開申請（${groups.more.length}）`], ['list', `📋 會員名單（${total}）`]].map(([k, t]) => `<button data-tab="${k}" class="${tab === k ? 'on' : ''}">${t}</button>`).join('')}</div>
     ${body}

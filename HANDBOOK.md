@@ -338,7 +338,7 @@
 - 已開通的外校老師：zoo@dssh、t059@m2.ymjh（請他們繼續用 Email＋密碼登入）
 
 **🔐 Firebase 規則與健檢**
-- 改規則：`rules.src.json` → `build_rules.py` → `node firebase/rules.test.js`（目前 282 項）→ 推上 main，Action 自動部署並在「🔋 Firebase 資源報告」議題回報用量（每週一 07:47 也報一次）
+- 改規則：`rules.src.json` → `build_rules.py` → `node firebase/rules.test.js`（目前 288 項）→ 推上 main，Action 自動部署並在「🔋 Firebase 資源報告」議題回報用量（每週一 07:47 也報一次）
 - 健檢：`python3 tools/health/check.py`；第 1 次 2026-10-18（約 20 個工具，修 7 處）
 
 ### 4-2 ⚗️ 化學實驗室 No.223
@@ -446,7 +446,9 @@
 - 學生密碼：`password_hash` 空字串＝仍是預設密碼（學號）→ 匯入幾百位學生不用一個個算雜湊；老師「還原」也只是清成空字串
 - 篩選在伺服器做：學生 API 只回傳「開放中課程」的「學生可見欄位」，老師頁的「用學生的眼睛看」用同一份 `studentView.js`
 - 伺服器 API 用本機的「假 Supabase」（`test/fakeSupabase.js`）跑完整流程測試（登入、鎖定、改密碼、還原、跨學期）
-- 分享給其他老師 → 不連回事務所首頁；其他老師帳號在 Supabase Authentication 新增
+- 分享給其他老師 → 不連回事務所首頁；**老師權限由會員中心管**（系統代號 `grade`）：Supabase 的 Google 登入＋伺服器用 Firebase 服務帳戶讀 `staff`／`staffpre` 確認核准，寫進 `teachers.active`，RLS 只看 active（第三階段）
+- 外部系統放進會員中心：`APPS.url` 寫完整網址，連結一律用 `WuStaff.href()`
+- 從 Excel 匯入成績：依學號／班級座號對學生、依欄名對欄位（忽略括號說明、群組＋同名欄位），老師原本的試算表可以直接匯入
 - 保活：cron-job.org 打 `/api/health`
 
 ### 4-7 🔬 科學任務偵探所（Supabase＋Vercel）

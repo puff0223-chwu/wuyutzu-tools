@@ -173,7 +173,7 @@ wuyutzu-tools/
 
 > 首頁是老師專用的工具箱，不會提供給學生；學生只會拿到各工具的「學生頁」連結（學生頁不連回首頁）。
 
-> **外部系統（資料庫不是 Firebase）**：首頁的 `TOOLS` 也可以放連到別的網站的卡片。另有「成績調閱室」（`gradequery`，老師頁；Supabase 專案 grade-query-system，個人信箱帳號；保活打 `/api/health`）。目前有「科普閱讀測驗」（`readingquiz`）：只是一張連結卡，點了在新分頁開啟，**資料與登入都獨立**——資料庫是 Supabase（`reading-quiz-system` 專案，用學校信箱註冊的獨立帳號）、老師後台用 Supabase Auth 登入（不是會員中心），所以不受 `firebase-rules.json` 管，也不吃 Firebase 免費額度。Supabase 免費專案連續 7 天沒有資料庫查詢會被暫停，目前由 cron-job.org 每週一、四打 `/api/assignments` 保活，**不要刪那個排程**。
+> **外部系統（資料庫不是 Firebase）**：首頁的 `TOOLS` 也可以放連到別的網站的卡片。另有「成績調閱室」（`gradequery`，老師頁；Supabase 專案 grade-query-system，個人信箱帳號；保活打 `/api/health`）。**成績調閱室的老師權限由會員中心管**（系統代號 `grade`）：老師用同一個 Google 帳號登入成績調閱室，它的伺服器用 Firebase 服務帳戶讀 `staff/*`、`staffpre/*` 確認核准＋開通，所以在會員中心核准／停用就會生效。目前有「科普閱讀測驗」（`readingquiz`）：只是一張連結卡，點了在新分頁開啟，**資料與登入都獨立**——資料庫是 Supabase（`reading-quiz-system` 專案，用學校信箱註冊的獨立帳號）、老師後台用 Supabase Auth 登入（不是會員中心），所以不受 `firebase-rules.json` 管，也不吃 Firebase 免費額度。Supabase 免費專案連續 7 天沒有資料庫查詢會被暫停，目前由 cron-job.org 每週一、四打 `/api/assignments` 保活，**不要刪那個排程**。
 
 ---
 
@@ -888,7 +888,7 @@ wuyutzu-tools/
 
 ### 👥 會員中心（account/，2026-10-13 新增）
 - **用途**：其他老師自己申請帳號 → 管理員核准並勾選可用的系統（excel／gps／seat／src／lab／exam），不用到 Firebase 控制台一個一個建帳號
-- **新增系統（2026-10-18 加 src；2026-10-22 加 lab＝⚗️ 化學實驗室 No.223，同時補上「核准的老師不能自己加開 src／lab」的規則檢查；2026-10-23 加 exam＝🎲 線上檢定所）**：`account/staff.js` 的 `APPS` 加一筆、規則裡三處 app 名單（staff／staffpre 的 `$app`）加上代號；各頁 `staff.js?v=` 版本號一起更新。會員中心的申請、核准、加開畫面都是讀 `APPS` 自動產生，不用另外改
+- **新增系統（2026-10-18 加 src；2026-10-22 加 lab＝⚗️ 化學實驗室 No.223，同時補上「核准的老師不能自己加開 src／lab」的規則檢查；2026-10-23 加 exam＝🎲 線上檢定所；2026-10-24 加 grade＝🗂️ 成績調閱室，**外部系統**：url 寫完整網址，頁面一律用 `WuStaff.href(url, '../')` 產生連結）**：`account/staff.js` 的 `APPS` 加一筆、規則裡三處 app 名單（staff／staffpre 的 `$app`）加上代號；各頁 `staff.js?v=` 版本號一起更新。會員中心的申請、核准、加開畫面都是讀 `APPS` 自動產生，不用另外改
 - **管理員＝主帳號 `puff0223@gmail.com`**（規則同時要求信箱已驗證 `email_verified`；Google 登入一定是已驗證，所以別人沒辦法冒名註冊同一個 Email 拿到管理權）。主帳號可以用全部系統，不用申請
 - **登入方式**：Email＋密碼，或「使用 Google 帳號登入」（popup；被瀏覽器擋就改整頁跳轉）。Google 新使用者第一次登入沒有申請資料 → 會員中心自動顯示「補填申請資料」
 - **流程**：會員中心申請（姓名、學校、想用的系統、用途）→ Email 申請者收驗證信 → `staff/<uid>` 狀態 pending → 管理員在「待核准」分頁勾系統按核准 → 老師重新整理各系統頁面就能用

@@ -420,5 +420,12 @@ expect('會員申請可以選 exam', exBase, STRANGER, W, '/staff/BAD', { email:
 expect('核准的老師不能自己加開 exam', exBase, TEA, W, '/staff/TEA', Object.assign({}, base.staff.TEA, { apps: Object.assign({}, base.staff.TEA.apps, { exam: true }) }), false);
 expect('管理員可以開通 exam', exBase, MAIN, W, '/staff/NOAPP/apps/exam', true, true);
 expect('預先開通可以勾 exam', exBase, MAIN, W, '/staffpre/new@school,edu,tw', { email: 'new@school.edu.tw', apps: { exam: true }, at: 1 }, true);
+console.log('— 🗂️ 成績調閱室（2026-10-24）：grade —');
+expect('會員申請可以選 grade', base, STRANGER, W, '/staff/BAD', { email: 'bad@evil.com', name: 'B', school: 'S', purpose: 'p', want: { grade: true }, at: 1, status: 'pending' }, true);
+expect('核准的老師不能自己加開 grade', base, TEA, W, '/staff/TEA', Object.assign({}, base.staff.TEA, { apps: Object.assign({}, base.staff.TEA.apps, { grade: true }) }), false);
+expect('管理員可以開通 grade', base, MAIN, W, '/staff/NOAPP/apps/grade', true, true);
+expect('預先開通可以勾 grade', base, MAIN, W, '/staffpre/new@school,edu,tw', { email: 'new@school.edu.tw', apps: { grade: true }, at: 1 }, true);
+expect('領取預先開通時不能多開 grade', withPre, ZOO, W, '/staff/ZOO', claim({ seat: true, grade: true }), false);
+expect('不存在的系統代號不行', base, MAIN, W, '/staff/NOAPP/apps/hack', true, false);
 console.log(`\n${fail ? '❌' : '✅'} 通過 ${pass} 項，失敗 ${fail} 項`);
 process.exit(fail ? 1 : 0);
