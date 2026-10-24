@@ -160,11 +160,13 @@ table.mon tr.none td{color:var(--muted)}
 .pstats b{display:block;font-size:clamp(2rem,4vw,3.2rem);font-family:"JetBrains Mono",monospace;line-height:1.05}
 .pstats .s-doing{border-left-color:#5b9bff}.pstats .s-off{border-left-color:#ffb020}.pstats .s-done{border-left-color:#4cc17a}.pstats .s-guard{border-left-color:#ff5a4f}.pstats .s-none{border-left-color:#8a93ab}
 .plist{column-gap:18px;font-size:clamp(1rem,1.55vw,1.45rem)}
-.prow{break-inside:avoid;display:grid;grid-template-columns:minmax(9em,auto) 7.5em 1fr;gap:10px;align-items:center;padding:7px 12px;margin-bottom:6px;border-radius:10px;background:#232c45;border-left:8px solid #59617a;color:#fff}
+/* 2026-10-24：改成會換行的 flex，1366 寬三欄時進度文字不再擠到隔壁欄（放不下就換到第二行靠右） */
+.prow{break-inside:avoid;display:flex;flex-wrap:wrap;gap:2px 10px;align-items:center;overflow:hidden;padding:7px 12px;margin-bottom:6px;border-radius:10px;background:#232c45;border-left:8px solid #59617a;color:#fff}
+.prow .pseat{min-width:8.5em}.prow .pst{min-width:7em}
 .prow .pseat b{font-family:"JetBrains Mono",monospace;font-size:1.1em}
 .prow .pname{color:#cfd6e8;font-weight:700;margin-left:4px}
 .prow .pst{font-weight:900;white-space:nowrap}
-.prow .pprog{color:#dfe5f5;white-space:nowrap;text-align:right}
+.prow .pprog{color:#dfe5f5;white-space:nowrap;text-align:right;margin-left:auto}
 .prow.p-doing{border-left-color:#5b9bff}.prow.p-doing .pst{color:#9cc3ff}
 .prow.p-off{border-left-color:#ffb020;background:#3a2f17}.prow.p-off .pst{color:#ffcf6b}
 .prow.p-done{border-left-color:#4cc17a}.prow.p-done .pst{color:#8fe0ad}

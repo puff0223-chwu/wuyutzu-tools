@@ -210,6 +210,24 @@ footer a { color: var(--navy); font-weight: 700; margin: 0 8px; white-space: now
   background: repeating-linear-gradient(-45deg, #fffdf8, #fffdf8 10px, #faf4e6 10px, #faf4e6 20px);
 }
 .shot .ic { font-size: 2em; }
+/* 📸 畫面預覽：電腦畫面一欄一張、手機畫面三張並排；點圖放大 */
+.shot-h { font-size: 0.95em; margin: 4px 0 8px; color: var(--navy-2); }
+.shot-wide { display: grid; grid-template-columns: 1fr; gap: 14px; margin-bottom: 14px; }
+.shot-phone { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; max-width: 760px; }
+.sfig { margin: 0; }
+.szoom { display: block; width: 100%; padding: 0; border: 2px solid var(--navy); border-radius: 12px; overflow: hidden; background: #fff; cursor: zoom-in; box-shadow: 3px 3px 0 var(--line); }
+.szoom img { display: block; width: 100%; height: auto; }
+.shot-phone .szoom { border-radius: 16px; }
+.sfig figcaption { font-size: 0.85em; color: var(--muted); padding: 6px 2px 0; line-height: 1.5; }
+.lightbox { position: fixed; inset: 0; z-index: 200; background: rgba(15,20,35,0.9); display: flex; align-items: center; justify-content: center; padding: 16px; cursor: zoom-out; }
+.lightbox figure { margin: 0; max-width: 100%; max-height: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.lightbox img { max-width: 100%; max-height: calc(100vh - 80px); border-radius: 10px; background: #fff; }
+.lightbox figcaption { color: #fff; font-size: 0.95em; text-align: center; }
+.lb-x { position: absolute; top: 12px; right: 14px; width: 40px; height: 40px; border-radius: 50%; border: none; background: rgba(255,255,255,0.2); color: #fff; font-size: 1.1em; cursor: pointer; }
+/* 社群分享頁：沒有任何連結，頂端只有招牌 */
+.share-top { justify-content: center; text-align: center; }
+.share-top .brand { min-width: 0; }
+.share-foot { text-align: center; color: var(--muted); font-size: 0.85em; margin: 22px 0 0; }
 .shot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
 .shot-grid figure { border: 2px solid var(--navy); border-radius: 12px; overflow: hidden; background: #fff; }
 .shot-grid img { display: block; width: 100%; height: auto; }
@@ -243,6 +261,7 @@ dl.faq dd { margin: 3px 0 0 26px; color: var(--navy-2); line-height: 1.7; }
   .drawer-head .desc { width: 100%; }
   .tagline { font-size: 0.88em; }
   .howto { grid-template-columns: 1fr; }
+  .shot-phone { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .two { grid-template-columns: 1fr; }
   .flow { flex-direction: column; gap: 0; }
   .flow .node { max-width: none; flex: none; display: grid; grid-template-columns: 34px 1fr auto; align-items: center; column-gap: 8px; text-align: left; padding: 6px 10px; }
