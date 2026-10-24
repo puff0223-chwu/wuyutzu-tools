@@ -91,6 +91,10 @@
   .pill.case { background: var(--red); color: #fff; font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.1em; font-size: 0.82em; }
   .pill.lock { background: #fff1d6; color: #8a5a00; border: 1px solid var(--mustard); }
 
+  .gal-chip { display: inline-flex; align-items: center; gap: 2px; margin-left: 10px; border: 2px dashed var(--navy); border-radius: 999px; background: #fffaf0; }
+  .gal-chip a, .gal-chip button { font: inherit; font-size: 0.88em; font-weight: 700; color: var(--navy); text-decoration: none; background: none; border: none; cursor: pointer; padding: 4px 6px 4px 12px; white-space: nowrap; }
+  .gal-chip button { padding: 4px 12px 4px 6px; border-left: 1.5px solid var(--line); }
+  @media (max-width: 640px) { .gal-chip { margin-left: 0; } }
   .empty { text-align: center; color: var(--muted); padding: 50px 0; font-weight: 700; }
 
   /* ===== 說明卷宗（彈窗） ===== */
@@ -164,6 +168,7 @@
     程式設計：巫魚子 © 2025 ｜
     <a href="https://sites.google.com/view/teacher-wuyutzu/%E9%A6%96%E9%A0%81?authuser=0" target="_blank" rel="noopener">巫魚子網站</a>
     <a href="https://www.youtube.com/@chwu0223" target="_blank" rel="noopener">YouTube 頻道</a>
+    <a href="showcase/" target="_blank" rel="noopener">🏛️ 教師展覽館</a>
     <a href="account/">👥 老師會員中心</a>
   </footer>
 </div>
@@ -231,7 +236,7 @@ TOOLS.forEach(t => { counters[t.drawer] = (counters[t.drawer] || 0) + 1; t.no = 
 /* ---------- 篩選 ---------- */
 $('chips').innerHTML = `<button class="chip on" data-d="-1" type="button">全部</button>` +
   DRAWERS.map((d, i) => `<button class="chip" data-d="${i}" type="button"><span class="dot" style="background:${d.color}"></span>${esc(d.name)}</button>`).join('') +
-  `<span class="count" id="count"></span>`;
+  `<span class="count" id="count"></span><span class="gal-chip"><a href="showcase/" target="_blank" rel="noopener" title="給其他老師看的開放系統">🏛️ 教師展覽館 ↗</a><button type="button" data-copy-gallery title="複製網址分享給其他老師" aria-label="複製教師展覽館網址">📋</button></span>`;
 $('chips').querySelectorAll('.chip').forEach(b => b.onclick = () => {
   filterDrawer = +b.dataset.d;
   $('chips').querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === b));
@@ -310,6 +315,10 @@ document.addEventListener('keydown', e => {
   if (e.key === '/' && document.activeElement !== $('q') && !$('overlay').classList.contains('on')) { e.preventDefault(); $('q').focus(); }
 });
 
+const copyG = (b) => { const url = new URL('showcase/', location.href).href, t = b.textContent;
+  const done = (ok) => { b.textContent = ok ? '✅ 已複製' : '⚠️ 請手動複製'; if (!ok) prompt('教師展覽館網址', url); setTimeout(() => { b.textContent = t; }, 1800); };
+  if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => done(true), () => done(false)); else done(false); };
+document.querySelectorAll('[data-copy-gallery]').forEach(b => b.onclick = () => copyG(b));
 render();
 </script>
 </body>
