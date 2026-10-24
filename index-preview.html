@@ -91,26 +91,10 @@
   .pill.case { background: var(--red); color: #fff; font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.1em; font-size: 0.82em; }
   .pill.lock { background: #fff1d6; color: #8a5a00; border: 1px solid var(--mustard); }
 
-
-  /* ===== 教師展覽館入口（招牌右邊的門票；給其他老師看的對外網址） ===== */
-  header .head-main { flex: 1; min-width: 0; }
-  .gallery {
-    flex: none; align-self: center; position: relative; display: flex; flex-direction: column; gap: 8px;
-    background: var(--card); border: 2.5px solid var(--navy); border-radius: 14px; padding: 12px 14px 12px 18px;
-    box-shadow: 4px 4px 0 var(--mustard); transform: rotate(1.5deg); max-width: 270px;
-  }
-  .gallery::before { content: ''; position: absolute; left: 6px; top: 10px; bottom: 10px; border-left: 2px dashed var(--line); }
-  .gallery .g-t { font-weight: 900; font-size: 1.02em; line-height: 1.3; }
-  .gallery .g-t small { display: block; font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.15em; color: var(--red); font-size: 0.78em; font-weight: 400; }
-  .gallery .g-d { color: var(--muted); font-size: 0.8em; line-height: 1.45; }
-  .gallery .g-btns { display: flex; gap: 6px; }
-  .gallery .g-btns a, .gallery .g-btns button {
-    flex: 1; text-align: center; text-decoration: none; font: inherit; font-weight: 900; font-size: 0.85em; cursor: pointer; white-space: nowrap;
-    color: var(--navy); background: var(--mustard); border: 2px solid var(--navy); border-radius: 9px; padding: 6px 8px;
-  }
-  .gallery .g-btns button { background: #fff; }
-  .gallery .g-btns :active { transform: translate(1px, 1px); }
-
+  .gal-chip { display: inline-flex; align-items: center; gap: 2px; margin-left: 10px; border: 2px dashed var(--navy); border-radius: 999px; background: #fffaf0; }
+  .gal-chip a, .gal-chip button { font: inherit; font-size: 0.88em; font-weight: 700; color: var(--navy); text-decoration: none; background: none; border: none; cursor: pointer; padding: 4px 6px 4px 12px; white-space: nowrap; }
+  .gal-chip button { padding: 4px 12px 4px 6px; border-left: 1.5px solid var(--line); }
+  @media (max-width: 640px) { .gal-chip { margin-left: 0; } }
   .empty { text-align: center; color: var(--muted); padding: 50px 0; font-weight: 700; }
 
   /* ===== 說明卷宗（彈窗） ===== */
@@ -151,10 +135,6 @@
     .count { width: 100%; margin-left: 0; }
     .drawer-head .desc { width: 100%; }
     .tagline { font-size: 0.88em; }
-    header { flex-wrap: wrap; }
-    .gallery { max-width: none; width: 100%; transform: none; flex-direction: row; flex-wrap: wrap; align-items: center; }
-    .gallery .g-d { display: none; }
-    .gallery .g-t { flex: 1; }
   }
   @media (prefers-reduced-motion: reduce) { .card, .dossier { transition: none; animation: none; } }
 </style>
@@ -166,16 +146,10 @@
     <div class="badge" aria-hidden="true">
       <svg width="40" height="40" viewBox="0 0 24 24"><circle cx="10" cy="10" r="6.2" fill="#fff" stroke="#1f2a44" stroke-width="2.4"/><line x1="14.6" y1="14.6" x2="21" y2="21" stroke="#1f2a44" stroke-width="3" stroke-linecap="round"/><path d="M7 8.5 q1.6-2 4-1" fill="none" stroke="#f2b134" stroke-width="1.6"/></svg>
     </div>
-    <div class="head-main">
+    <div>
       <div class="eyebrow">The Casebook of Wu Yu-Zi</div>
       <h1>巫魚子<span class="hl">教課事務所</span></h1>
       <p class="tagline">班級事務 · 化學實驗室 · 遊戲研究 · 探究實作——每個工具都是一份待破解的卷宗</p>
-    </div>
-    <!-- 教師展覽館：給其他老師看的對外網址（只列已開放申請的系統） -->
-    <div class="gallery">
-      <div class="g-t"><small>Teacher Gallery</small>🏛️ 教師展覽館</div>
-      <div class="g-d">給其他老師看的開放系統與使用說明，要分享就給這個網址</div>
-      <div class="g-btns"><a href="showcase/" target="_blank" rel="noopener">開啟 ↗</a><button type="button" id="copyGallery">📋 複製網址</button></div>
     </div>
   </header>
 
@@ -262,7 +236,7 @@ TOOLS.forEach(t => { counters[t.drawer] = (counters[t.drawer] || 0) + 1; t.no = 
 /* ---------- 篩選 ---------- */
 $('chips').innerHTML = `<button class="chip on" data-d="-1" type="button">全部</button>` +
   DRAWERS.map((d, i) => `<button class="chip" data-d="${i}" type="button"><span class="dot" style="background:${d.color}"></span>${esc(d.name)}</button>`).join('') +
-  `<span class="count" id="count"></span>`;
+  `<span class="count" id="count"></span><span class="gal-chip"><a href="showcase/" target="_blank" rel="noopener" title="給其他老師看的開放系統">🏛️ 教師展覽館 ↗</a><button type="button" data-copy-gallery title="複製網址分享給其他老師" aria-label="複製教師展覽館網址">📋</button></span>`;
 $('chips').querySelectorAll('.chip').forEach(b => b.onclick = () => {
   filterDrawer = +b.dataset.d;
   $('chips').querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === b));
@@ -341,13 +315,10 @@ document.addEventListener('keydown', e => {
   if (e.key === '/' && document.activeElement !== $('q') && !$('overlay').classList.contains('on')) { e.preventDefault(); $('q').focus(); }
 });
 
-/* ---------- 教師展覽館：複製對外網址 ---------- */
-$('copyGallery').onclick = () => {
-  const url = new URL('showcase/', location.href).href, b = $('copyGallery');
-  const done = (ok) => { b.textContent = ok ? '✅ 已複製' : '⚠️ 請手動複製'; if (!ok) prompt('教師展覽館網址', url); setTimeout(() => { b.textContent = '📋 複製網址'; }, 1800); };
-  if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => done(true), () => done(false)); else done(false);
-};
-
+const copyG = (b) => { const url = new URL('showcase/', location.href).href, t = b.textContent;
+  const done = (ok) => { b.textContent = ok ? '✅ 已複製' : '⚠️ 請手動複製'; if (!ok) prompt('教師展覽館網址', url); setTimeout(() => { b.textContent = t; }, 1800); };
+  if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => done(true), () => done(false)); else done(false); };
+document.querySelectorAll('[data-copy-gallery]').forEach(b => b.onclick = () => copyG(b));
 render();
 </script>
 </body>
