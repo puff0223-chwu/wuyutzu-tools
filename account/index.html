@@ -89,7 +89,10 @@ const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&':
 const toast = (m, err) => { const t = document.createElement('div'); t.className = 'toast' + (err ? ' err' : ''); t.textContent = m; document.body.appendChild(t); setTimeout(() => t.remove(), err ? 4200 : 2600); };
 const wantApp = new URLSearchParams(location.search).get('app') || '';
 // 從哪個系統點進來，就放「← 回到那個系統」（會員中心不放回事務所首頁的連結）
-if (W.APPS[wantApp]) { const bk = $('#back'); bk.href = W.href(W.APPS[wantApp].url, '../'); bk.textContent = '← 回到' + W.APPS[wantApp].name.replace(/^\S+\s/, ''); bk.style.display = ''; }
+// 從「教師展覽館」點進來（?from=showcase）→ 返回展覽館的那一頁說明（不是系統、也不是事務所首頁）
+const fromShowcase = new URLSearchParams(location.search).get('from') === 'showcase';
+if (fromShowcase) { const bk = $('#back'); bk.href = '../showcase/' + (W.APPS[wantApp] ? 'guide.html?app=' + encodeURIComponent(wantApp) : ''); bk.textContent = '← 回教師展覽館'; bk.style.display = ''; }
+else if (W.APPS[wantApp]) { const bk = $('#back'); bk.href = W.href(W.APPS[wantApp].url, '../'); bk.textContent = '← 回到' + W.APPS[wantApp].name.replace(/^\S+\s/, ''); bk.style.display = ''; }
 const S = { user: null, rec: null, unsubs: [], tab: 'pending', all: {}, ver: {}, req: {} };
 let FB, authErr = (e) => String(e && (e.code || e.message) || e), gBtn = () => '';
 

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📘 使用說明｜巫魚子教課事務所 教師展覽館</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="showcase.css?v=20261024a">
+</head>
+<body>
+<!-- ⚠️ 給其他老師看的說明頁：返回鍵只回「教師展覽館」，不連回事務所首頁 -->
+<div class="gtop">
+  <div class="brand"><small>WU YU-ZI TEACHING STUDIO · TEACHER GALLERY</small><span class="t" id="topName">🏛️ 教師展覽館</span></div>
+  <span class="sp"></span>
+  <a href="./" id="topBack">← 回教師展覽館</a>
+</div>
+<div id="page"></div>
+
+<script src="../account/staff.js?v=20261024a"></script>
+<script src="data.js?v=20261024a"></script>
+<script src="showcase.js?v=20261024a"></script>
+<script>
+(function () {
+  var SC = window.SHOWCASE, esc = SC.esc, rich = SC.rich;
+  var code = new URLSearchParams(location.search).get('app') || '';
+  var t = SC.get(code), page = document.getElementById('page');
+
+  if (!t) {
+    page.innerHTML = '<div class="notfound gcard"><div style="font-size:2.6em">🗄️</div><h2 style="justify-content:center">找不到這份卷宗</h2>' +
+      '<p>這個系統可能還沒開放，或網址打錯了。</p><p style="margin-top:12px"><a class="btn" href="./">← 回教師展覽館看所有系統</a></p></div>';
+    return;
+  }
+
+  var DR = SC.drawers(), d = DR[t.drawer] || DR[0];
+  document.title = t.icon + ' ' + t.name + '｜使用說明｜巫魚子教課事務所 教師展覽館';
+  document.getElementById('topName').textContent = t.icon + ' ' + t.name + '・使用說明';
+  document.documentElement.style.setProperty('--accent', d.color);
+  document.documentElement.style.setProperty('--soft', d.soft);
+
+  var appURL = SC.appURL(t), applyURL = SC.applyURL(t.code);
+  var sec = [];   // [id, 標題, 內容 HTML]
+
+  function list(arr, cls) { return '<ul class="' + (cls || 'clues') + '">' + arr.map(function (x) { return '<li>' + rich(x) + '</li>'; }).join('') + '</ul>'; }
+  function actions(big) {
+    return '<div class="actions">' +
+      '<a class="btn' + (big ? '' : ' small') + '" href="' + esc(applyURL) + '">📝 申請使用</a>' +
+      (appURL ? '<a class="btn ghost' + (big ? '' : ' small') + '" href="' + esc(appURL) + '"' + (t.external ? ' target="_blank" rel="noopener"' : '') + '>🔑 已開通，前往系統' + (t.external ? ' ↗' : ' →') + '</a>' : '') +
+      (t.links || []).map(function (l) { return '<a class="btn ghost' + (big ? '' : ' small') + '" href="' + esc(l[1]) + '" target="_blank" rel="noopener">' + esc(l[0]) + ' ↗</a>'; }).join('') +
+      '</div>';
+  }
+
+  if (t.ready) {
+    if (t.notice) sec.push(['notice', '📍 使用前請先看', '<div class="callout">' + rich(t.notice) + '</div>']);
+    if (t.tools) sec.push(['tools', '🧪 包含哪些系統', t.tools.map(function (x) {
+      return '<div class="sub-tool"><h3>' + esc(x[0]) + ' ' + esc(x[1]) + '</h3><p>' + rich(x[2]) + '</p></div>';
+    }).join('')]);
+    if (t.flow) sec.push(['flow', '🗺️ 上課流程', '<div class="flow">' + t.flow.map(function (x, i) {
+      return (i ? '<span class="arr" aria-hidden="true">→</span>' : '') +
+        '<div class="node"><span class="ic" aria-hidden="true">' + esc(x[0]) + '</span><b>' + rich(x[1]) + '</b><span>' + rich(x[2]) + '</span>' +
+        '<span class="who ' + (x[3] === 's' ? 's">學生' : 't">老師') + '</span></div>';
+    }).join('') + '</div><p class="act-note">深藍標籤＝老師做的事，黃色標籤＝學生做的事。</p>']);
+    if (t.feats) sec.push(['features', '✨ 主要功能', '<div class="feats">' + t.feats.map(function (x) {
+      return '<div class="feat"><span class="ic" aria-hidden="true">' + esc(x[0]) + '</span><div><b>' + rich(x[1]) + '</b><span>' + rich(x[2]) + '</span></div></div>';
+    }).join('') + '</div>']);
+    if (t.student || t.teacher) sec.push(['sides', '👀 學生端與老師端', '<div class="two">' +
+      (t.student ? '<div class="side"><h3>👩‍🎓 學生</h3>' + list(t.student) + '</div>' : '') +
+      (t.teacher ? '<div class="side"><h3>👨‍🏫 老師</h3>' + list(t.teacher) + '</div>' : '') + '</div>']);
+    if (t.prep) sec.push(['prep', '🧰 開始前要準備', list(t.prep)]);
+    sec.push(['shots', '📸 畫面預覽', (t.shots && t.shots.length)
+      ? '<div class="shot-grid">' + t.shots.map(function (s) { return '<figure><img src="' + esc(s[0]) + '" alt="' + esc(s[1]) + '" loading="lazy"><figcaption>' + esc(s[1]) + '</figcaption></figure>'; }).join('') + '</div>'
+      : '<div class="shot"><div class="ic">📸</div><b>畫面截圖整理中</b><br><span style="font-size:.88em">想先看看實際畫面？申請核准後可以直接打開系統試用，或聯絡巫魚子老師。</span></div>']);
+    if (t.faq) sec.push(['faq', '❓ 常見問題', '<dl class="faq">' + t.faq.map(function (x) { return '<dt>' + rich(x[0]) + '</dt><dd>' + rich(x[1]) + '</dd>'; }).join('') + '</dl>']);
+  } else {
+    sec.push(['about', '📄 這個系統', '<p>' + esc(t.brief) + '</p><div class="callout blue">📝 這個系統的詳細說明還在整理中。想了解更多，可以先申請，在「用途說明」寫下你的問題，巫魚子老師會回覆你。</div>']);
+  }
+  sec.push(['apply', '🚪 怎麼申請', '<ol class="steps">' + SC.APPLY.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ol>' +
+    (t.code === 'grade' ? '<div class="callout blue">🔑 成績調閱室<b>只能用 Google 帳號</b>登入，申請時也請用同一個 Google 帳號。</div>' : '') +
+    actions(false)]);
+
+  var facts = (t.facts || []).map(function (f) { return '<div class="fact"><b>' + esc(f[0]) + '</b>' + rich(f[1]) + '</div>'; }).join('');
+  page.innerHTML =
+    '<div class="gbody">' +
+      '<nav class="toc" aria-label="目錄"><div class="toc-h">Contents</div>' +
+        '<a href="#top">📘 簡介</a>' +
+        sec.map(function (s) { return '<a href="#' + s[0] + '">' + esc(s[1]) + '</a>'; }).join('') +
+        '<a class="toc-back" href="./">← 回教師展覽館</a>' +
+      '</nav>' +
+      '<main>' +
+        '<section class="hero" id="top" style="scroll-margin-top:76px">' +
+          '<div class="hero-top"><div class="no">' + esc(d.tag) + ' · ' + esc(d.name) + (t.shelf ? ' · ' + esc(t.shelf) : '') + '</div>' +
+            '<h1><span aria-hidden="true">' + esc(t.icon) + '</span>' + esc(t.name) + '</h1>' +
+            '<div class="sub">' + rich(t.sub) + '</div></div>' +
+          '<div class="hero-body">' +
+            (t.intro ? '<p class="intro">' + rich(t.intro) + '</p>' : '') +
+            (facts ? '<div class="facts">' + facts + '</div>' : '') +
+            actions(true) +
+            '<p class="act-note">還沒有帳號？先按「📝 申請使用」。' + (t.external ? '這是獨立網站，會在新分頁打開。' : '') + '</p>' +
+          '</div>' +
+        '</section>' +
+        sec.map(function (s) { return '<section class="gcard" id="' + s[0] + '"><h2>' + esc(s[1]) + '</h2>' + s[2] + '</section>'; }).join('') +
+        '<div class="foot-nav"><a class="btn ghost small" href="./">← 回教師展覽館</a><a class="btn ghost small" href="#top">↑ 回到最上面</a></div>' +
+      '</main>' +
+    '</div>';
+
+  // 目錄：捲到哪一段就亮哪一個
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a[href^="#"]'));
+  var targets = links.map(function (a) { return document.getElementById(a.getAttribute('href').slice(1)); });
+  function spy() {
+    var y = window.scrollY + 110, on = 0;
+    targets.forEach(function (el, i) { if (el && el.offsetTop <= y) on = i; });
+    if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 4) on = targets.length - 1;
+    links.forEach(function (a, i) { a.classList.toggle('on', i === on); });
+  }
+  window.addEventListener('scroll', spy, { passive: true });
+  spy();
+  if (location.hash) { var el = document.getElementById(location.hash.slice(1)); if (el) setTimeout(function () { el.scrollIntoView(); }, 0); }
+})();
+</script>
+</body>
+</html>

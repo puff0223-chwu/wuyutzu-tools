@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏛️ 巫魚子教課事務所｜教師展覽館</title>
+<meta name="description" content="巫魚子老師開放給其他老師使用的教學系統：先看使用說明，再到會員中心申請。">
+<meta property="og:title" content="巫魚子教課事務所｜教師展覽館">
+<meta property="og:description" content="座位大作戰、化學實驗室、成績調閱室、線上檢定所、Excel 數據救援、校園定向越野、文獻與 APA……先看說明，再決定要不要申請。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="showcase.css?v=20261024a">
+</head>
+<body class="home">
+<!-- ⚠️ 這是給其他老師看的展覽館：不放回「事務所首頁」的連結（首頁還有個人、尚未分享的工具） -->
+<div class="wrap">
+
+  <header class="sign">
+    <div class="badge" aria-hidden="true">
+      <svg width="40" height="40" viewBox="0 0 24 24"><circle cx="10" cy="10" r="6.2" fill="#fff" stroke="#1f2a44" stroke-width="2.4"/><line x1="14.6" y1="14.6" x2="21" y2="21" stroke="#1f2a44" stroke-width="3" stroke-linecap="round"/><path d="M7 8.5 q1.6-2 4-1" fill="none" stroke="#f2b134" stroke-width="1.6"/></svg>
+    </div>
+    <div>
+      <div class="eyebrow">The Casebook of Wu Yu-Zi · Teacher Gallery</div>
+      <h1>巫魚子<span class="hl">教課事務所</span><span class="stamp">教師展覽館</span></h1>
+      <p class="tagline">這裡展出的卷宗都已開放給其他老師借用——點開卡片看使用說明，覺得合用再到會員中心申請</p>
+    </div>
+  </header>
+
+  <section class="howto" aria-label="怎麼借用">
+    <div class="step"><span class="n">1</span><div><b>🔍 看卷宗說明</b><span>點下面的卡片，看系統在做什麼、怎麼上課</span></div></div>
+    <div class="step"><span class="n">2</span><div><b>📝 到會員中心申請</b><span>Google 帳號登入，勾選想用的系統</span></div></div>
+    <div class="step"><span class="n">3</span><div><b>✅ 核准後開始用</b><span>巫魚子老師核准後，就能打開系統</span></div></div>
+    <a class="go-center" href="../account/?from=showcase">👥 會員中心 →</a>
+  </section>
+
+  <div class="tools">
+    <label class="search">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6.5" fill="none" stroke="#1f2a44" stroke-width="2.4"/><line x1="15" y1="15" x2="21" y2="21" stroke="#1f2a44" stroke-width="2.8" stroke-linecap="round"/></svg>
+      <input id="q" type="search" placeholder="搜尋卷宗：例如 座位、pH、成績、測驗、Excel" autocomplete="off" aria-label="搜尋系統">
+      <button class="clear hidden" id="clear" type="button">清除</button>
+    </label>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <main id="drawers"><div class="empty">🔎 卷宗整理中……</div></main>
+
+  <footer>
+    程式設計：巫魚子 © 2025 ｜
+    <a href="https://sites.google.com/view/teacher-wuyutzu/%E9%A6%96%E9%A0%81?authuser=0" target="_blank" rel="noopener">巫魚子網站</a>
+    <a href="https://www.youtube.com/@chwu0223" target="_blank" rel="noopener">YouTube 頻道</a>
+    <a href="../account/?from=showcase">👥 老師會員中心</a>
+  </footer>
+</div>
+
+<script src="../account/staff.js?v=20261024a"></script>
+<script src="data.js?v=20261024a"></script>
+<script src="showcase.js?v=20261024a"></script>
+<script>
+(function () {
+  var SC = window.SHOWCASE, $ = function (id) { return document.getElementById(id); };
+  var esc = SC.esc, items = SC.list(), DR = SC.drawers();
+  var filterDrawer = -1;
+
+  /* ---------- 篩選 ---------- */
+  var used = DR.map(function (d, i) { return items.some(function (t) { return t.drawer === i; }) ? i : -1; }).filter(function (i) { return i >= 0; });
+  $('chips').innerHTML = '<button class="chip on" data-d="-1" type="button">全部</button>' +
+    used.map(function (i) { var d = DR[i]; return '<button class="chip" data-d="' + i + '" type="button"><span class="dot" style="background:' + d.color + '"></span>' + esc(d.name) + '</button>'; }).join('') +
+    '<span class="count" id="count"></span>';
+  Array.prototype.forEach.call($('chips').querySelectorAll('.chip'), function (b) {
+    b.onclick = function () {
+      filterDrawer = +b.dataset.d;
+      Array.prototype.forEach.call($('chips').querySelectorAll('.chip'), function (x) { x.classList.toggle('on', x === b); });
+      render();
+    };
+  });
+
+  /* ---------- 搜尋 ---------- */
+  var norm = function (s) { return String(s).toLowerCase().replace(/\s+/g, ''); };
+  function matches(t, q) {
+    if (!q) return true;
+    var hay = norm(SC.searchText(t) + ' ' + DR[t.drawer].name);
+    return q.split(/\s+/).filter(Boolean).every(function (k) { return hay.indexOf(norm(k)) >= 0; });
+  }
+  $('q').addEventListener('input', function () { $('clear').classList.toggle('hidden', !$('q').value); render(); });
+  $('clear').onclick = function () { $('q').value = ''; $('clear').classList.add('hidden'); render(); $('q').focus(); };
+
+  /* ---------- 畫抽屜與卡片（點卡片＝打開那個系統的說明頁） ---------- */
+  function cardHTML(t) {
+    var d = DR[t.drawer];
+    return '<a class="card" href="guide.html?app=' + encodeURIComponent(t.code) + '" style="--accent:' + d.color + ';--soft:' + d.soft + '">' +
+      '<span class="icon" aria-hidden="true">' + esc(t.icon) + '</span>' +
+      '<span><span class="name">' + esc(t.name) + '</span><br><span class="brief">' + SC.rich(t.brief) + '</span><br>' +
+      '<span class="pill guide">📘 使用說明</span>' + (t.external ? '<span class="pill ext">🌐 獨立網站</span>' : '') + '</span></a>';
+  }
+  function render() {
+    var q = $('q').value.trim();
+    var shown = items.filter(function (t) { return (filterDrawer < 0 || t.drawer === filterDrawer) && matches(t, q); });
+    var html = '';
+    DR.forEach(function (d, di) {
+      var its = shown.filter(function (t) { return t.drawer === di; });
+      if (!its.length) return;
+      var shelves = [];
+      its.forEach(function (t) { if (shelves.indexOf(t.shelf) < 0) shelves.push(t.shelf); });
+      html += '<section class="drawer"><div class="drawer-head"><span class="tag" style="background:' + d.color + '">' + esc(d.tag) + '</span><h2>' + esc(d.name) + '</h2><span class="desc">' + esc(d.desc) + '</span></div>' +
+        shelves.map(function (s) {
+          return (shelves.length > 1 ? '<div class="shelf">' + esc(s) + '</div>' : '<div class="shelf"></div>') +
+            '<div class="grid">' + its.filter(function (t) { return t.shelf === s; }).map(cardHTML).join('') + '</div>';
+        }).join('') + '</section>';
+    });
+    $('drawers').innerHTML = html || '<div class="empty">🔎 查無此案……換個關鍵字再找找看吧</div>';
+    $('count').textContent = q || filterDrawer >= 0 ? '找到 ' + shown.length + ' 份卷宗' : '共 ' + items.length + ' 份開放卷宗';
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.key === '/' && document.activeElement !== $('q')) { e.preventDefault(); $('q').focus(); }
+  });
+  render();
+})();
+</script>
+</body>
+</html>
