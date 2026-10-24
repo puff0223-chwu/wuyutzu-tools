@@ -15,7 +15,7 @@
    ========================================================= */
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const ROOT = path.join(__dirname, '..'), SITE = path.join(ROOT, '..');
-const VER = '20261024b';
+const VER = '20261024c';
 
 const ctx = { console };
 vm.createContext(ctx);
