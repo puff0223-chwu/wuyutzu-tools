@@ -8,7 +8,9 @@ const $ = (s, el = document) => el.querySelector(s), $$ = (s, el = document) => 
 const esc = X.escapeHtml;
 const LIB = {
   mammoth: 'https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js',
-  xlsx: 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
+  xlsx: 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
+  docx: 'https://cdn.jsdelivr.net/npm/docx@9.0.2/build/index.umd.js',
+  jszip: 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
 };
 let FB = null, authErr = (e) => String((e && (e.code || e.message)) || e), gBtn = () => '';
 try {
@@ -31,7 +33,7 @@ function modal(html, opt) {
   m.addEventListener('mousedown', (e) => { if (e.target === m && !opt.sticky) close(); });
   return m;
 }
-const download = (name, text, type) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: type || 'application/json' })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); };
+const download = (name, text, type) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: type || 'application/json' })); a.download = name; a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000); };
 const letterList = (arr) => (arr || []).map((i) => X.LETTERS[i]).join(' ') || '—';
 // ❓ 說明小圖示：滑鼠移過去（手機點一下）才顯示說明，畫面保持乾淨
 const tip = (text) => `<button type="button" class="tip" aria-label="說明" data-tip="${esc(text)}">?</button>`;
@@ -258,7 +260,7 @@ function pagerHTML(total, page, size) {
 function renderBankHome() {
   const el = $('#t-bank'), ids = bankIds();
   el.innerHTML = `<div class="card"><div class="row"><h2>📚 我的題庫</h2><span class="sp"></span><button class="btn" id="bNew">＋ 新題庫</button></div>
-    <div class="row" style="margin-top:12px"><button class="btn ghost" id="bWord">📥 匯入 Word 考卷</button><button class="btn ghost" id="bXls">📥 匯入 Excel</button><button class="linkbtn small" id="bTpl">⬇ Excel 範本</button><span class="sp"></span><button class="btn ghost sm" id="bIn">📂 匯入備份</button></div>
+    <div class="row" style="margin-top:12px"><button class="btn ghost" id="bWord">📥 匯入 Word 考卷</button><button class="btn ghost" id="bXls">📥 匯入 Excel</button><button class="linkbtn small" id="bTpl">⬇ Excel 範本</button><span class="sp"></span><button class="btn ghost sm" id="bAllOut">📤 匯出全部題庫</button><button class="btn ghost sm" id="bIn">📂 匯入備份</button></div>
     <p class="small muted" style="margin:8px 0 0">匯入時可以選擇建立新題庫，或加到已經有的題庫。題庫只記錄題目；配分在建立測驗時依題型設定。</p>
     ${ids.length ? `<div class="elist" style="margin-top:14px">${ids.map((id) => { const b = BANKS[id], c = bankCnt(b), tags = bankTags(b); return `<div class="ecard" role="button" tabindex="0" data-b="${id}"><button type="button" class="cardx" data-del="${id}" title="刪除這個題庫">🗑</button>
       <div class="row" style="gap:6px">${b.subj ? `<span class="chip">${esc(b.subj)}</span>` : ''}<span class="chip gray">${c.n} 題</span></div>
@@ -272,6 +274,7 @@ function renderBankHome() {
   $('#bXls').onclick = () => { IMPORT_TO = ''; pickFile('.xlsx,.xls,.csv', importExcel); };
   $('#bTpl').onclick = downloadTemplate;
   $('#bIn').onclick = () => pickFile('.json', importBackup);
+  $('#bAllOut').onclick = () => { if (!Object.keys(BANKS).length) return toast('還沒有題庫'); exportDlg(bankIds()); };
   $$('#t-bank .ecard').forEach((b) => { b.onclick = (e) => { if (e.target.closest('[data-del]')) return; openBank(b.dataset.b); }; b.onkeydown = (e) => { if (e.key === 'Enter') openBank(b.dataset.b); }; });
   $$('#t-bank [data-del]').forEach((x) => { x.onclick = (e) => { e.stopPropagation(); deleteBank(x.dataset.del); }; });
 }
@@ -319,7 +322,7 @@ function renderBankDetail() {
       <button class="btn ghost" id="bXls">📥 匯入 Excel</button>
       <button class="linkbtn small" id="bTpl">⬇ Excel 範本</button>
       <span class="sp"></span>
-      <button class="btn ghost sm" id="bOut">💾 備份下載</button>
+      <button class="btn ghost sm" id="bOut">📤 匯出／備份</button>
     </div>
     <div class="filters">
       <select id="fT"><option value="">全部題型</option>${Object.keys(X.TYPES).map((t) => `<option value="${t}" ${FILTER.t === t ? 'selected' : ''}>${X.TYPES[t]}</option>`).join('')}</select>
@@ -345,7 +348,7 @@ function renderBankDetail() {
   $('#bWord').onclick = () => { IMPORT_TO = CURB; pickFile('.docx', importWord); };
   $('#bXls').onclick = () => { IMPORT_TO = CURB; pickFile('.xlsx,.xls,.csv', importExcel); };
   $('#bTpl').onclick = downloadTemplate;
-  $('#bOut').onclick = () => exportBank(CURB);
+  $('#bOut').onclick = () => exportDlg([CURB]);
   $('#fT').onchange = (e) => { FILTER.t = e.target.value; PAGE = 1; renderBank(); };
   $('#fD').onchange = (e) => { FILTER.d = e.target.value; PAGE = 1; renderBank(); };
   $('#fG').onchange = (e) => { FILTER.tag = e.target.value; PAGE = 1; renderBank(); };
@@ -630,12 +633,49 @@ function importPreview(p, name, kind) {
     } catch (e) { console.error(e); toast('匯入失敗：' + e.message, 5000); btn.disabled = false; $('.x', m).disabled = false; }
   };
 }
-async function exportBank(bank) {
-  const b = BANKS[bank]; if (!b) return;
-  const img = {};
-  for (const q of Object.values(b.q)) { const h = [q.s, q.e, q.r].concat(q.o || []).join(' '); for (const id of X.imgIds(h)) img[id] = await getImg(id); }
-  download(`線上檢定所題庫_${b.name}_${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify({ app: 'wuyutzu-exam', v: 1, name: b.name, subj: b.subj || '', at: Date.now(), q: b.q, img }));
-  toast(`💾 已下載（${Object.keys(b.q).length} 題、${Object.keys(img).length} 張圖）`);
+/* ---------- 📤 匯出題庫（2026-10-24）：Word／Excel／完整備份 JSON；單一題庫或全部題庫 ---------- */
+const today = () => new Date().toISOString().slice(0, 10);
+const saveBlob = (name, blob) => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 8000); }; // 連結要先放進頁面再點，檔名才不會變成 download
+async function bankJSON(id) {
+  const b = BANKS[id], img = {};
+  for (const q of Object.values(b.q)) { const h = [q.s, q.e, q.r].concat(q.o || []).join(' '); for (const x of X.imgIds(h)) img[x] = await getImg(x); }
+  return { app: 'wuyutzu-exam', v: 1, name: b.name, subj: b.subj || '', at: Date.now(), q: b.q, img };
+}
+async function exportBank(bank) { const d = await bankJSON(bank); download(`線上檢定所題庫_${ExamExport.fileSafe(d.name)}_${today()}.json`, JSON.stringify(d)); toast(`💾 已下載（${Object.keys(d.q).length} 題、${Object.keys(d.img).length} 張圖）`); }
+function exportDlg(ids) {
+  const one = ids.length === 1, b0 = BANKS[ids[0]], nq = ids.reduce((a, id) => a + Object.keys(BANKS[id].q || {}).length, 0);
+  const m = modal(`<h2>📤 匯出${one ? `題庫「${esc(b0.name)}」` : `全部 ${ids.length} 個題庫`}</h2>
+    <p class="small muted" style="margin-top:0">共 ${nq} 題。萬一要換系統、或想留一份在自己電腦，選一種格式下載。</p>
+    <div class="grid3">
+      <button class="ecard" data-f="docx"><b>📄 Word（.docx）</b><span class="small muted">跟舊考卷同一種格式：題號、題型、選項、正確答案、解析、標籤，<b>含圖片</b>。可以直接列印，也能用「匯入 Word 考卷」匯回來。${one ? '' : '<br>每個題庫一個檔，打包成一個 ZIP。'}</span></button>
+      <button class="ecard" data-f="xlsx"><b>📊 Excel（.xlsx）</b><span class="small muted">跟匯入範本同樣的欄位，方便整理、篩選、給其他系統用。圖片會寫成「[圖片]」。${one ? '' : '<br>一個檔案，每個題庫一張工作表。'}</span></button>
+      <button class="ecard" data-f="json"><b>💾 完整備份（.json）</b><span class="small muted">最完整（含圖片、所有格式），用「📂 匯入備份」可以原封不動還原。${one ? '' : '<br>每個題庫一個檔，打包成一個 ZIP。'}</span></button>
+    </div><p class="small" id="exMsg" style="margin-top:10px"></p>`);
+  m.querySelectorAll('[data-f]').forEach((b) => { b.onclick = async () => {
+    const f = b.dataset.f, msg = $('#exMsg', m); m.querySelectorAll('[data-f]').forEach((x) => { x.disabled = true; });
+    try {
+      msg.textContent = '⏳ 準備中…（圖片多的題庫要等一下）';
+      if (f === 'xlsx') {
+        await loadScript(LIB.xlsx); const XL = window.XLSX, wb = XL.utils.book_new(), used = {};
+        ids.forEach((id) => { const ws = XL.utils.aoa_to_sheet(ExamExport.bankRows(BANKS[id])); ws['!cols'] = [{ wch: 8 }, { wch: 50 }].concat(new Array(8).fill({ wch: 18 })).concat([{ wch: 10 }, { wch: 40 }, { wch: 6 }, { wch: 16 }]); XL.utils.book_append_sheet(wb, ws, ExamExport.sheetName(BANKS[id].name, used)); });
+        XL.writeFile(wb, one ? `線上檢定所題庫_${ExamExport.fileSafe(b0.name)}_${today()}.xlsx` : `線上檢定所_全部題庫_${today()}.xlsx`);
+      } else {
+        if (f === 'docx') await loadScript(LIB.docx);
+        if (!one) await loadScript(LIB.jszip);
+        const files = [];
+        for (let k = 0; k < ids.length; k++) {
+          const id = ids[k], name = ExamExport.fileSafe(BANKS[id].name);
+          msg.textContent = `⏳ ${k + 1}／${ids.length}：${BANKS[id].name}`;
+          if (f === 'docx') files.push({ name: `${name}.docx`, blob: await ExamExport.bankDocx(BANKS[id], getImg) });
+          else files.push({ name: `${name}.json`, blob: new Blob([JSON.stringify(await bankJSON(id))], { type: 'application/json' }) });
+        }
+        if (one) saveBlob(`線上檢定所題庫_${files[0].name.replace(/\.(docx|json)$/, '')}_${today()}.${f}`, files[0].blob);
+        else { const z = new window.JSZip(), seen = {}; files.forEach((x) => { let nm = x.name, n = 2; while (seen[nm]) nm = x.name.replace(/(\.\w+)$/, `_${n++}$1`); seen[nm] = 1; z.file(nm, x.blob); }); saveBlob(`線上檢定所_全部題庫_${f === 'docx' ? 'Word' : '備份'}_${today()}.zip`, await z.generateAsync({ type: 'blob' })); }
+      }
+      msg.textContent = '✅ 已下載，請到瀏覽器的下載資料夾查看';
+    } catch (e) { console.error(e); msg.textContent = '❌ 匯出失敗：' + e.message; }
+    m.querySelectorAll('[data-f]').forEach((x) => { x.disabled = false; });
+  }; });
 }
 async function importBackup(file) {
   let d; try { d = JSON.parse(await file.text()); } catch (e) { return toast('這不是題庫備份檔'); }
@@ -1172,11 +1212,12 @@ async function exportXls() {
 /* 🧾 題目 */
 function paintPaper(el) {
   const ids = Object.keys(PAPER).sort((a, b) => PAPER[a].i - PAPER[b].i);
-  el.innerHTML = `<div class="card"><div class="row"><h3>🧾 這份測驗的題目（${ids.length} 題・滿分 ${META.total}）</h3><span class="sp"></span><button class="btn ghost sm" id="ppEdit">✏️ 修改題目與配分</button></div>
+  el.innerHTML = `<div class="card"><div class="row"><h3>🧾 這份測驗的題目（${ids.length} 題・滿分 ${META.total}）</h3><span class="sp"></span><button class="btn" id="ppPrint">🖨️ 紙本／PDF</button><button class="btn ghost sm" id="ppEdit">✏️ 修改題目與配分</button></div>
     <p class="small muted">這是建立測驗時的「快照」：之後改題庫不會影響這份測驗。要更新請按「修改題目與配分」重新選題。${META.shufQ ? '學生看到的題目順序會打亂。' : ''}${META.draw ? `每位學生隨機抽 ${META.draw} 題。` : ''}</p>
     <div id="ppList">${ids.map((id, n) => qViewHTML(Object.assign({}, PAPER[id], { a: (KEY[id] || {}).a || [], r: (KEY[id] || {}).r, e: (KEY[id] || {}).e }), n + 1)).join('')}</div></div>`;
   $$('#ppList .qview').forEach((v, n) => { const id = ids[n]; fillQView(v, Object.assign({}, PAPER[id], { a: (KEY[id] || {}).a || [], r: (KEY[id] || {}).r, e: (KEY[id] || {}).e })); });
   $('#ppEdit').onclick = () => examForm(CUR);
+  $('#ppPrint').onclick = printDlg;
 }
 
 /* 👥 名單 */
@@ -1513,4 +1554,40 @@ function optDetail(id, it) {
       const hint = ok ? (lo > hi ? '<span class="chip bad">❗ 正解卻是低分組選得多</span>' : '') : (all === 0 ? '<span class="chip gray">沒人選，誘答力低</span>' : lo > hi ? '<span class="chip ok">誘答力好</span>' : hi > lo ? '<span class="chip warn">高分組也被騙，題意要再確認</span>' : '');
       return `<tr><td><b>${X.LETTERS[i]}</b>${ok ? ' ✅' : ''}</td><td>${esc(X.plain(o).slice(0, 50))}</td><td class="num">${pct(all)}</td><td><div class="pbar ${ok ? 'ok' : ''}"><i style="width:${Math.round(all * 100)}%"></i></div></td><td class="num">${pct(hi)}</td><td class="num">${pct(lo)}</td><td>${hint}</td></tr>`; }).join('')}
     </tbody></table><div class="small muted">字母是題庫原始順序；「沒作答」${it.blank} 人次。</div>`;
+}
+
+/* =====================================================================
+   🖨️ 紙本／PDF（2026-10-24）：網路不通時也能考。開一個 A4 列印頁，列印時選「另存為 PDF」
+   ===================================================================== */
+function printDlg() {
+  const n = Object.keys(PAPER).length;
+  const m = modal(`<h2>🖨️ 紙本測驗／存成 PDF</h2>
+    <p class="small muted" style="margin-top:0">網路不通或想用紙本考時使用。會開一個 A4 的列印頁：最上面有班級、座號、姓名、學號、得分欄，題目依這份測驗排版，${n} 題全部印出${META.draw ? `（線上是每人抽 ${META.draw} 題，紙本印全部）` : ''}。</p>
+    <div class="grid2">
+      <div><label class="f">要印幾種版本</label><select id="pvN">${[1, 2, 3, 4].map((x) => `<option value="${x}">${x === 1 ? '1 種' : x + ' 種（' + 'ABCD'.slice(0, x).split('').join('、') + ' 卷）'}</option>`).join('')}</select></div>
+      <div><label class="f">字的大小</label><select id="pvS"><option value="s">小</option><option value="m" selected>標準</option><option value="l">大</option></select></div>
+    </div>
+    <div class="row" style="margin-top:10px;gap:4px 16px">
+      <span class="ckt"><label class="ck"><input type="checkbox" id="pvQ" ${META.shufQ ? 'checked' : ''}>題目順序打亂</label>${tip('每個版本的題目順序不一樣（同一個版本每次印都一樣）。不打亂時照題庫順序。')}</span>
+      <span class="ckt"><label class="ck"><input type="checkbox" id="pvO" ${META.shufO ? 'checked' : ''}>選項順序打亂</label>${tip('標「🔒 選項順序固定」的題目不會打亂。')}</span>
+      <span class="ckt"><label class="ck"><input type="checkbox" id="pvG" checked>依題型分大題</label>${tip('分成「一、單選題　二、多重選擇題　三、簡答題」，並標出每題配分。')}</span>
+      <span class="ckt"><label class="ck"><input type="checkbox" id="pvC">雙欄排版</label>${tip('一頁分左右兩欄，比較省紙；圖片多的題目建議單欄。')}</span>
+      <span class="ckt"><label class="ck"><input type="checkbox" id="pvK" checked>附答案卷（教師用）</label>${tip('放在最後面，每個版本一張；列印給學生時記得不要印到這幾頁。')}</span>
+      <span class="ckt"><label class="ck"><input type="checkbox" id="pvE">答案卷附解析</label></span>
+    </div>
+    <div class="row" style="margin-top:14px"><button class="btn lg" id="pvGo">🖨️ 開啟列印頁</button><span class="small muted" id="pvMsg"></span></div>`);
+  $('#pvK', m).onchange = () => { $('#pvE', m).disabled = !$('#pvK', m).checked; };
+  $('#pvGo', m).onclick = async () => {
+    const w = window.open('', '_blank'); // 要在按下去的當下開，才不會被瀏覽器擋
+    if (!w) return toast('瀏覽器擋住了新視窗，請允許這個網站開啟彈出視窗');
+    w.document.write('<p style="font-family:sans-serif;padding:20px">⏳ 正在排版、載入圖片…</p>');
+    try {
+      const ids = new Set(); Object.values(PAPER).forEach((q) => [q.s].concat(q.o || []).forEach((h) => X.imgIds(h).forEach((x) => ids.add(x))));
+      Object.values(KEY).forEach((k) => [k.r, k.e].forEach((h) => X.imgIds(h).forEach((x) => ids.add(x))));
+      const map = {}; for (const id of ids) map[id] = await getImg(id);
+      const html = ExamExport.examPrintHTML(META, PAPER, KEY, CUR, { versions: +$('#pvN', m).value, size: $('#pvS', m).value, shufQ: $('#pvQ', m).checked, shufO: $('#pvO', m).checked, group: $('#pvG', m).checked, cols: $('#pvC', m).checked ? 2 : 1, key: $('#pvK', m).checked, exp: $('#pvE', m).checked && $('#pvK', m).checked, need: !!META.showNeed }, map);
+      w.document.open(); w.document.write(html); w.document.close();
+      m.close();
+    } catch (e) { console.error(e); w.document.body.innerHTML = '<p style="font-family:sans-serif;padding:20px;color:#c0392b">排版失敗：' + esc(e.message) + '</p>'; }
+  };
 }

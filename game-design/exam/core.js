@@ -245,6 +245,8 @@
   var RE_OPT = /^\s*[（(]?\s*([A-Ha-h])\s*[)）.．、]\s*/;
   var RE_ANS = /^\s*(?:正確)?答案\s*[:：]\s*(.*)$/;
   var RE_EXP = /^\s*(?:正確)?(?:答案)?(?:解釋|解析|詳解)\s*[:：]\s*/;
+  var RE_REF = /^\s*參考答案\s*[:：]\s*/;   // 簡答題的參考答案（線上檢定所匯出的 Word 會有）
+  var RE_TAG = /^\s*標籤\s*[:：]\s*(.*)$/; // 標籤：遊戲元素、BGG 機制
   function stripPrefix(html, re) {
     // 去掉 HTML 開頭符合 re 的純文字（例如「1.    」、「A.    」），保留後面的格式
     html = String(html);
@@ -292,12 +294,15 @@
       if (mode === 'stem') cur._s = cur._s.concat(buf);
       else if (mode === 'opt') cur._o[cur._o.length - 1] = cur._o[cur._o.length - 1].concat(buf);
       else if (mode === 'exp') cur._e = cur._e.concat(buf);
+      else if (mode === 'ref') cur._r = (cur._r || []).concat(buf);
       buf = [];
     };
     var finish = function () {
       if (!cur) return;
       flush();
       var q = { num: cur.num, t: cur.t || '', d: cur.d || '中', s: joinLines(cur._s), o: cur._o.map(joinLines), a: cur.a || [], e: joinLines(cur._e) };
+      if (cur._r) q.r = joinLines(cur._r);
+      if (cur.tags) q.tags = cur.tags;
       if (/^\s*暫無\s*$/.test(plain(q.e))) q.e = '';
       if (!q.t) q.t = q.o.length ? (q.a.length > 1 ? 'm' : 's') : 'a';
       if (q.t === 'a') q.o = [];
@@ -352,6 +357,8 @@
         mode = 'ans';
         continue;
       }
+      if (RE_REF.test(t) && mode !== 'exp' && mode !== 'stem') { flush(); mode = 'ref'; buf.push(stripPrefix(L.html, RE_REF)); continue; }
+      if ((m = RE_TAG.exec(t)) && mode !== 'exp' && mode !== 'stem' && mode !== 'opt') { flush(); cur.tags = m[1].split(/[,，、;；]/).map(function (x) { return x.trim().slice(0, 20); }).filter(Boolean); mode = mode === 'ref' ? 'ans' : mode; continue; }
       if (RE_EXP.test(t) && mode !== 'stem') {
         flush();
         mode = 'exp';
