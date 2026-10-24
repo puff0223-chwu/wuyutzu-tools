@@ -23,7 +23,11 @@
   body {
     font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
     color: var(--navy); background-color: var(--cream);
-    background-image: radial-gradient(ellipse at 50% -20%, rgba(242,177,52,0.18), transparent 55%);
+    /* 千鳥格紋（很淡）＝偵探帽的質感 */
+    background-image:
+      linear-gradient(45deg, rgba(31,42,68,0.035) 25%, transparent 25%, transparent 75%, rgba(31,42,68,0.035) 75%),
+      linear-gradient(45deg, rgba(31,42,68,0.035) 25%, transparent 25%, transparent 75%, rgba(31,42,68,0.035) 75%);
+    background-size: 22px 22px; background-position: 0 0, 11px 11px;
     min-height: 100vh; padding: 0 16px 40px;
   }
   .wrap { max-width: 1080px; margin: 0 auto; }
@@ -34,7 +38,8 @@
   .badge {
     flex: none; width: 76px; height: 76px; border-radius: 50%;
     background: var(--mustard); display: grid; place-items: center;
-    box-shadow: 0 0 0 3px var(--navy), 0 6px 14px rgba(31,42,68,0.18);
+    box-shadow: 0 0 0 5px var(--cream), 0 0 0 8px var(--navy), 0 10px 20px rgba(31,42,68,0.25);
+    transform: rotate(-8deg);
   }
   .eyebrow { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.18em; color: var(--red); font-size: 1.05em; }
   h1 { font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: clamp(1.9em, 6vw, 2.9em); letter-spacing: 0.06em; line-height: 1.15; }
@@ -45,19 +50,18 @@
   .tools { position: sticky; top: 0; z-index: 20; padding: 10px 0 12px; background: linear-gradient(var(--cream) 80%, rgba(251,246,236,0)); }
   .search {
     display: flex; align-items: center; gap: 10px; background: var(--card);
-    border: 1.5px solid #ddd2bf; border-radius: 12px; padding: 4px 6px 4px 14px;
-    box-shadow: 0 2px 10px rgba(31,42,68,0.06);
+    border: 2.5px solid var(--navy); border-radius: 14px; padding: 4px 6px 4px 14px;
+    box-shadow: 4px 4px 0 var(--navy);
   }
-  .search:focus-within { border-color: var(--navy); }
   .search input { flex: 1; min-width: 0; border: none; background: transparent; font: inherit; font-size: 1.05em; color: var(--navy); outline: none; padding: 9px 0; }
   .search input::placeholder { color: #9a96a3; }
   .search .clear { border: none; background: var(--navy); color: #fff; border-radius: 9px; padding: 7px 12px; font: inherit; font-size: 0.85em; cursor: pointer; }
   .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
   .chip {
     font: inherit; font-size: 0.9em; font-weight: 700; cursor: pointer; color: var(--navy);
-    background: var(--card); border: 1px solid #ddd2bf; border-radius: 999px; padding: 5px 14px;
+    background: var(--card); border: 2px solid var(--navy); border-radius: 999px; padding: 5px 14px;
   }
-  .chip.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .chip.on { background: var(--navy); color: #fff; }
   .chip .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
   .count { margin-left: auto; align-self: center; color: var(--muted); font-size: 0.88em; }
 
@@ -74,12 +78,11 @@
   .card {
     position: relative; display: flex; gap: 12px; align-items: flex-start; text-align: left;
     background: var(--card); color: var(--navy); font: inherit; cursor: pointer;
-    border: 1px solid #e6dccb; border-radius: 12px; padding: 14px;
-    box-shadow: 0 1px 2px rgba(31,42,68,0.05), 0 4px 12px rgba(31,42,68,0.05);
-    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+    border: 2px solid var(--navy); border-radius: 14px; padding: 14px;
+    box-shadow: 3px 3px 0 var(--navy); transition: transform 0.12s, box-shadow 0.12s;
   }
-  .card:hover { transform: translateY(-2px); border-color: var(--accent, var(--navy)); box-shadow: 0 8px 20px rgba(31,42,68,0.10); }
-  .card:active { transform: none; }
+  .card:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--accent, var(--navy)); }
+  .card:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--navy); }
   .card:focus-visible { outline: 3px solid var(--mustard); outline-offset: 2px; }
   .card .icon { flex: none; width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; font-size: 1.5em; background: var(--soft, #f3efe6); }
   .card .name { font-weight: 900; font-size: 1.05em; line-height: 1.3; }
@@ -88,6 +91,26 @@
   .pill.case { background: var(--red); color: #fff; font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.1em; font-size: 0.82em; }
   .pill.lock { background: #fff1d6; color: #8a5a00; border: 1px solid var(--mustard); }
 
+
+  /* ===== 教師展覽館入口（招牌右邊的門票；給其他老師看的對外網址） ===== */
+  header .head-main { flex: 1; min-width: 0; }
+  .gallery {
+    flex: none; align-self: center; position: relative; display: flex; flex-direction: column; gap: 8px;
+    background: var(--card); border: 2.5px solid var(--navy); border-radius: 14px; padding: 12px 14px 12px 18px;
+    box-shadow: 4px 4px 0 var(--mustard); transform: rotate(1.5deg); max-width: 270px;
+  }
+  .gallery::before { content: ''; position: absolute; left: 6px; top: 10px; bottom: 10px; border-left: 2px dashed var(--line); }
+  .gallery .g-t { font-weight: 900; font-size: 1.02em; line-height: 1.3; }
+  .gallery .g-t small { display: block; font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.15em; color: var(--red); font-size: 0.78em; font-weight: 400; }
+  .gallery .g-d { color: var(--muted); font-size: 0.8em; line-height: 1.45; }
+  .gallery .g-btns { display: flex; gap: 6px; }
+  .gallery .g-btns a, .gallery .g-btns button {
+    flex: 1; text-align: center; text-decoration: none; font: inherit; font-weight: 900; font-size: 0.85em; cursor: pointer; white-space: nowrap;
+    color: var(--navy); background: var(--mustard); border: 2px solid var(--navy); border-radius: 9px; padding: 6px 8px;
+  }
+  .gallery .g-btns button { background: #fff; }
+  .gallery .g-btns :active { transform: translate(1px, 1px); }
+
   .empty { text-align: center; color: var(--muted); padding: 50px 0; font-weight: 700; }
 
   /* ===== 說明卷宗（彈窗） ===== */
@@ -95,11 +118,11 @@
   .overlay.on { display: flex; }
   .dossier {
     position: relative; width: min(500px, 100%); max-height: 90vh; overflow: auto;
-    background: var(--card); color: var(--navy); border-radius: 16px;
-    box-shadow: 0 24px 60px rgba(31,42,68,0.35); animation: pop 0.18s ease;
+    background: var(--card); color: var(--navy); border: 3px solid var(--navy); border-radius: 18px;
+    box-shadow: 8px 8px 0 var(--navy); animation: pop 0.18s ease;
   }
   @keyframes pop { from { transform: scale(0.94); opacity: 0; } to { transform: none; opacity: 1; } }
-  .d-top { background: var(--accent, var(--navy)); color: #fff; padding: 18px 22px 16px; border-radius: 16px 16px 0 0; }
+  .d-top { background: var(--accent, var(--navy)); color: #fff; padding: 18px 22px 16px; border-radius: 14px 14px 0 0; }
   .d-top .no { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.15em; opacity: 0.9; }
   .d-top h3 { font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: 1.6em; display: flex; align-items: center; gap: 10px; }
   .d-top .sub { opacity: 0.92; font-size: 0.9em; margin-top: 2px; }
@@ -111,11 +134,10 @@
   .d-body li::before { content: '🔍'; position: absolute; left: 0; top: 7px; font-size: 0.85em; }
   .go {
     display: block; text-align: center; text-decoration: none; font-weight: 900; letter-spacing: 0.05em;
-    background: var(--mustard); color: var(--navy); border-radius: 10px;
-    padding: 12px; box-shadow: 0 3px 0 #c98d17;
+    background: var(--mustard); color: var(--navy); border: 2.5px solid var(--navy); border-radius: 12px;
+    padding: 12px; box-shadow: 3px 3px 0 var(--navy);
   }
-  .go:hover { filter: brightness(1.04); }
-  .go:active { transform: translateY(2px); box-shadow: 0 1px 0 #c98d17; }
+  .go:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--navy); }
   .note { text-align: center; font-size: 0.84em; color: var(--muted); margin-top: 10px; }
 
   footer { text-align: center; color: var(--muted); font-size: 0.85em; padding: 26px 0 6px; }
@@ -129,6 +151,10 @@
     .count { width: 100%; margin-left: 0; }
     .drawer-head .desc { width: 100%; }
     .tagline { font-size: 0.88em; }
+    header { flex-wrap: wrap; }
+    .gallery { max-width: none; width: 100%; transform: none; flex-direction: row; flex-wrap: wrap; align-items: center; }
+    .gallery .g-d { display: none; }
+    .gallery .g-t { flex: 1; }
   }
   @media (prefers-reduced-motion: reduce) { .card, .dossier { transition: none; animation: none; } }
 </style>
@@ -140,10 +166,16 @@
     <div class="badge" aria-hidden="true">
       <svg width="40" height="40" viewBox="0 0 24 24"><circle cx="10" cy="10" r="6.2" fill="#fff" stroke="#1f2a44" stroke-width="2.4"/><line x1="14.6" y1="14.6" x2="21" y2="21" stroke="#1f2a44" stroke-width="3" stroke-linecap="round"/><path d="M7 8.5 q1.6-2 4-1" fill="none" stroke="#f2b134" stroke-width="1.6"/></svg>
     </div>
-    <div>
+    <div class="head-main">
       <div class="eyebrow">The Casebook of Wu Yu-Zi</div>
       <h1>巫魚子<span class="hl">教課事務所</span></h1>
-      <p class="tagline">班級事務 · 化學實驗室 · 遊戲研究——每個工具都是一份待破解的卷宗</p>
+      <p class="tagline">班級事務 · 化學實驗室 · 遊戲研究 · 探究實作——每個工具都是一份待破解的卷宗</p>
+    </div>
+    <!-- 教師展覽館：給其他老師看的對外網址（只列已開放申請的系統） -->
+    <div class="gallery">
+      <div class="g-t"><small>Teacher Gallery</small>🏛️ 教師展覽館</div>
+      <div class="g-d">給其他老師看的開放系統與使用說明，要分享就給這個網址</div>
+      <div class="g-btns"><a href="showcase/" target="_blank" rel="noopener">開啟 ↗</a><button type="button" id="copyGallery">📋 複製網址</button></div>
     </div>
   </header>
 
@@ -162,6 +194,8 @@
     程式設計：巫魚子 © 2025 ｜
     <a href="https://sites.google.com/view/teacher-wuyutzu/%E9%A6%96%E9%A0%81?authuser=0" target="_blank" rel="noopener">巫魚子網站</a>
     <a href="https://www.youtube.com/@chwu0223" target="_blank" rel="noopener">YouTube 頻道</a>
+    <a href="showcase/" target="_blank" rel="noopener">🏛️ 教師展覽館</a>
+    <a href="account/">👥 老師會員中心</a>
   </footer>
 </div>
 
@@ -172,7 +206,7 @@
 <script>
 /* =========================================================
    工具清單：新增工具只要在這裡加一筆資料，卡片和說明卷宗會自動產生
-   drawer：0 班級事務、1 化學實驗室 No.223、2 遊戲研究室
+   drawer：0 班級事務、1 化學實驗室 No.223、2 遊戲研究室、3 探究與實作、4 親子
    shelf：抽屜裡的小分類
    teacher：true 表示連到老師專用頁（顯示「🔒 老師專用」）
    case：系列案件編號（顯示紅色 CASE 標籤）
@@ -186,23 +220,32 @@ const TOOLS = [
   {"id": "fortune", "drawer": 0, "shelf": "班級氣氛", "icon": "🏮", "name": "詩籤系統", "brief": "108支文青詩籤，抽籤得到人生智慧", "title": "巫魚子文青學院詩籤", "sub": "108支詩籤 · 人生智慧抽抽看", "features": ["108支精選詩籤，10大類別", "上上籤至下下籤，5種籤級", "每支籤附有出處與解說", "搖晃動畫，沉浸式抽籤體驗"], "href": "classroom/poetry_fortune.html", "btn": "開始使用"},
   {"id": "lottery", "drawer": 0, "shelf": "班級氣氛", "icon": "🎲", "name": "聖誕抽籤系統", "brief": "交換禮物神秘配對，保留驚喜感", "title": "聖誕抽籤系統", "sub": "交換禮物 · 保密配對", "features": ["自動配對，確保沒人抽到自己", "個別查詢，保持驚喜感", "下載備份清單，應急查詢", "支援上傳舊備份重新查詢"], "href": "christmas/lottery.html", "btn": "開始使用"},
   {"id": "adjectives", "drawer": 0, "shelf": "班級氣氛", "icon": "✨", "name": "禮物形容詞產生器", "brief": "160個形容詞，幫你想到禮物靈感", "title": "禮物形容詞產生器", "sub": "8大類別 · 160個形容詞", "features": ["8種類別按鈕，選最多3類", "隨機產生3個形容詞", "一鍵複製，貼到Google表單", "幫助想不出禮物的同學"], "href": "christmas/adjectives.html", "btn": "開始使用"},
-  {"id": "equipment", "drawer": 1, "shelf": "No.223 懸案系列", "icon": "🔍", "name": "消失的實驗器材", "brief": "看圖認器材，限時搶分，3條命挑戰排行榜", "title": "消失的實驗器材", "sub": "化學實驗器材辨識 · 限時搶分", "features": ["33 種實驗器材題庫，每局隨機 30 題", "看圖輸入名稱，一字不差才過關", "整場 3 條命，答錯扣命，扣完 Game Over", "答得越快分數越高，結算答對、答錯與總分", "即時排行榜前 30 名，可只看自己班級"], "href": "chemistry/missing-equipment.html", "btn": "開始搜查", "case": "CASE 01"},
-  {"id": "ph", "drawer": 1, "shelf": "No.223 懸案系列", "icon": "🧪", "name": "消失的指示劑", "brief": "pH 值計算：正反向題型，每人專屬5題", "title": "消失的指示劑", "sub": "pH 值計算練習 · 老師頁產生題組碼讓學生領題", "features": ["係數由 2、3、5、7、10 組成，四級難度自由分配", "正向（濃度 → pH）、反向（pH／pOH → 濃度）或混合，老師自選", "題組碼＋班級＋座號 → 每人專屬 5 題，重新整理不變", "即時對錯（不給答案）或交卷後老師批改", "投影共同題目與解法、列印學習單與解答表、全班總表匯出 Excel"], "href": "chemistry/ph-generator-teacher.html", "btn": "開啟老師頁", "note": "學生連結與 QR Code 由老師頁產生後分享", "teacher": true, "case": "CASE 02"},
-  {"id": "unit", "drawer": 1, "shelf": "No.223 懸案系列", "icon": "📜", "name": "失落的配方", "brief": "單位換算：g、mol、分子數、CM、%、ppm", "title": "失落的配方", "sub": "化學單位換算練習 · 老師頁產生題組碼讓學生領題", "features": ["質量、莫耳數、分子數、原子數、CM、重量百分率、ppm", "生活情境題，只給原子量，四級難度自由分配", "答錯時亮出「單位換算地圖」路線提示（不給答案）", "投影共同題目與解法、列印學習單與解答表", "全班總表即時更新，匯出 Excel"], "href": "chemistry/unit-generator-teacher.html", "btn": "開啟老師頁", "note": "學生連結與 QR Code 由老師頁產生後分享", "teacher": true, "case": "CASE 03"},
+  {"id": "equipment", "drawer": 1, "shelf": "No.223 懸案系列", "icon": "🔍", "name": "消失的實驗器材", "brief": "看圖認器材，限時搶分，3條命挑戰排行榜", "title": "消失的實驗器材", "sub": "化學實驗器材辨識 · 老師開活動，學生限時搶分", "features": ["33 種實驗器材，老師開活動時選題數、命數與類別", "學生輸入活動代碼，選用途、填班級座號學號姓名", "老師按 ▶ 開始／⏹ 停止，停止後學生不能再玩", "每個活動自己的排行榜（另有全站名人堂）", "即時看誰在玩；每件器材答對率與學生常寫錯的名稱"], "href": "chemistry/missing-equipment-teacher.html", "btn": "開啟老師頁", "case": "CASE 01", "teacher": true, "note": "學生連結與 QR Code 由老師頁開活動後分享"},
+  {"id": "ph", "drawer": 1, "shelf": "No.223 懸案系列", "icon": "🧪", "name": "消失的指示劑", "brief": "pH 值計算：正反向題型，每人專屬5題", "title": "消失的指示劑", "sub": "pH 值計算練習 · 老師開活動讓學生用代碼進入", "features": ["係數由 2、3、5、7、10 組成，四級難度自由分配", "正向（濃度 → pH）、反向（pH／pOH → 濃度）或混合，老師自選", "開活動：學期、項次、名稱＋題目設定；▶ 開始／⏹ 停止", "學生選用途、填班級座號學號姓名，每人專屬 5 題", "即時總表＋能力分析（難度、題型、常見錯誤類型），匯出 Excel"], "href": "chemistry/ph-generator-teacher.html", "btn": "開啟老師頁", "note": "學生連結與 QR Code 由老師頁開活動後分享", "teacher": true, "case": "CASE 02"},
+  {"id": "unit", "drawer": 1, "shelf": "No.223 懸案系列", "icon": "📜", "name": "失落的配方", "brief": "單位換算：g、mol、分子數、CM、%、ppm", "title": "失落的配方", "sub": "化學單位換算練習 · 老師開活動讓學生用代碼進入", "features": ["質量、莫耳數、分子數、原子數、CM、重量百分率、ppm", "生活情境題，只給原子量，四級難度自由分配", "開活動：學期、項次、名稱＋題目設定；▶ 開始／⏹ 停止", "答錯時亮出「單位換算地圖」路線提示（不給答案）", "即時總表＋能力分析（題型、常見錯誤類型），匯出 Excel"], "href": "chemistry/unit-generator-teacher.html", "btn": "開啟老師頁", "note": "學生連結與 QR Code 由老師頁開活動後分享", "teacher": true, "case": "CASE 03"},
+  {"id": "scihistory", "drawer": 1, "shelf": "No.223 懸案系列", "icon": "📖", "name": "時光手稿：科學史大冒險", "brief": "扮演投資人，在科學史分岔點選擇論點；選錯掉進平行時空", "title": "時光手稿：科學史大冒險", "sub": "科學史抉擇遊戲 · 老師頁看進度、歷程與抉擇分析", "features": ["學生扮演投資人：8 金幣起家，每個實驗 1 金幣換證據", "支持錯誤論點 → 虛構的平行時空劇情＋真實歷史說明，扣 3 金幣回到開頭", "第一次就選對可擲投資回報骰；破產可向大師銀行借款、之後還款", "科學家知識網路：破關一位，受他影響的科學家亮起", "排行榜：總分、各科學家最快破關；本班／本學年／歷屆", "老師頁：學生統計、完整遊戲歷程、各抉擇的第一次選擇分布、Excel"], "href": "chemistry/sci-history/teacher.html", "btn": "開啟老師頁", "note": "學生連結與 QR Code 在老師頁上方", "teacher": true},
+  {"id": "bondsociety", "drawer": 1, "shelf": "No.223 懸案系列", "icon": "🕯️", "name": "隱秘的鍵結社", "brief": "化學鍵策略遊戲：接委託、維持各國均勢、別讓組織曝光", "title": "隱秘的鍵結社", "sub": "化學鍵 × 週期表 × 化學式 · 平行時空的奇幻大陸策略遊戲 · 老師頁看成績、知識點與常錯題目", "features": ["共國、離國、金國代表三種化學鍵，國力依鍵能比例設計；高二高三版加入氫聯邦、凡聯邦", "九種委託：尋礦、鑄造、命名、偵探鑑定、題組、結構工坊、工程應用、條約配係數、分子間作用力", "計時模式：回合倒數、每 90 秒干擾快問；隱密度系統與大陸危機", "學生：每局分析、累積成績、知識點圖鑑、常錯題目；排行榜本班／跨班／歷屆", "老師頁：學生成績、知識點熱點圖、常錯題目與錯誤答案、Excel、清除測試資料"], "href": "chemistry/bond-society/teacher.html", "btn": "開啟老師頁", "note": "學生連結與 QR Code 在老師頁上方", "teacher": true},
   {"id": "caseboard", "drawer": 1, "shelf": "課程經營", "icon": "📌", "name": "No.940 案件委託公告欄", "brief": "同儕解題互助：發布委託、承接教學、星等評價", "title": "No.940 案件委託公告欄", "sub": "同儕解題互助 · 老師頁開設公告欄讓學生加入", "features": ["學生即時發布問題（課本、習作、講義、考卷的頁數題號）", "會的同學承接委託、面對面講解，一人同時只接 1 案", "委託人按完成並給 1～3 顆星，偵探滿 5 個評價才看得到平均", "投影公告欄即時更新：待承接／偵辦中／已破案", "統計每位學生發問數、破案數與獎勵點數，匯出 Excel"], "href": "chemistry/case-board-teacher.html", "btn": "開啟老師頁", "note": "學生連結與 QR Code 由老師頁產生後分享", "teacher": true},
-  {"id": "scihistory", "drawer": 1, "shelf": "科學史", "icon": "📖", "name": "時光手稿：科學史大冒險", "brief": "扮演投資人，在科學史分岔點選擇論點；選錯掉進平行時空", "title": "時光手稿：科學史大冒險", "sub": "科學史抉擇遊戲 · 老師頁看進度、歷程與抉擇分析", "features": ["學生扮演投資人：8 金幣起家，每個實驗 1 金幣換證據", "支持錯誤論點 → 虛構的平行時空劇情＋真實歷史說明，扣 3 金幣回到開頭", "第一次就選對可擲投資回報骰；破產可向大師銀行借款、之後還款", "科學家知識網路：破關一位，受他影響的科學家亮起", "排行榜：總分、各科學家最快破關；本班／本學年／歷屆", "老師頁：學生統計、完整遊戲歷程、各抉擇的第一次選擇分布、Excel"], "href": "chemistry/sci-history/teacher.html", "btn": "開啟老師頁", "note": "學生連結與 QR Code 在老師頁上方", "teacher": true},
-  {"id": "bondsociety", "drawer": 1, "shelf": "化學鍵", "icon": "🕯️", "name": "隱秘的鍵結社", "brief": "化學鍵策略遊戲：接委託、維持各國均勢、別讓組織曝光", "title": "隱秘的鍵結社", "sub": "化學鍵 × 週期表 × 化學式 · 平行時空的奇幻大陸策略遊戲 · 老師頁看成績、知識點與常錯題目", "features": ["共國、離國、金國代表三種化學鍵，國力依鍵能比例設計；高二高三版加入氫聯邦、凡聯邦", "九種委託：尋礦、鑄造、命名、偵探鑑定、題組、結構工坊、工程應用、條約配係數、分子間作用力", "計時模式：回合倒數、每 90 秒干擾快問；隱密度系統與大陸危機", "學生：每局分析、累積成績、知識點圖鑑、常錯題目；排行榜本班／跨班／歷屆", "老師頁：學生成績、知識點熱點圖、常錯題目與錯誤答案、Excel、清除測試資料"], "href": "chemistry/bond-society/teacher.html", "btn": "開啟老師頁", "note": "學生連結與 QR Code 在老師頁上方", "teacher": true},
-  {"id": "gamification", "drawer": 1, "shelf": "課堂遊戲化", "icon": "🎯", "name": "選人系統", "brief": "可調機率隨機抽籤，8種抽選方式", "title": "巫魚子大師選人系統", "sub": "可調機率 · 8種抽選方式", "features": ["設定班級人數（1-50人）", "8種抽籤方式，每種可調整機率", "智能驗證，機率總和100%", "保留最近10次抽籤記錄"], "href": "gamification/system.html", "btn": "開始使用"},
-  {"id": "curse", "drawer": 1, "shelf": "課堂遊戲化", "icon": "💀", "name": "陣亡詛咒系統", "brief": "角色血量歸零時隨機抽取懲罰", "title": "陣亡詛咒系統", "sub": "遊戲化教學 · 懲罰抽取", "features": ["角色血量歸零時觸發", "9種詛咒等機率隨機抽取", "記錄所有陣亡歷史", "增加課堂遊戲化趣味"], "href": "gamification/system.html", "btn": "開始使用"},
+  {"id": "gradequery", "drawer": 1, "shelf": "課程經營", "icon": "🗂️", "name": "成績調閱室", "brief": "平時成績像 Excel 一樣管理，學生登入只看得到自己的成績", "title": "成績調閱室", "sub": "課程平時成績查詢 · 取代試算表＋VLOOKUP", "features": ["學期、課程種類、班級名單庫，一門課可以包含多個班級", "像 Excel 的成績表：從 Excel 整塊貼上、公式自動計算小計與總分、群組收合與縮放", "每一欄可設定學生看不看得到，開放查詢可設定時間區間", "學生用班級、座號、姓名登入，預設密碼是學號，可自己改密碼、老師一鍵還原", "學生可查不同學期、不同課程的成績，手機自動變成卡片版"], "href": "https://grade-query-system-coral.vercel.app/", "btn": "開啟老師頁", "note": "獨立系統（Vercel＋Supabase），資料不在 Firebase。老師帳號在 Supabase 建立，不是會員中心的帳號；學生查詢連結與 QR Code 在老師頁上方產生。", "teacher": true},
+  {"id": "readingquiz", "drawer": 1, "shelf": "課程經營", "icon": "📖", "name": "科普閱讀測驗", "brief": "讀科普文章，用自己的話回答，AI 依規準給引導式回饋", "title": "科普閱讀測驗", "sub": "科普文章閱讀理解 · 學生簡答，過關才算完成", "features": ["老師貼上文章網址，AI 自動整理摘要、協助出題與草擬評分規準", "學生用自己的話簡答，回饋只給方向、不洩漏答案，可不限次數修正", "作答進度存在同一台裝置的瀏覽器，離開後可接續作答", "老師後台：作業編號與排序、學生紀錄篩選與分頁、Excel 匯出、AI 用量統計、外觀設定"], "href": "https://reading-quiz-system.vercel.app/", "btn": "開始測驗", "note": "獨立系統（Vercel＋Supabase），資料不在 Firebase。老師後台請從該頁右上角「教師後台」登入，帳號不是會員中心的帳號。"},
+  {"id": "gamification", "drawer": 1, "shelf": "課堂遊戲化", "icon": "🎯", "name": "選人系統", "brief": "綜合、抽一～三位、僅抽女生／男生，按了就抽", "title": "巫魚子大師選人系統", "sub": "嫌疑人指認 · 一鍵抽選", "features": ["綜合按鈕：系統依比重決定抽法", "抽一～三位、僅抽女生、僅抽男生", "班級設定人數與男女座號（三個遊戲工具共用）", "不重複模式、請假標記、轉盤翻牌動畫音效"], "href": "gamification/picker.html", "btn": "開始使用"},
+  {"id": "curse", "drawer": 1, "shelf": "課堂遊戲化", "icon": "💀", "name": "陣亡詛咒系統", "brief": "英雄陣亡時翻開命運之牌，抽取懲罰", "title": "陣亡詛咒系統", "sub": "遊戲化教學 · 命運之牌", "features": ["洗牌、選牌、翻牌的動畫與音效", "清單只打文字，自動配小圖示", "各班「待執行」清單，完成就刪除", "清單可匯出匯入，換裝置也能用"], "href": "gamification/curse.html", "btn": "開始使用"},
   {"id": "poke", "drawer": 1, "shelf": "課堂遊戲化", "icon": "🎁", "name": "戳戳樂", "brief": "6×6格子，隨機獎品，即時開獎音效", "title": "戳戳樂", "sub": "6×6格子 · 即時開獎", "features": ["上傳背景圖片，36格覆蓋展示", "老師自訂獎品內容與數量", "學生輸入座號，點格即時開獎", "中獎金色閃亮，銘謝惠顧灰底", "下載完整中獎名單 Excel"], "href": "gamification/poke-game.html", "btn": "開始使用"},
-  {"id": "truthdare", "drawer": 1, "shelf": "課堂遊戲化", "icon": "🎲", "name": "真心話大冒險", "brief": "真心話開放式提問・大冒險拉霸機", "title": "真心話大冒險", "sub": "班級互動遊戲 · 兩種模式", "features": ["真心話：7大類70題，開放式問法", "大冒險：拉霸機決定任務，保證合理有趣", "對象機率：自己60%・同學30%・老師10%", "無傷大雅，適合課堂使用"], "href": "gamification/truth-or-dare.html", "btn": "開始使用"},
-  {"id": "bartle", "drawer": 2, "shelf": "玩家研究", "icon": "🃏", "name": "巴圖玩家類型", "brief": "♦♠♥♣ 四種玩家風格，12題精簡或30題完整版", "title": "巴圖玩家類型測驗", "sub": "遊戲設計思考 · 玩家心理探索", "features": ["精簡版 12 題（約2分鐘）／完整版 30 題（約6分鐘）", "四種玩家類型：♦成就型・♠探索型・♥社交型・♣殺手型", "每題二選一，操作簡單直覺", "結果含四維度分數、座標軸位置圖、與其他類型的關係", "理論來源：Richard Bartle（1996）"], "href": "classroom/bartle.html", "btn": "開始測驗"}
+  {"id": "truthdare", "drawer": 1, "shelf": "課堂遊戲化", "icon": "🎲", "name": "真心話大冒險", "brief": "真心話翻牌提問・大冒險拉霸機・內建選號", "title": "真心話大冒險", "sub": "班級互動遊戲 · 兩種模式", "features": ["真心話：7大類70題，翻牌抽題不重複", "大冒險：三格拉霸機決定對象與任務", "🎯 選號：輸入人數抽一個號碼", "題庫與對象機率都能在網頁上編輯"], "href": "gamification/truth-or-dare.html", "btn": "開始使用"},
+  {"id": "bartle", "drawer": 2, "shelf": "玩家研究", "icon": "🃏", "name": "巴圖玩家類型", "brief": "♦♠♥♣ 四種玩家風格，12題精簡或30題完整版", "title": "巴圖玩家類型測驗", "sub": "遊戲設計思考 · 玩家心理探索", "features": ["精簡版 12 題（約2分鐘）／完整版 30 題（約6分鐘）", "四種玩家類型：♦成就型・♠探索型・♥社交型・♣殺手型", "每題二選一，操作簡單直覺", "結果含四維度分數、座標軸位置圖、與其他類型的關係", "理論來源：Richard Bartle（1996）"], "href": "classroom/bartle.html", "btn": "開始測驗"},
+  {"id": "onlineexam", "drawer": 2, "shelf": "課程評量", "icon": "🎲", "name": "線上檢定所", "brief": "線上測驗：限時作答、反作弊、自動計分", "title": "線上檢定所", "sub": "線上測驗系統 · 老師開測驗，學生掃 QR Code 作答", "features": ["題庫編輯器：像文書軟體一樣編輯，可直接貼上圖片、截圖與連結", "Word 考卷直接匯入（題目、選項、答案、解析、圖片一次搬進來），也能用 Excel 範本", "題型：單選、多重選擇題（每錯一個選項倒扣 1/5、等於扣 2/5 題分，扣完為止）、簡答（老師批閱）", "開放／截止時間、作答時間倒數（以伺服器時間為準）、可作答次數與採計方式（最高分、第一次、最後一次、平均）", "題目與選項依學號打亂、每人隨機抽題", "🛡️ 反作弊：全螢幕作答，切換頁面、分割畫面、閒置都記違規，達上限由系統代結，成績標明交卷方式", "即時成績表、作答明細與事件時間軸、簡答給分、名單核對誰還沒考、匯出 Excel", "老師決定公布成績時要不要一併公布題目、正解與解析"], "href": "game-design/exam/", "btn": "開啟老師後台", "note": "老師帳號登入（會員中心申請・可用 Google 登入）", "teacher": true},
+  {"id": "excelrescue", "drawer": 3, "shelf": "Excel 數據處理", "icon": "📊", "name": "消失的實驗數據", "brief": "Excel 作圖與函數 Ending 作業，每人專屬數據", "title": "消失的實驗數據", "sub": "Excel 數據救援任務 · 學號產生專屬數據，抄答案對不上", "features": ["學生輸入學號，下載自己的專屬 Excel 數據檔", "六關：長條圖、折線圖、圓餅圖、散佈圖、函數、格式化條件", "從圖表讀出答案回報，答對得密碼碎片，六關全破拿結案代碼", "隱藏關卡：散佈圖過關後解鎖，找出被污染的標準品重算 R²", "Excel 鑑識：學生上傳自我檢查，老師整批拖進全班檔案自動批改", "即時進度儀表板＋破案牆投影：誰卡在哪一關、首破、最速結案、即時動態", "老師頁：換學期、答案表、批次驗證結案代碼、匯出 Excel"], "href": "inquiry/excel-rescue-teacher.html", "btn": "開啟老師頁", "note": "學生連結與 QR Code 在老師頁上方", "teacher": true},
+  {"id": "lostplaces", "drawer": 3, "shelf": "校園定向越野", "icon": "🧭", "name": "遺落的地點", "brief": "校園照片定向越野：看照片找地點、練觀察與視角", "title": "遺落的地點", "sub": "校園照片定向越野 · 學生手機闖關，系統自動派題", "features": ["每關 2 張照片＋7 個候選地點（分在 4 個區域），學生規劃路線、到現場比對", "系統自動派題：每關換區、避開人多的區域；快速版／半節課／整節課一鍵設定", "🤫 其他班上課時自動避開教學區；禁行區在學生地圖上用斜線標出", "💡 求助（系統給兩層提示）、🙋 申請 PASS（老師一鍵裁決）", "🎯 積分賽：任務牆自己挑照片，冷門區分數高、熱門區分數低，可設回集合點報到", "🎁 加分挑戰：🦶 站位挑戰（拍照的人站哪、朝哪）、🔍 現場觀察任務", "戰況看板＋投影畫面：排行榜、各區人數、首破與最快完成", "📊 視角統計找出全班最弱的視角、🗺️ 各組路線回放", "📸 學生拍照投稿出題：老師審核進題庫，通過畫面找大師領獎", "題庫管理：130 個點位、視角標籤、拍攝站位；也能一鍵印紙本版", "成績 Excel：排名、作答明細、點位與視角統計、加分挑戰"], "href": "inquiry/orienteering/index.html", "btn": "開啟老師後台", "note": "老師帳號登入（會員中心申請・可用 Google 登入）", "teacher": true},
+  {"id": "secretsource", "drawer": 3, "shelf": "文獻與小論文", "icon": "📜", "name": "出處失傳的秘文", "brief": "文獻查詢、引用與參考文獻格式（小論文 APA）", "title": "出處失傳的秘文", "sub": "文獻查詢 × 引用 × 參考文獻 · 老師開任務讓學生用連結進入", "features": ["依小論文寫作順序：查文獻 → 引用寫作 → 參考文獻格式", "第 3 關出處鑑識：每人專屬證物卡（書籍、網頁、YouTube、小論文、科展作品…），寫出正確格式", "逐項鑑識：指出作者、年份、書名、標點全半形、粗體哪裡錯", "找出破綻、整理參考文獻清單（中文依筆畫、英文依字母）", "老師開任務時勾選科目與文獻類型；即時進度、答案查詢、匯出 Excel"], "href": "inquiry/secret-source/teacher.html", "btn": "開啟老師頁", "note": "老師帳號登入（會員中心申請・可用 Google 登入）；第 1 關查文獻、第 2 關引用寫作開發中", "teacher": true},
+  {"id": "familypoints", "drawer": 4, "shelf": "家庭集點", "icon": "🪙", "name": "集點小金庫", "brief": "親子遊戲化集點：回報表現、擲骰加倍、兌換獎品", "title": "集點小金庫", "sub": "親子集點系統 · 孩子回報，爸爸審核", "features": ["孩子用自己的登入名稱與 PIN 登入，看自己的點數與可兌換的獎品", "孩子自己回報完成的表現，可重複回報（補記前一天忘記的），爸爸審核後才加點", "部分表現可擲骰子，隨機倍數加成", "孩子申請兌換獎品，爸爸確認後才扣點", "爸爸管理：人員、表現行為與點數、骰子倍數表、獎品與所需點數、手動加扣點、匯出 CSV 備份"], "href": "family-points/", "btn": "開啟小金庫", "note": "孩子的登入名稱與 PIN 由爸爸在「人員」分頁建立；爸爸用自己的 Email 帳號登入。"}
 ];
 
 const DRAWERS = [
   { name: '班級事務', tag: 'Drawer I',   desc: '行政、認識學生、班級氣氛', color: '#1f9e8f', soft: '#e3f4f1' },
   { name: '化學實驗室 No.223', tag: 'Drawer II', desc: '懸案系列與課堂遊戲化', color: '#e4572e', soft: '#fde8e1' },
-  { name: '遊戲研究室', tag: 'Drawer III', desc: '遊戲設計思考課程', color: '#7b5ea7', soft: '#eee8f6' }
+  { name: '遊戲研究室', tag: 'Drawer III', desc: '遊戲設計思考課程', color: '#7b5ea7', soft: '#eee8f6' },
+  { name: '探究與實作', tag: 'Drawer IV', desc: '數據處理與科學探究', color: '#2f6db5', soft: '#e4edf8' },
+  { name: '親子', tag: 'Drawer V', desc: '家庭與親子互動', color: '#b07d1f', soft: '#f8efd9' }
 ];
 
 const $ = id => document.getElementById(id);
@@ -297,6 +340,13 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && $('overlay').classList.contains('on')) closeDossier();
   if (e.key === '/' && document.activeElement !== $('q') && !$('overlay').classList.contains('on')) { e.preventDefault(); $('q').focus(); }
 });
+
+/* ---------- 教師展覽館：複製對外網址 ---------- */
+$('copyGallery').onclick = () => {
+  const url = new URL('showcase/', location.href).href, b = $('copyGallery');
+  const done = (ok) => { b.textContent = ok ? '✅ 已複製' : '⚠️ 請手動複製'; if (!ok) prompt('教師展覽館網址', url); setTimeout(() => { b.textContent = '📋 複製網址'; }, 1800); };
+  if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => done(true), () => done(false)); else done(false);
+};
 
 render();
 </script>
