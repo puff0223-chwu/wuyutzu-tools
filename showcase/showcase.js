@@ -62,12 +62,14 @@
   function shareURL(code) { return SITE + 'share/' + code + '.html'; }
 
   // 📸 畫面預覽：電腦畫面一區、手機畫面一區；點圖放大（放大不是連結，不會離開這一頁）
+  // 縮圖：img/x.webp → img/t/x.webp（一半大小，格子裡用；點開才載入原圖）
+  function thumb(src) { return String(src).replace(/(^|\/)img\//, '$1img/t/'); }
   function shotsHTML(t) {
     var shots = t.shots || [];
     if (!shots.length) return '<div class="shot"><div class="ic">📸</div><b>畫面截圖整理中</b></div>';
     var fig = function (s) {
       return '<figure class="sfig"><button type="button" class="szoom" data-zoom="' + esc(s[0]) + '" data-cap="' + esc(s[1]) + '" aria-label="放大：' + esc(s[1]) + '">' +
-        '<img src="' + esc(s[0]) + '" alt="' + esc(s[1]) + '" loading="lazy"' + (s[2] ? ' width="' + s[2] + '" height="' + s[3] + '"' : '') + '></button>' +
+        '<img src="' + esc(thumb(s[0])) + '" alt="' + esc(s[1]) + '" loading="lazy"></button>' +
         '<figcaption>' + esc(s[1]) + '</figcaption></figure>';
     };
     var wide = shots.filter(function (s) { return !(s[2] && s[2] < 600); }), phone = shots.filter(function (s) { return s[2] && s[2] < 600; });

@@ -21,19 +21,19 @@ with sync_playwright() as p:
     # 4 學生 pH（手機）
     s = c.new_page(); s.set_viewport_size({'width': 390, 'height': 844})
     s.goto(bed.ORIGIN + f'/chemistry/ph-generator.html?a={code["ph"]}'); s.wait_for_selector('#lab-go')
-    s.click('[data-use="正式進度"]'); s.fill('#lab-cls', '301'); s.fill('#lab-seat', '26'); s.fill('#lab-no', '11500126'); s.fill('#lab-name', '周品睿'); s.click('#lab-go')
+    s.click('[data-use="正式進度"]'); s.fill('#lab-cls', '301'); s.fill('#lab-seat', '26'); s.fill('#lab-no', '11500126'); s.fill('#lab-name', '周小睿'); s.click('#lab-go')
     s.wait_for_function('typeof S !== "undefined" && S && S.qs && document.querySelector("#q0 input")')
     s.evaluate('''() => { const put=(i,ok)=>{const q=S.qs[i]; if(q.dir==='rev'){document.getElementById('a'+i).value=ok?String(q.coef.h/100):String(q.coef.h/100+1); document.getElementById('e'+i).value=String(-q.exp);} else document.getElementById('a'+i).value=ok?PH.fix2(q.ans):PH.fix2(1400-q.ans); check(i);}; put(0,true); put(1,false); put(2,true); }''')
     s.wait_for_timeout(500); s.evaluate('window.scrollTo(0, document.getElementById("q0").getBoundingClientRect().top + scrollY - 150)'); shot.save(s, 'lab_ph_student')
     # 5 學生 單位換算答錯看地圖（手機）
     s.goto(bed.ORIGIN + f'/chemistry/unit-generator.html?a={code["unit"]}'); s.evaluate('localStorage.clear()'); s.goto(bed.ORIGIN + f'/chemistry/unit-generator.html?a={code["unit"]}'); s.wait_for_selector('#lab-go')
-    s.click('[data-use="考試複習"]'); s.fill('#lab-cls', '301'); s.fill('#lab-seat', '26'); s.fill('#lab-no', '11500126'); s.fill('#lab-name', '周品睿'); s.click('#lab-go')
+    s.click('[data-use="考試複習"]'); s.fill('#lab-cls', '301'); s.fill('#lab-seat', '26'); s.fill('#lab-no', '11500126'); s.fill('#lab-name', '周小睿'); s.click('#lab-go')
     s.wait_for_function('typeof S !== "undefined" && S && S.qs && document.querySelector("#q0 input")')
     s.evaluate('''() => { const i=1, q=S.qs[i], v=q.ans*1000; if(q.kind==='sci'){const e=Math.floor(Math.log10(v)); document.getElementById('m'+i).value=(v/10**e).toFixed(2); document.getElementById('e'+i).value=e;} else document.getElementById('v'+i).value=v.toFixed(2); check(i); }''')
     s.wait_for_timeout(600); s.evaluate('window.scrollTo(0, document.getElementById("q1").getBoundingClientRect().top + scrollY - 20)'); shot.save(s, 'lab_unit_student')
     # 6 學生 器材遊戲（手機）
     s.evaluate('localStorage.clear()'); s.clock.install(); s.goto(bed.ORIGIN + f'/chemistry/missing-equipment.html?a={code["eq"]}'); s.wait_for_selector('#lab-go')
-    s.click('[data-use="正式進度"]'); s.fill('#lab-cls', '301'); s.fill('#lab-seat', '26'); s.fill('#lab-no', '11500126'); s.fill('#lab-name', '周品睿'); s.click('#lab-go')
+    s.click('[data-use="正式進度"]'); s.fill('#lab-cls', '301'); s.fill('#lab-seat', '26'); s.fill('#lab-no', '11500126'); s.fill('#lab-name', '周小睿'); s.click('#lab-go')
     s.wait_for_selector('#btn-start:visible'); s.click('#btn-start'); s.wait_for_timeout(200)
     for k in range(2):
         s.clock.run_for(2600); s.fill('#in-answer', s.evaluate('game.queue[game.index].name')); s.click('#btn-submit'); s.wait_for_timeout(100); s.clock.run_for(1300); s.wait_for_timeout(300)

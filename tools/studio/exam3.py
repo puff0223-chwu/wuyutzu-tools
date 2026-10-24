@@ -14,7 +14,7 @@ with sync_playwright() as p:
     # 學生手機
     s = c.new_page(); s.set_viewport_size({'width': 390, 'height': 844}); s.on('pageerror', lambda e: print('SERR', e)); s.on('dialog', lambda d: d.accept())
     s.goto(bed.ORIGIN + f'/game-design/exam/take.html?code={code}'); s.wait_for_timeout(1500)
-    s.fill('#iCls', '309'); s.fill('#iSeat', '99'); s.fill('#iName', '黃以晴'); s.fill('#iNo', '11503099'); s.click('#iGo'); s.wait_for_timeout(1500)
+    s.fill('#iCls', '309'); s.fill('#iSeat', '99'); s.fill('#iName', '黃小晴'); s.fill('#iNo', '11503099'); s.click('#iGo'); s.wait_for_timeout(1500)
     shot.save(s, 'exam_student_lobby')
     if s.locator('#lPledge').count(): s.check('#lPledge')
     s.click('#lStart'); s.wait_for_timeout(1500)

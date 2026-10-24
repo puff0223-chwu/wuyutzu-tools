@@ -1,7 +1,7 @@
 const SC = require(require('path').join(__dirname, '../../classroom/seating/core.js'));
 const r = require('./r301.json');
 const c = SC.newClass('301', '');
-c.teacherTitle = '巫昶昕 老師';
+c.teacherTitle = '巫魚子 老師';
 c.roster = r.map(([seat, name], i) => ({ seat, name, sid: '115' + String(seat).padStart(4, '0') }));
 c.layout = SC.newLayout(6, 6);
 // 走道：第 3 列後面；最後一排兩個角落關閉（36 → 32 個座位，30 人）

@@ -22,7 +22,7 @@ with sync_playwright() as p:
     shot.save(t, 'src_live'); t.screenshot(path='out/raw_src_live_full.png', full_page=True)
     # 學生：書籍證物卡，寫錯幾個地方
     s = c.new_page(); s.on('pageerror', lambda e: print('SERR', e)); s.goto(bed.ORIGIN + f'/inquiry/secret-source/?m={code}'); s.wait_for_timeout(1000)
-    s.fill('#inId', '11500127'); s.fill('#inName', '許宥廷'); s.click('#btnStart'); s.wait_for_timeout(1500)
+    s.fill('#inId', '11500127'); s.fill('#inName', '許大廷'); s.click('#btnStart'); s.wait_for_timeout(1500)
     s.click('[data-k="book"]'); s.wait_for_timeout(800)
     s.evaluate('''() => { const ev = SecretSource.evidence(new URLSearchParams(location.search).get('m'), '11500127', 'book', {});
       let h = SecretSource.html(ev.segs); h = h.replace(/<\\/?b>/g, '').replace('（', '(').replace('）', ')');
