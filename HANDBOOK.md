@@ -217,6 +217,7 @@
 - 分支預覽網址要看得到畫面：環境變數也要勾 Preview，設完 Redeploy
 - 換分支交付時一定要給**該分支的預覽網址**，不然老師看舊網址會以為沒更新
 - SPA 深層網址 404 → `vercel.json` rewrite 到 `/index.html`
+- **Vercel API 預設跑在美國東岸**，Supabase 在亞太 → 每次查資料庫都橫跨太平洋，學生登入會明顯變慢。新專案一開始就在 `vercel.json` 加 `"regions": ["sin1"]`（和 Supabase 同區：新加坡 sin1、東京 hnd1）；多支 API 可合併成 `[action].js` 減少冷啟動；互不相依的查詢用 `Promise.all`（成績調閱室 2026-10-24；科普閱讀測驗、科學任務偵探所也可以檢查）
 - 專案名稱如果已經被別人用掉，網址會自動加尾巴（例：`grade-query-system-coral.vercel.app`）→ 部署後一定要請老師給**實際網址**，不要用猜的（猜的那個可能是別人的網站）
 - `api/` 裡檔名開頭是底線（`_lib.js`）的檔案不會變成 API，適合放共用程式；Hobby 方案每個專案最多 12 支 API
 - 新增 API 只加新檔、不改原本流程；推上去前先本機 `vite build`，部署後用 GET 健康檢查
