@@ -135,7 +135,7 @@
 - [ ] 更新 `DEVELOPMENT.md`（結構表、資料位置、第 7 節分段開發經驗）
 - [ ] 有新的「以後會再遇到」的經驗 → 補進本手冊第 1、2 章
 - [ ] 首頁改版先放 `index-preview.html`，老師說「上線」才換 `index.html`
-- [ ] 本機資料夾同步：**老師要求自動處理，不要再請老師手動同步**。老師電腦裝了 `tools/local-sync/install-auto-sync.bat` 排程後，每 30 分鐘自動從 GitHub 下載（推上 GitHub 就好）；這次對話若有連線老師電腦的檔案工具（device bash），推完直接幫忙同步。交付訊息不要寫「記得同步本機資料夾」
+- [ ] 本機資料夾同步：**老師要求自動處理，不要再請老師手動同步**。老師電腦裝了 `tools/local-sync/install-auto-sync.bat` 排程後，有新的 commit 才自動下載（每小時只檢查版本號，老師不希望定時整包下載吃效能；推上 GitHub 就好）；這次對話若有連線老師電腦的檔案工具（device bash），推完直接幫忙同步。交付訊息不要寫「記得同步本機資料夾」
 - [ ] 規則有改 → GitHub Action 自動部署並回報 Firebase 用量
 - [ ] Vercel 系統（Supabase）：更新 `docs/PROGRESS.md`，經驗補進本機 `經驗庫.md`
 
