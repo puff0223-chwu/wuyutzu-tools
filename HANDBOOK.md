@@ -135,7 +135,7 @@
 - [ ] 更新 `DEVELOPMENT.md`（結構表、資料位置、第 7 節分段開發經驗）
 - [ ] 有新的「以後會再遇到」的經驗 → 補進本手冊第 1、2 章
 - [ ] 首頁改版先放 `index-preview.html`，老師說「上線」才換 `index.html`
-- [ ] 推上 GitHub 後，把老師電腦的本機資料夾從 GitHub 同步（GitHub 為準）
+- [ ] 本機資料夾同步：**老師要求自動處理，不要再請老師手動同步**。老師電腦裝了 `tools/local-sync/install-auto-sync.bat` 排程後，每 30 分鐘自動從 GitHub 下載（推上 GitHub 就好）；這次對話若有連線老師電腦的檔案工具（device bash），推完直接幫忙同步。交付訊息不要寫「記得同步本機資料夾」
 - [ ] 規則有改 → GitHub Action 自動部署並回報 Firebase 用量
 - [ ] Vercel 系統（Supabase）：更新 `docs/PROGRESS.md`，經驗補進本機 `經驗庫.md`
 
@@ -516,7 +516,7 @@
 
 | 什麼時候 | 做什麼 |
 |---|---|
-| 每次開發結束 | 1-I 收尾清單；本機資料夾從 GitHub 同步 |
+| 每次開發結束 | 1-I 收尾清單（本機資料夾由排程自動同步） |
 | 每週一早上 | 看「🔋 Firebase 資源報告」議題（自動），出現 🟡／🔴 就做健檢 |
 | 每新增 3 個系統（或任何即時連線系統） | 全站連線健檢 `tools/health/check.py`，結果記在 DEVELOPMENT.md 7-14 |
 | 每學期開學前一週 | 全站健檢；確認兩個 Supabase 專案沒被暫停、cron-job.org 保活還在；清掉不用的題庫、活動、測試資料 |
