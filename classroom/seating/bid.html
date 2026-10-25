@@ -65,7 +65,7 @@ input:focus{outline:none;border-color:var(--gold)}
 </head>
 <body>
 <div class="wrap" id="app"><p class="muted" style="text-align:center;margin-top:30vh">載入中…</p></div>
-<script src="core.js?v=20261010d"></script>
+<script src="core.js?v=20261025a"></script>
 <script>
 /* =====================================================================
    🪑 座位暗標：學生頁（bid.html?code=回合代碼）
@@ -165,7 +165,8 @@ function mapHTML() {
   return `<div class="card"><h2>① 選一個想坐的座位</h2>
     <div class="map-box" style="text-align:center"><div class="cmap" style="grid-template-columns:20px repeat(${L.cols},${cw}px) 20px;grid-template-rows:auto repeat(${L.rows},${ch}px) auto">${marks}${cells}</div></div>
     <div class="legend"><span style="--c:#d79a1e;--b:var(--gold-soft)">${ST.wish ? '開放選位' : '開放投標'}</span><span style="--c:var(--red);--b:var(--red)">我選的</span><span style="--c:#d6d1c4;--b:#eceae4">不開放</span></div>
-    <p class="big" style="text-align:center">${sel ? `已選：第 ${sel.r + 1} 排、左起第 ${sel.c + 1} 列` : '<span class="muted small">點黃色的座位</span>'}</p>
+    <p class="big" style="text-align:center">${sel ? `已選：${SC.posLabel(L, ST.seat)}` : '<span class="muted small">點黃色的座位</span>'}</p>
+    <p class="muted small" style="text-align:center;margin-top:-4px">排＝直的、列＝橫的；從講台看過來，第 1 排在老師的左手邊、第 1 列最靠講台</p>
     ${ST.wish ? '<button class="btn" id="send">確認送出</button>' : ''}</div>`;
 }
 function resHTML() {
@@ -235,7 +236,7 @@ function confirmSend() {
   const res = ST.wish ? { w: 1 } : currentRes();
   if (!SC.bidValid(res, ST.rules)) return alert(ST.rules.allowMix ? '請至少填一種資源的數量' : '請選一種資源並填寫數量');
   const { r, c } = SC.parseKey(ST.seat);
-  const text = `第 ${r + 1} 排、左起第 ${c + 1} 列` + (ST.wish ? '' : `｜${SC.resText(res, ST.rules)}`);
+  const text = SC.posLabel({ cols: ST.board.cols }, ST.seat) + (ST.wish ? '' : `｜${SC.resText(res, ST.rules)}`);
   const bg = document.createElement('div'); bg.className = 'sheet-bg';
   bg.innerHTML = `<div class="sheet"><h3>📜 確認${ST.wish ? '選位' : '投標'}</h3>
     <p class="big">${esc(text)}</p>

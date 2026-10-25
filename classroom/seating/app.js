@@ -81,7 +81,7 @@ const Store = {
 const S = {
   classes: [], cls: null, tab: LS.get('seating3_tab', 'info'),
   roundId: null, roundMode: 'lock', swapSel: null,
-  paint: 's', editView: 'teacher', ruleDraft: { id: null, type: 'apart', who: [], mode: 'rows', list: [] },
+  paint: 's', editView: 'teacher', ruleDraft: { id: null, type: 'apart', who: [], mode: 'cols', list: [] },
   saveState: '', saveErr: '', rosterDraft: null, cloudErr: '',
   privacy: LS.get('seating3_privacy', false),           // 🙈 上課模式：藏起秘密規則與相關提醒
   stageOnly: /^#stage/.test(location.hash)               // 📺 投影專用連結：直接進投影舞台、不顯示後台
@@ -115,11 +115,15 @@ const stu = (seat) => C().roster.find((s) => s.seat === Number(seat));
 const stuLabel = (seat) => { const s = stu(seat); return s ? `${pad2(s.seat)} ${s.name}` : `${pad2(seat)}（名單外）`; };
 const round = () => { const r = C() && C().rounds.find((x) => x.id === S.roundId) || null; if (r && !r.biddable) r.biddable = {}; return r; };
 const rosterSeats = () => C().roster.map((s) => s.seat);
+const curLayout = () => (round() || {}).layout || C().layout;
+// 排＝直的、列＝橫的，一律用講台視角編號（第 1 排＝老師左手邊、第 1 列＝最靠講台）
 function ruleText(r) {
   if (r.type === 'apart') return `🚫 ${SC.members(r).map(stuLabel).join('、')} 互不相鄰`;
-  const list = toArr(r.list);
-  const where = r.mode === 'rows' ? '第 ' + list.map((x) => Number(x) + 1).sort((a, b) => a - b).join('、') + ' 排'
-    : r.mode === 'cols' ? '左起第 ' + list.map((x) => Number(x) + 1).sort((a, b) => a - b).join('、') + ' 列'
+  if (r.type === 'near') return `🤝 ${SC.members(r).map(stuLabel).join('、')} 坐在一起（上下左右相鄰）`;
+  const list = toArr(r.list), L = curLayout();
+  const nums = (f) => list.map(f).sort((a, b) => a - b).join('、');
+  const where = r.mode === 'rows' ? `第 ${nums((x) => SC.rowNo(x))} 列（橫）`
+    : r.mode === 'cols' ? `第 ${nums((x) => SC.colNo(L, x))} 排（直）`
       : `指定的 ${list.length} 個座位`;
   return `📍 ${SC.members(r).map(stuLabel).join('、')} 只能坐在 ${where}`;
 }
@@ -378,7 +382,7 @@ function rosterDraftHTML(d) {
 
 /* ---------- 🗺️ 教室地圖 ---------- */
 const MARK_SHORT = { door: '🚪 門', board: '📌 布告欄', desk: '🎓 講桌', text: '🏷️ 文字' };
-const SIDE_SHORT = { front: '前方（講台側）', back: '後方', left: '左側牆', right: '右側牆' };
+const SIDE_SHORT = { front: '前方（講台側）', back: '後方（布告欄側）', right: '老師左手邊的牆', left: '老師右手邊的牆' };   // left／right 資料是學生視角，顯示改成講台視角
 TABV.map = () => {
   const L = C().layout;
   const seats = SC.seatKeys(L).length, n = C().roster.length;
@@ -387,8 +391,8 @@ TABV.map = () => {
   <p class="lead">班級的基本地圖；每次開新回合會複製一份，回合裡還能再微調。</p>
   <div class="toolbar">
     <div class="tool-grp"><span class="tool-lbl">📐 大小</span>
-      <input class="inline" type="number" min="1" max="12" id="mapRows" value="${L.rows}" style="width:62px"> 排 ×
-      <input class="inline" type="number" min="1" max="12" id="mapCols" value="${L.cols}" style="width:62px"> 列
+      <input class="inline" type="number" min="1" max="12" id="mapCols" value="${L.cols}" style="width:62px"> 排（直）×
+      <input class="inline" type="number" min="1" max="12" id="mapRows" value="${L.rows}" style="width:62px"> 列（橫）
       <button class="btn sm" data-act="mapResize">套用</button></div>
     <div class="tool-grp"><span class="tool-lbl">🖌️ 畫筆</span>
       <div class="seg">${[['s', '🪑 座位'], ['x', '❌ 關閉'], ['a', '⬜ 走道']].map(([v, t]) => `<button class="${S.paint === v ? 'on' : ''}" data-act="paint" data-v="${v}">${t}</button>`).join('')}</div></div>
@@ -400,7 +404,7 @@ TABV.map = () => {
       <div class="row small" style="margin-bottom:8px"><span class="muted">選好畫筆，點一下或按住拖曳就能畫。</span><span class="spacer"></span>
         <span class="chip ${seats >= n ? 'teal' : 'red'}">可坐 <b id="seatCount">${seats}</b> 個座位／全班 ${n} 人</span></div>
       <div class="map-wrap" style="--cw:66px;--ch:48px;text-align:center">${mapHTML(L, { view: S.editView, id: 'editMap', cell: (k, t) => ({ html: t === 'a' ? '走道' : '' }) })}</div>
-      <p class="small muted" style="margin-top:8px">改大小會保留已畫好的格子。第 1 排＝最前排（靠講台）；「左起」以學生面向講台的左手邊算。</p>
+      <p class="small muted" style="margin-top:8px">改大小會保留已畫好的格子。<b>排</b>是直的（講台→布告欄）、<b>列</b>是橫的；編號一律用講台視角：第 1 排在老師（站在講台）的左手邊，第 1 列最靠講台。</p>
     </div>
     <div class="card">
       <h3 style="margin-top:0">🚪 周邊標示</h3>
@@ -416,8 +420,13 @@ TABV.map = () => {
           </div>
           <div class="row small" style="margin-top:6px">
             <select class="inline" data-mark="${m.id}" data-f="side">${Object.entries(SIDE_SHORT).map(([v, t]) => `<option value="${v}" ${m.side === v ? 'selected' : ''}>${t}</option>`).join('')}</select>
-            <select class="inline" data-mark="${m.id}" data-f="pos">${Array.from({ length: max }, (_, i) => `<option value="${i}" ${Number(m.pos) === i ? 'selected' : ''}>${lr ? `第 ${i + 1} 排旁` : `從左起第 ${i + 1} 列`}</option>`).join('')}</select>
-            ${lr ? '' : `<span>寬</span><input type="number" class="inline" min="1" max="${L.cols}" data-mark="${m.id}" data-f="span" value="${m.span || 1}" style="width:58px"><span>列</span>`}
+            <select class="inline" data-mark="${m.id}" data-f="pos">${Array.from({ length: max }, (_, i) => {
+              let t;
+              if (lr) t = `第 ${SC.rowNo(i)} 列旁`;
+              else { const sp = Math.min(m.span || 1, L.cols - i); const a = SC.colNo(L, i + sp - 1), b = SC.colNo(L, i); t = sp > 1 ? `第 ${a}～${b} 排` : `第 ${b} 排`; }
+              return `<option value="${i}" ${Number(m.pos) === i ? 'selected' : ''}>${t}</option>`;
+            }).join('')}</select>
+            ${lr ? '' : `<span>寬</span><input type="number" class="inline" min="1" max="${L.cols}" data-mark="${m.id}" data-f="span" value="${m.span || 1}" style="width:58px"><span>排</span>`}
           </div></div>`;
       }).join('') || '<p class="muted small">還沒有標示。</p>'}
       <div class="row" style="margin-top:4px">
@@ -549,19 +558,28 @@ TABV.rules = () => {
       <h3 style="margin-top:0">${editing ? '✏️ 修改規則' : '＋ 新增規則'}</h3>
       <div class="seg" style="margin-bottom:6px">
         <button class="${d.type === 'apart' ? 'on' : ''}" data-act="ruleType" data-v="apart">🚫 互不相鄰</button>
+        <button class="${d.type === 'near' ? 'on' : ''}" data-act="ruleType" data-v="near">🤝 坐在一起</button>
         <button class="${d.type === 'zone' ? 'on' : ''}" data-act="ruleType" data-v="zone">📍 限定區域</button>
       </div>
-      <p class="small muted">${d.type === 'apart' ? '選 2 人以上：他們彼此的周圍八格（前後左右、斜角，隔走道也算）都不會出現對方。' : '選 1 人以上：這些同學都只會被分到指定的範圍。'}</p>
+      <p class="small muted">${d.type === 'apart' ? '選 2 人以上：他們彼此的周圍八格（前後左右、斜角，隔走道也算）都不會出現對方。'
+        : d.type === 'near' ? '選 2 人以上：他們會被隨機分到「上下、左右」相鄰的座位，連成一塊（斜角不算；中間隔一整排走道也算相鄰）。位置每次抽籤都不一樣。'
+          : '選 1 人以上：這些同學都只會被分到指定的範圍。'}</p>
       <label class="f">選擇學生 <span class="chip ${d.who.length ? 'teal' : ''}">已選 ${d.who.length} 人</span></label>
       <div class="pick-grid">${c.roster.map((st) => `<button type="button" class="pick ${d.who.includes(st.seat) ? 'on' : ''}" data-act="ruleWho" data-v="${st.seat}">${pad2(st.seat)} ${esc(st.name)}</button>`).join('') || '<span class="muted small">請先匯入學生名單</span>'}</div>
       ${d.type === 'zone' ? `
         <label class="f">只能坐在</label>
-        <div class="seg">${[['rows', '某幾排'], ['cols', '某幾列'], ['cells', '指定座位']].map(([v, t]) => `<button class="${d.mode === v ? 'on' : ''}" data-act="ruleMode" data-v="${v}">${t}</button>`).join('')}</div>
-        <div style="margin-top:10px">
-        ${d.mode === 'rows' ? Array.from({ length: L.rows }, (_, i) => `<label style="margin-right:12px;white-space:nowrap"><input type="checkbox" data-zone="${i}" ${d.list.includes(i) ? 'checked' : ''}> 第${i + 1}排${i === 0 ? '（最前）' : ''}</label>`).join('')
-          : d.mode === 'cols' ? Array.from({ length: L.cols }, (_, i) => `<label style="margin-right:12px;white-space:nowrap"><input type="checkbox" data-zone="${i}" ${d.list.includes(i) ? 'checked' : ''}> 左起第${i + 1}列</label>`).join('')
-            : `<p class="small muted">點地圖上的座位來選取（講台視角），已選 ${d.list.length} 個。</p>
-               <div class="map-wrap" style="--cw:44px;--ch:34px">${mapHTML(L, { view: 'teacher', act: 'zoneCell', cell: (k) => ({ cls: d.list.includes(k) ? 'filled' : '' }) })}</div>`}
+        <div class="seg">${[['cols', '某幾排（直）'], ['rows', '某幾列（橫）'], ['cells', '指定座位']].map(([v, t]) => `<button class="${d.mode === v ? 'on' : ''}" data-act="ruleMode" data-v="${v}">${t}</button>`).join('')}</div>
+        <div class="view-note">👨‍🏫 一律用<b>講台視角</b>：想像你站在講台上看學生。<b>排</b>是直的（講台→布告欄），<b>第 1 排在你的左手邊</b>；<b>列</b>是橫的，<b>第 1 列最靠講台</b>。</div>
+        <div style="margin-top:8px">
+        ${d.mode === 'rows' ? Array.from({ length: L.rows }, (_, i) => `<label style="margin-right:12px;white-space:nowrap"><input type="checkbox" data-zone="${i}" ${d.list.includes(i) ? 'checked' : ''}> 第${SC.rowNo(i)}列${i === 0 ? '（最靠講台）' : i === L.rows - 1 ? '（最後面）' : ''}</label>`).join('')
+          : d.mode === 'cols' ? Array.from({ length: L.cols }, (_, j) => { const i = L.cols - 1 - j; return `<label style="margin-right:12px;white-space:nowrap"><input type="checkbox" data-zone="${i}" ${d.list.includes(i) ? 'checked' : ''}> 第${SC.colNo(L, i)}排${j === 0 ? '（你的左手邊）' : j === L.cols - 1 ? '（你的右手邊）' : ''}</label>`; }).join('')
+            : `<p class="small muted" style="margin:0">點地圖上的座位來選取，已選 ${d.list.length} 個。</p>`}
+        <p class="small muted" style="margin:8px 0 4px">${d.mode === 'cells' ? '' : '也可以直接點地圖上的座位，整' + (d.mode === 'rows' ? '列' : '排') + '一起選取或取消。'}地圖是講台視角（講台在下方）：</p>
+        <div class="map-wrap" style="--cw:44px;--ch:34px">${mapHTML(L, { view: 'teacher', act: d.mode === 'cells' ? 'zoneCell' : 'zoneLine', cell: (k) => {
+          const { r, c } = SC.parseKey(k);
+          const on = d.mode === 'cells' ? d.list.includes(k) : d.list.includes(d.mode === 'rows' ? r : c);
+          return { cls: on ? 'filled' : '', html: d.mode === 'cells' ? '' : `<span class="pos-tag">${d.mode === 'rows' ? SC.rowNo(r) + '列' : SC.colNo(L, c) + '排'}</span>` };
+        } })}</div>
         </div>` : ''}
       <div class="row" style="margin-top:14px">
         <button class="btn primary" data-act="ruleSave">${editing ? '💾 儲存修改' : '加入規則'}</button>
@@ -1047,7 +1065,7 @@ function bidRulesSummary() {
 }
 const TIE_NAME = { rps: '✊ 現場猜拳', random: '🎲 系統抽籤', early: '⏱️ 先送出者勝' };
 const stuBySeat = (n) => C().roster.find((s) => s.seat === Number(n));
-const seatLabel = (k) => { const { r, c } = SC.parseKey(k); return `第${r + 1}排 左起第${c + 1}列`; };
+const seatLabel = (k) => SC.posLabel(curLayout(), k);   // 講台視角：第 x 排（直）、第 y 列（橫）
 
 act.bidRulesEdit = () => {
   const draft = JSON.parse(JSON.stringify(C().bidRules));
@@ -1418,7 +1436,7 @@ act.rosterApply = () => {
   c.roster = list;
   c.cadres.forEach((x) => { if (x.seat != null && !ok.has(x.seat)) x.seat = null; });
   [c.cleaning, ...c.rounds.map((rd) => rd.cleaning || [])].forEach((list) => list.forEach((a) => a.items.forEach((it) => { it.seats = it.seats.filter((s) => ok.has(s)); })));
-  c.secret = c.secret.map((r) => ({ ...r, who: SC.members(r).filter((x) => ok.has(x)) })).filter((r) => r.who.length >= (r.type === 'apart' ? 2 : 1));
+  c.secret = c.secret.map((r) => ({ ...r, who: SC.members(r).filter((x) => ok.has(x)) })).filter((r) => r.who.length >= (r.type === 'apart' || r.type === 'near' ? 2 : 1));
   c.rounds.forEach((rd) => {
     Object.entries(rd.locked).forEach(([k, s]) => { if (!ok.has(Number(s))) { delete rd.locked[k]; delete rd.lockInfo[k]; } });
     if (rd.assign) Object.entries(rd.assign).forEach(([k, s]) => { if (!ok.has(Number(s))) delete rd.assign[k]; });
@@ -1484,7 +1502,7 @@ act.cleanImport = async () => {
   } });
 };
 /* 秘密規則 */
-const newDraft = (type) => ({ id: null, type: type || 'apart', who: [], mode: 'rows', list: [] });
+const newDraft = (type) => ({ id: null, type: type || 'apart', who: [], mode: 'cols', list: [] });
 act.ruleType = (b) => { const d = S.ruleDraft; S.ruleDraft = { ...newDraft(b.dataset.v), id: d.id, who: d.who }; render(); };
 act.ruleMode = (b) => { S.ruleDraft.mode = b.dataset.v; S.ruleDraft.list = []; render(); };
 act.ruleWho = (b) => { const d = S.ruleDraft, v = Number(b.dataset.v); d.who = d.who.includes(v) ? d.who.filter((x) => x !== v) : [...d.who, v].sort((x, y) => x - y); render(); };
@@ -1492,9 +1510,15 @@ act.zoneCell = (b) => {
   const k = b.dataset.k, d = S.ruleDraft; if (SC.cellType(((round() || {}).layout || C().layout), k) !== 's') return;
   d.list = d.list.includes(k) ? d.list.filter((x) => x !== k) : [...d.list, k]; render();
 };
+act.zoneLine = (b) => {
+  const k = b.dataset.k, d = S.ruleDraft; if (SC.cellType(curLayout(), k) !== 's') return;
+  const { r, c } = SC.parseKey(k); const v = d.mode === 'rows' ? r : c;
+  d.list = d.list.includes(v) ? d.list.filter((x) => x !== v) : [...d.list, v]; render();
+};
 act.ruleSave = () => {
   const d = S.ruleDraft, c = C();
   if (d.type === 'apart' && d.who.length < 2) return toast('「互不相鄰」請至少選 2 位學生', true);
+  if (d.type === 'near' && d.who.length < 2) return toast('「坐在一起」請至少選 2 位學生', true);
   if (d.type === 'zone' && !d.who.length) return toast('請至少選 1 位學生', true);
   if (d.type === 'zone' && !d.list.length) return toast('請至少選一個範圍', true);
   const rule = { id: d.id || uid('r'), type: d.type, who: d.who.slice(), on: true };
@@ -1505,7 +1529,7 @@ act.ruleSave = () => {
 };
 act.ruleEdit = (b) => {
   const r = C().secret.find((x) => x.id === b.dataset.v); if (!r) return;
-  S.ruleDraft = { id: r.id, type: r.type, who: SC.members(r), mode: r.mode || 'rows', list: toArr(r.list).slice() }; render();
+  S.ruleDraft = { id: r.id, type: r.type, who: SC.members(r), mode: r.mode || 'cols', list: toArr(r.list).slice() }; render();
 };
 act.ruleCancel = () => { S.ruleDraft = newDraft(S.ruleDraft.type); render(); };
 act.ruleToggle = (b) => { const r = C().secret.find((x) => x.id === b.dataset.v); r.on = r.on === false; touch(true); };
@@ -1575,7 +1599,7 @@ function lockModal(k) {
   const where = {}; Object.entries(rd.locked).forEach(([kk, s]) => { where[s] = kk; });
   const { r, c } = SC.parseKey(k);
   const game = isGame();
-  modal(`<h3>🔒 ${game ? '鎖定座位' : '指定座位'}（第 ${r + 1} 排、左起第 ${c + 1} 列）</h3>
+  modal(`<h3>🔒 ${game ? '鎖定座位' : '指定座位'}（${SC.posLabel(rd.layout, k)}）</h3>
     <label class="f">同學</label><select id="lkWho">${studentOptions(cur, { note: (s) => where[s] && where[s] !== k ? '（已在別的座位，選了會移過來）' : '' })}</select>
     ${game ? `<label class="f">類型</label>
     <label><input type="radio" name="lkKind" value="bid" ${info.kind !== 'reserve' ? 'checked' : ''}> 🏆 暗標得標</label>
@@ -1664,7 +1688,7 @@ act.guide = () => {
     ${step('1', '📋 班級資料', '輸入班級名稱、導師稱謂，貼上或上傳學生名單（座號、姓名、學號）。')}
     ${step('2', '🗺️ 教室地圖', '設定幾排幾列，用畫筆標出關閉的座位、走道，再擺上門、布告欄、講桌。')}
     ${step('3', '🎖️ 幹部（選用）', '新增職位並選學生；不需要的話座位表版型選「只有座位圖」。')}
-    ${step('4', '🔒 秘密規則（選用）', '設定「互不相鄰」或「限定區域」，抽籤時默默生效，學生看不到。')}
+    ${step('4', '🔒 秘密規則（選用）', '設定「互不相鄰」「坐在一起」或「限定區域」（排＝直、列＝橫，一律講台視角），抽籤時默默生效，學生看不到。')}
     <h3 style="font-size:1em;margin-top:14px">二、每次換座位</h3>
     ${step('1', '🎲 換座位 → ＋ 開新回合', '可以沿用上一回合的地圖與打掃工作。')}
     ${g ? step('2', '線上暗標（選用）', '切到「🎯 暗標區」點選開放的座位 → 設截止時間 → 🚀 開放暗標 → 把學生連結或 QR 給學生。截止後按「⚖️ 開標」，處理平手與衝突後「🔒 鎖定得標座位」。資源回收清單可下載 Excel。')

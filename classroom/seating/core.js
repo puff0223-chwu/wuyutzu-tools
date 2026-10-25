@@ -9,7 +9,7 @@
 (function (root) {
   'use strict';
 
-  const VERSION = '20261010c';
+  const VERSION = '20261025a';
 
   /* ---------------- 小工具 ---------------- */
   const key = (r, c) => r + '-' + c;
@@ -44,7 +44,10 @@
   const DEFAULT_NOTE = '※請本班任課老師協助注意，如有同學在未被您允許的情況下，不在屬於自己的位置上學習時，可視同曠課登記，感謝!';
 
   /* ---------------- 教室地圖 ----------------
-     資料座標一律用「學生視角」：r=0 是最前排（靠講台），c=0 是學生的左手邊
+     資料座標一律用「學生視角」：r=0 是最前面那一橫列（靠講台），c=0 是學生的左手邊
+     ⚠ 對老師顯示的名稱一律用「講台視角」（2026-10-25 老師決定）：
+       排＝直的（講台→布告欄方向），第 1 排＝老師站在講台時的左手邊（c = cols-1）
+       列＝橫的，第 1 列＝最靠講台（r = 0）　→ 用 posLabel()／colNo()／rowNo()，不要自己算
      cells：{ "r-c": 's' 座位 | 'x' 關閉座位 | 'a' 走道 }，沒寫的格子＝座位
      marks：周邊標示 [{ id, type:'door'|'board'|'desk'|'text', side:'front'|'back'|'left'|'right', pos, span, label }]
        front／back：pos＝起始列、span＝橫跨幾列；left／right：pos＝第幾排 */
@@ -62,6 +65,11 @@
   }
 
   const cellType = (layout, k) => (layout.cells && layout.cells[k]) || 's';
+
+  /** 第幾排（直，講台視角：老師左手邊是第 1 排）、第幾列（橫，最靠講台是第 1 列） */
+  const colNo = (layout, c) => layout.cols - Number(c);
+  const rowNo = (r) => Number(r) + 1;
+  const posLabel = (layout, k) => { const { r, c } = parseKey(k); return `第 ${colNo(layout, c)} 排、第 ${rowNo(r)} 列`; };
 
   /** 改變行列數：保留原本的格子設定，超出範圍的丟掉、標示夾回範圍內 */
   function resizeLayout(layout, rows, cols) {
@@ -116,16 +124,34 @@
     const rIdx = [], cIdx = []; let n = 0;
     rowKeep.forEach((k, i) => { rIdx[i] = n; if (k) n++; }); n = 0;
     colKeep.forEach((k, i) => { cIdx[i] = n; if (k) n++; });
-    return function adjacent(k1, k2) {
+    const adjacent = function (k1, k2) {
       if (k1 === k2) return false;
       const a = parseKey(k1), b = parseKey(k2);
       return Math.abs(rIdx[a.r] - rIdx[b.r]) <= 1 && Math.abs(cIdx[a.c] - cIdx[b.c]) <= 1;
     };
+    /** 十字相鄰（上下左右，不含斜角；中間隔整排／整列走道也算） */
+    adjacent.cross = function (k1, k2) {
+      if (k1 === k2) return false;
+      const a = parseKey(k1), b = parseKey(k2);
+      return Math.abs(rIdx[a.r] - rIdx[b.r]) + Math.abs(cIdx[a.c] - cIdx[b.c]) === 1;
+    };
+    return adjacent;
+  }
+
+  /** 一群座位用十字相鄰能不能連成一塊 */
+  function connected(keys, cross) {
+    if (keys.length <= 1) return true;
+    const seen = new Set([keys[0]]), stack = [keys[0]];
+    while (stack.length) { const k = stack.pop(); keys.forEach((x) => { if (!seen.has(x) && cross(k, x)) { seen.add(x); stack.push(x); } }); }
+    return seen.size === keys.length;
   }
 
   /* ---------------- 秘密規則 ----------------
      { id, type:'apart', who:[座號…], on }   這幾個人彼此都不相鄰（2 人以上）
-     { id, type:'zone',  who:[座號…], mode:'rows'|'cols'|'cells', list:[], on }   這幾個人都只能坐在：某幾排（0＝最前排）／某幾列（0＝學生左手邊）／指定座位
+     { id, type:'near',  who:[座號…], on }   這幾個人坐在一起：用十字相鄰（上下左右）連成一塊（2 人以上）
+     { id, type:'zone',  who:[座號…], mode:'rows'|'cols'|'cells', list:[], on }   這幾個人都只能坐在：
+        mode 'rows'＝某幾「列」（橫的，list 存 r，0＝最靠講台）／'cols'＝某幾「排」（直的，list 存 c）／指定座位
+        （資料仍存學生視角的 r、c；畫面上的排號用 colNo() 換成講台視角）
      舊格式（apart 的 a、b；zone 的 who 是單一座號）讀取時自動轉換 */
   function members(rule) {
     if (!rule) return [];
@@ -154,6 +180,10 @@
         });
       } else if (rule.type === 'zone') {
         members(rule).forEach((m) => { const k = where[m]; if (k && !zoneAllows(rule, k)) out.push({ rule, seats: [m], keys: [k] }); });
+      } else if (rule.type === 'near') {
+        const ms = members(rule).filter((m) => where[m]);
+        const ks = ms.map((m) => where[m]);
+        if (ms.length >= 2 && !connected(ks, adj.cross)) out.push({ rule, seats: ms, keys: ks });
       }
     });
     return out;
@@ -177,6 +207,13 @@
     act.filter((x) => x.type === 'apart').forEach((x) => {
       pairsOf(members(x)).forEach(([a, b]) => { (apart[a] = apart[a] || []).push(b); (apart[b] = apart[b] || []).push(a); });
     });
+    // 坐在一起的群組：座號 → 他所屬的每一組（每條規則各自要連成一塊）
+    const groupsOf = {};
+    act.filter((x) => x.type === 'near').forEach((x) => {
+      const ms = members(x); if (ms.length < 2) return;
+      ms.forEach((m) => { (groupsOf[m] = groupsOf[m] || []).push(ms); });
+    });
+    const matesOf = (s) => [...new Set((groupsOf[s] || []).flat())].filter((m) => m !== s);
     const domain = {};
     for (const s of students) {
       let d = free;
@@ -187,7 +224,7 @@
     const lockedWhere = {}; Object.entries(locked).forEach(([k, s]) => { lockedWhere[s] = k; });
 
     // 沒有任何規則 → 直接洗牌
-    const constrained = students.filter((s) => apart[s] || domain[s].length < free.length);
+    const constrained = students.filter((s) => apart[s] || groupsOf[s] || domain[s].length < free.length);
     if (!constrained.length) {
       const sh = shuffle(free, R); const assign = { ...locked };
       shuffle(students, R).forEach((s, i) => { assign[sh[i]] = s; });
@@ -197,9 +234,26 @@
     const maxSteps = input.maxSteps || 20000, restarts = input.restarts || 40;
     for (let t = 0; t < restarts; t++) {
       // 限制多的先排：可坐位置少 → 有不相鄰對象 → 隨機
-      const order = shuffle(students, R).sort((a, b) => (domain[a].length - domain[b].length) || ((apart[b] ? 1 : 0) - (apart[a] ? 1 : 0)));
+      const sorted = shuffle(students, R).sort((a, b) => (domain[a].length - domain[b].length) || ((groupsOf[b] ? 1 : 0) - (groupsOf[a] ? 1 : 0)) || ((apart[b] ? 1 : 0) - (apart[a] ? 1 : 0)));
+      // 坐在一起的同組同學排在一起連續放（沿著組員關係一個接一個），後放的人一定要貼著已經坐好的組員
+      const order = []; const inOrder = new Set();
+      sorted.forEach((s) => {
+        if (inOrder.has(s)) return;
+        const queue = [s];
+        while (queue.length) {
+          const m = queue.shift(); if (inOrder.has(m) || !students.includes(m)) continue;
+          inOrder.add(m); order.push(m);
+          shuffle(matesOf(m), R).forEach((x) => { if (!inOrder.has(x)) queue.push(x); });
+        }
+      });
       const placed = {}; const used = new Set(); let steps = 0;
-      const ok = (s, k) => (apart[s] || []).every((p) => { const kp = placed[p] || lockedWhere[p]; return !kp || !adj(k, kp); });
+      const ok = (s, k) => {
+        if (!(apart[s] || []).every((p) => { const kp = placed[p] || lockedWhere[p]; return !kp || !adj(k, kp); })) return false;
+        return (groupsOf[s] || []).every((g) => {
+          const mates = g.filter((m) => m !== s).map((m) => placed[m] || lockedWhere[m]).filter(Boolean);
+          return !mates.length || mates.some((km) => adj.cross(k, km));
+        });
+      };
       const dfs = (i) => {
         if (i === order.length) return true;
         if (++steps > maxSteps) return false;
@@ -438,7 +492,7 @@
     DEFAULT_RESOURCES, DEFAULT_BID_RULES, normalizeBidRules, resTotal, bidVector, compareBids, bidUsed, bidValid, resText, rankBids, decideWinners, WISH_RULES,
     studentKey, normName, normSid, newCode, CODE_CHARS,
     newLayout, resizeLayout, cellType, seatKeys, viewOf, adjacency,
-    members, zoneAllows, activeRules, violations, solve, diagnose,
+    members, zoneAllows, activeRules, violations, solve, diagnose, connected, colNo, rowNo, posLabel,
     parseRoster, parseCleaning, newClass, normalizeClass, sanitize
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
