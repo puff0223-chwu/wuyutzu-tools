@@ -33,7 +33,7 @@ try {
   $state = Join-Path $env:LOCALAPPDATA 'WuyutzuSync\last-commit.txt'
   $sha = ((Invoke-WebRequest -UseBasicParsing -UserAgent 'wuyutzu-sync' -Uri ("https://api.github.com/repos/$Repo/git/refs/heads/$Branch")).Content | ConvertFrom-Json).object.sha
   $last = if (Test-Path -LiteralPath $state) { (Get-Content -LiteralPath $state -Raw).Trim() } else { '' }
-  if ($sha -and $sha -eq $last -and (Test-Path -LiteralPath $Target)) { exit 0 }
+  if ($sha -and $sha -eq $last -and (Test-Path -LiteralPath $Target)) { Write-Host '👌 本機已經是最新版，不用下載'; exit 0 }
   New-Item -ItemType Directory -Force -Path $Target | Out-Null
   $tmp = Join-Path $env:TEMP ('wuyutzu-sync-' + [guid]::NewGuid().ToString('N'))
   New-Item -ItemType Directory -Force -Path $tmp | Out-Null
