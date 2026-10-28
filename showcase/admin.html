@@ -95,8 +95,6 @@ table.mt { width: 100%; border-collapse: collapse; font-size: .92em; }
 .modes label b { display: block; font-size: 1.05em; }
 .modes label.on { border-color: var(--navy); background: #fff7e6; box-shadow: 2px 2px 0 var(--navy); }
 .modes input { display: none; }
-.fromlist { display: flex; flex-wrap: wrap; gap: 6px; }
-.fromlist label { display: inline-flex; align-items: center; gap: 4px; border: 1.5px solid var(--line); border-radius: 999px; padding: 3px 10px; font-size: .85em; cursor: pointer; background: #fff; }
 .shotrow { display: grid; grid-template-columns: 96px 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--line); }
 .shotrow img { width: 96px; height: 64px; object-fit: cover; object-position: top; border: 1.5px solid var(--navy); border-radius: 8px; background: #fff; }
 .shotrow .ops button { font: inherit; border: 1.5px solid var(--line); background: #fff; border-radius: 8px; padding: 3px 8px; cursor: pointer; }
@@ -400,8 +398,6 @@ function openEditor(id, listInit, itemInit, isNew) {
       ${l.mode !== 'show' ? `<div class="modes m2 sub"><label class="${l.mode === 'apply' ? 'on' : ''}"><input type="radio" name="mode" value="apply" ${l.mode === 'apply' ? 'checked' : ''}><b>🔐 要申請帳號</b>${MODE_INFO.apply[1]}</label>
         <label class="${l.mode === 'open' ? 'on' : ''}"><input type="radio" name="mode" value="open" ${l.mode === 'open' ? 'checked' : ''}><b>🚀 不用申請，直接打開</b>${MODE_INFO.open[1]}</label></div>` : ''}
       <div id="modeExtra"></div>
-      <label class="f">對應的事務所工具${tip('勾選後，「🧰 事務所工具」分頁就知道這個工具已經加入展覽館。')}</label>
-      <div class="fromlist">${S.tools.map((t) => `<label><input type="checkbox" data-from="${esc(t.id)}" ${l.from.includes(t.id) ? 'checked' : ''}>${esc(t.icon)} ${esc(t.name)}</label>`).join('')}</div>
       <p class="muted small" style="margin-top:10px">網址代號：<b>${esc(id)}</b>（說明頁 guide.html?app=${esc(id)}、分享頁 share/${esc(id)}.html，建立後不能改）</p>`;
     if (E.tab === 'intro') return `<label class="f">副標題${tip('顯示在說明頁最上方大標題下面')}</label><input type="text" data-it="sub" value="${esc(it.sub || '')}" maxlength="80">
       ${field('intro', '簡介', '說明頁最上面的一段介紹，3～5 句最好。' + BOLD, 5)}
@@ -423,7 +419,7 @@ function openEditor(id, listInit, itemInit, isNew) {
         ${S.pub.list[id] ? `<a class="btn small ghost" href="guide.html?app=${encodeURIComponent(id)}&preview=1" target="_blank" rel="noopener">👀 預覽說明頁 ↗</a>` : ''}</div>
       <div class="mtabs">${TABS.map(([k, n]) => `<button data-et="${k}" class="${E.tab === k ? 'on' : ''}">${n}</button>`).join('')}</div>
       <div class="mbody">${body()}</div>
-      <div class="mfoot"><button class="btn" id="eSave">💾 儲存</button><button class="btn ghost" id="eSaveX">儲存並關閉</button><span class="grow"></span><span class="muted small" id="eDirty">${E.dirty ? '● 有還沒儲存的修改' : ''}</span><button class="btn ghost" id="eX">關閉</button></div></div>`;
+      <div class="mfoot"><button class="btn" id="eSave">💾 儲存</button><button class="btn ghost" id="eSaveX">💾 儲存並關閉</button><button class="btn ghost" id="eX">↩ 取消返回</button><span class="muted small" id="eDirty">${E.dirty ? '● 有還沒儲存的修改' : ''}</span></div></div>`;
     $$('[data-et]', md).forEach((b) => { b.onclick = () => { collect(); E.tab = b.dataset.et; paint(); }; });
     $$('input, textarea, select', md).forEach((x) => { x.addEventListener('input', () => { E.dirty = true; $('#eDirty', md).textContent = '● 有還沒儲存的修改'; }); });
     $$('[name=mode]', md).forEach((r) => { r.onchange = () => { collect(); l.mode = r.value; paint(); }; });
@@ -432,7 +428,7 @@ function openEditor(id, listInit, itemInit, isNew) {
     const dsel = $('[data-l="drawer"]', md); if (dsel) dsel.onchange = () => { collect(); paint(); };
     $('#eOn', md).onclick = () => { collect(); l.on = !l.on; E.dirty = true; paint(); };
     $('#eSave', md).onclick = () => doSave(false); $('#eSaveX', md).onclick = () => doSave(true);
-    $('#eX', md).onclick = () => { collect(); if (E.dirty && !confirm('有還沒儲存的修改，確定要關閉嗎？')) return; md.remove(); S.edit = null; render(); };
+    $('#eX', md).onclick = () => { md.remove(); S.edit = null; render(); };   // 取消返回：不存、不再確認
     if (E.tab === 'card') modeExtra();
     if (E.tab === 'shots') shotsWire();
   }
@@ -468,7 +464,6 @@ function openEditor(id, listInit, itemInit, isNew) {
     $$('[data-it]', md).forEach((x) => { it[x.dataset.it] = x.value.trim(); });
     $$('[data-lines]', md).forEach((x) => { const k = x.dataset.lines, n = +x.dataset.n; it[k] = PARSE(x.value, n, k === 'flow' ? (a) => { a[3] = /學|^s$/i.test(a[3]) ? 's' : 't'; return a; } : null); });
     $$('[data-one]', md).forEach((x) => { it[x.dataset.one] = PONE(x.value); });
-    if ($$('[data-from]', md).length) l.from = $$('[data-from]', md).filter((c) => c.checked).map((c) => c.dataset.from);
   }
   async function doSave(close) {
     collect();
