@@ -12,5 +12,5 @@
 - 首頁改版先放 `index-preview.html`，老師說「上線」才換 `index.html`。
 - Firebase 規則改 `firebase/rules.src.json` → `python3 firebase/build_rules.py` → `node firebase/rules.test.js`，不要手改 `firebase-rules.json`。
 - 金鑰、密碼不進 repo（這是公開 repo）。
-- 每次開發結束：更新 `CHANGELOG.md`、`DEVELOPMENT.md`，有新的通用經驗補進 `HANDBOOK.md`；**本機資料夾：每次開發或調整完成由 Claude 同步一次**（有連線老師電腦就直接做；雲端對話做不到時，請老師雙擊 `tools/local-sync/sync-now.bat`），目前不用定時自動化，見手冊 1-I。
+- 每次開發結束：更新 `CHANGELOG.md`、`DEVELOPMENT.md`，有新的通用經驗補進 `HANDBOOK.md`；**本機資料夾：每次開發或調整完成由 Claude 同步一次**（有連線老師電腦就直接做；雲端對話做不到時，請老師開 GitHub Desktop 按 Fetch／Pull，備用是雙擊 `tools/local-sync/sync-now.bat`，不要用系統管理員執行），目前不用定時自動化，見手冊 1-I。
 - 和老師溝通用繁體中文、白話、親切；技術概念用小學生聽得懂的比喻。

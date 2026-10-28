@@ -1,13 +1,23 @@
 # 本機資料夾同步
 
-## 目前做法（2026-10-25 老師決定）
-系統量體還不大 → **每次開發或調整完成，由 Claude 幫忙更新本機一次**，先不做定時自動化。
-- 這次對話**有連線老師電腦**（有 device 檔案／指令工具）：推上 GitHub 後，Claude 直接在老師電腦執行同步（git pull 或下載 zip），完成後在交付訊息說一聲
-- **沒有連線**（雲端對話）：Claude 做不到 → 交付訊息最後提醒一句「雙擊 `sync-now.bat` 同步本機」（一次就好，跑完即結束，不常駐）；也可以請老師用 Claude 桌面版把對話連到電腦
-- `sync-now.bat`：同步一次就結束；若之前裝過每小時排程，會順便移除
-- 以後開發量變大，再改用下面的 `install-auto-sync.bat`（每小時只檢查版本號，有新版才下載）
+## 目前做法（2026-10-28 老師決定）
+系統量體還不大 → **每次開發或調整完成，同步本機一次**，先不做定時自動化。
 
-## 未來自動化用（目前不使用）
+- **主要：GitHub Desktop（官方免費程式，有數位簽章，不需要腳本、不需要系統管理員）**
+  - 打開 GitHub Desktop → 左上選 `wuyutzu-tools` → 按「Fetch origin」→ 出現「Pull origin」再按一次
+  - 私人 repo（例如 `grade-query-system`）也可以用同一個程式同步
+  - 這個資料夾只拿來「看」，不要在裡面直接改檔案（改了會和 GitHub 版本打架）；真的改到了，在 GitHub Desktop 的 Changes 對檔案按右鍵「Discard changes」就會還原
+- **備用：`sync-now.bat`（簡單版）**：只用 Windows 內建的 curl、tar、robocopy，不用 PowerShell；**一般雙擊就好，不要用系統管理員執行**
+  - 第一次被 Windows 擋：先用記事本打開確認內容（只連 github.com），再右鍵 →「內容」→ 勾「解除封鎖」→ 確定
+  - 只新增／覆蓋、不刪除本機檔案；會略過 `.git`（GitHub Desktop 的資料）
+  - 同步紀錄：`Claude-Code\sync-log.txt`
+- 這次對話**有連線老師電腦**：Claude 推上 GitHub 後直接在老師電腦同步並告知
+- **沒有連線**（雲端對話）：交付訊息最後提醒一句「開 GitHub Desktop 按 Fetch／Pull（或雙擊 sync-now.bat）」
+
+### 為什麼換掉舊版 sync-now.bat（2026-10-28）
+舊版用「`powershell -ExecutionPolicy Bypass` ＋ 把自己的內容當指令執行（iex）」讓一個檔案就能雙擊，**這正是惡意程式常用的手法**，防毒軟體會攔下來，老師只好用系統管理員執行——反而更危險。新規則：**給老師執行的檔案不用繞過安全檢查的寫法，也不需要管理員權限**。
+
+## 未來自動化用（目前不使用；⚠️ 仍是舊寫法，會被防毒擋，真的要自動化時改用 GitHub Desktop／git 的排程重寫）
 
 老師電腦（Windows）的 `桌面\系統工具開發\Claude-Code\wuyutzu-tools` 要和 GitHub 一樣（GitHub 為準）。
 

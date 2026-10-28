@@ -135,7 +135,7 @@
 - [ ] 更新 `DEVELOPMENT.md`（結構表、資料位置、第 7 節分段開發經驗）
 - [ ] 有新的「以後會再遇到」的經驗 → 補進本手冊第 1、2 章
 - [ ] 首頁改版先放 `index-preview.html`，老師說「上線」才換 `index.html`
-- [ ] **本機資料夾同步（老師 2026-10-25 決定，重點！）**：系統量體還不大，**每次開發或調整完成，由 Claude 幫老師更新本機一次**，先不做定時自動化（以後量體變大再改用 `tools/local-sync/install-auto-sync.bat`）。有連線老師電腦 → 推上 GitHub 後直接同步並告知；沒有連線（雲端對話）→ 交付訊息最後一句請老師雙擊 `tools/local-sync/sync-now.bat`（同步一次就結束），或用 Claude 桌面版把對話連到電腦
+- [ ] **本機資料夾同步（老師 2026-10-25 決定、2026-10-28 改用 GitHub Desktop，重點！）**：系統量體還不大，**每次開發或調整完成同步本機一次**，先不做定時自動化。有連線老師電腦 → 推上 GitHub 後直接同步並告知；沒有連線（雲端對話）→ 交付訊息最後一句請老師「開 GitHub Desktop 按 Fetch origin／Pull origin」（備用：雙擊 `tools/local-sync/sync-now.bat` 簡單版，**不要用系統管理員執行**）
 - [ ] 規則有改 → GitHub Action 自動部署並回報 Firebase 用量
 - [ ] Vercel 系統（Supabase）：更新 `docs/PROGRESS.md`，經驗補進本機 `經驗庫.md`
 
@@ -296,6 +296,7 @@
 
 ### 2-M 老師的 Windows 電腦
 
+- **給老師執行的 .bat 不要用「`-ExecutionPolicy Bypass`＋iex 執行自己」這種寫法**：是惡意程式常見手法，會被防毒擋，老師就得用系統管理員硬跑（更危險）。改用官方簽章的程式（GitHub Desktop），或只用 Windows 內建的 curl／tar／robocopy 的純 .bat；檔案內容保持全英文 ASCII、CRLF 換行、絕不需要管理員權限
 - 沒有 python、gh；Node 用完整路徑 `C:\Program Files\nodejs\node.exe`
 - 中文內容寫成 UTF-8 檔案再傳，不要在指令列內嵌中文
 - git 後檔案變 CRLF，腳本比對前先正規化；sed 遇到中文、emoji、`#` 容易壞，改用 Edit 或 node 腳本
@@ -523,7 +524,7 @@
 
 | 什麼時候 | 做什麼 |
 |---|---|
-| 每次開發結束 | 1-I 收尾清單（本機資料夾：每次開發完由 Claude 同步一次） |
+| 每次開發結束 | 1-I 收尾清單（本機資料夾：每次開發完同步一次，GitHub Desktop 按 Pull） |
 | 每週一早上 | 看「🔋 Firebase 資源報告」議題（自動），出現 🟡／🔴 就做健檢 |
 | 每新增 3 個系統（或任何即時連線系統） | 全站連線健檢 `tools/health/check.py`，結果記在 DEVELOPMENT.md 7-14 |
 | 每學期開學前一週 | 全站健檢；確認兩個 Supabase 專案沒被暫停、cron-job.org 保活還在；清掉不用的題庫、活動、測試資料 |
