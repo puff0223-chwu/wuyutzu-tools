@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>🔧 展覽館管理｜巫魚子教課事務所</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="showcase.css?v=20261028b">
+<style>
+/* ===== 🔧 展覽館管理頁（只有巫魚子老師的管理員帳號能用） ===== */
+body { padding-bottom: 60px; }
+.atop { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--navy); color: #fff; padding: 10px 16px; box-shadow: 0 3px 0 var(--mustard); }
+.atop .brand { font-weight: 900; line-height: 1.2; }
+.atop .brand small { display: block; font-family: 'Bebas Neue', sans-serif; letter-spacing: .2em; color: var(--mustard); font-size: .72em; font-weight: 400; }
+.atop .sp { flex: 1; }
+.atop a, .atop button { color: #fff; text-decoration: none; background: none; border: 1.5px solid rgba(255,255,255,.5); border-radius: 10px; padding: 5px 12px; font: inherit; font-weight: 700; font-size: .88em; cursor: pointer; white-space: nowrap; }
+.atop .who { font-size: .82em; opacity: .8; }
+.awrap { max-width: 1100px; margin: 0 auto; padding: 18px 16px; }
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.tabs button { font: inherit; font-weight: 800; cursor: pointer; border: 2px solid var(--navy); background: #fff; color: var(--navy); border-radius: 999px; padding: 7px 16px; }
+.tabs button.on { background: var(--navy); color: #fff; }
+.tabs .badge-n { display: inline-block; min-width: 20px; border-radius: 999px; background: var(--red); color: #fff; font-size: .78em; padding: 0 6px; margin-left: 4px; }
+.panel { background: var(--card); border: 2px solid var(--navy); border-radius: 16px; box-shadow: 4px 4px 0 var(--navy); padding: 18px; }
+.row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.grow { flex: 1; }
+.muted { color: var(--muted); }
+.small { font-size: .86em; }
+.btn.red { background: #fff; color: var(--red); border-color: var(--red); box-shadow: 3px 3px 0 var(--red); }
+.btn[disabled] { opacity: .45; cursor: not-allowed; }
+input[type=text], input[type=search], textarea, select { font: inherit; color: var(--navy); border: 2px solid #ddd3bd; border-radius: 10px; padding: 8px 10px; background: #fff; width: 100%; }
+textarea { min-height: 90px; resize: vertical; line-height: 1.6; }
+input:focus, textarea:focus, select:focus { outline: none; border-color: var(--mustard); }
+label.f { display: block; font-weight: 800; margin: 12px 0 4px; font-size: .92em; }
+.tip { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--navy); color: #fff; font-size: .72em; font-weight: 900; cursor: help; position: relative; vertical-align: 1px; margin-left: 4px; }
+.tip::after { content: attr(data-tip); display: none; position: absolute; left: 50%; top: 24px; transform: translateX(-50%); z-index: 60; width: max-content; max-width: 280px; white-space: pre-line; background: var(--navy); color: #fff; font-weight: 500; font-size: 13px; line-height: 1.55; padding: 8px 11px; border-radius: 9px; box-shadow: 3px 3px 0 var(--mustard); text-align: left; }
+.tip:hover::after, .tip:focus::after { display: block; }
+.chips2 { display: flex; gap: 6px; flex-wrap: wrap; }
+.chips2 button { font: inherit; font-size: .88em; font-weight: 700; cursor: pointer; border: 2px solid var(--navy); background: #fff; border-radius: 999px; padding: 4px 12px; color: var(--navy); }
+.chips2 button.on { background: var(--navy); color: #fff; }
+/* 卡片小首頁 */
+.dsec { margin: 18px 0 8px; }
+.dsec h2 { font-family: 'Noto Serif TC', serif; font-size: 1.25em; display: flex; align-items: center; gap: 8px; }
+.dsec h2 .tag { font-family: 'Bebas Neue', sans-serif; letter-spacing: .12em; color: #fff; padding: 1px 10px; border-radius: 6px; font-size: .78em; }
+.agrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; margin-top: 8px; }
+.acard { position: relative; background: #fff; border: 2px solid var(--navy); border-radius: 14px; padding: 12px; box-shadow: 3px 3px 0 var(--accent, var(--navy)); display: flex; flex-direction: column; gap: 6px; }
+.acard.off { opacity: .55; border-style: dashed; box-shadow: none; background: #fbf8f2; }
+.acard .top { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.acard .ic { flex: none; width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; font-size: 1.35em; background: var(--soft, #f3efe6); }
+.acard .nm { font-weight: 900; line-height: 1.3; }
+.acard .br { color: var(--muted); font-size: .8em; line-height: 1.45; margin-top: 2px; }
+.acard .meta { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; font-size: .84em; }
+.acard .meta .shelf-t { color: var(--muted); }
+.acard .bar { display: flex; gap: 6px; align-items: center; border-top: 1px dashed var(--line); padding-top: 8px; }
+.acard .bar button { font: inherit; font-size: .85em; border: 1.5px solid var(--line); background: #fff; border-radius: 8px; padding: 3px 8px; cursor: pointer; }
+.acard .bar button:hover { border-color: var(--navy); }
+.acard .del { position: absolute; top: 8px; right: 8px; border: none; background: none; cursor: pointer; font-size: 1em; opacity: .5; }
+.acard .del:hover { opacity: 1; }
+.sw { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 800; font-size: .85em; user-select: none; }
+.sw i { width: 38px; height: 22px; border-radius: 999px; background: #cfc8b8; position: relative; transition: background .15s; }
+.sw i::after { content: ''; position: absolute; left: 3px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: left .15s; }
+.sw.on i { background: #2e9d6a; }
+.sw.on i::after { left: 19px; }
+.warn { background: #fde8e1; border: 1.5px solid #f2b3a0; color: #8c2f17; border-radius: 10px; padding: 8px 12px; font-size: .9em; line-height: 1.6; margin: 8px 0; }
+.okbox { background: #e3f4f1; border: 1.5px solid #9fd6cd; color: #13675d; border-radius: 10px; padding: 8px 12px; font-size: .9em; margin: 8px 0; }
+.info { background: #fff1d6; border: 1.5px solid var(--mustard); border-radius: 10px; padding: 8px 12px; font-size: .9em; line-height: 1.6; margin: 8px 0; }
+/* 母體工具表 */
+table.mt { width: 100%; border-collapse: collapse; font-size: .92em; }
+.mt th { text-align: left; background: #f3eee2; padding: 8px; font-size: .85em; }
+.mt td { padding: 8px; border-top: 1px solid var(--line); vertical-align: middle; }
+.mt .new { background: #fff7e6; }
+.st { display: inline-block; border-radius: 999px; padding: 1px 9px; font-size: .8em; font-weight: 800; white-space: nowrap; }
+.st.on { background: #2e9d6a; color: #fff; } .st.hid { background: #efedf2; color: #55515f; } .st.no { background: #fff; border: 1.5px dashed #b9b2a3; color: var(--muted); }
+.st.ok { background: #e3f4f1; color: #13675d; } .st.bad { background: #fde8e1; color: #a33a1d; } .st.ext { background: #e4edf8; color: #2f5a8f; }
+/* 分類 */
+.drow { display: grid; grid-template-columns: 54px 1.2fr 0.8fr 1.6fr 56px auto; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--line); }
+.drow input[type=color] { width: 54px; height: 38px; border: 2px solid #ddd3bd; border-radius: 10px; padding: 2px; background: #fff; }
+/* 編輯視窗 */
+.modal { position: fixed; inset: 0; z-index: 100; background: rgba(31,42,68,.55); display: flex; align-items: flex-start; justify-content: center; padding: 3vh 12px; overflow: auto; }
+.mbox { background: var(--card); border: 3px solid var(--navy); border-radius: 18px; box-shadow: 8px 8px 0 var(--navy); width: min(920px, 100%); }
+.mhead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 2px solid var(--line); }
+.mhead h3 { font-family: 'Noto Serif TC', serif; font-size: 1.3em; }
+.mtabs { display: flex; gap: 6px; flex-wrap: wrap; padding: 10px 18px 0; }
+.mtabs button { font: inherit; font-size: .88em; font-weight: 800; cursor: pointer; border: 2px solid var(--line); background: #fff; border-radius: 10px 10px 0 0; padding: 6px 12px; color: var(--navy); border-bottom: none; }
+.mtabs button.on { border-color: var(--navy); background: var(--navy); color: #fff; }
+.mbody { padding: 6px 18px 16px; border-top: 2px solid var(--navy); }
+.mfoot { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 12px 18px; border-top: 2px solid var(--line); position: sticky; bottom: 0; background: var(--card); border-radius: 0 0 16px 16px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+.modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.modes label { display: block; border: 2px solid var(--line); border-radius: 12px; padding: 10px; cursor: pointer; background: #fff; font-size: .88em; line-height: 1.5; }
+.modes label b { display: block; font-size: 1.05em; }
+.modes label.on { border-color: var(--navy); background: #fff7e6; box-shadow: 2px 2px 0 var(--navy); }
+.modes input { display: none; }
+.fromlist { display: flex; flex-wrap: wrap; gap: 6px; }
+.fromlist label { display: inline-flex; align-items: center; gap: 4px; border: 1.5px solid var(--line); border-radius: 999px; padding: 3px 10px; font-size: .85em; cursor: pointer; background: #fff; }
+.shotrow { display: grid; grid-template-columns: 96px 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--line); }
+.shotrow img { width: 96px; height: 64px; object-fit: cover; object-position: top; border: 1.5px solid var(--navy); border-radius: 8px; background: #fff; }
+.shotrow .ops button { font: inherit; border: 1.5px solid var(--line); background: #fff; border-radius: 8px; padding: 3px 8px; cursor: pointer; }
+.toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%); z-index: 300; background: var(--navy); color: #fff; padding: 10px 18px; border-radius: 12px; font-weight: 700; box-shadow: 3px 3px 0 var(--mustard); max-width: 90vw; }
+.toast.err { background: var(--red); }
+.gate { max-width: 460px; margin: 10vh auto; }
+.howto3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 10px 0; }
+@media (max-width: 760px) {
+  .grid2, .modes, .howto3 { grid-template-columns: 1fr; }
+  .drow { grid-template-columns: 54px 1fr; }
+  .mt th:nth-child(3), .mt td:nth-child(3) { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="atop">
+  <div class="brand"><small>TEACHER GALLERY · ADMIN</small>🔧 教師展覽館管理</div>
+  <span class="sp"></span>
+  <span id="topLinks"></span>
+</div>
+<div class="awrap" id="app"><p class="muted" style="text-align:center;margin-top:20vh">載入中…</p></div>
+
+<script src="../account/staff.js?v=20261024a"></script>
+<script src="data.js?v=20261028a"></script>
+<script src="drafts.js?v=20261028a"></script>
+<script src="showcase.js?v=20261028a"></script>
+<script type="module">
+/* =========================================================
+   🔧 教師展覽館管理頁（2026-10-28）
+   - 只有管理員（puff0223@gmail.com，Google 登入）能改；資料在 Firebase showcase/pub、showcase/img
+   - 「事務所工具」清單直接讀事務所首頁 index.html 的 TOOLS（首頁新增工具，這裡自動出現）
+   - 存檔＝展覽館馬上更新；社群分享頁與預覽圖由 GitHub 每 30 分鐘檢查 rev 後自動重做
+   ========================================================= */
+const SC = window.SHOWCASE, W = window.WuStaff, esc = SC.esc;
+const $ = (s, el) => (el || document).querySelector(s), $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
+const tip = (t) => `<span class="tip" tabindex="0" data-tip="${esc(t)}">?</span>`;
+const toast = (m, err) => { const t = document.createElement('div'); t.className = 'toast' + (err ? ' err' : ''); t.textContent = m; document.body.appendChild(t); setTimeout(() => t.remove(), err ? 5000 : 2800); };
+const rid = (n) => { const c = 'abcdefghijklmnopqrstuvwxyz0123456789', a = new Uint32Array(n); crypto.getRandomValues(a); return Array.from(a, (v) => c[v % c.length]).join(''); };
+const clean = (o) => JSON.parse(JSON.stringify(o, (k, v) => (v === undefined ? null : v)));
+const MODE_INFO = {
+  apply: ['🔐 申請使用', '需要會員帳號。其他老師到會員中心申請、你核准後才能用（要先有會員中心的系統代號）。'],
+  open: ['🚀 直接開啟', '免登入的小工具，展覽館放「直接開啟」按鈕。頁面裡不能有回事務所首頁的按鈕。'],
+  show: ['👀 只展示', '只放說明與截圖，想用的老師請私訊你。適合還沒準備好分享的系統。']
+};
+const S = { user: null, pub: null, tools: [], mDrawers: [], tab: localStorage.getItem('sca-tab') || 'items', filter: 'all', q: '', safety: {}, edit: null };
+let FB;
+
+/* ---------- 登入 ---------- */
+async function boot() {
+  try { const M = await import('../account/fb.js?v=20261020a'); FB = await M.openFirebase('showcase'); S.M = M; }
+  catch (e) { $('#app').innerHTML = `<div class="panel gate"><h2>😵 連不上 Firebase</h2><p class="muted">請確認網路後重新整理。（${esc(e.message || e)}）</p></div>`; return; }
+  FB.onUser(async (u) => { S.user = u; if (!u) return renderLogin(); if (!W.isAdmin(u)) return renderNotAdmin(); await loadAll(); });
+}
+function topLinks() {
+  $('#topLinks').innerHTML = S.user && W.isAdmin(S.user)
+    ? `<span class="who">${esc(S.user.email)}</span> <a href="./" target="_blank" rel="noopener">👀 看展覽館 ↗</a> <a href="../index.html">🏠 事務所首頁</a> <button id="out">登出</button>`
+    : (S.user ? '<button id="out">登出</button>' : '');
+  const o = $('#out'); if (o) o.onclick = () => FB.logout();
+}
+function renderLogin(err) {
+  topLinks();
+  $('#app').innerHTML = `<div class="panel gate"><h2 style="font-family:'Noto Serif TC',serif">🔐 管理員登入</h2>
+    <p class="muted small" style="margin:6px 0 14px">這一頁只有巫魚子老師的管理員帳號可以使用。</p>
+    ${S.M.googleButtonHTML('gG', '使用 Google 帳號登入')}
+    <label class="f">Email</label><input type="text" id="lE" autocomplete="username"><label class="f">密碼</label><input type="password" id="lP" style="font:inherit;border:2px solid #ddd3bd;border-radius:10px;padding:8px 10px;width:100%">
+    <div class="row" style="margin-top:14px"><button class="btn" id="lGo">登入</button></div>${err ? `<div class="warn">${esc(err)}</div>` : ''}</div>`;
+  $('#gG').onclick = async () => { try { await FB.google(); } catch (e) { renderLogin(S.M.authErr(e)); } };
+  $('#lGo').onclick = async () => { try { await FB.login($('#lE').value.trim(), $('#lP').value); } catch (e) { renderLogin(S.M.authErr(e)); } };
+}
+function renderNotAdmin() {
+  topLinks();
+  $('#app').innerHTML = `<div class="panel gate"><h2>🙅 這個帳號不能管理展覽館</h2><p class="muted" style="margin-top:8px">目前登入：${esc(S.user.email)}。只有巫魚子老師的管理員帳號可以使用這一頁。</p><div class="row" style="margin-top:12px"><a class="btn ghost" href="./">← 回教師展覽館</a></div></div>`;
+}
+
+/* ---------- 讀資料：展覽館（Firebase）＋事務所首頁的工具清單 ---------- */
+async function loadAll() {
+  topLinks();
+  $('#app').innerHTML = '<p class="muted" style="text-align:center;margin-top:16vh">讀取展覽館與事務所工具…</p>';
+  try { S.pub = SC.normalize(await FB.get('showcase/pub')); } catch (e) { return toast('讀取展覽館失敗：' + (e.code || e.message), true); }
+  try { await loadTools(); } catch (e) { S.tools = []; toast('讀不到事務所首頁的工具清單（' + e.message + '）', true); }
+  if (!S.pub.rev) return renderWelcome();
+  SC.setPub(S.pub, 'admin');
+  render();
+}
+async function loadTools() {
+  const html = await (await fetch('../index.html', { cache: 'no-store' })).text();
+  const a = html.indexOf('const TOOLS = ['), b = html.indexOf('\n];', a);
+  if (a < 0 || b < 0) throw new Error('找不到 TOOLS');
+  S.tools = JSON.parse(html.slice(a + 'const TOOLS = '.length, b + 2));
+  const d = html.slice(html.indexOf('const DRAWERS = ['), html.indexOf('];', html.indexOf('const DRAWERS = [')));
+  S.mDrawers = Array.from(d.matchAll(/name:\s*'([^']+)'/g), (m) => m[1]);
+}
+function renderWelcome() {
+  const seed = SC.seedPub(), n = Object.keys(seed.list).length, on = Object.values(seed.list).filter((l) => l.on).length;
+  $('#app').innerHTML = `<div class="panel" style="max-width:640px;margin:6vh auto"><h2 style="font-family:'Noto Serif TC',serif">🌱 第一次使用：把展覽館搬進資料庫</h2>
+    <p style="margin:10px 0;line-height:1.8">按下去之後，展覽館的內容會存進 Firebase，之後就由你在這一頁自己管理。</p>
+    <div class="info">會匯入 <b>${on}</b> 個目前展出中的系統（說明、截圖都保留，已分享出去的網址不變），以及 <b>${n - on}</b> 個 Claude 寫好初版、<b>先不展出</b>的工具。</div>
+    <div class="row" style="margin-top:12px"><button class="btn" id="seed">🌱 匯入並開始管理</button></div></div>`;
+  $('#seed').onclick = async () => {
+    $('#seed').disabled = true;
+    const p = SC.seedPub(); p.rev = Date.now();
+    try { await FB.set('showcase/pub', clean(p)); toast('✅ 匯入完成'); await loadAll(); }
+    catch (e) { $('#seed').disabled = false; toast('匯入失敗：' + (e.code || e.message), true); }
+  };
+}
+
+/* ---------- 存檔：只寫有改的地方＋更新 rev ---------- */
+async function save(paths, msg) {
+  const rev = Date.now(), up = clean(Object.assign({}, paths, { rev }));
+  await FB.update('showcase/pub', up);
+  Object.entries(paths).forEach(([p, v]) => { const ks = p.split('/'); let o = S.pub; ks.slice(0, -1).forEach((k) => { o = o[k] = o[k] || {}; }); if (v === null) delete o[ks[ks.length - 1]]; else o[ks[ks.length - 1]] = clean(v); });
+  S.pub.rev = rev; SC.setPub(S.pub, 'admin');
+  if (msg !== false) toast(msg || '💾 已儲存，展覽館已更新');
+}
+
+/* ---------- 首頁連結安全檢查（「直接開啟」的頁面不能有回事務所首頁的按鈕） ---------- */
+const HOME_RE = /回事務所首頁|返回工具箱首頁|href="(\.\.\/)+(index\.html)?"|href="\/wuyutzu-tools\/?(index\.html)?"/;
+function safety(url) {
+  url = String(url || '').trim();
+  if (!url) return Promise.resolve('none');
+  if (/^https?:\/\//.test(url)) return Promise.resolve('ext');
+  if (S.safety[url]) return S.safety[url];
+  return (S.safety[url] = fetch('../' + url.replace(/^\/+/, ''), { cache: 'no-store' }).then((r) => (r.ok ? r.text() : Promise.reject(new Error(r.status))))
+    .then((t) => (HOME_RE.test(t) ? 'bad' : 'ok')).catch(() => 'missing'));
+}
+const SAFE_TXT = { ok: '<span class="st ok">✅ 可以直接開啟</span>', bad: '<span class="st bad">⚠️ 頁面有回首頁按鈕</span>', ext: '<span class="st ext">🌐 外部網站</span>', missing: '<span class="st bad">❓ 找不到頁面</span>', none: '' };
+
+/* ---------- 主畫面 ---------- */
+function render() {
+  topLinks();
+  const L = S.pub.list, ids = Object.keys(L), on = ids.filter((i) => L[i].on).length;
+  const fresh = S.tools.filter((t) => !ids.some((i) => (L[i].from || []).includes(t.id))).length;
+  const TABS = [['items', `🖼️ 展出的系統`], ['tools', `🧰 事務所工具${fresh ? `<span class="badge-n">${fresh}</span>` : ''}`], ['drawers', '🗂️ 分類'], ['help', '❓ 使用說明']];
+  $('#app').innerHTML = `<div class="row" style="margin-bottom:10px"><div class="grow"><b style="font-size:1.1em">目前展出 ${on} 個系統</b><span class="muted small">（共 ${ids.length} 張卡片，未展出的只有你看得到）</span></div>
+      <span class="muted small">最後更新：${new Date(S.pub.rev).toLocaleString('zh-TW')}</span></div>
+    <div class="tabs">${TABS.map(([k, n]) => `<button data-tab="${k}" class="${S.tab === k ? 'on' : ''}">${n}</button>`).join('')}</div>
+    <div id="tabBody"></div>`;
+  $$('[data-tab]').forEach((b) => { b.onclick = () => { S.tab = b.dataset.tab; try { localStorage.setItem('sca-tab', S.tab); } catch (e) { } render(); }; });
+  ({ items: renderItems, tools: renderTools, drawers: renderDrawers, help: renderHelp }[S.tab] || renderItems)();
+}
+
+/* 🖼️ 展出的系統：卡片小首頁（分類 → 小分類 → 卡片），開關、▲▼、✏️、🗑 */
+function renderItems() {
+  const L = S.pub.list, DR = SC.drawers(), q = S.q.trim().toLowerCase();
+  const pass = (id) => (S.filter === 'all' || (S.filter === 'on' ? L[id].on : !L[id].on)) && (!q || (L[id].name + L[id].brief + (L[id].shelf || '')).toLowerCase().includes(q));
+  const groups = DR.concat([{ id: '', name: '未分類', tag: 'Drawer ?', color: '#6d6a75', soft: '#efedf2' }]);
+  const cnt = (f) => Object.keys(L).filter((id) => (f === 'all' || (f === 'on' ? L[id].on : !L[id].on))).length;
+  let html = `<div class="panel"><div class="row"><div class="chips2">${[['all', '全部'], ['on', '展出中'], ['off', '未展出']].map(([k, n]) => `<button data-f="${k}" class="${S.filter === k ? 'on' : ''}">${n}（${cnt(k)}）</button>`).join('')}</div>
+    <input type="search" id="q" placeholder="🔍 搜尋系統" value="${esc(S.q)}" style="max-width:220px"><span class="grow"></span>
+    <button class="btn small ghost" id="newBlank">＋ 新增空白卡片</button>${tip('從「🧰 事務所工具」分頁加入會自動帶入名稱、網址與 Claude 寫的說明初版；這裡是完全空白的卡片。')}</div>`;
+  groups.forEach((d) => {
+    const its = Object.keys(L).filter((id) => (d.id ? L[id].drawer === d.id : !DR.some((x) => x.id === L[id].drawer)) && pass(id)).sort((a, b) => (L[a].order || 0) - (L[b].order || 0));
+    if (!its.length) return;
+    html += `<div class="dsec"><h2><span class="tag" style="background:${esc(d.color)}">${esc(d.tag || '')}</span>${esc(d.name)}<span class="muted small" style="font-family:'Noto Sans TC';font-weight:500">${its.length} 張</span></h2><div class="agrid">` +
+      its.map((id) => { const l = L[id]; return `<div class="acard ${l.on ? '' : 'off'}" style="--accent:${esc(d.color)};--soft:${esc(d.soft)}">
+        <button class="del" data-del="${esc(id)}" title="刪除這張卡片">🗑</button>
+        <div class="top" data-edit="${esc(id)}" role="button" tabindex="0"><span class="ic">${esc(l.icon || '📁')}</span><div><div class="nm">${esc(l.name)}</div><div class="br">${esc(SC.plain(l.brief || ''))}</div></div></div>
+        <div class="meta"><span class="pill mode-${esc(l.mode)}">${esc((MODE_INFO[l.mode] || MODE_INFO.show)[0])}</span>${l.shelf ? `<span class="shelf-t">· ${esc(l.shelf)}</span>` : ''}<span class="shelf-t">· ${esc(id)}</span></div>
+        <div class="bar"><span class="sw ${l.on ? 'on' : ''}" data-tog="${esc(id)}"><i></i>${l.on ? '展出中' : '未展出'}</span><span class="grow"></span>
+          <button data-mv="${esc(id)}" data-d="-1" title="往前">▲</button><button data-mv="${esc(id)}" data-d="1" title="往後">▼</button><button data-edit="${esc(id)}">✏️ 編輯</button></div></div>`; }).join('') + '</div></div>';
+  });
+  html += '</div>';
+  $('#tabBody').innerHTML = html;
+  $$('[data-f]').forEach((b) => { b.onclick = () => { S.filter = b.dataset.f; renderItems(); }; });
+  const qi = $('#q'); qi.oninput = () => { S.q = qi.value; const p = qi.selectionStart; renderItems(); const n = $('#q'); n.focus(); n.setSelectionRange(p, p); };
+  $('#newBlank').onclick = () => { const id = 'sys' + rid(5); openEditor(id, { on: false, drawer: (SC.drawers()[0] || {}).id || '', shelf: '', order: nextOrder(), icon: '📁', name: '新的系統', brief: '', mode: 'show', app: '', url: '', from: [] }, {}, true); };
+  $$('[data-edit]').forEach((b) => { b.onclick = () => openEditor(b.dataset.edit); b.onkeydown = (e) => { if (e.key === 'Enter') openEditor(b.dataset.edit); }; });
+  $$('[data-tog]').forEach((b) => { b.onclick = () => toggle(b.dataset.tog); });
+  $$('[data-mv]').forEach((b) => { b.onclick = () => move(b.dataset.mv, +b.dataset.d); });
+  $$('[data-del]').forEach((b) => { b.onclick = (e) => { e.stopPropagation(); delItem(b.dataset.del); }; });
+}
+const nextOrder = () => Math.max(0, ...Object.values(S.pub.list).map((l) => +l.order || 0)) + 1;
+async function canShow(l) {
+  if (l.mode === 'apply' && !(W.APPS || {})[l.app]) return '「申請使用」要先選會員中心的系統代號（在 ✏️ 編輯 →「卡片與展出」）。';
+  if (l.mode === 'open') { const s = await safety(l.url); if (s === 'bad') return '這個工具的頁面有「回事務所首頁」的按鈕，其他老師點了會看到你的私人首頁。請改成「只展示」，或請 Claude 拿掉那顆按鈕。'; if (s === 'missing' || s === 'none') return '「直接開啟」的網址找不到頁面，請在 ✏️ 編輯裡確認網址。'; }
+  return '';
+}
+async function toggle(id) {
+  const l = S.pub.list[id];
+  if (!l.on) { const why = await canShow(l); if (why) return toast(why, true); }
+  try { await save({ [`list/${id}/on`]: !l.on }, !l.on ? `✅ 「${l.name}」已展出` : `🙈 「${l.name}」已下架（內容保留）`); renderItems(); } catch (e) { toast('儲存失敗：' + (e.code || e.message), true); }
+}
+async function move(id, dir) {
+  const L = S.pub.list, d = L[id].drawer, sib = Object.keys(L).filter((k) => L[k].drawer === d).sort((a, b) => (L[a].order || 0) - (L[b].order || 0));
+  const i = sib.indexOf(id), j = i + dir; if (j < 0 || j >= sib.length) return;
+  [sib[i], sib[j]] = [sib[j], sib[i]];
+  const paths = {}; sib.forEach((k, n) => { if (L[k].order !== n + 1) paths[`list/${k}/order`] = n + 1; });
+  try { await save(paths, false); renderItems(); } catch (e) { toast('儲存失敗：' + (e.code || e.message), true); }
+}
+async function delItem(id) {
+  const l = S.pub.list[id], it = S.pub.items[id] || {}, keep = SC.GUIDES && SC.GUIDES[id];
+  const msg = `確定要刪除「${l.name}」這張卡片嗎？說明與上傳的截圖會一起刪掉。${keep ? '\n\n⚠️ 這個系統的分享網址已經發出去過，刪除後網址會失效。只是暫時不想展出的話，請改用「未展出」開關。' : ''}\n\n請輸入系統名稱確認：`;
+  const ans = prompt(msg, ''); if (ans === null) return;
+  if (ans.trim() !== l.name.trim()) return toast('名稱不符，沒有刪除', true);
+  try {
+    await save({ [`list/${id}`]: null, [`items/${id}`]: null }, `🗑 已刪除「${l.name}」`);
+    for (const s of SC.arr(it.shots)) { const src = (SC.arr(s)[0] || ''); if (src.startsWith('f:')) await FB.remove('showcase/img/' + src.slice(2)).catch(() => {}); }
+    renderItems();
+  } catch (e) { toast('刪除失敗：' + (e.code || e.message), true); }
+}
+
+/* 🧰 事務所工具：首頁 TOOLS 一覽，看哪些已加入、哪些可以直接開啟 */
+function renderTools() {
+  const L = S.pub.list, byTool = {};
+  Object.keys(L).forEach((id) => (L[id].from || []).forEach((t) => { (byTool[t] = byTool[t] || []).push(id); }));
+  const groups = {};
+  S.tools.forEach((t) => { (groups[t.drawer] = groups[t.drawer] || []).push(t); });
+  let html = `<div class="panel"><p class="small muted" style="margin-bottom:8px">這裡是事務所首頁上所有的工具（首頁新增工具，這裡會自動出現，標 🆕）。按「➕ 加入展覽館」會建立一張<b>未展出</b>的卡片，確認說明後再打開展出開關。</p>`;
+  if (!S.tools.length) html += '<div class="warn">讀不到事務所首頁的工具清單。</div>';
+  Object.keys(groups).sort((a, b) => a - b).forEach((di) => {
+    html += `<div class="dsec"><h2>${esc(S.mDrawers[di] || '其他')}</h2></div><table class="mt"><thead><tr><th>工具</th><th>展覽館</th><th>直接開啟檢查</th><th></th></tr></thead><tbody>` +
+      groups[di].map((t) => { const ins = byTool[t.id] || []; const st = ins.length ? ins.map((id) => `<span class="st ${L[id].on ? 'on' : 'hid'}">${L[id].on ? '展出中' : '未展出'}・${esc(L[id].name)}</span>`).join(' ') : '<span class="st no">未加入</span>';
+        return `<tr class="${ins.length ? '' : 'new'}"><td>${esc(t.icon)} <b>${esc(t.name)}</b>${ins.length ? '' : ' 🆕'}<div class="muted small">${esc(t.brief)}</div></td><td>${st}</td><td data-safe="${esc(t.href)}"><span class="muted small">檢查中…</span></td>
+          <td style="text-align:right">${ins.length ? `<button class="btn small ghost" data-edit="${esc(ins[0])}">✏️ 編輯</button>` : `<button class="btn small" data-add="${esc(t.id)}">➕ 加入展覽館</button>`}</td></tr>`; }).join('') + '</tbody></table>';
+  });
+  html += '</div>';
+  $('#tabBody').innerHTML = html;
+  $$('[data-safe]').forEach((td) => safety(td.dataset.safe).then((s) => { td.innerHTML = SAFE_TXT[s] || ''; }));
+  $$('[data-edit]').forEach((b) => { b.onclick = () => openEditor(b.dataset.edit); });
+  $$('[data-add]').forEach((b) => { b.onclick = () => addFromTool(b.dataset.add); });
+}
+function addFromTool(tid) {
+  const t = S.tools.find((x) => x.id === tid); if (!t) return;
+  let id = tid.toLowerCase().replace(/[^a-z0-9_-]/g, '') || 'sys' + rid(5); while (S.pub.list[id]) id += rid(1);
+  const dr = SC.drawers(), byName = dr.find((d) => d.name === S.mDrawers[t.drawer]);
+  const g = (SC.DRAFTS || {})[tid];
+  const list = { on: false, drawer: (byName || dr[0] || {}).id || '', shelf: g ? g.shelf : t.shelf, order: nextOrder(), icon: t.icon, name: g ? g.name : t.name, brief: g ? g.brief : t.brief,
+    mode: g ? g.mode : (t.teacher ? 'show' : 'open'), app: '', url: g ? g.url : t.href, from: [tid] };
+  if (g && g.drawer != null && S.pub.drawers['d' + (+g.drawer + 1)]) list.drawer = 'd' + (+g.drawer + 1);
+  if (!list.shelf) list.shelf = '';
+  const item = g ? Object.fromEntries(['sub', 'intro', 'facts', 'notice', 'tools', 'flow', 'feats', 'student', 'teacher', 'prep', 'faq', 'links', 'shots'].filter((k) => g[k] != null).map((k) => [k, g[k]]))
+    : { sub: t.sub, intro: t.sub, feats: (t.features || []).map((f) => ['🔍', f, '']) };
+  openEditor(id, list, item, true);
+}
+
+/* 🗂️ 分類 */
+function renderDrawers() {
+  const DR = SC.drawers(), L = S.pub.list, used = (id) => Object.keys(L).filter((k) => L[k].drawer === id).length;
+  $('#tabBody').innerHTML = `<div class="panel"><p class="small muted">分類就是展覽館上的「抽屜」。可以改名稱、英文標籤、說明、顏色、順序。裡面還有卡片的分類不能刪（先把卡片移到別的分類）。小分類（同一個抽屜裡的分組標題）在每張卡片的 ✏️ 編輯裡設定。</p>
+    <div class="drow muted small" style="font-weight:800"><span>顏色</span><span>名稱</span><span>英文標籤</span><span>說明</span><span>卡片</span><span></span></div>
+    ${DR.map((d, i) => `<div class="drow" data-d="${esc(d.id)}"><input type="color" value="${esc(d.color || '#6d6a75')}" data-k="color"><input type="text" value="${esc(d.name)}" data-k="name"><input type="text" value="${esc(d.tag || '')}" data-k="tag"><input type="text" value="${esc(d.desc || '')}" data-k="desc">
+      <span class="muted small">${used(d.id)} 張</span><span class="row" style="flex-wrap:nowrap"><button class="btn small ghost" data-dmv="${i}" data-dir="-1">▲</button><button class="btn small ghost" data-dmv="${i}" data-dir="1">▼</button><button class="btn small ghost" data-ddel="${esc(d.id)}" ${used(d.id) ? 'disabled title="還有卡片"' : ''}>🗑</button></span></div>`).join('')}
+    <div class="row" style="margin-top:12px"><button class="btn small ghost" id="dAdd">＋ 新增分類</button><span class="grow"></span><button class="btn" id="dSave">💾 儲存分類</button></div></div>`;
+  const soft = (hex) => { const n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255, m = (c) => Math.round(c + (255 - c) * 0.86); return '#' + [m(r), m(g), m(b)].map((c) => c.toString(16).padStart(2, '0')).join(''); };
+  const collect = () => { const out = {}; $$('.drow[data-d]').forEach((r, i) => { const v = (k) => $(`[data-k="${k}"]`, r).value.trim(); out[r.dataset.d] = { name: v('name') || '未命名分類', tag: v('tag'), desc: v('desc'), color: v('color'), soft: soft(v('color')), order: i }; }); return out; };
+  $('#dSave').onclick = async () => { try { await save({ drawers: collect() }, '💾 分類已儲存'); renderDrawers(); } catch (e) { toast('儲存失敗：' + (e.code || e.message), true); } };
+  $('#dAdd').onclick = async () => { const d = collect(), id = 'd' + rid(5); d[id] = { name: '新的分類', tag: 'Drawer ' + (Object.keys(d).length + 1), desc: '', color: '#2f6db5', soft: soft('#2f6db5'), order: Object.keys(d).length }; try { await save({ drawers: d }, '➕ 已新增分類'); renderDrawers(); } catch (e) { toast('儲存失敗：' + (e.code || e.message), true); } };
+  $$('[data-dmv]').forEach((b) => { b.onclick = async () => { const d = collect(), ks = Object.keys(d), i = +b.dataset.dmv, j = i + +b.dataset.dir; if (j < 0 || j >= ks.length) return; [ks[i], ks[j]] = [ks[j], ks[i]]; ks.forEach((k, n) => { d[k].order = n; }); try { await save({ drawers: d }, false); renderDrawers(); } catch (e) { toast('儲存失敗', true); } }; });
+  $$('[data-ddel]').forEach((b) => { b.onclick = async () => { if (b.disabled || !confirm('確定刪除這個分類？')) return; const d = collect(); delete d[b.dataset.ddel]; try { await save({ drawers: d }, '🗑 已刪除分類'); renderDrawers(); } catch (e) { toast('儲存失敗', true); } }; });
+}
+
+/* ❓ 使用說明 */
+function renderHelp() {
+  $('#tabBody').innerHTML = `<div class="panel"><h3>🔧 怎麼管理展覽館</h3>
+    <div class="howto3"><div class="step"><span class="n">1</span><div><b>🧰 加入工具</b><span>在「事務所工具」按 ➕，會帶入 Claude 寫的說明初版</span></div></div>
+      <div class="step"><span class="n">2</span><div><b>✏️ 調整說明</b><span>改文字、選展出方式、上傳截圖，按 💾 儲存</span></div></div>
+      <div class="step"><span class="n">3</span><div><b>🔛 打開展出</b><span>卡片上的開關打開，展覽館馬上看得到</span></div></div></div>
+    <ul class="clues">
+      <li><b>展出方式</b>：🔐 申請使用（要會員帳號，需要會員中心系統代號）／🚀 直接開啟（免登入小工具）／👀 只展示（想用的人私訊你）。</li>
+      <li><b>下架</b>：把開關關掉就好，內容會保留，之後再打開就回來了。🗑 是整張卡片刪掉。</li>
+      <li><b>社群分享頁</b>（share/○○.html）與 LINE／FB 預覽圖：GitHub 每 30 分鐘檢查一次，有改才自動重做，所以<b>最慢約半小時</b>才更新；展覽館本身是存檔後馬上更新。</li>
+      <li><b>⚠️ 直接開啟的頁面</b>不能有「回事務所首頁」的按鈕（不然其他老師會看到你的私人工具）。系統會自動檢查，有的話不能用「直接開啟」。</li>
+      <li><b>截圖</b>：上傳時自動壓縮（約 50～150 KB）。畫面裡如果有學生姓名，請用假名（例如「陳小安」）。</li>
+      <li><b>新的「需要帳號」系統</b>：要讓外校老師申請，還是要請 Claude 開發時接上會員中心；接好後在這裡選「🔐 申請使用」就能展出。</li>
+    </ul></div>`;
+}
+
+/* ---------- ✏️ 編輯視窗（分頁：卡片與展出／簡介／流程與功能／學生老師準備／常見問題／截圖） ---------- */
+const LINES = (v, n) => SC.arr(v).map((x) => (Array.isArray(x) ? x : SC.arr(x)).map((c) => String(c == null ? '' : c)).slice(0, n).join('｜')).join('\n');
+const PARSE = (t, n, fix) => String(t || '').split('\n').map((s) => s.trim()).filter(Boolean).map((s) => { const a = s.split(/[｜|]/).map((x) => x.trim()); while (a.length < n) a.push(''); return fix ? fix(a.slice(0, n)) : a.slice(0, n); });
+const ONE = (v) => SC.arr(v).join('\n'), PONE = (t) => String(t || '').split('\n').map((s) => s.trim()).filter(Boolean);
+function openEditor(id, listInit, itemInit, isNew) {
+  const l = JSON.parse(JSON.stringify(listInit || S.pub.list[id])), it = JSON.parse(JSON.stringify(itemInit || S.pub.items[id] || {}));
+  l.from = SC.arr(l.from); it.shots = SC.arr(it.shots).map((s) => (Array.isArray(s) ? s : SC.arr(s)));
+  const E = S.edit = { id, l, it, isNew, tab: 'card', dirty: !!isNew };
+  const md = document.createElement('div'); md.className = 'modal'; document.body.appendChild(md);
+  const DR = SC.drawers(), APPS = W.APPS || {};
+  const shelves = (d) => Array.from(new Set(Object.values(S.pub.list).filter((x) => x.drawer === d && x.shelf).map((x) => x.shelf)));
+  const TABS = [['card', '① 卡片與展出'], ['intro', '② 簡介'], ['flow', '③ 流程與功能'], ['sides', '④ 學生／老師／準備'], ['faq', '⑤ 常見問題'], ['shots', '⑥ 截圖']];
+  const field = (k, label, help, rows) => `<label class="f">${label}${help ? tip(help) : ''}</label><textarea data-it="${k}" rows="${rows || 4}">${esc(it[k] == null ? '' : it[k])}</textarea>`;
+  const lineField = (k, n, label, help, rows) => `<label class="f">${label}${tip(help)}</label><textarea data-lines="${k}" data-n="${n}" rows="${rows || 5}">${esc(LINES(it[k], n))}</textarea>`;
+  const oneField = (k, label, help) => `<label class="f">${label}${tip(help)}</label><textarea data-one="${k}" rows="4">${esc(ONE(it[k]))}</textarea>`;
+  const BOLD = '\n可以用 <b>粗體</b>、<i>斜體</i>、<sub>下標</sub>。';
+  function body() {
+    if (E.tab === 'card') return `<div class="grid2"><div><label class="f">圖示${tip('一個表情符號，例如 🧪')}</label><input type="text" data-l="icon" value="${esc(l.icon)}" maxlength="4"></div>
+        <div><label class="f">系統名稱</label><input type="text" data-l="name" value="${esc(l.name)}" maxlength="30"></div></div>
+      <label class="f">一句話介紹${tip('顯示在展覽館的卡片上，約 20～30 字')}</label><input type="text" data-l="brief" value="${esc(l.brief)}" maxlength="60">
+      <div class="grid2"><div><label class="f">分類（抽屜）</label><select data-l="drawer">${DR.map((d) => `<option value="${esc(d.id)}" ${l.drawer === d.id ? 'selected' : ''}>${esc(d.name)}</option>`).join('')}</select></div>
+        <div><label class="f">小分類${tip('同一個抽屜裡的分組標題，例如「課堂遊戲化」。可以留空。')}</label><input type="text" data-l="shelf" value="${esc(l.shelf || '')}" list="shelfL" maxlength="20"><datalist id="shelfL">${shelves(l.drawer).map((s) => `<option>${esc(s)}</option>`).join('')}</datalist></div></div>
+      <label class="f">展出方式</label><div class="modes">${Object.entries(MODE_INFO).map(([k, [n, d]]) => `<label class="${l.mode === k ? 'on' : ''}"><input type="radio" name="mode" value="${k}" ${l.mode === k ? 'checked' : ''}><b>${n}</b>${d}</label>`).join('')}</div>
+      <div id="modeExtra"></div>
+      <label class="f">對應的事務所工具${tip('勾選後，「🧰 事務所工具」分頁就知道這個工具已經加入展覽館。')}</label>
+      <div class="fromlist">${S.tools.map((t) => `<label><input type="checkbox" data-from="${esc(t.id)}" ${l.from.includes(t.id) ? 'checked' : ''}>${esc(t.icon)} ${esc(t.name)}</label>`).join('')}</div>
+      <p class="muted small" style="margin-top:10px">網址代號：<b>${esc(id)}</b>（說明頁 guide.html?app=${esc(id)}、分享頁 share/${esc(id)}.html，建立後不能改）</p>`;
+    if (E.tab === 'intro') return `<label class="f">副標題${tip('顯示在說明頁最上方大標題下面')}</label><input type="text" data-it="sub" value="${esc(it.sub || '')}" maxlength="80">
+      ${field('intro', '簡介', '說明頁最上面的一段介紹，3～5 句最好。' + BOLD, 5)}
+      ${lineField('facts', 2, '快速資訊（小方塊）', '一行一個：標題｜內容\n例：適合｜高一化學\n例：學生要準備｜手機', 4)}
+      ${field('notice', '使用前請先看（選填）', '有特別要提醒的事才填，會用黃色方塊顯示在最前面。' + BOLD, 3)}
+      ${lineField('links', 2, '額外按鈕（選填）', '一行一個：按鈕文字｜網址（https:// 開頭）\n分享頁不會顯示這些按鈕。', 2)}`;
+    if (E.tab === 'flow') return `${lineField('flow', 4, '上課流程', '一行一個步驟：圖示｜步驟｜小字說明｜老師或學生\n例：📱｜學生加入｜輸入代碼｜學生', 6)}
+      ${lineField('feats', 3, '主要功能', '一行一個：圖示｜功能名稱｜一句話說明\n例：📊｜能力分析｜依難度統計答對率', 7)}
+      ${lineField('tools', 3, '包含哪些系統（選填）', '一個卡片包含好幾個系統時才填：圖示｜名稱｜說明', 3)}`;
+    if (E.tab === 'sides') return `${oneField('student', '👩‍🎓 學生端', '一行一點')}${oneField('teacher', '👨‍🏫 老師端', '一行一點')}${oneField('prep', '🧰 開始前要準備', '一行一點')}`;
+    if (E.tab === 'faq') return lineField('faq', 2, '常見問題', '一行一題：問題｜回答\n例：要付費嗎？｜不用，免費使用。', 10);
+    return `<div class="info small">📸 可以一次選好幾張。會自動壓縮成網頁用的大小；寬度小於 600 的（手機截圖）會放在「📱 學生端」那一區。<b>畫面裡的學生姓名請用假名。</b></div>
+      <div class="row"><label class="btn small"><input type="file" id="upl" accept="image/*" multiple hidden>⬆️ 上傳截圖</label><span id="uplMsg" class="muted small"></span></div>
+      <div id="shotList">${it.shots.length ? it.shots.map((s, i) => `<div class="shotrow"><img data-src="${esc(s[0])}" alt=""><div><input type="text" data-cap="${i}" value="${esc(s[1] || '')}" placeholder="圖說"><div class="muted small">${s[2] && s[2] < 600 ? '📱 手機畫面' : '💻 電腦畫面'}・${s[2] || '?'}×${s[3] || '?'}${String(s[0]).startsWith('f:') ? '・你上傳的' : '・Claude 拍的'}</div></div>
+        <div class="ops"><button data-smv="${i}" data-d="-1">▲</button> <button data-smv="${i}" data-d="1">▼</button> <button data-sdel="${i}">🗑</button></div></div>`).join('') : '<p class="muted" style="padding:14px 0">還沒有截圖。</p>'}</div>`;
+  }
+  function paint() {
+    md.innerHTML = `<div class="mbox"><div class="mhead"><h3>${esc(l.icon)} ${esc(l.name)}</h3><span class="sw ${l.on ? 'on' : ''}" id="eOn"><i></i>${l.on ? '展出中' : '未展出'}</span><span class="grow"></span>
+        ${S.pub.list[id] ? `<a class="btn small ghost" href="guide.html?app=${encodeURIComponent(id)}&preview=1" target="_blank" rel="noopener">👀 預覽說明頁 ↗</a>` : ''}</div>
+      <div class="mtabs">${TABS.map(([k, n]) => `<button data-et="${k}" class="${E.tab === k ? 'on' : ''}">${n}</button>`).join('')}</div>
+      <div class="mbody">${body()}</div>
+      <div class="mfoot"><button class="btn" id="eSave">💾 儲存</button><button class="btn ghost" id="eSaveX">儲存並關閉</button><span class="grow"></span><span class="muted small" id="eDirty">${E.dirty ? '● 有還沒儲存的修改' : ''}</span><button class="btn ghost" id="eX">關閉</button></div></div>`;
+    $$('[data-et]', md).forEach((b) => { b.onclick = () => { collect(); E.tab = b.dataset.et; paint(); }; });
+    $$('input, textarea, select', md).forEach((x) => { x.addEventListener('input', () => { E.dirty = true; $('#eDirty', md).textContent = '● 有還沒儲存的修改'; }); });
+    $$('[name=mode]', md).forEach((r) => { r.onchange = () => { collect(); l.mode = r.value; paint(); }; });
+    const dsel = $('[data-l="drawer"]', md); if (dsel) dsel.onchange = () => { collect(); paint(); };
+    $('#eOn', md).onclick = () => { collect(); l.on = !l.on; E.dirty = true; paint(); };
+    $('#eSave', md).onclick = () => doSave(false); $('#eSaveX', md).onclick = () => doSave(true);
+    $('#eX', md).onclick = () => { collect(); if (E.dirty && !confirm('有還沒儲存的修改，確定要關閉嗎？')) return; md.remove(); S.edit = null; render(); };
+    if (E.tab === 'card') modeExtra();
+    if (E.tab === 'shots') shotsWire();
+  }
+  function modeExtra() {
+    const box = $('#modeExtra', md);
+    if (l.mode === 'apply') {
+      box.innerHTML = `<label class="f">會員中心的系統代號${tip('其他老師申請時要勾的系統。新的需要帳號的系統，要先請 Claude 接上會員中心才會出現在這裡。')}</label>
+        <select data-l="app"><option value="">（請選擇）</option>${Object.entries(APPS).map(([k, a]) => `<option value="${esc(k)}" ${l.app === k ? 'selected' : ''}>${esc(a.name)}（${esc(k)}）</option>`).join('')}</select>
+        ${l.app && !APPS[l.app] ? '<div class="warn">這個系統代號已經不在會員中心了。</div>' : ''}`;
+    } else if (l.mode === 'open') {
+      box.innerHTML = `<label class="f">工具網址${tip('站內網址從網站根目錄寫起，例如 gamification/picker.html；外部網站寫完整 https:// 網址。')}</label><input type="text" data-l="url" value="${esc(l.url || '')}"><div id="safeBox" class="small muted" style="margin-top:6px">檢查中…</div>`;
+      const run = () => safety($('[data-l="url"]', md).value).then((s) => { const b = $('#safeBox', md); if (!b) return; b.innerHTML = s === 'bad' ? '<div class="warn">⚠️ 這個頁面有「回事務所首頁」的按鈕，其他老師點了會看到你的私人首頁。請改成「👀 只展示」，或請 Claude 拿掉那顆按鈕。</div>' : s === 'ok' ? '<div class="okbox">✅ 頁面沒有回事務所首頁的按鈕，可以直接開啟。</div>' : s === 'ext' ? '<div class="okbox">🌐 外部網站，會在新分頁打開。</div>' : '<div class="warn">❓ 找不到這個頁面，請確認網址。</div>'; });
+      run(); $('[data-l="url"]', md).addEventListener('change', run);
+    } else box.innerHTML = '';
+  }
+  function shotsWire() {
+    $$('img[data-src]', md).forEach((im) => { const s = im.dataset.src; if (s.startsWith('f:')) SC.fimg(s.slice(2), false).then((d) => { if (d) im.src = d; }); else im.src = SC.thumb(s); });
+    $$('[data-cap]', md).forEach((x) => { x.oninput = () => { it.shots[+x.dataset.cap][1] = x.value; E.dirty = true; }; });
+    $$('[data-smv]', md).forEach((b) => { b.onclick = () => { const i = +b.dataset.smv, j = i + +b.dataset.d; if (j < 0 || j >= it.shots.length) return; [it.shots[i], it.shots[j]] = [it.shots[j], it.shots[i]]; E.dirty = true; paint(); }; });
+    $$('[data-sdel]', md).forEach((b) => { b.onclick = () => { const s = it.shots[+b.dataset.sdel]; if (!confirm('刪除這張截圖？')) return; it.shots.splice(+b.dataset.sdel, 1); if (String(s[0]).startsWith('f:')) (E.gone = E.gone || []).push(s[0].slice(2)); E.dirty = true; paint(); }; });
+    $('#upl', md).onchange = async (e) => {
+      const files = Array.from(e.target.files || []); if (!files.length) return;
+      for (let k = 0; k < files.length; k++) {
+        $('#uplMsg', md).textContent = `壓縮並上傳第 ${k + 1}／${files.length} 張…`;
+        try { const r = await compress(files[k]); const iid = rid(14); await FB.set('showcase/img/' + iid, { data: r.data, t: r.t }); it.shots.push(['f:' + iid, files[k].name.replace(/\.[^.]+$/, ''), r.w, r.h]); E.dirty = true; }
+        catch (err) { toast(`「${files[k].name}」上傳失敗：${err.message || err}`, true); }
+      }
+      paint(); toast('📸 上傳完成，記得按 💾 儲存');
+    };
+  }
+  function collect() {
+    $$('[data-l]', md).forEach((x) => { l[x.dataset.l] = x.value.trim(); });
+    $$('[data-it]', md).forEach((x) => { it[x.dataset.it] = x.value.trim(); });
+    $$('[data-lines]', md).forEach((x) => { const k = x.dataset.lines, n = +x.dataset.n; it[k] = PARSE(x.value, n, k === 'flow' ? (a) => { a[3] = /學|^s$/i.test(a[3]) ? 's' : 't'; return a; } : null); });
+    $$('[data-one]', md).forEach((x) => { it[x.dataset.one] = PONE(x.value); });
+    if ($$('[data-from]', md).length) l.from = $$('[data-from]', md).filter((c) => c.checked).map((c) => c.dataset.from);
+  }
+  async function doSave(close) {
+    collect();
+    if (!l.name.trim()) return toast('請填系統名稱', true);
+    if (l.on) { const why = await canShow(l); if (why) { E.tab = 'card'; paint(); return toast(why, true); } }
+    const item = {}; Object.entries(it).forEach(([k, v]) => { if (Array.isArray(v) ? v.length : v) item[k] = v; });
+    const lst = Object.assign({}, l); if (lst.mode !== 'apply') lst.app = ''; if (lst.mode !== 'open' && !lst.url) lst.url = '';
+    try {
+      await save({ [`list/${id}`]: lst, [`items/${id}`]: item }, l.on ? '💾 已儲存，展覽館已更新' : '💾 已儲存（目前未展出）');
+      for (const g of E.gone || []) await FB.remove('showcase/img/' + g).catch(() => {});
+      E.gone = []; E.dirty = false; E.isNew = false;
+      if (close) { md.remove(); S.edit = null; render(); } else paint();
+    } catch (e) { toast('儲存失敗：' + (e.code || e.message), true); }
+  }
+  paint();
+}
+
+/* ---------- 截圖壓縮：最長邊 1200、WebP（不支援就 JPEG），超過大小就降品質；縮圖一半大小 ---------- */
+async function compress(file) {
+  const img = await new Promise((ok, bad) => { const u = URL.createObjectURL(file), i = new Image(); i.onload = () => { URL.revokeObjectURL(u); ok(i); }; i.onerror = () => bad(new Error('不是圖片檔')); i.src = u; });
+  const draw = (w) => { const c = document.createElement('canvas'); c.width = w; c.height = Math.round(img.height * w / img.width); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); return c; };
+  const enc = (c, q) => { let d = c.toDataURL('image/webp', q); if (!d.startsWith('data:image/webp')) d = c.toDataURL('image/jpeg', q); return d; };
+  let w = Math.min(1200, img.width), c = draw(w), q = 0.82, data = enc(c, q);
+  while (data.length > 430000 && (q > 0.45 || w > 600)) { if (q > 0.45) q -= 0.08; else { w = Math.round(w * 0.8); c = draw(w); } data = enc(c, q); }
+  if (data.length > 430000) throw new Error('圖片太大，請先裁小一點');
+  const tw = w >= 600 ? 600 : 240, t = enc(draw(Math.min(tw, w)), 0.76);
+  return { data, t, w, h: c.height };
+}
+
+boot();
+</script>
+</body>
+</html>

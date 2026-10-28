@@ -1143,6 +1143,20 @@
      }
     }
    }
+  },
+  "showcase": {
+   "pub": {
+    ".read": true,
+    ".write": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true)",
+    ".validate": "newData.hasChild('rev') && newData.child('rev').isNumber()"
+   },
+   "img": {
+    "$id": {
+     ".read": true,
+     ".write": "(auth != null && auth.token.email === 'puff0223@gmail.com' && auth.token.email_verified === true)",
+     ".validate": "$id.matches(/^[a-z0-9]{10,20}$/) && (!newData.exists() || (newData.hasChildren(['data', 't']) && newData.child('data').isString() && newData.child('data').val().length < 450000 && newData.child('t').isString() && newData.child('t').val().length < 150000 && newData.child('data').val().beginsWith('data:image/') && newData.child('t').val().beginsWith('data:image/')))"
+    }
+   }
   }
  }
 }

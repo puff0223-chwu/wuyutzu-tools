@@ -1,0 +1,67 @@
+# 🏛️ 教師展覽館：社群分享頁＋預覽圖自動重做（2026-10-28）
+# 老師在 showcase/admin.html 改了展覽館 → Firebase showcase/pub 的 rev 會變
+# 這裡每 30 分鐘看一次 rev：跟 showcase/share/rev.txt 一樣就什麼都不做（幾秒鐘結束）；
+# 不一樣才重做 share/<代號>.html、share/og/<代號>.jpg、下載老師上傳的截圖到 share/media/，再推回 main。
+# 也可以在 GitHub 的 Actions 分頁按「Run workflow」馬上跑一次。
+name: 🏛️ 展覽館分享頁自動更新
+
+on:
+  schedule:
+    - cron: '17,47 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: showcase-share
+  cancel-in-progress: false
+
+env:
+  DB: https://point-collection-stash-default-rtdb.asia-southeast1.firebasedatabase.app
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: 🔎 展覽館有沒有改過？
+        id: rev
+        run: |
+          curl -fsS "$DB/showcase/pub.json" -o /tmp/pub.json
+          NEW=$(python3 -c "import json;p=json.load(open('/tmp/pub.json')) or {};print(p.get('rev') or '')")
+          OLD=$(cat showcase/share/rev.txt 2>/dev/null || true)
+          echo "新 rev=$NEW　舊 rev=$OLD"
+          if [ -z "$NEW" ]; then echo "還沒在管理頁匯入，先不動"; echo "go=0" >> $GITHUB_OUTPUT
+          elif [ "$NEW" = "$OLD" ] && [ "${{ github.event_name }}" != "workflow_dispatch" ]; then echo "沒有改，結束"; echo "go=0" >> $GITHUB_OUTPUT
+          else echo "go=1" >> $GITHUB_OUTPUT; fi
+
+      - uses: actions/setup-node@v5
+        if: steps.rev.outputs.go == '1'
+        with:
+          node-version: 22
+
+      - name: 📄 重做分享頁（含下載老師上傳的截圖）
+        if: steps.rev.outputs.go == '1'
+        run: node showcase/tools/build_share.js --pub /tmp/pub.json
+
+      - name: 🖼️ 重做社群預覽圖
+        if: steps.rev.outputs.go == '1'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk fonts-noto-color-emoji > /dev/null
+          pip install -q playwright pillow
+          python -m playwright install --with-deps chromium > /dev/null
+          python showcase/tools/make_og.py --pub /tmp/pub.json
+
+      - name: 📤 推回 main
+        if: steps.rev.outputs.go == '1'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A showcase/share
+          if git diff --cached --quiet; then echo "內容沒有變化"; exit 0; fi
+          git commit -m "🏛️ 展覽館分享頁自動更新（rev $(cat showcase/share/rev.txt)）"
+          for i in 1 2 3; do git pull --rebase -q && git push && exit 0; sleep 5; done
+          exit 1

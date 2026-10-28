@@ -46,14 +46,16 @@ wuyutzu-tools/
 │   ├── staff.js                  #   各系統共用的權限檢查（WuStaff）
 │   └── fb.js                     #   各老師頁共用的 Firebase 連線、Email／Google 登入（ES module）
 ├── showcase/                     # 🏛️ 教師展覽館（2026-10-24）：給其他老師看的對外展示站，不連回事務所首頁
-│   ├── index.html                #   展覽館首頁（外觀同事務所首頁，只列會員中心 APPS 裡的系統）
-│   ├── guide.html                #   各系統使用說明頁 guide.html?app=代號
-│   ├── data.js                   #   ⭐ 各系統說明內容 GUIDES（key＝會員中心系統代號）
-│   ├── showcase.js               #   共用：合併 APPS＋GUIDES、網址、說明頁內容 pageHTML(t, 'guide'|'share')
+│   ├── index.html                #   展覽館首頁（外觀同事務所首頁，列 Firebase showcase/pub 裡「展出中」的卡片）
+│   ├── guide.html                #   各系統使用說明頁 guide.html?app=代號（&preview=1：管理頁預覽未展出的卡片）
+│   ├── admin.html                #   🔧 管理頁（2026-10-28，只有管理員）：新增／下架／刪除、分類與順序、編輯說明、上傳截圖
+│   ├── data.js                   #   內建內容：最早 7 個系統的說明＋截圖（第一次「🌱 匯入」用，也是讀不到資料庫時的備用）
+│   ├── drafts.js                 #   內建內容：其他事務所工具的說明初版（Claude 寫，匯入時是「未展出」）
+│   ├── showcase.js               #   共用引擎：讀 showcase/pub、網址、說明頁內容 pageHTML(t, 'guide'|'share')
 │   ├── showcase.css              #   共用樣式（事務所配色）
 │   ├── img/                      #   📸 各系統畫面截圖（WebP，攝影棚拍的假資料畫面）
-│   ├── share/                    #   📤 社群分享頁 <代號>.html（自動產生，不要手改）＋ og/<代號>.jpg 預覽圖
-│   └── tools/                    #   build_share.js（產生分享頁）、make_og.py（產生預覽圖，要 Playwright）
+│   ├── share/                    #   📤 社群分享頁 <代號>.html（GitHub 每 30 分鐘自動產生，不要手改）＋ og/ 預覽圖＋ media/ 老師上傳的截圖＋ rev.txt
+│   └── tools/                    #   build_share.js（產生分享頁，--pub）、make_og.py（產生預覽圖，要 Playwright）
 │
 ├── classroom/                    # 🏫 導師班工具
 │   ├── seating.html              # 舊版座位安排系統（2026-10-10 起首頁改連新版，舊檔保留備查）
@@ -292,6 +294,7 @@ wuyutzu-tools/
 - **`seating/` 抽屜（座位大作戰，2026-10-09）**：老師用 Email 登入（座位系統專用帳號），每個班級記錄 `owner`，規則只讓擁有者讀寫；未來分享給其他老師只要幫對方開帳號。
 - **`fp/` 抽屜（集點小金庫，2026-10-06）**：使用 Firebase Authentication（登入）的工具，規則依登入身分判斷（admins／users／kids／config／ledger），詳見第 6 節「集點小金庫」與附錄規則。
 - **`orienteering/` 抽屜（遺落的地點，2026-10-12）**：老師用專用帳號 `puff0223+gps@gmail.com` 登入；照片代號 `r:<id>` 是網站 `p/` 資料夾裡的內建照片、`f:<id>` 是老師後來上傳存在 Firebase 的照片
+- **`showcase/` 抽屜（🏛️ 教師展覽館，2026-10-28）**：`pub`＝整個展覽館（大家都能讀，只有管理員能寫，一定要有 `rev` 數字）：`drawers/<id>`（分類：name、tag、desc、color、soft、order）、`list/<id>`（卡片：on 展出、drawer、shelf 小分類、order、icon、name、brief、mode＝apply／open／show、app 會員中心代號、url、from 對應的首頁 TOOLS id）、`items/<id>`（說明：sub、intro、facts、notice、tools、flow、feats、student、teacher、prep、faq、links、shots）、`rev`（最後修改時間，GitHub 用來判斷要不要重做分享頁）。`img/<14 碼亂數>`＝老師上傳的截圖 `{data, t}`（dataURL，原圖 < 45 萬字元、縮圖 < 15 萬字元；只能讀單張，不能整包列出）。截圖寫法 `[來源, 圖說, 寬, 高]`，來源 `img/x.webp`（網站檔）或 `f:<id>`（Firebase），寬 < 600＝手機畫面
 - **`exam/` 抽屜（線上檢定所，2026-10-23）**：會員中心登入（app `exam`）。題庫 `bk/<uid>/<題庫>`、圖片 `img/<亂數>`（dataURL，知道代號才讀得到）、測驗 `m/<代碼>`（meta、paper 題目快照、key 正解、roster 名單、s 學生作答、mg 簡答給分、g 成績）、老師清單 `owners/<uid>`。**正確答案只在 `key`，只有出題老師讀得到**（公布正解後學生才讀得到）。詳見第 6 節
 - 與「科學任務偵探所」的 Supabase 完全分開：**Supabase 給大系統、Firebase 給輕量小工具**。
 

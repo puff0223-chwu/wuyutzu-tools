@@ -3,14 +3,18 @@
 貼到 LINE、Facebook 時出現的那張大圖。用每個系統的名稱、一句話介紹和第一張截圖排版。
 要 Playwright（Claude 的工作環境有；老師的 Windows 電腦不用跑這支）：
 
-    node showcase/tools/build_share.js
-    python3 showcase/tools/make_og.py
+    node showcase/tools/build_share.js [--pub pub.json]
+    python3 showcase/tools/make_og.py [--pub pub.json]
+
+GitHub Action（.github/workflows/showcase-share.yml）會自動跑。內容沒變的圖不重做（記在 og/hash.json），
+系統下架時圖會刪掉。
 """
-import json, os, subprocess, pathlib, html
+import json, os, sys, subprocess, pathlib, html, hashlib
 from playwright.sync_api import sync_playwright
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-items = json.loads(subprocess.check_output(['node', str(ROOT / 'tools/build_share.js'), '--json']))
+extra = sys.argv[sys.argv.index('--pub'):sys.argv.index('--pub') + 2] if '--pub' in sys.argv else []
+items = json.loads(subprocess.check_output(['node', str(ROOT / 'tools/build_share.js'), '--json'] + extra))
 OUT = ROOT / 'share/og'; OUT.mkdir(parents=True, exist_ok=True)
 esc = html.escape
 
@@ -51,13 +55,30 @@ h1 .ic{{margin-right:14px}}
 <div class="foot"><div class="badge">🔍</div><div class="brand"><b>巫魚子教課事務所</b><span>巫魚子老師開發的教學系統</span></div></div>
 </body></html>'''
 
-with sync_playwright() as p:
+HASHF = OUT / 'hash.json'
+try: old = json.loads(HASHF.read_text())
+except Exception: old = {}
+new, todo = {}, []
+for it in items:
+    h = page(it)
+    if it['shot']:
+        f = ROOT / it['shot'][0]
+        h += str(f.stat().st_size) if f.exists() else ''
+    new[it['code']] = hashlib.sha1(h.encode()).hexdigest()[:16]
+    if old.get(it['code']) != new[it['code']] or not (OUT / f"{it['code']}.jpg").exists(): todo.append(it)
+for f in OUT.glob('*.jpg'):
+    if f.stem not in new: f.unlink(); print('🗑 share/og/' + f.name)
+from PIL import Image
+if todo:
+  with sync_playwright() as p:
     b = p.chromium.launch(); pg = b.new_page(viewport={'width': 1200, 'height': 630})
-    for it in items:
+    for it in todo:
         tmp = OUT / f'_{it["code"]}.html'; tmp.write_text(page(it), encoding='utf-8')
         pg.goto(tmp.as_uri()); pg.wait_for_timeout(300)
         png = OUT / f'_{it["code"]}.png'; pg.screenshot(path=str(png))
-        from PIL import Image
         Image.open(png).convert('RGB').save(OUT / f'{it["code"]}.jpg', 'JPEG', quality=84, optimize=True, progressive=True)
         png.unlink(); tmp.unlink(); print('✅ share/og/' + it['code'] + '.jpg')
     b.close()
+else:
+    print('預覽圖都沒變，不用重做')
+HASHF.write_text(json.dumps(new, ensure_ascii=False, indent=0, sort_keys=True))

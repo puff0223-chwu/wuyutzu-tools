@@ -9,7 +9,7 @@
 <meta property="og:description" content="座位大作戰、化學實驗室、成績調閱室、線上檢定所、Excel 數據救援、校園定向越野、文獻與 APA……先看說明，再決定要不要申請。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="showcase.css?v=20261024c">
+<link rel="stylesheet" href="showcase.css?v=20261028b">
 </head>
 <body class="home">
 <!-- ⚠️ 這是給其他老師看的展覽館：不放回「事務所首頁」的連結（首頁還有個人、尚未分享的工具） -->
@@ -49,71 +49,74 @@
     <a href="https://sites.google.com/view/teacher-wuyutzu/%E9%A6%96%E9%A0%81?authuser=0" target="_blank" rel="noopener">巫魚子網站</a>
     <a href="https://www.youtube.com/@chwu0223" target="_blank" rel="noopener">YouTube 頻道</a>
     <a href="../account/?from=showcase">👥 老師會員中心</a>
+    <a href="admin.html" class="admin-link" title="巫魚子老師的管理頁（需要管理員帳號）">🔧</a>
   </footer>
 </div>
 
 <script src="../account/staff.js?v=20261024a"></script>
-<script src="data.js?v=20261024c"></script>
-<script src="showcase.js?v=20261024c"></script>
+<script src="data.js?v=20261028a"></script>
+<script src="drafts.js?v=20261028a"></script>
+<script src="showcase.js?v=20261028a"></script>
 <script>
 (function () {
   var SC = window.SHOWCASE, $ = function (id) { return document.getElementById(id); };
-  var esc = SC.esc, items = SC.list(), DR = SC.drawers();
-  var filterDrawer = -1;
-
-  /* ---------- 篩選 ---------- */
-  var used = DR.map(function (d, i) { return items.some(function (t) { return t.drawer === i; }) ? i : -1; }).filter(function (i) { return i >= 0; });
-  $('chips').innerHTML = '<button class="chip on" data-d="-1" type="button">全部</button>' +
-    used.map(function (i) { var d = DR[i]; return '<button class="chip" data-d="' + i + '" type="button"><span class="dot" style="background:' + d.color + '"></span>' + esc(d.name) + '</button>'; }).join('') +
-    '<span class="count" id="count"></span>';
-  Array.prototype.forEach.call($('chips').querySelectorAll('.chip'), function (b) {
-    b.onclick = function () {
-      filterDrawer = +b.dataset.d;
-      Array.prototype.forEach.call($('chips').querySelectorAll('.chip'), function (x) { x.classList.toggle('on', x === b); });
-      render();
-    };
-  });
-
-  /* ---------- 搜尋 ---------- */
+  var esc = SC.esc, items = [], DR = [], filterDrawer = '';
   var norm = function (s) { return String(s).toLowerCase().replace(/\s+/g, ''); };
+  var drawerName = function (id) { var d = DR.filter(function (x) { return x.id === id; })[0]; return d ? d.name : ''; };
+
+  /* ---------- 篩選膠囊（只列出有展出系統的分類） ---------- */
+  function paintChips() {
+    var used = DR.filter(function (d) { return items.some(function (t) { return t.drawer === d.id; }); });
+    if (filterDrawer && !used.some(function (d) { return d.id === filterDrawer; })) filterDrawer = '';
+    $('chips').innerHTML = '<button class="chip' + (filterDrawer ? '' : ' on') + '" data-d="" type="button">全部</button>' +
+      used.map(function (d) { return '<button class="chip' + (filterDrawer === d.id ? ' on' : '') + '" data-d="' + esc(d.id) + '" type="button"><span class="dot" style="background:' + esc(d.color) + '"></span>' + esc(d.name) + '</button>'; }).join('') +
+      '<span class="count" id="count"></span>';
+    Array.prototype.forEach.call($('chips').querySelectorAll('.chip'), function (b) {
+      b.onclick = function () { filterDrawer = b.dataset.d; paintChips(); render(); };
+    });
+  }
   function matches(t, q) {
     if (!q) return true;
-    var hay = norm(SC.searchText(t) + ' ' + DR[t.drawer].name);
+    var hay = norm(SC.searchText(t) + ' ' + drawerName(t.drawer));
     return q.split(/\s+/).filter(Boolean).every(function (k) { return hay.indexOf(norm(k)) >= 0; });
   }
   $('q').addEventListener('input', function () { $('clear').classList.toggle('hidden', !$('q').value); render(); });
   $('clear').onclick = function () { $('q').value = ''; $('clear').classList.add('hidden'); render(); $('q').focus(); };
 
   /* ---------- 畫抽屜與卡片（點卡片＝打開那個系統的說明頁） ---------- */
+  var PILL = { apply: '<span class="pill mode-apply">🔐 申請使用</span>', open: '<span class="pill mode-open">🚀 免登入</span>', show: '<span class="pill mode-show">👀 展示中</span>' };
   function cardHTML(t) {
-    var d = DR[t.drawer];
-    return '<a class="card" href="guide.html?app=' + encodeURIComponent(t.code) + '" style="--accent:' + d.color + ';--soft:' + d.soft + '">' +
+    var d = SC.drawerOf(t);
+    return '<a class="card" href="guide.html?app=' + encodeURIComponent(t.code) + '" style="--accent:' + esc(d.color) + ';--soft:' + esc(d.soft) + '">' +
       '<span class="icon" aria-hidden="true">' + esc(t.icon) + '</span>' +
       '<span><span class="name">' + esc(t.name) + '</span><br><span class="brief">' + SC.rich(t.brief) + '</span><br>' +
-      '<span class="pill guide">📘 使用說明</span>' + (t.external ? '<span class="pill ext">🌐 獨立網站</span>' : '') + '</span></a>';
+      '<span class="pill guide">📘 使用說明</span>' + (PILL[t.mode] || '') + (t.external ? '<span class="pill ext">🌐 獨立網站</span>' : '') + '</span></a>';
   }
   function render() {
     var q = $('q').value.trim();
-    var shown = items.filter(function (t) { return (filterDrawer < 0 || t.drawer === filterDrawer) && matches(t, q); });
-    var html = '';
-    DR.forEach(function (d, di) {
-      var its = shown.filter(function (t) { return t.drawer === di; });
+    var shown = items.filter(function (t) { return (!filterDrawer || t.drawer === filterDrawer) && matches(t, q); });
+    var html = '', groups = DR.concat([{ id: '__none', name: '其他', tag: 'Drawer +', desc: '', color: '#6d6a75', soft: '#efedf2' }]);
+    groups.forEach(function (d) {
+      var its = shown.filter(function (t) { return d.id === '__none' ? !DR.some(function (x) { return x.id === t.drawer; }) : t.drawer === d.id; });
       if (!its.length) return;
       var shelves = [];
-      its.forEach(function (t) { if (shelves.indexOf(t.shelf) < 0) shelves.push(t.shelf); });
-      html += '<section class="drawer"><div class="drawer-head"><span class="tag" style="background:' + d.color + '">' + esc(d.tag) + '</span><h2>' + esc(d.name) + '</h2><span class="desc">' + esc(d.desc) + '</span></div>' +
-        shelves.map(function (s) {
-          return (shelves.length > 1 ? '<div class="shelf">' + esc(s) + '</div>' : '<div class="shelf"></div>') +
-            '<div class="grid">' + its.filter(function (t) { return t.shelf === s; }).map(cardHTML).join('') + '</div>';
-        }).join('') + '</section>';
+      its.forEach(function (t) { if (shelves.indexOf(t.shelf || '') < 0) shelves.push(t.shelf || ''); });
+      html += '<section class="drawer"><div class="drawer-head"><span class="tag" style="background:' + esc(d.color) + '">' + esc(d.tag) + '</span><h2>' + esc(d.name) + '</h2><span class="desc">' + esc(d.desc) + '</span></div>' +
+        // 小分類卡片少的時候並排（不會一排只有一張、右邊空一大片）
+        '<div class="shelves">' + shelves.map(function (s) {
+          var ss = its.filter(function (t) { return (t.shelf || '') === s; });
+          return '<div class="shelf-g" style="--n:' + Math.min(ss.length, 4) + '">' + (shelves.length > 1 && s ? '<div class="shelf">' + esc(s) + '</div>' : '<div class="shelf"></div>') +
+            '<div class="grid">' + ss.map(cardHTML).join('') + '</div></div>';
+        }).join('') + '</div></section>';
     });
-    $('drawers').innerHTML = html || '<div class="empty">🔎 查無此案……換個關鍵字再找找看吧</div>';
-    $('count').textContent = q || filterDrawer >= 0 ? '找到 ' + shown.length + ' 份卷宗' : '共 ' + items.length + ' 份開放卷宗';
+    $('drawers').innerHTML = html || (items.length ? '<div class="empty">🔎 查無此案……換個關鍵字再找找看吧</div>' : '<div class="empty">🗄️ 目前沒有展出的卷宗</div>');
+    $('count').textContent = q || filterDrawer ? '找到 ' + shown.length + ' 份卷宗' : '共 ' + items.length + ' 份開放卷宗';
   }
   document.addEventListener('keydown', function (e) {
     if (e.key === '/' && document.activeElement !== $('q')) { e.preventDefault(); $('q').focus(); }
   });
-  render();
+  // 先用這台裝置存的上一份畫出來，再換成 Firebase 的最新內容
+  SC.load(function () { items = SC.list(); DR = SC.drawers(); paintChips(); render(); });
 })();
 </script>
 </body>
