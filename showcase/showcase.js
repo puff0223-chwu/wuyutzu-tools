@@ -19,7 +19,7 @@
   var W = root.WuStaff;
   var DB = 'https://point-collection-stash-default-rtdb.asia-southeast1.firebasedatabase.app';
   var SITE = 'https://puff0223-chwu.github.io/wuyutzu-tools/showcase/';
-  var MODES = { apply: '🔐 申請使用', open: '🚀 免登入', show: '👀 展示中' };
+  var MODES = { apply: '🔐 開放申請', open: '🚀 免申請直接用', show: '👀 只展示' };
   var BLANK = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }

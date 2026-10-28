@@ -9,7 +9,7 @@
 <meta property="og:description" content="座位大作戰、化學實驗室、成績調閱室、線上檢定所、Excel 數據救援、校園定向越野、文獻與 APA……先看說明，再決定要不要申請。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="showcase.css?v=20261028b">
+<link rel="stylesheet" href="showcase.css?v=20261028c">
 </head>
 <body class="home">
 <!-- ⚠️ 這是給其他老師看的展覽館：不放回「事務所首頁」的連結（首頁還有個人、尚未分享的工具） -->
@@ -56,7 +56,7 @@
 <script src="../account/staff.js?v=20261024a"></script>
 <script src="data.js?v=20261028a"></script>
 <script src="drafts.js?v=20261028a"></script>
-<script src="showcase.js?v=20261028a"></script>
+<script src="showcase.js?v=20261028c"></script>
 <script>
 (function () {
   var SC = window.SHOWCASE, $ = function (id) { return document.getElementById(id); };
@@ -84,7 +84,7 @@
   $('clear').onclick = function () { $('q').value = ''; $('clear').classList.add('hidden'); render(); $('q').focus(); };
 
   /* ---------- 畫抽屜與卡片（點卡片＝打開那個系統的說明頁） ---------- */
-  var PILL = { apply: '<span class="pill mode-apply">🔐 申請使用</span>', open: '<span class="pill mode-open">🚀 免登入</span>', show: '<span class="pill mode-show">👀 展示中</span>' };
+  var PILL = { apply: '<span class="pill mode-apply">🔐 開放申請</span>', open: '<span class="pill mode-open">🚀 免申請直接用</span>', show: '<span class="pill mode-show">👀 只展示</span>' };
   function cardHTML(t) {
     var d = SC.drawerOf(t);
     return '<a class="card" href="guide.html?app=' + encodeURIComponent(t.code) + '" style="--accent:' + esc(d.color) + ';--soft:' + esc(d.soft) + '">' +

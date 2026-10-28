@@ -16,7 +16,7 @@
    ========================================================= */
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const ROOT = path.join(__dirname, '..'), SITE = path.join(ROOT, '..');
-const VER = '20261028b';
+const VER = '20261028c';
 const arg = (k) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : null; };
 
 const ctx = { console };

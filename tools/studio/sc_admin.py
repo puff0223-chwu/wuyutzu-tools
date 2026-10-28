@@ -50,6 +50,10 @@ with sync_playwright() as p:
     tid = adds[0]
     pg.click(f'[data-add="{tid}"]'); pg.wait_for_selector('.modal')
     pg.fill('[data-l="brief"]', '測試用的一句話介紹')
+    pg.click('label:has([name=use][value=show])'); pg.wait_for_timeout(200)
+    ok(not pg.query_selector('[name=mode]'), '選「只展示」時不顯示申請／免申請')
+    pg.click('label:has([name=use][value=use])'); pg.wait_for_timeout(200)
+    ok(pg.is_checked('[name=mode][value=open]'), '選「開放使用」後，有網址的工具預設「不用申請」')
     pg.screenshot(path=OUT + 'a3_editor_card.png')
     pg.click('[data-et="intro"]'); pg.fill('[data-it="intro"]', '這是<b>測試</b>簡介。')
     pg.fill('[data-lines="facts"]', '適合｜高一\n登入｜免登入')
@@ -73,7 +77,7 @@ with sync_playwright() as p:
     ok(img and img['data'].startswith('data:image/webp') and len(img['data']) < 450000 and len(img['t']) < 150000, f"壓縮後 {len(img['data'])} / 縮圖 {len(img['t'])} 字元")
     # 預覽說明頁（未展出也看得到）
     pv = ctx.new_page(); pv.goto(ORIGIN + '/showcase/guide.html?app=' + newid[0] + '&preview=1'); pv.wait_for_selector('.hero', timeout=8000); pv.wait_for_timeout(1500)
-    ok(pv.query_selector('#pvPill') is not None, '預覽頁顯示「預覽・未展出」')
+    ok(pv.query_selector('#pvPill') is not None, '預覽頁顯示「預覽・展覽館看不見」')
     ok(pv.eval_on_selector_all('.szoom img', 'e => e.filter(i => i.src.startsWith("data:image/webp")).length') == 2, '說明頁載入上傳的截圖')
     pv.screenshot(path=OUT + 'a5_preview.png', full_page=True)
     pv.goto(ORIGIN + '/showcase/guide.html?app=' + newid[0]); pv.wait_for_timeout(1500)

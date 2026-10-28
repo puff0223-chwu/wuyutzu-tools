@@ -6,7 +6,7 @@
 <title>📘 使用說明｜巫魚子教課事務所 教師展覽館</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="showcase.css?v=20261028b">
+<link rel="stylesheet" href="showcase.css?v=20261028c">
 </head>
 <body>
 <!-- ⚠️ 給其他老師看的說明頁：返回鍵只回「教師展覽館」，不連回事務所首頁 -->
@@ -20,7 +20,7 @@
 <script src="../account/staff.js?v=20261024a"></script>
 <script src="data.js?v=20261028a"></script>
 <script src="drafts.js?v=20261028a"></script>
-<script src="showcase.js?v=20261028a"></script>
+<script src="showcase.js?v=20261028c"></script>
 <script>
 (function () {
   var SC = window.SHOWCASE, esc = SC.esc;
@@ -29,7 +29,7 @@
   SC.load(function () {
     // preview=1：管理頁「👀 預覽」用，未展出的卡片也看得到（內容本來就是公開資料，只是不列在展覽館上）
     var t = SC.get(code, { all: preview });
-    if (t && preview && !t.on && !document.getElementById('pvPill')) document.getElementById('topName').insertAdjacentHTML('afterend', ' <span id="pvPill" class="pill mode-show" style="margin-left:8px">預覽・未展出</span>');
+    if (t && preview && !t.on && !document.getElementById('pvPill')) document.getElementById('topName').insertAdjacentHTML('afterend', ' <span id="pvPill" class="pill mode-show" style="margin-left:8px">預覽・展覽館看不見</span>');
     if (!t) {
       page.innerHTML = '<div class="notfound gcard"><div style="font-size:2.6em">🗄️</div><h2 style="justify-content:center">找不到這份卷宗</h2>' +
         '<p>這個系統可能還沒開放，或網址打錯了。</p><p style="margin-top:12px"><a class="btn" href="./">← 回教師展覽館看所有系統</a></p></div>';
