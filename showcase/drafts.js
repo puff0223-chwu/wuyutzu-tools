@@ -4,7 +4,7 @@
    key＝事務所首頁 TOOLS 的 id。第一次在管理頁按「🌱 匯入」時，這些會變成「未展出」的卡片；
    之後老師在管理頁「事務所工具」分頁按「➕ 加入展覽館」，也會優先用這裡的初版。
    內容和 data.js 同格式；drawer：0 班級事務、1 化學實驗室 No.223、2 遊戲研究室、3 探究與實作
-   mode：open＝免登入直接開啟（url＝工具網址）／show＝只展示（例如資料會送到巫魚子老師的表單，或還沒接會員中心）
+   mode：open＝免登入直接開啟（url＝工具網址；頁面不能有回事務所首頁的按鈕，2026-10-28 已全部拿掉）／show＝只展示（例如資料會送到巫魚子老師的表單，或還沒接會員中心）
    ========================================================= */
 (function (root) {
   var SC = root.SHOWCASE = root.SHOWCASE || {};
@@ -68,7 +68,7 @@
     },
     /* ------------------------------------------------ 🎁 戳戳樂 */
     poke: {
-      drawer: 0, shelf: '課堂遊戲化', icon: '🎁', name: '戳戳樂', mode: 'show', url: 'gamification/poke-game.html', from: ['poke'],
+      drawer: 0, shelf: '課堂遊戲化', icon: '🎁', name: '戳戳樂', mode: 'open', url: 'gamification/poke-game.html', from: ['poke'],
       brief: '6×6 格子，隨機獎品，即時開獎音效',
       sub: '6×6 格子 · 即時開獎',
       intro: '把傳統的「戳戳樂」搬上投影幕：上傳一張背景圖片，36 個格子蓋在上面；老師設定獎品與數量，學生輸入座號、點一格就開獎。中獎格閃金光，銘謝惠顧變灰，最後可以下載完整中獎名單。',
@@ -110,7 +110,7 @@
     },
     /* ------------------------------------------------ 🎲 聖誕抽籤 */
     lottery: {
-      drawer: 0, shelf: '班級氣氛', icon: '🎲', name: '聖誕抽籤系統', mode: 'show', url: 'christmas/lottery.html', from: ['lottery'],
+      drawer: 0, shelf: '班級氣氛', icon: '🎲', name: '聖誕抽籤系統', mode: 'open', url: 'christmas/lottery.html', from: ['lottery'],
       brief: '交換禮物神秘配對，保留驚喜感',
       sub: '交換禮物 · 保密配對',
       intro: '班上交換禮物時，自動幫全班配對「誰送給誰」，保證沒有人抽到自己；每個人個別查詢自己的對象，保留驚喜。可以下載備份清單，忘記時也查得回來。',

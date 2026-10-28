@@ -12,7 +12,7 @@ db('PUT', 'showcase', None)
 with sync_playwright() as p:
     b = p.chromium.launch(); ctx = b.new_context(viewport={'width': 1280, 'height': 900}); setup(ctx)
     pg = ctx.new_page(); cons = []
-    pg.on('console', lambda m: cons.append(m.text) if m.type == 'error' and 'ERR_FAILED' not in m.text else None)
+    pg.on('console', lambda m: cons.append(m.text) if m.type == 'error' and 'ERR_FAILED' not in m.text and '404' not in m.text else None)
     pg.on('pageerror', lambda e: cons.append(str(e)))
     ANS = {'v': ''}
     pg.on('dialog', lambda d: d.accept(ANS['v'] if d.type == 'prompt' else None))
@@ -30,7 +30,10 @@ with sync_playwright() as p:
     db('PATCH', 'showcase/pub/list/lottery', {'mode': 'open', 'url': 'christmas/lottery.html'})
     pg.reload(); pg.wait_for_selector('.acard')
     pg.click('[data-tog="lottery"]'); pg.wait_for_timeout(1500)
-    ok(db('GET', 'showcase/pub/list/lottery/on') is not True, '有回首頁按鈕的工具不能用直接開啟展出')
+    ok(db('GET', 'showcase/pub/list/lottery/on') is True, '聖誕抽籤（已拿掉回首頁按鈕）可以直接開啟展出')
+    db('PATCH', 'showcase/pub/list/lottery', {'on': False, 'url': 'christmas/nope.html'})
+    pg.reload(); pg.wait_for_selector('.acard'); pg.click('[data-tog="lottery"]'); pg.wait_for_timeout(1500)
+    ok(db('GET', 'showcase/pub/list/lottery/on') is not True, '直接開啟的網址找不到頁面時不能展出')
     # 排序
     before = db('GET', 'showcase/pub/list/seat/order')
     pg.click('[data-mv="lab"][data-d="-1"]'); pg.wait_for_timeout(1000)
@@ -43,7 +46,7 @@ with sync_playwright() as p:
     adds = pg.eval_on_selector_all('[data-add]', 'e => e.map(x => x.dataset.add)')
     ok(len(adds) >= 1, '還沒加入的工具：' + ','.join(adds))
     bad = pg.eval_on_selector_all('td[data-safe]', 'e => e.filter(x => x.textContent.includes("⚠️")).map(x => x.dataset.safe)')
-    print('   ⚠️ 有回首頁按鈕：', bad)
+    ok(not bad, '事務所工具都沒有回首頁按鈕' + (str(bad) if bad else ''))
     tid = adds[0]
     pg.click(f'[data-add="{tid}"]'); pg.wait_for_selector('.modal')
     pg.fill('[data-l="brief"]', '測試用的一句話介紹')
