@@ -157,7 +157,6 @@
     position: relative; transition: transform 0.08s;
   }
   .tag::before { content: ''; position: absolute; left: 8px; top: 50%; width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--navy); transform: translateY(-50%); background: var(--cream); }
-  .tag.sel { background: var(--mustard); transform: scale(1.03); box-shadow: 0 0 0 3px var(--navy); }
   .tag .used { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 0.7em; font-weight: 700; color: var(--muted); }
 
   /* 證物燒杯 */
@@ -174,7 +173,20 @@
   .beaker .lab.empty { color: #a7a2ae; font-weight: 700; font-size: 0.9em; }
   .beaker .x { flex: none; border: 1.5px solid var(--navy); background: #fff; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 0.85em; }
   .beaker.inmix { background: var(--green-soft); }
-  .beaker.target { box-shadow: 0 0 0 3px var(--mustard); }
+  /* 拖曳 */
+  .tag, .beaker { touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: grab; }
+  .tag:disabled { cursor: default; }
+  .dragging { opacity: 0.4; }
+  .ghost { position: fixed; left: 0; top: 0; z-index: 300; pointer-events: none; margin: -26px 0 0 -30px; font-weight: 900; border: 2.5px solid var(--navy); border-radius: 12px; box-shadow: 4px 4px 0 var(--navy); white-space: nowrap; }
+  .ghost.tag-g { background: var(--mustard); padding: 10px 14px; font-size: 1.05em; rotate: -4deg; }
+  .ghost.cup-g { background: var(--card); padding: 4px 12px 4px 6px; display: flex; align-items: center; gap: 6px; rotate: 6deg; }
+  .ghost.cup-g svg { width: 40px; height: 46px; }
+  .ghost.cup-g b { font-family: 'Bebas Neue', sans-serif; font-size: 1.9em; }
+  body.drag-tag .beaker:not(.dragging) { outline: 3px dashed var(--mustard); outline-offset: 2px; }
+  body.drag-cup .slot { outline: 3px dashed var(--mustard); outline-offset: 2px; }
+  .beaker.over, .slot.over { background: #fff3c4 !important; transform: scale(1.03); }
+  .p-mix.over { box-shadow: 4px 4px 0 var(--navy), 0 0 0 4px var(--mustard); }
+  body.drag-tag, body.drag-cup { cursor: grabbing; }
   .beaker .mk { position: absolute; right: -8px; top: -10px; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-size: 1.35em; font-weight: 900; border: 3px solid; background: #fff; transform: rotate(-12deg); animation: stamp 0.25s ease-out; }
   .beaker .mk.ok { color: var(--green); border-color: var(--green); }
   .beaker .mk.ng { color: var(--red); border-color: var(--red); }
@@ -307,8 +319,8 @@
     </div>
 
     <div class="steps">
-      <div class="step"><div class="n">⚗️</div><p><b>① 混合觀察</b>點兩個燒杯放上混合檯，看實驗照片</p></div>
-      <div class="step"><div class="n">🏷️</div><p><b>② 貼上標籤</b>先點藥品名稱，再點燒杯</p></div>
+      <div class="step"><div class="n">⚗️</div><p><b>① 混合觀察</b>把兩個燒杯拖到混合檯，看實驗照片</p></div>
+      <div class="step"><div class="n">🏷️</div><p><b>② 貼上標籤</b>把藥品名稱拖到燒杯上放開</p></div>
       <div class="step"><div class="n">🔏</div><p><b>③ 結案對答案</b>每杯都貼好就能結案，看你是不是精熟</p></div>
     </div>
 
@@ -356,7 +368,7 @@
       <button class="iconbtn" data-sound aria-label="音效">🔊</button>
     </div>
 
-    <div class="hint" id="hint" aria-live="polite"><span class="ic">🔍</span><span>點兩個燒杯放上混合檯，看看會發生什麼事。</span></div>
+    <div class="hint" id="hint" aria-live="polite"><span class="ic">🔍</span><span>把燒杯拖到混合檯，看看會發生什麼事。</span></div>
 
     <div class="board">
       <div class="panel p-tags">
@@ -376,7 +388,7 @@
             <button class="slot" id="slot1" aria-label="混合檯第二格"></button>
           </div>
           <div class="photo" id="photo"></div>
-          <p class="mixnote">💡 同一個燒杯放兩次，可以單獨觀察它原本的樣子。點混合檯上的燒杯可以拿下來。</p>
+          <p class="mixnote">💡 同一個燒杯拖進兩格，可以單獨觀察它原本的樣子。點混合檯上的燒杯可以拿下來。</p>
         </div>
       </div>
     </div>
@@ -587,7 +599,7 @@
     const idx = [...Array(q.n)].map((_, i) => i + 1);
     G = {
       q, cups: shuffle(idx.slice()), order: shuffle(idx.slice()),
-      label: Array(q.n).fill(0), mix: [-1, -1], sel: 0, done: false, t0: Date.now(), result: null
+      label: Array(q.n).fill(0), mix: [-1, -1], done: false, t0: Date.now(), result: null
     };
     // 預先載入照片，混合時不用等
     new Set(Object.values(q.pairs)).forEach(p => { const im = new Image(); im.src = photoSrc(p); });
@@ -614,7 +626,7 @@
     // 嫌疑藥品
     $('#tags').innerHTML = G.order.map(r => {
       const used = G.label.filter(x => x === r).length;
-      return `<button class="tag ${G.sel === r ? 'sel' : ''}" data-r="${r}" ${G.done ? 'disabled' : ''}>${nameHTML(q, r)}${used ? `<span class="used">×${used}</span>` : ''}</button>`;
+      return `<button class="tag" data-r="${r}" ${G.done ? 'disabled' : ''}>${nameHTML(q, r)}${used ? `<span class="used">×${used}</span>` : ''}</button>`;
     }).join('');
 
     // 證物燒杯
@@ -622,7 +634,7 @@
       const lab = G.label[i], inmix = G.mix.includes(i);
       let mk = '';
       if (G.done && G.result) mk = G.result.ok[i] ? '<span class="mk ok" aria-label="正確">✓</span>' : '<span class="mk ng" aria-label="錯誤">✗</span>';
-      return `<div class="beaker ${inmix ? 'inmix' : ''} ${G.sel && !G.done ? 'target' : ''}" role="button" tabindex="0" data-i="${i}" aria-label="燒杯 ${LETTER[i]}">
+      return `<div class="beaker ${inmix ? 'inmix' : ''}" data-i="${i}" aria-label="燒杯 ${LETTER[i]}">
         <div class="glass">${glassSVG(inmix)}<span class="L">${LETTER[i]}</span></div>
         <div class="lab ${lab ? '' : 'empty'}">${lab ? nameHTML(q, lab) : '？<span class="hm"> 未貼標籤</span>'}</div>
         ${lab && !G.done ? `<button class="x" data-un="${i}" aria-label="撕掉 ${LETTER[i]} 的標籤">✕</button>` : ''}
@@ -636,7 +648,7 @@
       el.classList.toggle('full', i >= 0);
       el.innerHTML = i >= 0
         ? `<div><div class="big">${LETTER[i]}</div><div class="nm">${G.label[i] ? nameHTML(q, G.label[i]) : '？'}</div></div>`
-        : `<div>點一個燒杯<br>放到這裡</div>`;
+        : `<div>把燒杯<br>拖到這裡</div>`;
     });
     const [a, b] = G.mix;
     if (a >= 0 && b >= 0) {
@@ -648,7 +660,7 @@
         $('#photo').innerHTML = `<img src="${photoSrc(p)}" data-p="${p}" alt="${esc(cap)}的實驗照片"><div class="cap">${esc(cap)}</div>`;
       }
     } else {
-      $('#photo').innerHTML = `<div class="ph">🧫<br>混合檯放上兩個燒杯<br>就會出現實驗照片</div>`;
+      $('#photo').innerHTML = `<div class="ph">🧫<br>把兩個燒杯拖到混合檯<br>就會出現實驗照片</div>`;
     }
 
     // 底部
@@ -660,44 +672,95 @@
     $('#leftInfo').textContent = G.done ? `已結案：答對 ${G.result.s} / ${q.n} 杯` : left ? `還有 ${left} 杯沒貼標籤` : '全部貼好了，可以結案！';
 
     if (G.done) hint('🔏', '已結案。✓ 是貼對的燒杯、✗ 是貼錯的。');
-    else if (G.sel) hint('🏷️', `已拿起「<b>${nameHTML(q, G.sel)}</b>」標籤 → 點一個燒杯貼上去（再點一次藥品可以放下）`);
     else if (a >= 0 && b >= 0) hint('👀', '仔細看照片：有沒有沉澱？什麼顏色？想一想是哪兩種藥品。');
-    else hint('🔍', '點兩個燒杯放上混合檯，看看會發生什麼事；推理出來後，<b>先點藥品、再點燒杯</b>貼上標籤。');
+    else hint('🔍', '把燒杯<b>拖到混合檯</b>看看會發生什麼事；推理出來後，把<b>藥品標籤拖到燒杯上</b>放開。');
   }
   function glassSVG(fill) {
     return `<svg viewBox="0 0 46 52" aria-hidden="true"><path d="M7 4h32M10 4v36a8 8 0 0 0 8 8h10a8 8 0 0 0 8-8V4" fill="none" stroke="#1f2a44" stroke-width="2.5" stroke-linecap="round"/><path d="M12 22h22v18a6 6 0 0 1-6 6H18a6 6 0 0 1-6-6z" fill="${fill ? '#bfe3cd' : '#e8eef6'}"/></svg>`;
   }
 
-  // 點藥品：拿起／放下標籤
-  $('#tags').addEventListener('click', e => {
-    const b = e.target.closest('[data-r]'); if (!b || !G || G.done) return;
-    const r = +b.dataset.r;
-    G.sel = G.sel === r ? 0 : r; sfx.pick(); renderGame();
+  // ---------- 拖曳：按住 → 移動 → 放開（2026-11-03 巫老師指定，滑鼠、手指都用 Pointer Events） ----------
+  // 藥品標籤拖到燒杯＝貼標籤；燒杯拖到混合檯＝倒進去；只點一下不拖，會提示怎麼拖
+  let D = null;
+  function srcOf(e) {
+    if (!G || G.done || e.target.closest('[data-un]')) return null;
+    const t = e.target.closest('#tags [data-r]'); if (t) return { kind: 'tag', r: +t.dataset.r, el: t };
+    const b = e.target.closest('#beakers [data-i]'); if (b) return { kind: 'cup', i: +b.dataset.i, el: b };
+    return null;
+  }
+  function targetAt(kind, x, y) {
+    const el = document.elementFromPoint(x, y); if (!el) return null;
+    if (kind === 'tag') { const b = el.closest('#beakers [data-i]'); return b ? { el: b, i: +b.dataset.i } : null; }
+    const sl = el.closest('.slot'); if (sl) return { el: sl, slot: +sl.id.slice(4) };
+    const pm = el.closest('.p-mix'); if (pm) return { el: pm, slot: -1 };
+    return null;
+  }
+  function markOver() {
+    const t = targetAt(D.kind, D.x, D.y), el = t ? t.el : null;
+    if (el !== D.over) { if (D.over) D.over.classList.remove('over'); D.over = el; if (el) el.classList.add('over'); }
+  }
+  function autoScroll() {   // 拖到畫面上下邊緣會自動捲動（手機上混合檯、藥品可能不在同一個畫面）
+    if (!D || !D.on) return;
+    const m = 70, h = window.innerHeight;
+    const v = D.y < m ? -(m - D.y) / 3 : D.y > h - m ? (D.y - (h - m)) / 3 : 0;
+    if (v) { window.scrollBy(0, v); markOver(); }
+    requestAnimationFrame(autoScroll);
+  }
+  document.addEventListener('pointerdown', e => {
+    if (e.button > 0 || D) return;
+    const s = srcOf(e); if (!s) return;
+    e.preventDefault();
+    D = { ...s, pid: e.pointerId, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, on: false, ghost: null, over: null };
   });
-  // 點燒杯：手上有標籤就貼上，沒有就放上混合檯
-  function onBeaker(e) {
-    if (!G || G.done) return;
-    const un = e.target.closest('[data-un]');
-    if (un) { e.stopPropagation(); G.label[+un.dataset.un] = 0; sfx.pick(); renderGame(); return; }
-    const el = e.target.closest('[data-i]'); if (!el) return;
-    const i = +el.dataset.i;
-    if (G.sel) {
-      G.label[i] = G.sel; G.sel = 0; sfx.put(); renderGame(); return;
+  document.addEventListener('pointermove', e => {
+    if (!D || e.pointerId !== D.pid) return;
+    D.x = e.clientX; D.y = e.clientY;
+    if (!D.on) {
+      if (Math.hypot(D.x - D.x0, D.y - D.y0) < 6) return;
+      D.on = true;
+      const w = document.createElement('div');
+      w.innerHTML = D.kind === 'tag'
+        ? `<div class="ghost tag-g">🏷️ ${nameHTML(G.q, D.r)}</div>`
+        : `<div class="ghost cup-g">${glassSVG(true)}<b>${LETTER[D.i]}</b></div>`;
+      D.ghost = w.firstElementChild; document.body.appendChild(D.ghost);
+      D.el.classList.add('dragging'); document.body.classList.add(D.kind === 'tag' ? 'drag-tag' : 'drag-cup');
+      sfx.pick(); requestAnimationFrame(autoScroll);
     }
-    if (G.mix[0] < 0) G.mix[0] = i;
-    else if (G.mix[1] < 0) G.mix[1] = i;
-    else G.mix = [i, -1];               // 兩格都滿：換一組新的
-    G.mix[1] >= 0 ? sfx.mix() : sfx.put();
+    e.preventDefault();
+    D.ghost.style.transform = `translate(${D.x}px, ${D.y}px)`;
+    markOver();
+  }, { passive: false });
+  function endDrag(e, cancel) {
+    if (!D || e.pointerId !== D.pid) return;
+    const d = D; D = null;
+    if (!d.on) { toast(d.kind === 'tag' ? '按住藥品標籤，拖到燒杯上再放開' : '按住燒杯，拖到混合檯再放開'); return; }
+    d.ghost.remove(); d.el.classList.remove('dragging'); if (d.over) d.over.classList.remove('over');
+    document.body.classList.remove('drag-tag', 'drag-cup');
+    if (cancel || !G || G.done) return;
+    const t = targetAt(d.kind, d.x, d.y);
+    if (!t) return;
+    if (d.kind === 'tag') { G.label[t.i] = d.r; sfx.put(); }
+    else {
+      let k = t.slot;
+      if (k < 0) k = G.mix[0] < 0 ? 0 : G.mix[1] < 0 ? 1 : 1;   // 丟在混合檯其他地方：放進空格，兩格都滿就換第二格
+      G.mix[k] = d.i;
+      G.mix[0] >= 0 && G.mix[1] >= 0 ? sfx.mix() : sfx.put();
+    }
     renderGame();
   }
-  $('#beakers').addEventListener('click', onBeaker);
-  $('#beakers').addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-i]')) { e.preventDefault(); onBeaker(e); } });
+  document.addEventListener('pointerup', e => endDrag(e, false));
+  document.addEventListener('pointercancel', e => endDrag(e, true));
+  // 撕掉標籤（✕）
+  $('#beakers').addEventListener('click', e => {
+    const un = e.target.closest('[data-un]'); if (!un || !G || G.done) return;
+    G.label[+un.dataset.un] = 0; sfx.pick(); renderGame();
+  });
   [0, 1].forEach(k => $('#slot' + k).addEventListener('click', () => {
     if (!G || G.done || G.mix[k] < 0) return;
     G.mix[k] = -1; if (k === 0 && G.mix[1] >= 0) G.mix = [G.mix[1], -1];
     sfx.pick(); renderGame();
   }));
-  $('#btnClearLabels').addEventListener('click', () => { if (!G || G.done) return; G.label.fill(0); G.sel = 0; renderGame(); });
+  $('#btnClearLabels').addEventListener('click', () => { if (!G || G.done) return; G.label.fill(0); renderGame(); });
 
   // ---------- 結案・計分 ----------
   // 原作規則：答對比例 > 90% 精熟、> 50% 基礎、其餘待加強；只保留最好的一次；精熟才能直接玩下一案
@@ -723,7 +786,7 @@
       const s = ok.filter(Boolean).length;
       if (!best || s > best.s) best = { s, ok, alt: perm.some((v, i) => v !== i + 1) };
     }
-    G.done = true; G.sel = 0; G.result = best;
+    G.done = true; G.result = best;
     const ratio = best.s / n, g = ratio > 0.9 ? 2 : ratio > 0.5 ? 3 : 4;
     const prev = gradeOf(q.id);
     if (!prev || g < prev) { SAVE.grade[q.id] = g; persist(); }
