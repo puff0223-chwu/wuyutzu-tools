@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧪 化學尋寶｜未知溶液鑑定</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #fbf6ec;
+    --card: #ffffff;
+    --navy: #1f2a44;
+    --navy-2: #34405e;
+    --mustard: #f2b134;
+    --red: #e4572e;
+    --green: #2f8f5b;       /* 本案主色：證物綠 */
+    --green-soft: #e3f3e9;
+    --line: #ece3d2;
+    --muted: #6d6a75;
+    /* 成績四種狀態（一律搭配文字＋圖示，不只靠顏色） */
+    --s-none: #ffffff;
+    --s-master: #fff3c4;
+    --s-basic: #dcebff;
+    --s-weak: #ffe1d8;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+    color: var(--navy); background-color: var(--cream);
+    background-image:
+      linear-gradient(45deg, rgba(31,42,68,0.035) 25%, transparent 25%, transparent 75%, rgba(31,42,68,0.035) 75%),
+      linear-gradient(45deg, rgba(31,42,68,0.035) 25%, transparent 25%, transparent 75%, rgba(31,42,68,0.035) 75%);
+    background-size: 22px 22px; background-position: 0 0, 11px 11px;
+    min-height: 100vh; padding: 0 14px 30px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  .hidden { display: none !important; }
+  button { font: inherit; color: inherit; }
+  sub { font-size: 0.68em; vertical-align: -0.28em; line-height: 0; }
+
+  /* ===== 招牌 ===== */
+  header.sign { display: flex; align-items: center; gap: 16px; padding: 26px 0 14px; }
+  .badge {
+    flex: none; width: 70px; height: 70px; border-radius: 50%;
+    background: var(--green); display: grid; place-items: center; font-size: 2em;
+    box-shadow: 0 0 0 5px var(--cream), 0 0 0 8px var(--navy), 0 10px 20px rgba(31,42,68,0.25);
+    transform: rotate(-8deg);
+  }
+  .eyebrow { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.18em; color: var(--red); font-size: 1em; }
+  h1 { font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: clamp(1.9em, 6vw, 2.7em); letter-spacing: 0.08em; line-height: 1.15; }
+  h1 .hl { background: linear-gradient(transparent 62%, rgba(47,143,91,0.35) 62%); padding: 0 2px; }
+  .tagline { color: var(--muted); margin-top: 4px; font-size: 0.93em; }
+
+  /* 署名條 */
+  .credit {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px;
+    background: var(--card); border: 2px dashed var(--navy); border-radius: 12px;
+    padding: 8px 14px; font-size: 0.86em; margin-bottom: 16px;
+  }
+  .credit b { font-weight: 900; }
+  .credit .sep { color: var(--line); }
+  .linkbtn { border: none; background: none; cursor: pointer; color: var(--green); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; padding: 2px 0; }
+
+  /* 小按鈕、開關 */
+  .tb { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .chip {
+    font-size: 0.9em; font-weight: 700; cursor: pointer;
+    background: var(--card); border: 2px solid var(--navy); border-radius: 999px; padding: 6px 14px; white-space: nowrap;
+  }
+  .chip.on { background: var(--navy); color: #fff; }
+  .chip small { font-weight: 500; opacity: 0.8; margin-left: 4px; }
+  .seg { display: inline-flex; border: 2px solid var(--navy); border-radius: 999px; overflow: hidden; background: var(--card); }
+  .seg button { border: none; background: none; cursor: pointer; padding: 6px 13px; font-weight: 700; font-size: 0.88em; }
+  .seg button.on { background: var(--navy); color: #fff; }
+  .iconbtn { border: 2px solid var(--navy); background: var(--card); border-radius: 999px; cursor: pointer; padding: 6px 12px; font-weight: 700; font-size: 0.88em; }
+
+  /* 主要按鈕 */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    font-weight: 900; letter-spacing: 0.04em; font-size: 1.02em; cursor: pointer;
+    border: 2.5px solid var(--navy); border-radius: 12px; padding: 11px 18px;
+    background: var(--mustard); color: var(--navy); box-shadow: 3px 3px 0 var(--navy);
+    transition: transform 0.08s, box-shadow 0.08s;
+  }
+  .btn:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--navy); }
+  .btn.green { background: var(--green); color: #fff; }
+  .btn.white { background: var(--card); }
+  .btn:disabled { background: #e9e4d8; color: #9a96a3; border-color: #b9b3a4; box-shadow: none; cursor: not-allowed; }
+  .btn:focus-visible, .chip:focus-visible, .qbtn:focus-visible, .beaker:focus-visible, .tag:focus-visible, .slot:focus-visible { outline: 3px solid var(--mustard); outline-offset: 2px; }
+
+  /* ===== 卷宗室（選題） ===== */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
+  .step { background: var(--card); border: 2px solid var(--navy); border-radius: 12px; padding: 10px 12px; display: flex; gap: 10px; align-items: center; box-shadow: 3px 3px 0 var(--navy); }
+  .step .n { flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--green-soft); display: grid; place-items: center; font-size: 1.15em; }
+  .step p { font-size: 0.86em; line-height: 1.45; }
+  .step p b { display: block; font-size: 1.06em; }
+
+  .folder { background: var(--card); border: 2.5px solid var(--navy); border-radius: 0 16px 16px 16px; box-shadow: 5px 5px 0 var(--navy); position: relative; margin-top: 44px; }
+  .folder-tabs { position: absolute; left: -2.5px; bottom: 100%; display: flex; gap: 4px; flex-wrap: nowrap; overflow-x: auto; max-width: calc(100% + 5px); scrollbar-width: none; }
+  .folder-tabs::-webkit-scrollbar { display: none; }
+  .ftab {
+    flex: none; cursor: pointer; border: 2.5px solid var(--navy); border-bottom: none; border-radius: 12px 12px 0 0;
+    background: #efe8d8; padding: 7px 14px 6px; font-weight: 900; font-size: 0.92em; white-space: nowrap; position: relative; top: 2.5px;
+  }
+  .ftab small { font-weight: 500; color: var(--muted); margin-left: 4px; }
+  .ftab.on { background: var(--card); z-index: 2; }
+  .ftab.on small { color: var(--green); font-weight: 700; }
+  .folder-body { padding: 16px 16px 18px; }
+  .folder-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: 12px; }
+  .folder-head h2 { font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: 1.3em; }
+  .meter { flex: 1; min-width: 160px; height: 12px; border: 2px solid var(--navy); border-radius: 999px; background: #f3efe6; overflow: hidden; display: flex; }
+  .meter i { display: block; height: 100%; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px; font-size: 0.8em; }
+  .legend span { border: 1.5px solid var(--navy); border-radius: 999px; padding: 2px 9px; font-weight: 700; }
+  .qgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 9px; }
+  .qbtn {
+    cursor: pointer; border: 2px solid var(--navy); border-radius: 10px; background: var(--s-none);
+    padding: 8px 4px 6px; text-align: center; box-shadow: 2px 2px 0 var(--navy); transition: transform 0.1s;
+  }
+  .qbtn:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--green); }
+  .qbtn .id { font-family: 'Bebas Neue', sans-serif; font-size: 1.45em; letter-spacing: 0.06em; line-height: 1; }
+  .qbtn .st { font-size: 0.72em; font-weight: 700; color: var(--muted); margin-top: 3px; min-height: 1.2em; }
+  .qbtn.s2 { background: var(--s-master); } .qbtn.s2 .st { color: #8a5a00; }
+  .qbtn.s3 { background: var(--s-basic); } .qbtn.s3 .st { color: #1d4f91; }
+  .qbtn.s4 { background: var(--s-weak); } .qbtn.s4 .st { color: #a33a1c; }
+  .pager { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 14px; font-weight: 700; }
+  .pager button { min-width: 44px; }
+
+  footer.foot { margin-top: 26px; text-align: center; color: var(--muted); font-size: 0.82em; line-height: 1.8; }
+
+  /* ===== 鑑定現場（遊戲） ===== */
+  .gbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 16px 0 12px; }
+  .gbar .case { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.12em; background: var(--red); color: #fff; border-radius: 8px; padding: 2px 10px; font-size: 1.15em; }
+  .gbar h2 { font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: 1.25em; }
+  .gbar .grow { flex: 1; }
+  .hint {
+    background: var(--navy); color: #fff; border-radius: 12px; padding: 9px 14px; font-size: 0.92em; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 10px; min-height: 44px;
+  }
+  .hint .ic { font-size: 1.2em; }
+  .hint b { color: var(--mustard); }
+
+  .board { display: grid; grid-template-columns: minmax(200px, 0.9fr) minmax(250px, 1.15fr) minmax(280px, 1.2fr); gap: 14px; align-items: start; }
+  .panel { background: var(--card); border: 2.5px solid var(--navy); border-radius: 16px; box-shadow: 4px 4px 0 var(--navy); overflow: hidden; }
+  .panel-h { display: flex; align-items: baseline; gap: 8px; padding: 9px 14px; border-bottom: 2px solid var(--navy); background: #f6f1e5; }
+  .panel-h h3 { font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: 1.08em; }
+  .panel-h .en { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.14em; color: var(--muted); font-size: 0.9em; }
+  .panel-b { padding: 12px; }
+
+  /* 嫌疑藥品（標籤） */
+  .tags { display: grid; gap: 8px; }
+  .tag {
+    cursor: pointer; text-align: center; font-weight: 900; font-size: 1.05em;
+    background: #fffaf0; border: 2px solid var(--navy); border-radius: 10px; padding: 10px 8px;
+    position: relative; transition: transform 0.08s;
+  }
+  .tag::before { content: ''; position: absolute; left: 8px; top: 50%; width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--navy); transform: translateY(-50%); background: var(--cream); }
+  .tag.sel { background: var(--mustard); transform: scale(1.03); box-shadow: 0 0 0 3px var(--navy); }
+  .tag .used { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 0.7em; font-weight: 700; color: var(--muted); }
+
+  /* 證物燒杯 */
+  .beakers { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .beaker {
+    cursor: pointer; display: flex; align-items: center; gap: 10px; text-align: left;
+    background: var(--card); border: 2px solid var(--navy); border-radius: 12px; padding: 6px 10px 6px 6px; position: relative;
+    transition: transform 0.08s, background 0.15s;
+  }
+  .beaker .glass { flex: none; width: 46px; height: 52px; position: relative; }
+  .beaker .glass svg { width: 100%; height: 100%; display: block; }
+  .beaker .glass .L { position: absolute; inset: 14px 0 0; display: grid; place-items: center; font-family: 'Bebas Neue', sans-serif; font-size: 1.6em; color: var(--navy); }
+  .beaker .lab { flex: 1; min-width: 0; font-weight: 900; font-size: 1.02em; line-height: 1.25; }
+  .beaker .lab.empty { color: #a7a2ae; font-weight: 700; font-size: 0.9em; }
+  .beaker .x { flex: none; border: 1.5px solid var(--navy); background: #fff; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 0.85em; }
+  .beaker.inmix { background: var(--green-soft); }
+  .beaker.target { box-shadow: 0 0 0 3px var(--mustard); }
+  .beaker .mk { position: absolute; right: -8px; top: -10px; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-size: 1.35em; font-weight: 900; border: 3px solid; background: #fff; transform: rotate(-12deg); animation: stamp 0.25s ease-out; }
+  .beaker .mk.ok { color: var(--green); border-color: var(--green); }
+  .beaker .mk.ng { color: var(--red); border-color: var(--red); }
+  @keyframes stamp { from { transform: scale(2) rotate(-12deg); opacity: 0; } to { transform: scale(1) rotate(-12deg); opacity: 1; } }
+
+  /* 混合檯 */
+  .slots { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .slot {
+    cursor: pointer; min-height: 62px; border: 2.5px dashed var(--navy); border-radius: 12px; background: #fbf8f1;
+    display: grid; place-items: center; text-align: center; padding: 6px; font-size: 0.85em; color: var(--muted); font-weight: 700;
+  }
+  .slot.full { border-style: solid; background: var(--green-soft); color: var(--navy); }
+  .slot .big { font-family: 'Bebas Neue', sans-serif; font-size: 2em; line-height: 1; }
+  .slot .nm { font-size: 0.92em; font-weight: 900; }
+  .plus { font-weight: 900; font-size: 1.4em; }
+  .photo { position: relative; border: 2.5px solid var(--navy); border-radius: 12px; overflow: hidden; background: #2a2f3a; aspect-ratio: 3 / 4; max-height: 62vh; margin: 0 auto; }
+  .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .photo .ph { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: #cfd3dc; padding: 20px; font-size: 0.95em; line-height: 1.7; }
+  .photo .cap { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(31,42,68,0.86); color: #fff; padding: 7px 10px; font-weight: 700; font-size: 0.9em; text-align: center; }
+  .mixnote { font-size: 0.78em; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; align-items: center; margin-top: 14px; }
+  .actions .left { margin-right: auto; color: var(--muted); font-size: 0.88em; font-weight: 700; }
+
+  /* ===== 彈窗 ===== */
+  .overlay { position: fixed; inset: 0; background: rgba(31,42,68,0.55); z-index: 100; display: none; align-items: center; justify-content: center; padding: 16px; }
+  .overlay.on { display: flex; }
+  .dossier { position: relative; width: min(470px, 100%); max-height: 92vh; overflow: auto; background: var(--card); border: 3px solid var(--navy); border-radius: 18px; box-shadow: 8px 8px 0 var(--navy); animation: pop 0.2s ease; }
+  @keyframes pop { from { transform: scale(0.94); opacity: 0; } to { transform: none; opacity: 1; } }
+  .d-top { background: var(--green); color: #fff; padding: 16px 22px 14px; border-radius: 14px 14px 0 0; }
+  .d-top .no { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.15em; opacity: 0.9; }
+  .d-top h3 { font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: 1.45em; }
+  .d-body { padding: 16px 22px 20px; line-height: 1.75; font-size: 0.95em; }
+  .d-body h4 { font-family: 'Noto Serif TC', serif; font-size: 1.05em; margin: 10px 0 2px; }
+  .d-body dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; }
+  .d-body dt { font-weight: 900; white-space: nowrap; }
+  .close { position: absolute; top: 10px; right: 12px; border: none; background: rgba(255,255,255,0.22); color: #fff; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 1.05em; }
+  .dbtns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+  .dbtns .btn { flex: 1; min-width: 120px; }
+  .input { width: 100%; font: inherit; padding: 9px 12px; border: 2px solid var(--navy); border-radius: 10px; margin-top: 8px; }
+
+  /* 成績報告 */
+  .report { text-align: center; }
+  .report .score { font-size: 1.05em; margin: 4px 0 2px; }
+  .report .score b { font-family: 'Bebas Neue', sans-serif; font-size: 2.6em; letter-spacing: 0.04em; color: var(--green); vertical-align: -0.12em; }
+  .stampbig {
+    display: inline-block; margin: 8px 0 6px; padding: 6px 22px; border: 5px double; border-radius: 12px;
+    font-family: 'Noto Serif TC', serif; font-weight: 900; font-size: 2.3em; letter-spacing: 0.15em; transform: rotate(-6deg);
+    animation: stampin 0.35s cubic-bezier(.2,1.6,.4,1);
+  }
+  @keyframes stampin { from { transform: scale(2.2) rotate(-6deg); opacity: 0; } to { transform: scale(1) rotate(-6deg); opacity: 1; } }
+  .stampbig.s2 { color: #b8860b; border-color: #b8860b; background: #fffbea; }
+  .stampbig.s3 { color: #1d4f91; border-color: #1d4f91; background: #f1f7ff; }
+  .stampbig.s4 { color: var(--red); border-color: var(--red); background: #fff4f0; }
+  .report .meta { color: var(--muted); font-size: 0.9em; }
+  .report .why { font-size: 0.82em; color: var(--muted); margin-top: 6px; }
+
+  .toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); background: var(--navy); color: #fff; padding: 10px 18px; border-radius: 999px; font-weight: 700; font-size: 0.92em; z-index: 200; opacity: 0; transition: opacity 0.2s; pointer-events: none; max-width: 92vw; text-align: center; }
+  .toast.on { opacity: 1; }
+
+  /* ===== 手機、平板 ===== */
+  @media (max-width: 960px) {
+    .board { grid-template-columns: 1fr 1fr; }
+    .p-mix { grid-column: 1 / -1; grid-row: 1; }
+    .mixwrap { display: grid; grid-template-columns: 1fr auto; gap: 8px 14px; align-items: center; }
+    .mixwrap .slots { grid-template-columns: 1fr; gap: 4px; margin: 0; }
+    .mixwrap .plus { text-align: center; line-height: 1.1; }
+    .mixwrap .slot { min-height: 84px; }
+    .photo { height: min(40vh, 430px); width: auto; max-height: none; }
+    .mixwrap .mixnote { grid-column: 1 / -1; margin-top: 0; }
+  }
+  @media (max-width: 640px) {
+    body { padding: 0 10px 24px; }
+    header.sign { padding-top: 18px; gap: 12px; }
+    .badge { width: 54px; height: 54px; font-size: 1.5em; }
+    .steps { gap: 6px; }
+    .step { flex-direction: column; text-align: center; padding: 8px 6px; gap: 4px; box-shadow: 2px 2px 0 var(--navy); }
+    .step .n { width: 30px; height: 30px; font-size: 1em; }
+    .step p { font-size: 0.74em; line-height: 1.35; }
+    .step p b { font-size: 1.12em; }
+    .eyebrow { font-size: 0.82em; letter-spacing: 0.1em; }
+    .ftab { padding: 6px 10px 5px; font-size: 0.85em; }
+    .ftab .lvx { display: none; }
+    .folder { margin-top: 40px; }
+    .board { grid-template-columns: 1fr; gap: 12px; }
+    .p-mix { grid-row: auto; order: 1; }
+    .p-cups { order: 2; } .p-tags { order: 3; }
+    .beakers { grid-template-columns: 1fr 1fr; }
+    .tags { grid-template-columns: 1fr 1fr; }
+    .beaker .glass { width: 38px; height: 44px; }
+    .beaker .lab { font-size: 0.92em; }
+    .mixwrap { grid-template-columns: 0.85fr 1.15fr; gap: 10px; align-items: start; }
+    .mixwrap .slots { gap: 2px; }
+    .mixwrap .slot { min-height: 74px; }
+    .photo { height: auto; width: 100%; }
+    .photo .cap { font-size: 0.78em; padding: 5px 6px; }
+    .photo .ph { font-size: 0.82em; padding: 8px; }
+    .mixwrap .mixnote { grid-column: 1 / -1; margin-top: 0; }
+    .qgrid { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 7px; }
+    .actions { position: sticky; bottom: 0; background: linear-gradient(rgba(251,246,236,0), var(--cream) 30%); padding: 14px 0 6px; }
+    .actions .left { flex-basis: 100%; text-align: center; }
+    .actions .btn { flex: 1; }
+  }
+  @media (max-width: 380px) {
+    .beaker .lab .hm { display: none; }
+    .actions .btn { font-size: 0.9em; padding: 10px 8px; }
+  }
+  @media print { .no-print { display: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ================= 卷宗室（選題） ================= -->
+  <section id="menu">
+    <header class="sign">
+      <div class="badge" aria-hidden="true">🧪</div>
+      <div>
+        <div class="eyebrow">The Unknown Solutions</div>
+        <h1><span class="hl">化學尋寶</span></h1>
+        <p class="tagline">未知溶液鑑定室 · 兩兩混合、觀察沉澱，推理出每一杯是什麼</p>
+      </div>
+    </header>
+
+    <div class="credit">
+      <span>🏛️ 原作 <b>國立臺灣師大附中 自然科教師團隊</b></span>
+      <span class="sep">｜</span>
+      <span>🔎 改製重現 <b>巫魚子老師</b></span>
+      <button class="linkbtn" id="btnCredits">製作團隊</button>
+    </div>
+
+    <div class="steps">
+      <div class="step"><div class="n">⚗️</div><p><b>① 混合觀察</b>點兩個燒杯放上混合檯，看實驗照片</p></div>
+      <div class="step"><div class="n">🏷️</div><p><b>② 貼上標籤</b>先點藥品名稱，再點燒杯</p></div>
+      <div class="step"><div class="n">🔏</div><p><b>③ 結案對答案</b>每杯都貼好就能結案，看你是不是精熟</p></div>
+    </div>
+
+    <div class="tb" style="justify-content:flex-end; margin-bottom:4px;">
+      <div class="seg" role="group" aria-label="藥品顯示方式">
+        <button data-nm="0" class="on">中文名稱</button><button data-nm="1">化學式</button>
+      </div>
+      <button class="iconbtn" id="btnSound" aria-label="音效">🔊 音效</button>
+    </div>
+
+    <div class="folder">
+      <div class="folder-tabs" id="levelTabs" role="tablist"></div>
+      <div class="folder-body">
+        <div class="folder-head">
+          <h2 id="levelTitle">3 種未知物</h2>
+          <div class="meter" id="meter" title="本卷宗進度"></div>
+          <div class="legend">
+            <span style="background:var(--s-none)">○ 未玩</span>
+            <span style="background:var(--s-master)">🏅 精熟</span>
+            <span style="background:var(--s-basic)">🔎 基礎</span>
+            <span style="background:var(--s-weak)">⚠️ 待加強</span>
+          </div>
+        </div>
+        <div class="qgrid" id="qgrid"></div>
+        <div class="pager" id="pager"></div>
+      </div>
+    </div>
+
+    <footer class="foot">
+      <div>成績只存在<b>這台裝置的這個瀏覽器</b>，換裝置或清除瀏覽資料就會重新開始。</div>
+      <div><button class="linkbtn" id="btnReset" style="color:var(--muted)">清除我的紀錄</button></div>
+    </footer>
+  </section>
+
+  <!-- ================= 鑑定現場（遊戲） ================= -->
+  <section id="game" class="hidden">
+    <div class="gbar">
+      <button class="iconbtn" id="btnBack">◀ 回到卷宗</button>
+      <span class="case" id="gCase">CASE 3-01</span>
+      <h2 id="gTitle">3 種未知物</h2>
+      <span class="grow"></span>
+      <div class="seg" role="group" aria-label="藥品顯示方式">
+        <button data-nm="0" class="on">中文</button><button data-nm="1">化學式</button>
+      </div>
+      <button class="iconbtn" data-sound aria-label="音效">🔊</button>
+    </div>
+
+    <div class="hint" id="hint" aria-live="polite"><span class="ic">🔍</span><span>點兩個燒杯放上混合檯，看看會發生什麼事。</span></div>
+
+    <div class="board">
+      <div class="panel p-tags">
+        <div class="panel-h"><h3>嫌疑藥品</h3><span class="en">Suspects</span></div>
+        <div class="panel-b"><div class="tags" id="tags"></div></div>
+      </div>
+      <div class="panel p-cups">
+        <div class="panel-h"><h3>證物燒杯</h3><span class="en">Evidence</span></div>
+        <div class="panel-b"><div class="beakers" id="beakers"></div></div>
+      </div>
+      <div class="panel p-mix">
+        <div class="panel-h"><h3>混合檯</h3><span class="en">Reaction Bench</span></div>
+        <div class="panel-b mixwrap">
+          <div class="slots">
+            <button class="slot" id="slot0" aria-label="混合檯第一格"></button>
+            <span class="plus">＋</span>
+            <button class="slot" id="slot1" aria-label="混合檯第二格"></button>
+          </div>
+          <div class="photo" id="photo"></div>
+          <p class="mixnote">💡 同一個燒杯放兩次，可以單獨觀察它原本的樣子。點混合檯上的燒杯可以拿下來。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <span class="left" id="leftInfo"></span>
+      <button class="btn white" id="btnClearLabels">↺ 標籤全部撕掉</button>
+      <button class="btn green" id="btnSubmit" disabled>🔏 結案・對答案</button>
+      <button class="btn white hidden" id="btnAgain2">↺ 重玩本案</button>
+      <button class="btn green hidden" id="btnReport">📋 成績報告</button>
+    </div>
+  </section>
+
+</div>
+
+<!-- 成績報告 -->
+<div class="overlay" id="ovReport" role="dialog" aria-modal="true" aria-labelledby="rTitle">
+  <div class="dossier">
+    <div class="d-top"><div class="no" id="rNo">CASE 3-01</div><h3 id="rTitle">成績報告</h3></div>
+    <div class="d-body report">
+      <div class="score">你答對 <b id="rScore">3</b> / <span id="rN">3</span> 杯</div>
+      <div class="stampbig s2" id="rStamp">精熟!!</div>
+      <div class="meta" id="rTime">共費時 35 秒</div>
+      <div class="why" id="rWhy"></div>
+      <div class="dbtns">
+        <button class="btn white" id="rAgain">↺ 重玩本案</button>
+        <button class="btn green" id="rNext">下一案 ▶</button>
+      </div>
+      <div class="dbtns" style="margin-top:10px"><button class="btn white" id="rLook">👀 看哪幾杯錯</button><button class="btn white" id="rMenu">📂 回到卷宗</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- 製作團隊 -->
+<div class="overlay" id="ovCredits" role="dialog" aria-modal="true" aria-labelledby="cTitle">
+  <div class="dossier">
+    <button class="close" data-close aria-label="關閉">✕</button>
+    <div class="d-top"><div class="no">CREDITS</div><h3 id="cTitle">製作團隊</h3></div>
+    <div class="d-body">
+      <h4>🏛️ 原作：化學尋寶 App（v1.7.0，2017.5.20）</h4>
+      <p>國立臺灣師範大學附屬高級中學 自然科教師團隊製作，信望愛文教基金會贊助。</p>
+      <dl>
+        <dt>題目設計</dt><dd>陳昭錦、廖靜宜、江青釗、黃姵瑀、郭泰亨</dd>
+        <dt>照片拍攝</dt><dd>徐嘉偉、鍾欣雅、黃姵瑀、郭泰亨</dd>
+        <dt>程式設計</dt><dd>潘冠錡</dd>
+      </dl>
+      <h4>🔎 改製重現：巫魚子老師</h4>
+      <p>原 App 已從 Google Play 下架。網頁版保留原作的全部題目（158 題）、實驗照片與計分方式，改成觸控「點一下」操作並重新設計版面；題目與照片的著作權屬原作團隊。</p>
+    </div>
+  </div>
+</div>
+
+<!-- 清除紀錄 -->
+<div class="overlay" id="ovReset" role="dialog" aria-modal="true" aria-labelledby="xTitle">
+  <div class="dossier">
+    <button class="close" data-close aria-label="關閉">✕</button>
+    <div class="d-top" style="background:var(--red)"><div class="no">DANGER</div><h3 id="xTitle">清除我的紀錄</h3></div>
+    <div class="d-body">
+      <p>這台裝置上的 158 案成績會全部變回「未玩」，清掉就救不回來。</p>
+      <p>確定的話請輸入「<b>刪除</b>」：</p>
+      <input class="input" id="xInput" autocomplete="off">
+      <div class="dbtns"><button class="btn white" data-close>取消</button><button class="btn" id="xGo" style="background:var(--red);color:#fff" disabled>清除</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="data.js"></script>
+<script>
+(() => {
+  'use strict';
+  // ---------- 題庫 ----------
+  const QS = (window.TREASURE_QUESTIONS || []).map(([id, names, formulas, pairs]) => {
+    const p = {};
+    pairs.split(',').forEach(s => { const [k, v] = s.split(':'); p[k] = +v; });
+    return { id, n: +id.split('-')[0], names, formulas, pairs: p };
+  });
+  const BY_ID = Object.fromEntries(QS.map(q => [q.id, q]));
+  const LEVELS = [3, 4, 5, 6, 7, 8];
+  const PAGE = 80;   // 一個卷宗最多 76 案，原作也是一頁全列；超過才分頁
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const LETTER = 'ABCDEFGH';
+
+  // ---------- 本機存檔（try/catch：有些瀏覽器的無痕模式會丟錯） ----------
+  const KEY = 'wuyutzu.treasure.v1';
+  function load() {
+    try { const d = JSON.parse(localStorage.getItem(KEY) || '{}'); return d && typeof d === 'object' ? d : {}; } catch (e) { return {}; }
+  }
+  let SAVE = load();
+  if (!SAVE.grade || typeof SAVE.grade !== 'object') SAVE.grade = {};
+  if (typeof SAVE.nm !== 'number') SAVE.nm = 0;
+  if (typeof SAVE.sound !== 'boolean') SAVE.sound = true;
+  if (!LEVELS.includes(SAVE.level)) SAVE.level = 3;
+  function persist() { try { localStorage.setItem(KEY, JSON.stringify(SAVE)); } catch (e) {} }
+  // 成績：2 精熟、3 基礎、4 待加強（數字小＝比較好，跟原作一樣只保留最好的一次）
+  function gradeOf(id) { const g = SAVE.grade[id]; return g === 2 || g === 3 || g === 4 ? g : 0; }
+  const ST = { 0: ['○', '未玩'], 2: ['🏅', '精熟'], 3: ['🔎', '基礎'], 4: ['⚠️', '待加強'] };
+
+  // ---------- 音效（現場合成，不用音檔） ----------
+  let AC = null;
+  function tone(freqs, dur = 0.09, type = 'triangle', gap = 0.07, vol = 0.12) {
+    if (!SAVE.sound) return;
+    try {
+      AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+      if (AC.state === 'suspended') AC.resume();
+      freqs.forEach((f, i) => {
+        const o = AC.createOscillator(), g = AC.createGain(), t = AC.currentTime + i * gap;
+        o.type = type; o.frequency.value = f;
+        g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(g).connect(AC.destination); o.start(t); o.stop(t + dur + 0.02);
+      });
+    } catch (e) {}
+  }
+  const sfx = {
+    pick: () => tone([660], 0.06),
+    put: () => tone([520, 780], 0.08, 'sine', 0.05),
+    mix: () => tone([300, 360, 440], 0.12, 'sine', 0.06, 0.1),
+    win: () => tone([523, 659, 784, 1047], 0.16, 'triangle', 0.1),
+    mid: () => tone([440, 554, 659], 0.14, 'triangle', 0.1),
+    low: () => tone([392, 330, 262], 0.18, 'sine', 0.12)
+  };
+
+  // ---------- 小工具 ----------
+  function shuffle(a) {
+    const r = new Uint32Array(a.length); crypto.getRandomValues(r);
+    for (let i = a.length - 1; i > 0; i--) { const j = r[i] % (i + 1); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+  }
+  // 化學式：用｜分段，奇數段是下標
+  function formulaHTML(s) {
+    return String(s).split('|').map((p, i) => i % 2 ? `<sub>${esc(p)}</sub>` : esc(p)).join('');
+  }
+  function nameHTML(q, r) { return SAVE.nm ? formulaHTML(q.formulas[r - 1]) : esc(q.names[r - 1]); }
+  let toastT = 0;
+  function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2200); }
+  function openOv(id) { $(id).classList.add('on'); }
+  function closeOv(el) { el.closest('.overlay').classList.remove('on'); }
+  document.querySelectorAll('.overlay').forEach(ov => {
+    ov.addEventListener('click', e => { if (e.target === ov && ov.id !== 'ovReport') ov.classList.remove('on'); });
+    ov.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => closeOv(b)));
+  });
+
+  // ================= 卷宗室 =================
+  let page = 0;
+  function renderMenu() {
+    const tabs = LEVELS.map(n => {
+      const list = QS.filter(q => q.n === n), done = list.filter(q => gradeOf(q.id) === 2).length;
+      return `<button class="ftab ${n === SAVE.level ? 'on' : ''}" role="tab" aria-selected="${n === SAVE.level}" data-lv="${n}">${n} 種<span class="lvx">未知物</span><small>${done}/${list.length}</small></button>`;
+    }).join('');
+    $('#levelTabs').innerHTML = tabs;
+    const list = QS.filter(q => q.n === SAVE.level);
+    const pages = Math.ceil(list.length / PAGE);
+    if (page >= pages) page = 0;
+    $('#levelTitle').textContent = `${SAVE.level} 種未知物 · ${list.length} 案`;
+    const cnt = { 0: 0, 2: 0, 3: 0, 4: 0 };
+    list.forEach(q => cnt[gradeOf(q.id)]++);
+    const pct = k => (cnt[k] / list.length * 100).toFixed(2) + '%';
+    $('#meter').innerHTML = `<i style="width:${pct(2)};background:var(--mustard)"></i><i style="width:${pct(3)};background:#7fb0ef"></i><i style="width:${pct(4)};background:#f19b80"></i>`;
+    $('#meter').title = `精熟 ${cnt[2]}、基礎 ${cnt[3]}、待加強 ${cnt[4]}、未玩 ${cnt[0]}`;
+    $('#qgrid').innerHTML = list.slice(page * PAGE, page * PAGE + PAGE).map(q => {
+      const g = gradeOf(q.id), [ic, tx] = ST[g];
+      return `<button class="qbtn ${g ? 's' + g : ''}" data-q="${q.id}" aria-label="第 ${q.id} 案，${tx}"><div class="id">${q.id}</div><div class="st">${g ? ic + ' ' + tx : '&nbsp;'}</div></button>`;
+    }).join('');
+    $('#pager').innerHTML = pages > 1
+      ? `<button class="iconbtn" data-pg="-1" ${page === 0 ? 'disabled' : ''}>◀</button><span>第 ${page + 1} / ${pages} 頁</span><button class="iconbtn" data-pg="1" ${page >= pages - 1 ? 'disabled' : ''}>▶</button>`
+      : '';
+  }
+  $('#levelTabs').addEventListener('click', e => {
+    const b = e.target.closest('[data-lv]'); if (!b) return;
+    SAVE.level = +b.dataset.lv; page = 0; persist(); renderMenu(); sfx.pick();
+  });
+  $('#pager').addEventListener('click', e => {
+    const b = e.target.closest('[data-pg]'); if (!b || b.disabled) return;
+    page += +b.dataset.pg; renderMenu();
+  });
+  $('#qgrid').addEventListener('click', e => {
+    const b = e.target.closest('[data-q]'); if (!b) return;
+    startCase(b.dataset.q);
+  });
+
+  // 顯示方式、音效（兩個畫面同步）
+  function syncToggles() {
+    document.querySelectorAll('[data-nm]').forEach(b => b.classList.toggle('on', +b.dataset.nm === SAVE.nm));
+    $('#btnSound').textContent = SAVE.sound ? '🔊 音效' : '🔇 靜音';
+    document.querySelectorAll('[data-sound]').forEach(b => b.textContent = SAVE.sound ? '🔊' : '🔇');
+  }
+  document.querySelectorAll('[data-nm]').forEach(b => b.addEventListener('click', () => {
+    SAVE.nm = +b.dataset.nm; persist(); syncToggles(); if (G) renderGame();
+  }));
+  [$('#btnSound'), ...document.querySelectorAll('[data-sound]')].forEach(b => b.addEventListener('click', () => {
+    SAVE.sound = !SAVE.sound; persist(); syncToggles(); sfx.pick();
+  }));
+  $('#btnCredits').addEventListener('click', () => openOv('#ovCredits'));
+  $('#btnReset').addEventListener('click', () => { $('#xInput').value = ''; $('#xGo').disabled = true; openOv('#ovReset'); setTimeout(() => $('#xInput').focus(), 50); });
+  $('#xInput').addEventListener('input', e => { $('#xGo').disabled = e.target.value.trim() !== '刪除'; });
+  $('#xGo').addEventListener('click', () => {
+    SAVE.grade = {}; persist(); renderMenu(); $('#ovReset').classList.remove('on'); toast('紀錄已清除');
+  });
+
+  // ================= 鑑定現場 =================
+  // G.cups[i]：畫面上第 i 個燒杯（字母 LETTER[i]）裝的是真正的哪一瓶（1..N）
+  // G.label[i]：學生貼在第 i 個燒杯的藥品（1..N，0＝還沒貼）
+  let G = null;
+  function startCase(id) {
+    const q = BY_ID[id]; if (!q) return;
+    const idx = [...Array(q.n)].map((_, i) => i + 1);
+    G = {
+      q, cups: shuffle(idx.slice()), order: shuffle(idx.slice()),
+      label: Array(q.n).fill(0), mix: [-1, -1], sel: 0, done: false, t0: Date.now(), result: null
+    };
+    // 預先載入照片，混合時不用等
+    new Set(Object.values(q.pairs)).forEach(p => { const im = new Image(); im.src = photoSrc(p); });
+    $('#menu').classList.add('hidden'); $('#game').classList.remove('hidden');
+    window.scrollTo(0, 0);
+    renderGame(); sfx.mix();
+  }
+  function photoSrc(p) { return `img/p${String(p).padStart(2, '0')}.webp`; }
+  function backToMenu() {
+    G = null; $('#ovReport').classList.remove('on');
+    $('#game').classList.add('hidden'); $('#menu').classList.remove('hidden');
+    renderMenu(); window.scrollTo(0, 0);
+  }
+  $('#btnBack').addEventListener('click', backToMenu);
+
+  function hint(ic, html) { $('#hint').innerHTML = `<span class="ic">${ic}</span><span>${html}</span>`; }
+
+  function renderGame() {
+    if (!G) return;
+    const { q } = G;
+    $('#gCase').textContent = 'CASE ' + q.id;
+    $('#gTitle').textContent = `${q.n} 種未知物`;
+
+    // 嫌疑藥品
+    $('#tags').innerHTML = G.order.map(r => {
+      const used = G.label.filter(x => x === r).length;
+      return `<button class="tag ${G.sel === r ? 'sel' : ''}" data-r="${r}" ${G.done ? 'disabled' : ''}>${nameHTML(q, r)}${used ? `<span class="used">×${used}</span>` : ''}</button>`;
+    }).join('');
+
+    // 證物燒杯
+    $('#beakers').innerHTML = G.cups.map((real, i) => {
+      const lab = G.label[i], inmix = G.mix.includes(i);
+      let mk = '';
+      if (G.done && G.result) mk = G.result.ok[i] ? '<span class="mk ok" aria-label="正確">✓</span>' : '<span class="mk ng" aria-label="錯誤">✗</span>';
+      return `<div class="beaker ${inmix ? 'inmix' : ''} ${G.sel && !G.done ? 'target' : ''}" role="button" tabindex="0" data-i="${i}" aria-label="燒杯 ${LETTER[i]}">
+        <div class="glass">${glassSVG(inmix)}<span class="L">${LETTER[i]}</span></div>
+        <div class="lab ${lab ? '' : 'empty'}">${lab ? nameHTML(q, lab) : '？<span class="hm"> 未貼標籤</span>'}</div>
+        ${lab && !G.done ? `<button class="x" data-un="${i}" aria-label="撕掉 ${LETTER[i]} 的標籤">✕</button>` : ''}
+        ${mk}
+      </div>`;
+    }).join('');
+
+    // 混合檯
+    [0, 1].forEach(k => {
+      const i = G.mix[k], el = $('#slot' + k);
+      el.classList.toggle('full', i >= 0);
+      el.innerHTML = i >= 0
+        ? `<div><div class="big">${LETTER[i]}</div><div class="nm">${G.label[i] ? nameHTML(q, G.label[i]) : '？'}</div></div>`
+        : `<div>點一個燒杯<br>放到這裡</div>`;
+    });
+    const [a, b] = G.mix;
+    if (a >= 0 && b >= 0) {
+      const r1 = Math.min(G.cups[a], G.cups[b]), r2 = Math.max(G.cups[a], G.cups[b]);
+      const p = q.pairs[`${r1}${r2}`];
+      const cap = a === b ? `燒杯 ${LETTER[a]} 單獨觀察` : `燒杯 ${LETTER[a]} ＋ 燒杯 ${LETTER[b]} 混合的結果`;
+      const img = $('#photo img');
+      if (!img || img.dataset.p !== String(p) || $('#photo .cap')?.textContent !== cap) {
+        $('#photo').innerHTML = `<img src="${photoSrc(p)}" data-p="${p}" alt="${esc(cap)}的實驗照片"><div class="cap">${esc(cap)}</div>`;
+      }
+    } else {
+      $('#photo').innerHTML = `<div class="ph">🧫<br>混合檯放上兩個燒杯<br>就會出現實驗照片</div>`;
+    }
+
+    // 底部
+    const left = G.label.filter(x => !x).length;
+    $('#btnSubmit').disabled = left > 0;
+    $('#btnClearLabels').disabled = G.label.every(x => !x);
+    ['#btnSubmit', '#btnClearLabels'].forEach(s => $(s).classList.toggle('hidden', G.done));
+    ['#btnAgain2', '#btnReport'].forEach(s => $(s).classList.toggle('hidden', !G.done));
+    $('#leftInfo').textContent = G.done ? `已結案：答對 ${G.result.s} / ${q.n} 杯` : left ? `還有 ${left} 杯沒貼標籤` : '全部貼好了，可以結案！';
+
+    if (G.done) hint('🔏', '已結案。✓ 是貼對的燒杯、✗ 是貼錯的。');
+    else if (G.sel) hint('🏷️', `已拿起「<b>${nameHTML(q, G.sel)}</b>」標籤 → 點一個燒杯貼上去（再點一次藥品可以放下）`);
+    else if (a >= 0 && b >= 0) hint('👀', '仔細看照片：有沒有沉澱？什麼顏色？想一想是哪兩種藥品。');
+    else hint('🔍', '點兩個燒杯放上混合檯，看看會發生什麼事；推理出來後，<b>先點藥品、再點燒杯</b>貼上標籤。');
+  }
+  function glassSVG(fill) {
+    return `<svg viewBox="0 0 46 52" aria-hidden="true"><path d="M7 4h32M10 4v36a8 8 0 0 0 8 8h10a8 8 0 0 0 8-8V4" fill="none" stroke="#1f2a44" stroke-width="2.5" stroke-linecap="round"/><path d="M12 22h22v18a6 6 0 0 1-6 6H18a6 6 0 0 1-6-6z" fill="${fill ? '#bfe3cd' : '#e8eef6'}"/></svg>`;
+  }
+
+  // 點藥品：拿起／放下標籤
+  $('#tags').addEventListener('click', e => {
+    const b = e.target.closest('[data-r]'); if (!b || !G || G.done) return;
+    const r = +b.dataset.r;
+    G.sel = G.sel === r ? 0 : r; sfx.pick(); renderGame();
+  });
+  // 點燒杯：手上有標籤就貼上，沒有就放上混合檯
+  function onBeaker(e) {
+    if (!G || G.done) return;
+    const un = e.target.closest('[data-un]');
+    if (un) { e.stopPropagation(); G.label[+un.dataset.un] = 0; sfx.pick(); renderGame(); return; }
+    const el = e.target.closest('[data-i]'); if (!el) return;
+    const i = +el.dataset.i;
+    if (G.sel) {
+      G.label[i] = G.sel; G.sel = 0; sfx.put(); renderGame(); return;
+    }
+    if (G.mix[0] < 0) G.mix[0] = i;
+    else if (G.mix[1] < 0) G.mix[1] = i;
+    else G.mix = [i, -1];               // 兩格都滿：換一組新的
+    G.mix[1] >= 0 ? sfx.mix() : sfx.put();
+    renderGame();
+  }
+  $('#beakers').addEventListener('click', onBeaker);
+  $('#beakers').addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-i]')) { e.preventDefault(); onBeaker(e); } });
+  [0, 1].forEach(k => $('#slot' + k).addEventListener('click', () => {
+    if (!G || G.done || G.mix[k] < 0) return;
+    G.mix[k] = -1; if (k === 0 && G.mix[1] >= 0) G.mix = [G.mix[1], -1];
+    sfx.pick(); renderGame();
+  }));
+  $('#btnClearLabels').addEventListener('click', () => { if (!G || G.done) return; G.label.fill(0); G.sel = 0; renderGame(); });
+
+  // ---------- 結案・計分 ----------
+  // 原作規則：答對比例 > 90% 精熟、> 50% 基礎、其餘待加強；只保留最好的一次；精熟才能直接玩下一案
+  // 補強：有少數題目（例如 6-03 的硫酸／氯化鋇）兩種配法看到的照片完全一樣，兩種都算對
+  function permutations(n) {
+    const out = [], a = [...Array(n)].map((_, i) => i + 1);
+    const rec = k => { if (k === n) { out.push(a.slice()); return; } for (let i = k; i < n; i++) { [a[k], a[i]] = [a[i], a[k]]; rec(k + 1); [a[k], a[i]] = [a[i], a[k]]; } };
+    rec(0); return out;
+  }
+  const altCache = {};
+  function sameLooking(q) {   // 回傳所有「照片看起來完全一樣」的重新配法（含正解本身）
+    if (altCache[q.id]) return altCache[q.id];
+    const n = q.n, key = p => { let s = ''; for (let i = 0; i < n; i++) for (let j = i; j < n; j++) { const a = Math.min(p[i], p[j]), b = Math.max(p[i], p[j]); s += q.pairs[`${a}${b}`] + ','; } return s; };
+    const base = key([...Array(n)].map((_, i) => i + 1));
+    return (altCache[q.id] = permutations(n).filter(p => key(p) === base));
+  }
+  $('#btnSubmit').addEventListener('click', () => {
+    if (!G || G.done || G.label.some(x => !x)) return;
+    const q = G.q, n = q.n;
+    let best = null;
+    for (const perm of sameLooking(q)) {    // perm[真正杯號-1] = 視為哪一瓶
+      const ok = G.cups.map((real, i) => G.label[i] === perm[real - 1]);
+      const s = ok.filter(Boolean).length;
+      if (!best || s > best.s) best = { s, ok, alt: perm.some((v, i) => v !== i + 1) };
+    }
+    G.done = true; G.sel = 0; G.result = best;
+    const ratio = best.s / n, g = ratio > 0.9 ? 2 : ratio > 0.5 ? 3 : 4;
+    const prev = gradeOf(q.id);
+    if (!prev || g < prev) { SAVE.grade[q.id] = g; persist(); }
+    const sec = Math.max(1, Math.round((Date.now() - G.t0) / 1000));
+    renderGame();
+    // 成績報告
+    $('#rNo').textContent = 'CASE ' + q.id;
+    $('#rScore').textContent = best.s; $('#rN').textContent = n;
+    const st = $('#rStamp'); st.className = 'stampbig s' + g; st.textContent = { 2: '精熟!!', 3: '基礎', 4: '待加強' }[g];
+    $('#rTime').textContent = `共費時 ${sec} 秒`;
+    $('#rLook').textContent = best.s === n ? '👀 看鑑定結果' : '👀 看哪幾杯錯';
+    $('#rWhy').textContent = best.alt && best.s === n ? '這案有兩種配法看到的照片完全一樣，你的配法也算對！' : (g !== 2 ? '精熟才能直接挑戰下一案，再試一次吧！' : '');
+    const last = QS[QS.length - 1].id === q.id;
+    $('#rNext').disabled = g !== 2 || last;
+    $('#rNext').textContent = last ? '已是最後一案' : '下一案 ▶';
+    setTimeout(() => { openOv('#ovReport'); (g === 2 ? sfx.win : g === 3 ? sfx.mid : sfx.low)(); }, 450);
+  });
+  $('#rAgain').addEventListener('click', () => { $('#ovReport').classList.remove('on'); startCase(G.q.id); });
+  $('#rNext').addEventListener('click', () => {
+    const i = QS.findIndex(x => x.id === G.q.id); if (i < 0 || i >= QS.length - 1) return;
+    $('#ovReport').classList.remove('on');
+    const nx = QS[i + 1]; SAVE.level = nx.n; persist(); startCase(nx.id);
+  });
+  $('#rMenu').addEventListener('click', backToMenu);
+  $('#rLook').addEventListener('click', () => { $('#ovReport').classList.remove('on'); document.querySelector('.p-cups').scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+  $('#btnReport').addEventListener('click', () => openOv('#ovReport'));
+  $('#btnAgain2').addEventListener('click', () => G && startCase(G.q.id));
+
+  // Esc 關掉彈窗（成績報告除外）
+  window.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.overlay.on').forEach(o => { if (o.id !== 'ovReport') o.classList.remove('on'); }); });
+
+  // 自動測試用（網址加 ?test=1 才有）
+  if (/[?&]test=1/.test(location.search)) window.__treasure = { get G() { return G; }, startCase, QS };
+
+  syncToggles(); renderMenu();
+  if (!QS.length) $('#qgrid').innerHTML = '<p>題庫載入失敗，請重新整理頁面。</p>';
+})();
+</script>
+</body>
+</html>
