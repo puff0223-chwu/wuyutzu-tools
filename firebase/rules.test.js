@@ -427,6 +427,17 @@ expect('管理員可以開通 grade', base, MAIN, W, '/staff/NOAPP/apps/grade', 
 expect('預先開通可以勾 grade', base, MAIN, W, '/staffpre/new@school,edu,tw', { email: 'new@school.edu.tw', apps: { grade: true }, at: 1 }, true);
 expect('領取預先開通時不能多開 grade', withPre, ZOO, W, '/staff/ZOO', claim({ seat: true, grade: true }), false);
 expect('不存在的系統代號不行', base, MAIN, W, '/staff/NOAPP/apps/hack', true, false);
+console.log('— 🏘️ WYTClass 課堂小鎮（2026-11-05）：cc、game 職員證 —');
+for (const app of ['cc', 'game']) {
+  expect(`會員申請可以選 ${app}`, base, STRANGER, W, '/staff/BAD', { email: 'bad@evil.com', name: 'B', school: 'S', purpose: 'p', want: { [app]: true }, at: 1, status: 'pending' }, true);
+  expect(`核准的老師不能自己加開 ${app}`, base, TEA, W, '/staff/TEA', Object.assign({}, base.staff.TEA, { apps: Object.assign({}, base.staff.TEA.apps, { [app]: true }) }), false);
+  expect(`管理員可以開通 ${app}`, base, MAIN, W, '/staff/NOAPP/apps/' + app, true, true);
+  expect(`預先開通可以勾 ${app}`, base, MAIN, W, '/staffpre/new@school,edu,tw', { email: 'new@school.edu.tw', apps: { [app]: true }, at: 1 }, true);
+  expect(`領取預先開通時不能多開 ${app}`, withPre, ZOO, W, '/staff/ZOO', claim({ seat: true, [app]: true }), false);
+}
+expect('管理員補發：多路徑加上 apps/cc 和 wyt 記號', base, MAIN, 'update', '/staff/TEA', { 'apps/cc': true, wyt: 1 }, true);
+expect('老師不能自己拿掉 wyt 記號（避免舊規則把謎案課堂證補回來）', Object.assign({}, base, { staff: Object.assign({}, base.staff, { TEA: Object.assign({}, base.staff.TEA, { wyt: 1 }) }) }), TEA, W, '/staff/TEA', Object.assign({}, base.staff.TEA), false);
+expect('老師改自己的名字（wyt 不變）可以', Object.assign({}, base, { staff: Object.assign({}, base.staff, { TEA: Object.assign({}, base.staff.TEA, { wyt: 1 }) }) }), TEA, W, '/staff/TEA', Object.assign({}, base.staff.TEA, { wyt: 1, name: '新名字' }), true);
 console.log('— 🏛️ 教師展覽館（2026-10-28）：showcase —');
 const scPub = { list: { seat: { on: true, name: '座位大作戰' } }, drawers: { d0: { name: '班級事務' } }, items: { seat: { name: '座位大作戰' } }, rev: 1 };
 const scBase = Object.assign({}, base, { showcase: { pub: scPub, img: { abcdefghij12: { data: 'data:image/webp;base64,xx', t: 'data:image/webp;base64,yy' } } } });

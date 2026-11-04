@@ -191,7 +191,7 @@ wuyutzu-tools/
 
 > 首頁是老師專用的工具箱，不會提供給學生；學生只會拿到各工具的「學生頁」連結（學生頁不連回首頁）。
 
-> **外部系統（資料庫不是 Firebase）**：首頁的 `TOOLS` 也可以放連到別的網站的卡片。另有「成績調閱室」（`gradequery`，老師頁；Supabase 專案 grade-query-system，個人信箱帳號；保活打 `/api/health`）。**成績調閱室的老師權限由會員中心管**（系統代號 `grade`）：老師用同一個 Google 帳號登入成績調閱室，它的伺服器用 Firebase 服務帳戶讀 `staff/*`、`staffpre/*` 確認核准＋開通，所以在會員中心核准／停用就會生效。目前有「科普閱讀測驗」（`readingquiz`）：只是一張連結卡，點了在新分頁開啟，**資料與登入都獨立**——資料庫是 Supabase（`reading-quiz-system` 專案，用學校信箱註冊的獨立帳號）、老師後台用 Supabase Auth 登入（不是會員中心），所以不受 `firebase-rules.json` 管，也不吃 Firebase 免費額度。Supabase 免費專案連續 7 天沒有資料庫查詢會被暫停，目前由 cron-job.org 每週一、四打 `/api/assignments` 保活，**不要刪那個排程**。
+> **外部系統（資料庫不是 Firebase）**：首頁的 `TOOLS` 也可以放連到別的網站的卡片。另有「成績調閱室」（`gradequery`，老師頁；Supabase 專案 grade-query-system，個人信箱帳號；保活打 `/api/health`）。**成績調閱室網站（WYTClass 課堂小鎮，2026-11-05 起首頁是大廳、成績調閱室在 `/grade`）的老師權限由會員中心管**（系統代號 `grade` 成績調閱室、`cc` 謎案課堂、`game` 英勇學院；舊老師沒有 `wyt` 記號時 cc 沿用 grade）：老師用同一個 Google 帳號登入成績調閱室，它的伺服器用 Firebase 服務帳戶讀 `staff/*`、`staffpre/*` 確認核准＋開通，所以在會員中心核准／停用就會生效。目前有「科普閱讀測驗」（`readingquiz`）：只是一張連結卡，點了在新分頁開啟，**資料與登入都獨立**——資料庫是 Supabase（`reading-quiz-system` 專案，用學校信箱註冊的獨立帳號）、老師後台用 Supabase Auth 登入（不是會員中心），所以不受 `firebase-rules.json` 管，也不吃 Firebase 免費額度。Supabase 免費專案連續 7 天沒有資料庫查詢會被暫停，目前由 cron-job.org 每週一、四打 `/api/assignments` 保活，**不要刪那個排程**。
 
 ---
 

@@ -82,7 +82,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92em;min-width:720px}
 <body>
 <div class="top"><div class="brand">👥 會員中心<small>WU YU-ZI TEACHING STUDIO</small></div><span class="sp"></span><span id="who" class="small" style="opacity:.8"></span><button id="out" style="display:none">登出</button><a id="back" href="#" style="display:none"></a><a id="home" href="../" style="display:none" title="只有管理員看得到">🏠 事務所首頁</a></div>
 <div class="wrap" id="app"><p class="muted" style="text-align:center;margin-top:20vh">載入中…</p></div>
-<script src="staff.js?v=20261024a"></script>
+<script src="staff.js?v=20261105a"></script>
 <script type="module">
 const W = window.WuStaff, $ = (s, el) => (el || document).querySelector(s), $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -294,7 +294,31 @@ function listHTML() {
     </tbody></table></div>
     <p class="small muted" style="margin-top:8px">🗒 管理員備註只有你看得到。刪除名單只會移除會員資料，Firebase 的登入帳號還在（要刪請到 Firebase 主控台 → Authentication）。</p>`;
 }
+// 🎫 WYTClass 課堂小鎮（2026-11-05）：以前「成績調閱室」和「謎案課堂」共用一張證 → 舊老師自動補發謎案課堂的證
+// 管理員打開會員中心時做一次；做過的加上 wyt 記號（之後就完全照勾選的為準，取消勾選也不會再被補回來）
+const CC_SPLIT_AT = Date.parse('2026-11-06T00:00:00+08:00');
+let wytDone = false;
+function wytMigrate() {
+  if (wytDone || !S.all || !S.pres) return;
+  wytDone = true;
+  const jobs = [];
+  Object.entries(S.all).forEach(([uid, r]) => {
+    if (!r || r.wyt !== undefined || (r.decidedAt || r.at || 0) >= CC_SPLIT_AT) return;
+    const up = { wyt: 1 };
+    if (r.apps && r.apps.grade === true && !r.apps.cc) up['apps/cc'] = true;
+    if (r.want && r.want.grade === true && !r.want.cc) up['want/cc'] = true;
+    jobs.push(FB.update('staff/' + uid, up));
+  });
+  Object.entries(S.pres).forEach(([key, r]) => {
+    if (!r || r.wyt !== undefined || (r.at || 0) >= CC_SPLIT_AT) return;
+    const up = { wyt: 1 };
+    if (r.apps && r.apps.grade === true && !r.apps.cc) up['apps/cc'] = true;
+    jobs.push(FB.update('staffpre/' + key, up));
+  });
+  if (jobs.length) Promise.all(jobs).then(() => toast('🎫 已替舊老師補發「🕵️ 謎案課堂」職員證（' + jobs.length + ' 筆）')).catch((e) => { wytDone = false; console.warn('補發失敗', e); });
+}
 function drawAdmin() {
+  wytMigrate();
   const all = Object.entries(S.all || {}).map(([uid, r]) => ({ uid, ...r })).sort((a, b) => (b.at || 0) - (a.at || 0));
   const groups = { pending: all.filter((x) => x.status === 'pending'), more: Object.keys(S.req || {}).filter((uid) => (S.all || {})[uid]) };
   const tab = ['pending', 'more', 'list'].includes(S.tab) ? S.tab : 'pending';

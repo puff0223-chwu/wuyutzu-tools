@@ -2,6 +2,7 @@
    - 老師在會員中心（account/）自己申請帳號 → 管理員核准，並勾選可以用哪些系統
    - 資料：staff/<uid> = { email, name, school, purpose, want{app:true}, at, status: pending|approved|rejected|disabled, apps{app:true}, note }
    - 管理員＝主帳號 puff0223@gmail.com（信箱要已驗證；用 Google 登入一定是已驗證），所有系統都能用
+   - grade／cc／game＝WYTClass 課堂小鎮（另一個網站）的職員證；舊老師只有 grade 沒有 cc 這一格時，視為兩張都有（以前共用一張）
    - 舊的系統專用帳號（+gps、+seat、+excel）2026-10-18 已搬家完成並從 Firebase 刪除，規則與這裡都不再特別處理
    ⚠ 這裡的檢查只負責「畫面」；真正擋資料的是 Firebase 安全規則（規則裡有同樣的條件） */
 (function (root) {
@@ -13,8 +14,10 @@
     src: { name: '📜 出處失傳的秘文', desc: '文獻查詢、引用與參考文獻格式（小論文 APA）', url: 'inquiry/secret-source/teacher.html' },
     lab: { name: '⚗️ 化學實驗室 No.223', desc: '消失的實驗器材、消失的指示劑（pH）、失落的配方（單位換算）：開活動、即時統計', url: 'chemistry/lab223.html' },
     exam: { name: '🎲 線上檢定所', desc: '線上測驗：題庫編輯器、Word 考卷匯入、限時作答、反作弊、自動計分', url: 'game-design/exam/' },
-    // 外部系統（Vercel＋Supabase）：網址是完整網址；登入時由它的伺服器來這裡查核准狀態
-    grade: { name: '🗂️ 成績調閱室', desc: '平時成績管理與學生查詢：像 Excel 的成績表、公式、學生登入只看自己的成績', url: 'https://grade-query-system-coral.vercel.app/' }
+    // 外部系統（Vercel＋Supabase，WYTClass 課堂小鎮）：網址是完整網址；登入時由它的伺服器來這裡查職員證
+    grade: { name: '🗂️ 成績調閱室', desc: '平時成績管理與學生查詢：像 Excel 的成績表、公式、學生登入只看自己的成績', url: 'https://grade-query-system-coral.vercel.app/grade' },
+    cc: { name: '🕵️ 謎案課堂', desc: '分組報告互評、繳交型任務、偵查日誌、情報板（成績自動送進成績調閱室）', url: 'https://grade-query-system-coral.vercel.app/caseclass' },
+    game: { name: '⚔️ 英勇學院', desc: '遊戲化班級經營：角色、經驗、血量魔力、隊友互助（建造中）', url: 'https://grade-query-system-coral.vercel.app/' }
   };
   // 系統網址：完整網址（外部系統）直接用；站內網址前面加 base（例如 '../'）
   function href(url, base) { return /^https?:\/\//.test(url) ? url : (base || '') + url; }
