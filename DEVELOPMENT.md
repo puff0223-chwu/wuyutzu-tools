@@ -134,7 +134,7 @@ wuyutzu-tools/
 │   └── poke-game.html            # 戳戳樂
 │
 ├── game-design/                  # 🎮 遊戲設計思考（首頁抽屜「遊戲研究室」；巴圖測驗仍在 classroom/bartle.html）
-│   └── exam/                     # 🎲 線上檢定所：線上測驗系統（2026-10-23 三個階段全部完成）
+│   └── exam/                     # 📝 線上檢定所：線上測驗系統（2026-10-23 三個階段全部完成）
 │       ├── index.html            #   老師後台（會員中心登入 app=exam：📝 測驗、📚 題庫；不連回事務所首頁）
 │       ├── teacher.js            #   老師後台程式：Quill 題目編輯器、Word／Excel／JSON 匯入、建立測驗、自動閱卷官、成績、名單、公布
 │       ├── take.html             #   學生作答頁（take.html?code=測驗代碼，手機／平板用，不連回首頁；REST，不載 SDK）

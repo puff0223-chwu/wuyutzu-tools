@@ -13,7 +13,7 @@
     seat: { name: '🪑 座位大作戰', desc: '換座位：暗標、規則、隨機排位、A4 座位表', url: 'classroom/seating/' },
     src: { name: '📜 出處失傳的秘文', desc: '文獻查詢、引用與參考文獻格式（小論文 APA）', url: 'inquiry/secret-source/teacher.html' },
     lab: { name: '⚗️ 化學實驗室 No.223', desc: '消失的實驗器材、消失的指示劑（pH）、失落的配方（單位換算）：開活動、即時統計', url: 'chemistry/lab223.html' },
-    exam: { name: '🎲 線上檢定所', desc: '線上測驗：題庫編輯器、Word 考卷匯入、限時作答、反作弊、自動計分', url: 'game-design/exam/' },
+    exam: { name: '📝 線上檢定所', desc: '線上測驗：題庫編輯器、Word 考卷匯入、限時作答、反作弊、自動計分', url: 'game-design/exam/' },
     // 外部系統（Vercel＋Supabase，WYTClass 課堂小鎮）：網址是完整網址；登入時由它的伺服器來這裡查職員證
     grade: { name: '🗂️ 成績調閱室', desc: '平時成績管理與學生查詢：像 Excel 的成績表、公式、學生登入只看自己的成績', url: 'https://grade-query-system-coral.vercel.app/grade' },
     cc: { name: '🕵️ 謎案課堂', desc: '分組報告互評、繳交型任務、偵查日誌、情報板（成績自動送進成績調閱室）', url: 'https://grade-query-system-coral.vercel.app/caseclass' },

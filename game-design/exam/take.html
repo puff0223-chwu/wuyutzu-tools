@@ -104,7 +104,7 @@ textarea.ans{min-height:170px;font-size:1.02rem;line-height:1.6;margin-top:12px;
   var DEV = store.get('exam:dev'); if (!DEV) { DEV = X.newId(16); store.set('exam:dev', DEV); }
   var now = function () { return Date.now() + OFFSET; };
   var G = function () { return (META && META.guard && META.guard.on) ? META.guard : null; };
-  function card(html) { app.innerHTML = '<div class="brand"><span class="b">🎲 線上檢定所</span></div>' + html + '<div class="foot">© 巫魚子老師 線上檢定所</div>'; }
+  function card(html) { app.innerHTML = '<div class="brand"><span class="b">📝 線上檢定所</span></div>' + html + '<div class="foot">© 巫魚子老師 線上檢定所</div>'; }
   function sanitize(html) {
     var h = window.DOMPurify ? DOMPurify.sanitize(String(html || ''), { ADD_ATTR: ['data-img'], FORBID_TAGS: ['style', 'script', 'iframe', 'form', 'input'] }) : esc(X.plain(html));
     return h.replace(/<a\b[^>]*>/gi, '<span class="nolink">').replace(/<\/a>/gi, '</span>'); // 作答中連結不能點（點了會離開畫面）

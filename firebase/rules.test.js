@@ -273,8 +273,8 @@ expect('會員申請可以選 lab', labBase, STRANGER, W, '/staff/BAD', { email:
 expect('核准的老師不能自己加開 lab', labBase, TEA, W, '/staff/TEA', Object.assign({}, base.staff.TEA, { apps: Object.assign({}, base.staff.TEA.apps, { lab: true }) }), false);
 expect('核准的老師不能自己加開 src（補洞）', labBase, TEA, W, '/staff/TEA', Object.assign({}, base.staff.TEA, { apps: Object.assign({}, base.staff.TEA.apps, { src: true }) }), false);
 expect('核准的老師可以改自己的姓名學校', labBase, TEA, W, '/staff/TEA', Object.assign({}, base.staff.TEA, { name: '新名字' }), true);
-// 🎲 線上檢定所（2026-10-23）：exam
-console.log('— 🎲 線上檢定所 —');
+// 📝 線上檢定所（2026-10-23）：exam
+console.log('— 📝 線上檢定所 —');
 const EX_TEA = U('EXT', 'ext@school.edu.tw', true);
 const NOW_ = Date.now(), SV = { '.sv': 'timestamp' };
 const emeta = (o) => Object.assign({ owner: 'EXT', at: 1, title: '期中檢定', open: true, openAt: 0, closeAt: 0, mins: 40, tries: 2, policy: 'max', gap: 0, guard: { on: true, max: 2, idle: 5, blur: 3 } }, o || {});

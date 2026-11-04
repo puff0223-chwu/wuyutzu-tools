@@ -1,4 +1,4 @@
-/* 🎲 線上檢定所：老師後台（ES module）
+/* 📝 線上檢定所：老師後台（ES module）
    - 登入：會員中心共用帳號（app＝exam）
    - 📚 題庫：Quill 編輯器（貼圖、拖曳、連結）、Word／Excel／JSON 匯入、備份
    - 📝 測驗：建立（選題、時間、次數、計分方式、打亂、反作弊、名單）、分享 QR、成績、名單、公布
@@ -175,7 +175,7 @@ const gate = $('#gate');
 const gbox = (inner) => `<div class="card" style="max-width:460px;margin:9vh auto">${inner}</div>`;
 function renderLogin(msg) {
   $('#main').classList.add('hidden');
-  gate.innerHTML = gbox(`<h1 style="font-size:1.45rem">🎲 線上檢定所｜老師登入</h1>
+  gate.innerHTML = gbox(`<h1 style="font-size:1.45rem">📝 線上檢定所｜老師登入</h1>
     <p class="muted small">老師後台有題庫與學生成績，需要登入。各系統共用同一個老師帳號。</p>
     ${msg ? `<p class="small" style="color:var(--bad)">${esc(msg)}</p>` : ''}${!FB ? '<p class="small" style="color:var(--bad)">雲端服務載入失敗，請確認網路後重新整理。</p>' : ''}
     <div style="margin-top:14px">${gBtn('gG')}</div>
@@ -1075,7 +1075,7 @@ function paintShare(el) {
   $('#sCopy').onclick = async () => { try { await navigator.clipboard.writeText(link); toast('📋 已複製'); } catch (e) { prompt('複製這個連結', link); } };
   $('#sProj').onclick = () => {
     const p = document.createElement('div'); p.className = 'proj';
-    p.innerHTML = `<button class="x">✕ 關閉</button><div class="badge" style="font-size:1.1rem">🎲 線上檢定所</div><h1>${esc(META.title)}</h1><div class="qrbox" id="pQr"></div><div class="bigcode">${CUR}</div><div id="pInfo" style="font-size:1.3rem;font-weight:700"></div>`;
+    p.innerHTML = `<button class="x">✕ 關閉</button><div class="badge" style="font-size:1.1rem">📝 線上檢定所</div><h1>${esc(META.title)}</h1><div class="qrbox" id="pQr"></div><div class="bigcode">${CUR}</div><div id="pInfo" style="font-size:1.3rem;font-weight:700"></div>`;
     document.body.appendChild(p); qrInto($('#pQr', p), link, Math.min(420, Math.round(window.innerHeight * 0.45)));
     const info = () => { const r = rows(); $('#pInfo', p).textContent = `${X.STATE[X.stateOf(META)]}｜作答中 ${r.filter((x) => x.st === 'doing').length} 人・已交卷 ${r.filter((x) => x.graded.length).length} 人`; };
     info(); const t = setInterval(info, 3000);
@@ -1391,7 +1391,7 @@ function projBoard() {
     const col = (r) => r.st === 'doing' ? (r.off > OFFLINE_MS ? 'off' : 'doing') : r.st === 'none' ? 'none' : r.st === 'guard' ? 'guard' : 'done';
     const list = R.slice().sort((a, b) => String(a.info.cls || '').localeCompare(String(b.info.cls || '')) || (a.info.seat || 0) - (b.info.seat || 0));
     const ncol = list.length > 45 ? 4 : list.length > 24 ? 3 : list.length > 10 ? 2 : 1;
-    p.innerHTML = `<div class="pbar0"><span class="badge">🎲 線上檢定所</span><b class="ptitle">${esc(META.title)}</b><span class="pcode">${CUR}</span><span class="sp"></span>
+    p.innerHTML = `<div class="pbar0"><span class="badge">📝 線上檢定所</span><b class="ptitle">${esc(META.title)}</b><span class="pcode">${CUR}</span><span class="sp"></span>
         <button class="pbtn" data-pn>${PROJ_NAME ? '🙈 隱藏姓名' : '👤 顯示姓名'}</button><button class="pbtn" data-px>✕ 關閉</button></div>
       <div class="pinfo"><span>${X.STATE[X.stateOf(META)]}</span><span>🕒 現在 <b class="mono">${X.fmtClock(now)}</b></span>${META.closeAt ? `<span>⏹ 截止 <b class="mono">${X.fmtTime(META.closeAt)}</b></span>` : ''}<span>⏱ 每人作答 <b>${META.mins}</b> 分鐘</span></div>
       <div class="pstats">${c.roster ? `<div class="s-none"><b>${c.none}</b>⚪ 未進入</div>` : ''}<div class="s-doing"><b>${c.doing - c.off}</b>🔵 作答中</div>${c.off ? `<div class="s-off"><b>${c.off}</b>🟠 失聯</div>` : ''}<div class="s-done"><b>${c.done - c.guard}</b>✅ 已交卷</div><div class="s-guard"><b>${c.guard}</b>🚨 系統代結</div></div>
