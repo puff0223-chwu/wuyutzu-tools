@@ -80,7 +80,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92em;min-width:720px}
 </style>
 </head>
 <body>
-<div class="top"><div class="brand">👥 會員中心<small>WU YU-ZI TEACHING STUDIO</small></div><span class="sp"></span><span id="who" class="small" style="opacity:.8"></span><button id="out" style="display:none">登出</button><a id="back" href="#" style="display:none"></a></div>
+<div class="top"><div class="brand">👥 會員中心<small>WU YU-ZI TEACHING STUDIO</small></div><span class="sp"></span><span id="who" class="small" style="opacity:.8"></span><button id="out" style="display:none">登出</button><a id="back" href="#" style="display:none"></a><a id="home" href="../" style="display:none" title="只有管理員看得到">🏠 事務所首頁</a></div>
 <div class="wrap" id="app"><p class="muted" style="text-align:center;margin-top:20vh">載入中…</p></div>
 <script src="staff.js?v=20261024a"></script>
 <script type="module">
@@ -108,7 +108,7 @@ const picked = (el, name) => Object.fromEntries($$(`input[name="${name}"]:checke
 
 // ---------- 登入 ----------
 function renderLogin(msg) {
-  $('#who').textContent = ''; $('#out').style.display = 'none';
+  $('#who').textContent = ''; $('#out').style.display = 'none'; $('#home').style.display = 'none';
   $('#app').innerHTML = `<div class="card narrow">
     <div style="font-family:'Bebas Neue',sans-serif;letter-spacing:.2em;color:#e4572e">MEMBER CENTER</div>
     <h1>👥 老師會員中心</h1>
@@ -181,6 +181,8 @@ async function enter(user) {
   if (S.user && S.user.uid === user.uid && S.entered) return; S.entered = true;
   stop(); S.user = user;
   $('#who').textContent = user.email; $('#out').style.display = '';
+  // 回事務所首頁：只有管理員（巫魚子）看得到，其他老師的會員中心不放（手冊 1-E）
+  $('#home').style.display = W.isAdmin(user) ? '' : 'none';
   if (W.isAdmin(user)) return renderAdmin();
   S.pre = null; try { S.pre = await FB.get('staffpre/' + W.ekey(user.email)); } catch (e) { }
   S.unsubs.push(FB.listen('staff/' + user.uid, (rec) => { S.rec = rec; renderMe(); }));
