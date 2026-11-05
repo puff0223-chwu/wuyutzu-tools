@@ -17,7 +17,7 @@
     // 外部系統（Vercel＋Supabase，WYTClass 課堂小鎮）：網址是完整網址；登入時由它的伺服器來這裡查職員證
     grade: { name: '🗂️ 成績調閱室', desc: '平時成績管理與學生查詢：像 Excel 的成績表、公式、學生登入只看自己的成績', url: 'https://grade-query-system-coral.vercel.app/grade' },
     cc: { name: '🕵️ 謎案課堂', desc: '分組報告互評、繳交型任務、偵查日誌、情報板（成績自動送進成績調閱室）', url: 'https://grade-query-system-coral.vercel.app/caseclass' },
-    game: { name: '⚔️ 英勇學院', desc: '遊戲化班級經營：角色、經驗、血量魔力、隊友互助（建造中）', url: 'https://grade-query-system-coral.vercel.app/' }
+    game: { name: '⚔️ 英勇學院', desc: '遊戲化班級經營：角色、經驗、血量魔力、隊友互助（試營運）', url: 'https://grade-query-system-coral.vercel.app/valor' }
   };
   // 系統網址：完整網址（外部系統）直接用；站內網址前面加 base（例如 '../'）
   function href(url, base) { return /^https?:\/\//.test(url) ? url : (base || '') + url; }
