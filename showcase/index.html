@@ -6,10 +6,10 @@
 <title>🏛️ 巫魚子教課事務所｜教師展覽館</title>
 <meta name="description" content="巫魚子老師開放給其他老師使用的教學系統：先看使用說明，再到會員中心申請。">
 <meta property="og:title" content="巫魚子教課事務所｜教師展覽館">
-<meta property="og:description" content="座位大作戰、化學實驗室、成績調閱室、線上檢定所、Excel 數據救援、校園定向越野、文獻與 APA……先看說明，再決定要不要申請。">
+<meta property="og:description" content="座位大作戰、化學實驗室、WYTClass 課堂小鎮（成績調閱室、謎案課堂、英勇學院、線上檢定所）、Excel 數據救援、校園定向越野、文獻與 APA……先看說明，再決定要不要申請。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="showcase.css?v=20261028c">
+<link rel="stylesheet" href="showcase.css?v=20261108a">
 </head>
 <body class="home">
 <!-- ⚠️ 這是給其他老師看的展覽館：不放回「事務所首頁」的連結（首頁還有個人、尚未分享的工具） -->
@@ -54,9 +54,9 @@
 </div>
 
 <script src="../account/staff.js?v=20261105a"></script>
-<script src="data.js?v=20261028a"></script>
-<script src="drafts.js?v=20261028a"></script>
-<script src="showcase.js?v=20261028c"></script>
+<script src="data.js?v=20261108a"></script>
+<script src="drafts.js?v=20261108a"></script>
+<script src="showcase.js?v=20261108a"></script>
 <script>
 (function () {
   var SC = window.SHOWCASE, $ = function (id) { return document.getElementById(id); };
@@ -87,10 +87,15 @@
   var PILL = { apply: '<span class="pill mode-apply">🔐 開放申請</span>', open: '<span class="pill mode-open">🚀 免申請直接用</span>', show: '<span class="pill mode-show">👀 只展示</span>' };
   function cardHTML(t) {
     var d = SC.drawerOf(t);
-    return '<a class="card" href="guide.html?app=' + encodeURIComponent(t.code) + '" style="--accent:' + esc(d.color) + ';--soft:' + esc(d.soft) + '">' +
+    // 套組卡（例：課堂小鎮）：下面列出裡面的系統，每個系統一個小標籤
+    var mem = t.suite ? '<span class="mini">' + t.members.map(function (m) {
+      return '<span class="mi mode-' + esc(m.mode) + '" title="' + esc(SC.MODES[m.mode]) + '">' + esc(m.icon) + ' ' + esc(m.name) + '</span>';
+    }).join('') + '</span>' : '';
+    return '<a class="card' + (t.suite ? ' suite' : '') + '" href="guide.html?app=' + encodeURIComponent(t.code) + '" style="--accent:' + esc(d.color) + ';--soft:' + esc(d.soft) + '">' +
       '<span class="icon" aria-hidden="true">' + esc(t.icon) + '</span>' +
-      '<span><span class="name">' + esc(t.name) + '</span><br><span class="brief">' + SC.rich(t.brief) + '</span><br>' +
-      '<span class="pill guide">📘 使用說明</span>' + (PILL[t.mode] || '') + (t.external ? '<span class="pill ext">🌐 獨立網站</span>' : '') + '</span></a>';
+      '<span><span class="name">' + esc(t.name) + '</span><br><span class="brief">' + SC.rich(t.brief) + '</span><br>' + mem +
+      '<span class="pill guide">📘 使用說明</span>' + (t.suite ? '<span class="pill suite">🏘️ ' + t.members.length + ' 個系統・可分開申請</span>' : (PILL[t.mode] || '')) +
+      (t.external && !t.suite ? '<span class="pill ext">🌐 獨立網站</span>' : '') + '</span></a>';
   }
   function render() {
     var q = $('q').value.trim();

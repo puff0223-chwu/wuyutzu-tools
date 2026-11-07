@@ -6,7 +6,7 @@
 <title>📘 使用說明｜巫魚子教課事務所 教師展覽館</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="showcase.css?v=20261028c">
+<link rel="stylesheet" href="showcase.css?v=20261108a">
 </head>
 <body>
 <!-- ⚠️ 給其他老師看的說明頁：返回鍵只回「教師展覽館」，不連回事務所首頁 -->
@@ -18,9 +18,9 @@
 <div id="page"><p class="act-note" style="text-align:center;margin-top:20vh">卷宗調閱中…</p></div>
 
 <script src="../account/staff.js?v=20261105a"></script>
-<script src="data.js?v=20261028a"></script>
-<script src="drafts.js?v=20261028a"></script>
-<script src="showcase.js?v=20261028c"></script>
+<script src="data.js?v=20261108a"></script>
+<script src="drafts.js?v=20261108a"></script>
+<script src="showcase.js?v=20261108a"></script>
 <script>
 (function () {
   var SC = window.SHOWCASE, esc = SC.esc;
@@ -29,19 +29,21 @@
   SC.load(function () {
     // preview=1：管理頁「👀 預覽」用，未展出的卡片也看得到（內容本來就是公開資料，只是不列在展覽館上）
     var t = SC.get(code, { all: preview });
-    if (t && preview && !t.on && !document.getElementById('pvPill')) document.getElementById('topName').insertAdjacentHTML('afterend', ' <span id="pvPill" class="pill mode-show" style="margin-left:8px">預覽・展覽館看不見</span>');
+    if (t && preview && !SC.visible(code) && !document.getElementById('pvPill')) document.getElementById('topName').insertAdjacentHTML('afterend', ' <span id="pvPill" class="pill mode-show" style="margin-left:8px">預覽・展覽館看不見</span>');
     if (!t) {
       page.innerHTML = '<div class="notfound gcard"><div style="font-size:2.6em">🗄️</div><h2 style="justify-content:center">找不到這份卷宗</h2>' +
         '<p>這個系統可能還沒開放，或網址打錯了。</p><p style="margin-top:12px"><a class="btn" href="./">← 回教師展覽館看所有系統</a></p></div>';
       return;
     }
-    var d = SC.drawerOf(t);
+    var d = SC.drawerOf(t.parent && !t.solo ? SC.PUB.list[t.parent.code] : t);
     document.title = t.icon + ' ' + t.name + '｜使用說明｜巫魚子教課事務所 教師展覽館';
     document.getElementById('topName').textContent = t.icon + ' ' + t.name + '・使用說明';
+    var bk = SC.backOf(t), tb = document.getElementById('topBack'); tb.href = bk.href; tb.textContent = bk.text;   // 套組成員回套組那一頁
     document.documentElement.style.setProperty('--accent', d.color);
     document.documentElement.style.setProperty('--soft', d.soft);
     // 內容由 showcase.js 的 pageHTML 產生（社群分享頁 share/<代號>.html 用同一支，內容永遠一致）
     page.innerHTML = SC.pageHTML(t, 'guide');
+    if (preview) Array.prototype.forEach.call(document.querySelectorAll('a[href^="guide.html?app="]'), function (a) { a.href += '&preview=1'; });   // 預覽時，點套組裡的系統也是預覽
     SC.enhance();
   });
 })();

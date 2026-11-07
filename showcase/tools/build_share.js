@@ -16,7 +16,7 @@
    ========================================================= */
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const ROOT = path.join(__dirname, '..'), SITE = path.join(ROOT, '..');
-const VER = '20261028c';
+const VER = '20261108a';
 const arg = (k) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : null; };
 
 const ctx = { console };
@@ -29,7 +29,11 @@ const esc = SC.esc;
 const PUBFILE = arg('--pub');
 const PUB = PUBFILE ? JSON.parse(fs.readFileSync(PUBFILE, 'utf8')) : null;
 SC.setPub(PUB && PUB.rev ? PUB : SC.seedPub(), PUB ? 'file' : 'seed');
-const items = SC.list().filter((t) => t.ready);
+// 母頁（事務所首頁）：「跟母頁同步」的卡片名稱、圖示用母頁的（和展覽館畫面一致）
+try { SC.setMother(SC.parseMother(fs.readFileSync(path.join(SITE, 'index.html'), 'utf8'))); } catch (e) { console.log('⚠️ 讀不到母頁，名稱用卡片自己存的：' + e.message); }
+// 看得見的卡片都做分享頁：一般卡片要有寫說明；套組卡（課堂小鎮）和裡面的系統各有一頁
+const items = Object.keys(SC.PUB.list).filter(SC.visible).map((id) => SC.get(id)).filter((t) => t && (t.ready || t.suite));
+const colorOf = (t) => SC.drawerOf(t.parent && !t.solo ? SC.PUB.list[t.parent.code] : t);
 
 /* 老師上傳的截圖 f:<id> → share/media/<id>.<副檔名>（GitHub Action 有網路；沒網路時沿用舊檔） */
 const MEDIA = path.join(ROOT, 'share/media');
@@ -65,7 +69,7 @@ const shareShots = (t) => (t.shots || []).map((s) => {
 if (PUB) await media();
 
 if (process.argv.includes('--json')) {   // 給 make_og.py 用（shot 路徑相對 showcase/）
-  console.log(JSON.stringify(items.map((t) => { const d = SC.drawerOf(t), s = shareShots(t)[0] || null;
+  console.log(JSON.stringify(items.map((t) => { const d = colorOf(t), s = shareShots(t)[0] || null;
     if (s) s[0] = s[0].startsWith('../') ? s[0].slice(3) : 'share/' + s[0];
     return { code: t.code, icon: t.icon, name: t.name, sub: SC.plain(t.sub || t.brief), brief: SC.plain(t.brief), color: d.color, soft: d.soft, drawer: d.name, shot: s }; })));
   return;
@@ -77,7 +81,7 @@ const keep = new Set();
 for (const t0 of items) {
   // 分享頁在 showcase/share/ 底下，圖片路徑要往上一層
   const t = Object.assign({}, t0, { shots: shareShots(t0) });
-  const d = SC.drawerOf(t);
+  const d = colorOf(t);
   const url = SC.shareURL(t.code), og = SC.SITE + 'share/og/' + t.code + '.jpg';
   const desc = SC.plain(t.intro || t.brief || '').replace(/\s+/g, ' ').slice(0, 150);
   const title = `${t.icon} ${t.name}｜巫魚子教課事務所 教師展覽館`;

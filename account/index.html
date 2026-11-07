@@ -87,11 +87,16 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92em;min-width:720px}
 const W = window.WuStaff, $ = (s, el) => (el || document).querySelector(s), $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const toast = (m, err) => { const t = document.createElement('div'); t.className = 'toast' + (err ? ' err' : ''); t.textContent = m; document.body.appendChild(t); setTimeout(() => t.remove(), err ? 4200 : 2600); };
-const wantApp = new URLSearchParams(location.search).get('app') || '';
+// ?app=grade 或 ?app=grade,cc,exam（教師展覽館的套組卡可以一次帶好幾個系統）；第一個當作「從哪個系統來」
+const QS = new URLSearchParams(location.search);
+const wantApps = (QS.get('app') || '').split(',').map((s) => s.trim()).filter((k) => W.APPS[k]);
+const wantApp = wantApps[0] || '';
 // 從哪個系統點進來，就放「← 回到那個系統」（會員中心不放回事務所首頁的連結）
 // 從「教師展覽館」點進來（?from=showcase）→ 返回展覽館的那一頁說明（不是系統、也不是事務所首頁）
 const fromShowcase = new URLSearchParams(location.search).get('from') === 'showcase';
-if (fromShowcase) { const bk = $('#back'); bk.href = '../showcase/' + (W.APPS[wantApp] ? 'guide.html?app=' + encodeURIComponent(wantApp) : ''); bk.textContent = '← 回教師展覽館'; bk.style.display = ''; }
+// back＝展覽館說明頁的卡片代號（2026-11-08 起展覽館會帶；舊連結沒有 back 就用系統代號）
+const backCard = (QS.get('back') || '').replace(/[^\w-]/g, '') || wantApp;
+if (fromShowcase) { const bk = $('#back'); bk.href = '../showcase/' + (backCard ? 'guide.html?app=' + encodeURIComponent(backCard) : ''); bk.textContent = '← 回教師展覽館'; bk.style.display = ''; }
 else if (W.APPS[wantApp]) { const bk = $('#back'); bk.href = W.href(W.APPS[wantApp].url, '../'); bk.textContent = '← 回到' + W.APPS[wantApp].name.replace(/^\S+\s/, ''); bk.style.display = ''; }
 const S = { user: null, rec: null, unsubs: [], tab: 'pending', all: {}, ver: {}, req: {} };
 let FB, authErr = (e) => String(e && (e.code || e.message) || e), gBtn = () => '';
@@ -131,7 +136,7 @@ function renderLogin(msg) {
 // ---------- 申請 ----------
 function profileFields(rec) {
   rec = rec || {};
-  const want = rec.want || (wantApp ? { [wantApp]: true } : {});
+  const want = rec.want || Object.fromEntries(wantApps.map((k) => [k, true]));
   return `<div class="row" style="gap:12px;align-items:flex-start"><div style="flex:1;min-width:180px"><label class="f">姓名</label><input type="text" id="rName" maxlength="20" value="${esc(rec.name)}" placeholder="例：王小明"></div>
     <div style="flex:1.4;min-width:200px"><label class="f">學校</label><input type="text" id="rSchool" maxlength="30" value="${esc(rec.school)}" placeholder="例：桃園市立大溪高中"></div></div>
     <label class="f">想使用的系統（可以多選）</label>${appBoxes(want, 'want')}
@@ -223,7 +228,7 @@ function renderMe() {
   </div>
   ${mine.length ? `<div class="card"><h2>🧰 我可以用的系統</h2><div class="mylinks">${mine.map((k) => `<a href="${W.href(W.APPS[k].url, '../')}"><b>${W.APPS[k].name}</b><span>${esc(W.APPS[k].desc)}</span><span class="sp"></span>開啟 →</a>`).join('')}</div>
     <p class="small muted" style="margin-top:10px">各系統用<b>同一個帳號</b>登入（Google 登入就按 Google 按鈕）。</p></div>` : ''}
-  ${st === 'approved' && Object.keys(W.APPS).some((k) => !mine.includes(k)) ? `<div class="card"><h2>➕ 申請加開其他系統</h2><div id="moreBox">${appBoxes({}, 'more', Object.keys(W.APPS).filter((k) => !mine.includes(k)))}</div>
+  ${st === 'approved' && Object.keys(W.APPS).some((k) => !mine.includes(k)) ? `<div class="card"><h2>➕ 申請加開其他系統</h2><div id="moreBox">${appBoxes(Object.fromEntries(wantApps.filter((k) => !mine.includes(k)).map((k) => [k, true])), 'more', Object.keys(W.APPS).filter((k) => !mine.includes(k)))}</div>
     <button class="btn" id="moreGo" style="margin-top:12px">📨 送出加開申請</button><span class="small muted" id="moreMsg" style="margin-left:8px"></span></div>` : ''}
   ${rec ? `<div class="card"><details${S.editMe ? ' open' : ''} id="meBox"><summary style="cursor:pointer;font-weight:900">✏️ 修改我的資料</summary>
     <div class="row" style="gap:12px;align-items:flex-start;margin-top:6px"><div style="flex:1;min-width:180px"><label class="f">姓名</label><input type="text" id="meName" maxlength="20" value="${esc(rec.name)}"></div>

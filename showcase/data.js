@@ -104,7 +104,7 @@
 
     /* ------------------------------------------------ 🗂️ 成績調閱室 */
     grade: {
-      drawer: 1, shelf: '課程經營', icon: '🗂️', name: '成績調閱室', external: true, from: ['gradequery'],
+      drawer: 1, shelf: '課程經營', icon: '🗂️', name: '成績調閱室', external: true, from: [], // 2026-11-08：母頁的 gradequery 改成「🏘️ WYTClass 課堂小鎮」→ 成績調閱室變成小鎮套組（drafts.js 的 town）裡的一個系統
       shots: [
         ["img/grade-1.webp", "像 Excel 的成績表：群組、小計、總分自動計算", 1200, 755],
         ["img/grade-2.webp", "欄位設定：公式寫法像 Excel，下方即時試算", 1200, 755],
@@ -141,7 +141,7 @@
 
     /* ------------------------------------------------ 📝 線上檢定所 */
     exam: {
-      drawer: 2, shelf: '課程評量', icon: '📝', name: '線上檢定所', from: ['onlineexam'],
+      drawer: 2, shelf: '課程評量', icon: '📝', name: '線上檢定所', from: ['onlineexam'], solo: true, // 也是課堂小鎮的一員，同時單獨放在遊戲研究室
       shots: [
         ["img/exam-1.webp", "監控清單：每位學生的狀態、違規、連線，一目了然", 1200, 755],
         ["img/exam-2.webp", "考場投影看板：不顯示姓名與分數", 1200, 675],

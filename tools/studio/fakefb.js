@@ -28,6 +28,8 @@ export async function openFirebase() {
     login: async () => ({ user: USER }), google: async () => ({ user: USER }), register: async () => ({ user: USER }),
     verify: async () => {}, reload: async () => USER, logout: async () => {}, reset: async () => {},
     get: (p) => req('GET', p), set: (p, v) => req('PUT', p, v === undefined ? null : v), update: (p, v) => req('PATCH', p, v), remove: (p) => req('DELETE', p),
-    listen: (p, cb) => poll(p, cb), idle: () => () => {}, close: async () => {}
+    // .info/connected：預設連線中；測試可設 window.__fakeOffline = true 模擬斷線
+    listen: (p, cb) => { if (p === '.info/connected') { let last; const t = setInterval(() => { const v = !window.__fakeOffline; if (v !== last) { last = v; cb(v); } }, 200); return () => clearInterval(t); } return poll(p, cb); },
+    idle: () => () => {}, close: async () => {}
   };
 }
