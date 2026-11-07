@@ -85,7 +85,8 @@ async function refresh(FB, force) {
 export async function renderStats(box, ctx) {
   const { FB, W, esc, toast } = ctx;
   css();
-  if (!C.data && !C.loading) {
+  if (C.loading) { box.innerHTML = '<p class="muted" style="margin:16px 0">⏳ 正在盤點兩個資料庫，大約 10～20 秒…</p>'; return; }
+  if (!C.data) {
     box.innerHTML = '<p class="muted" style="margin:16px 0">讀取使用狀況…</p>';
     await load(FB);
   }
@@ -95,7 +96,7 @@ export async function renderStats(box, ctx) {
     C.auto = true;
     box.innerHTML = '<p class="muted" style="margin:16px 0">⏳ 第一次（或超過一週）打開：正在盤點兩個資料庫，大約 10～20 秒…</p>';
     await refresh(FB);
-    return renderStats(box, ctx);
+    return renderStats(box.isConnected ? box : document.getElementById('statsBox') || box, ctx);
   }
   draw(box, ctx);
 }
@@ -129,6 +130,7 @@ function chart(hist, limits) {
 }
 
 function draw(box, { FB, W, esc, toast }) {
+  if (!box.isConnected) box = document.getElementById('statsBox') || box;   // 會員名單更新時整頁會重畫，改畫在新的格子
   const D = C.data || {}, S = D.summary;
   const head = `<div class="st-head"><h2>📊 使用狀況</h2><span class="small muted">${S ? `上次統計：${new Date(S.at).toLocaleString('zh-TW')}（${S.by === 'cron' ? '每週自動' : '手動'}）` : '還沒有統計'}</span><span class="sp"></span>
     <button class="btn sm" id="stGo" ${C.loading ? 'disabled' : ''}>${C.loading ? '⏳ 統計中…' : '🔄 現在重新統計'}</button></div>
@@ -159,12 +161,12 @@ function draw(box, { FB, W, esc, toast }) {
   const T = Object.entries(S.teachers || {}).map(([k, t]) => ({ k, ...t }));
   const seen = D.seen || {};
   const rows = T.map((t) => {
-    const apps = Object.keys(METRICS).filter((a) => (t.apps || {})[a] || (t.use || {})[a] || (seen[t.k] || {})[a] || t.admin);
+    const apps = Object.keys(METRICS).filter((a) => ((t.apps || {})[a] && !t.admin) || (t.use || {})[a] || (seen[t.k] || {})[a]);   // 管理員：只列真的有用的系統
     const cells = apps.map((a) => {
-      const u = (t.use || {})[a] || {}, s = dayOf((seen[t.k] || {})[a]) || (['grade', 'cc', 'game'].includes(a) && t.town && t.town.checked && (u && Object.keys(u).length) ? 0 : 0);
+      const u = (t.use || {})[a] || {}, s = dayOf((seen[t.k] || {})[a]);
       const nums = METRICS[a].map(([key, lab]) => `${u[key] || 0} ${lab}`).join('・');
       const empty = !METRICS[a].some(([key]) => u[key]) && !s;
-      return { a, empty, s, html: `<div class="ap ${empty ? 'zzz' : ''}"><b>${W.APPS[a] ? esc(W.APPS[a].name) : a}</b>${nums}<div class="seen">${empty ? '💤 核准了還沒用' : '🕐 上次 ' + ago(s)}</div></div>` };
+      return { a, empty, s, html: `<div class="ap ${empty ? 'zzz' : ''}"><b>${W.APPS[a] ? esc(W.APPS[a].name) : a}</b>${nums}<div class="seen">${empty ? '💤 核准了還沒用' : s ? '🕐 上次 ' + ago(s) : '🕐 上次使用：11/08 起才開始記錄'}</div></div>` };
     }).filter((c) => !C.app || c.a === C.app);
     const score = cells.reduce((n, c) => n + (c.empty ? 0 : 1), 0), last = Math.max(0, ...cells.map((c) => c.s || 0));
     return { t, cells, score, last, zzz: cells.some((c) => c.empty) };

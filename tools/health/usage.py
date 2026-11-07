@@ -30,6 +30,7 @@ NAMES = {
     'bond-society': '🕯️ 隱秘的鍵結社', 'bond-mp': '🕯️ 鍵結社多人連線', 'seating': '🪑 座位大作戰', 'orienteering': '🧭 遺落的地點',
     'secret-source': '📜 出處失傳的秘文', 'exam': '📝 線上檢定所', 'staff': '👥 會員中心', 'staffpre': '👥 會員中心（預先開通）', 'staffmemo': '👥 會員中心（備註）',
     'staffv': '👥 會員中心（驗證）', 'staffreq': '👥 會員中心（加開申請）',
+    'showcase': '🏛️ 教師展覽館', 'stats': '📊 會員使用統計', 'staffseen': '📊 最後使用日',
 }
 HEAVY = {'orienteering'}  # 照片很多：只在每週報告／手動執行時秤重
 

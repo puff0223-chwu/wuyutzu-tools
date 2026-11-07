@@ -12,7 +12,8 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--ink);font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif;line-height:1.6;min-height:100vh}
 button,input,textarea,select{font:inherit;color:inherit}
-.top{background:var(--ink);color:#fff;padding:10px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 3px 0 var(--gold)}
+.top{background:var(--ink);color:#fff;padding:10px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 3px 0 var(--gold);flex-wrap:wrap}
+@media(max-width:520px){.top{gap:8px;padding:8px 12px}#who{display:none}}
 .top .brand{font-weight:900;font-size:1.1em}.top .brand small{display:block;font-family:'Bebas Neue',sans-serif;letter-spacing:.2em;color:var(--gold);font-size:.7em;font-weight:400}
 .top .sp{flex:1}.top a{color:#fff;text-decoration:none;border:1.5px solid rgba(255,255,255,.5);border-radius:10px;padding:4px 12px;font-weight:700;font-size:.9em}
 .top button,.top a{white-space:nowrap}
@@ -326,7 +327,7 @@ function drawAdmin() {
   wytMigrate();
   const all = Object.entries(S.all || {}).map(([uid, r]) => ({ uid, ...r })).sort((a, b) => (b.at || 0) - (a.at || 0));
   const groups = { pending: all.filter((x) => x.status === 'pending'), more: Object.keys(S.req || {}).filter((uid) => (S.all || {})[uid]) };
-  const tab = ['pending', 'more', 'list'].includes(S.tab) ? S.tab : 'pending';
+  const tab = ['pending', 'more', 'list', 'stats'].includes(S.tab) ? S.tab : 'pending';
   const appChips = (o) => Object.keys(o || {}).filter((k) => W.APPS[k]).map((k) => `<span class="chip">${W.APPS[k].name}</span>`).join(' ') || '<span class="muted small">（無）</span>';
   const checks = (uid, sel) => Object.entries(W.APPS).map(([k, a]) => `<label class="ck"><input type="checkbox" data-app="${uid}" value="${k}" ${sel[k] ? 'checked' : ''}>${a.name}</label>`).join('');
   const card = (x) => `<div class="mem"><div class="hd"><span class="nm">${esc(x.name)}</span><span class="small muted">${esc(x.school)}</span><span class="sp"></span><span class="chip wait">${W.STATUS[x.status]}</span></div>
@@ -338,17 +339,19 @@ function drawAdmin() {
   const moreCard = (uid) => { const x = S.all[uid], r = S.req[uid]; return `<div class="mem"><div class="hd"><span class="nm">${esc(x.name)}</span><span class="small muted">${esc(x.school)}・${esc(x.email)}</span></div>
     <div class="small" style="margin-top:6px">已開通：${appChips(x.apps)}　→　想加開：${appChips(r.want)}</div>
     <div class="row" style="margin-top:8px"><button class="btn teal sm" data-addok="${uid}">✅ 加開</button><button class="btn ghost sm" data-addno="${uid}">不加開</button></div></div>`; };
-  const body = tab === 'list' ? listHTML() : (tab === 'more' ? groups.more.map(moreCard) : groups.pending.map(card)).join('') || '<p class="muted" style="margin-top:14px">目前沒有資料</p>';
+  const body = tab === 'stats' ? '<div id="statsBox"></div>' : tab === 'list' ? listHTML() : (tab === 'more' ? groups.more.map(moreCard) : groups.pending.map(card)).join('') || '<p class="muted" style="margin-top:14px">目前沒有資料</p>';
   const total = Object.keys(S.all || {}).length + Object.keys(S.pres || {}).length;
   $('#app').innerHTML = `
   <div class="card"><div class="row"><h1>👥 會員管理</h1><span class="chip ink">🔑 管理員</span><span class="sp"></span>${Object.values(W.APPS).map((a) => `<a class="btn ghost sm" href="${W.href(a.url, '../')}">${a.name}</a>`).join('')}</div>
     <p class="small muted">老師在這個頁面自己申請帳號，你核准時勾選他能用哪些系統；也可以在「📋 會員名單」手動新增、修改、停用。各系統的安全規則會檢查這份名單。</p>
-    <div class="tabs">${[['pending', `⏳ 待核准（${groups.pending.length}）`], ['more', `➕ 加開申請（${groups.more.length}）`], ['list', `📋 會員名單（${total}）`]].map(([k, t]) => `<button data-tab="${k}" class="${tab === k ? 'on' : ''}">${t}</button>`).join('')}</div>
+    <div class="tabs">${[['pending', `⏳ 待核准（${groups.pending.length}）`], ['more', `➕ 加開申請（${groups.more.length}）`], ['list', `📋 會員名單（${total}）`], ['stats', '📊 使用狀況']].map(([k, t]) => `<button data-tab="${k}" class="${tab === k ? 'on' : ''}">${t}</button>`).join('')}</div>
     ${body}
   </div>`;
   document.title = (groups.pending.length + groups.more.length ? `(${groups.pending.length + groups.more.length}) ` : '') + '👥 會員中心';
   $$('[data-tab]').forEach((b) => { b.onclick = () => { S.tab = b.dataset.tab; drawAdmin(); }; });
   if (tab === 'list') bindList();
+  // 📊 使用狀況（2026-11-08）：另外一支程式 stats.js（只有管理員會載入）
+  if (tab === 'stats') import('./stats.js?v=20261108c').then((m) => m.renderStats($('#statsBox'), { FB, W, esc, toast })).catch((e) => { $('#statsBox').innerHTML = '<p class="muted">讀不到使用狀況：' + esc(e.message || e) + '</p>'; });
   const appsOf = (uid) => Object.fromEntries($$(`input[data-app="${uid}"]:checked`).map((i) => [i.value, true]));
   const upd = async (uid, v, msg) => { try { await FB.update('staff/' + uid, { ...v, decidedAt: Date.now() }); toast(msg); } catch (e) { toast(authErr(e), true); } };
   $$('[data-ok]').forEach((b) => { b.onclick = () => { const a = appsOf(b.dataset.ok); if (!Object.keys(a).length) return toast('至少勾一個系統', true); upd(b.dataset.ok, { status: 'approved', apps: a, note: null }, '✅ 已核准'); }; });
