@@ -1157,6 +1157,19 @@
           ".validate": "$id.matches(/^[a-z0-9]{10,20}$/) && (!newData.exists() || (newData.hasChildren(['data', 't']) && newData.child('data').isString() && newData.child('data').val().length < 450000 && newData.child('t').isString() && newData.child('t').val().length < 150000 && newData.child('data').val().beginsWith('data:image/') && newData.child('t').val().beginsWith('data:image/')))"
         }
       }
+    },
+    "staffseen": {
+      ".read": "{{ADMIN}}",
+      "$key": {
+        "$app": {
+          ".write": "auth != null && {{EKEY}} === $key",
+          ".validate": "$app.matches(/^(excel|gps|seat|src|lab|exam|grade|cc|game)$/) && newData.isString() && newData.val().matches(/^20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/)"
+        }
+      }
+    },
+    "stats": {
+      ".read": "{{ADMIN}}",
+      ".write": false
     }
   }
 }

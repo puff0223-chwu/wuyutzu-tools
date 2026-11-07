@@ -12,7 +12,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="../account/staff.js?v=20261105a"></script>
+<script src="../account/staff.js?v=20261108a"></script>
 <script src="excel-rescue-core.js?v=20261013b"></script>
 <script src="excel-rescue-checker.js?v=20261013b"></script>
 <style>
@@ -919,7 +919,7 @@ if (!FB) renderLogin();
 else FB.onUser(async (u) => {
   if (!u) return renderLogin();
   gate.innerHTML = box('<p class="note">檢查帳號中…</p>');
-  const res = await W.check(FB.get, u, 'excel');
+  const res = await W.check(FB.get, u, 'excel', FB.set);
   if (!res.ok) { gate.innerHTML = W.blockedHTML(res, 'excel', '../', u.email); gate.querySelector('[data-staff-logout]').onclick = () => FB.logout(); return; }
   try {
     const own = await ensureTeacher(u, res.rec && res.rec.name);

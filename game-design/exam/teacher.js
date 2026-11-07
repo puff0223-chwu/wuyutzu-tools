@@ -198,7 +198,7 @@ if (!FB) renderLogin();
 else FB.onUser(async (u) => {
   if (!u) { ME = null; return renderLogin(); }
   gate.innerHTML = gbox('<p class="muted">檢查帳號中…</p>');
-  const res = await W.check(FB.get, u, 'exam');
+  const res = await W.check(FB.get, u, 'exam', FB.set);
   if (!res.ok) { gate.innerHTML = W.blockedHTML(res, 'exam', '../../', u.email); const b = gate.querySelector('[data-staff-logout]'); if (b) b.onclick = () => FB.logout(); return; }
   ME = u; ADMIN = !!res.admin;
   gate.innerHTML = ''; $('#main').classList.remove('hidden');

@@ -289,7 +289,7 @@ export async function startTeacher(opt) {
   FB.onUser(async u => {
     if (!u) return renderLogin();
     gate.innerHTML = box('<p class="note">檢查帳號中…</p>');
-    const res = await W.check(FB.get, u, 'lab');
+    const res = await W.check(FB.get, u, 'lab', FB.set);
     if (!res.ok) { gate.innerHTML = W.blockedHTML(res, 'lab', '../', u.email); const lo = gate.querySelector('[data-staff-logout]'); if (lo) lo.onclick = () => FB.logout(); return; }
     API.ME = { uid: u.uid, email: u.email, name: (res.rec && res.rec.name) || u.email, admin: W.isAdmin(u) };
     gate.innerHTML = ''; main.classList.remove('hidden'); keepAwake();

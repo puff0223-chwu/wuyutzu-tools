@@ -29,13 +29,22 @@
   // Email 當成資料位置的寫法（小寫、. 換成 ,）：預先開通 staffpre/<ekey>，規則裡用同樣的算法核對
   function ekey(email) { return lower(email).replace(/\./g, ','); }
   function legacyApp(user) { for (var k in APPS) if (isOwner(user, k)) return k; return ''; }
-  // getFn(path) → Promise(value)；回傳 { ok, rec, reason }
-  function check(getFn, user, app) {
+  // 📊 最後使用日（2026-11-08，會員中心「使用狀況」用）：staffseen/<Email>/<系統> = '2026-11-08'
+  // 每台裝置每天每個系統只寫一次（像打卡），寫失敗也不影響使用
+  function seen(setFn, user, app) {
+    if (!setFn || !user || !user.email || !APPS[app]) return;
+    var day = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10), k = 'wu-seen-' + app + '-' + user.uid;
+    try { if (localStorage.getItem(k) === day) return; } catch (e) { }
+    Promise.resolve().then(function () { return setFn('staffseen/' + ekey(user.email) + '/' + app, day); })
+      .then(function () { try { localStorage.setItem(k, day); } catch (e) { } }, function () { });
+  }
+  // getFn(path) → Promise(value)；setFn（可省略）→ 用來記最後使用日；回傳 { ok, rec, reason }
+  function check(getFn, user, app, setFn) {
     if (!user) return Promise.resolve({ ok: false, reason: 'login' });
-    if (isAdmin(user)) return Promise.resolve({ ok: true, owner: true, admin: true });
+    if (isAdmin(user)) { seen(setFn, user, app); return Promise.resolve({ ok: true, owner: true, admin: true }); }
     return Promise.resolve().then(function () {
       return Promise.resolve(getFn('staff/' + user.uid)).then(function (rec) {
-        if (rec && rec.status === 'approved' && rec.apps && rec.apps[app]) return { ok: true, rec: rec };
+        if (rec && rec.status === 'approved' && rec.apps && rec.apps[app]) { seen(setFn, user, app); return { ok: true, rec: rec }; }
         if (!rec || rec.status === 'pending') {
           // 管理員預先開通了這個 Email → 請他到會員中心啟用（第一次登入，一下子就好）
           return Promise.resolve(getFn('staffpre/' + ekey(user.email))).then(function (pre) { return pre ? { ok: false, rec: rec, reason: 'pre' } : (rec ? { ok: false, rec: rec, reason: 'pending' } : { ok: false, reason: 'none' }); }, function () { return rec ? { ok: false, rec: rec, reason: 'pending' } : { ok: false, reason: 'none' }; });

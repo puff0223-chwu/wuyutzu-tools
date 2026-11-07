@@ -109,7 +109,7 @@ async function enter(user) {
   S.user = user;
   $('#app').innerHTML = '<p style="text-align:center;margin-top:20vh" class="muted">檢查帳號中…</p>';
   // 2026-10-13 會員制：要在會員中心核准、開通「遺落的地點」才能用（巫魚子的 +gps 帳號不用申請）
-  const res = window.WuStaff ? await WuStaff.check(FB.get, user, 'gps') : { ok: true };
+  const res = window.WuStaff ? await WuStaff.check(FB.get, user, 'gps', FB.set) : { ok: true };
   if (!res.ok) { $('#app').innerHTML = WuStaff.blockedHTML(res, 'gps', '../../', user.email); $('[data-staff-logout]').onclick = () => FB.logout(); return; }
   $('#app').innerHTML = '<p style="text-align:center;margin-top:20vh" class="muted">讀取題庫中…</p>';
   try { S.banks = await Store.index(); } catch (e) { return renderLogin('讀取失敗：' + (e.code || e.message) + '（Firebase 規則可能還沒貼上 orienteering 區塊）'); }

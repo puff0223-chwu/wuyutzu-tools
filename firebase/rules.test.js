@@ -457,5 +457,18 @@ expect('截圖太大不行', scBase, MAIN, W, '/showcase/img/newimg00003', { dat
 expect('截圖代號格式要對', scBase, MAIN, W, '/showcase/img/BAD-ID', { data: 'data:image/webp;base64,aa', t: 'data:image/webp;base64,bb' }, false);
 expect('管理員可以刪截圖', scBase, MAIN, W, '/showcase/img/abcdefghij12', null, true);
 expect('別人不能上傳截圖', scBase, TEA, W, '/showcase/img/newimg00004', { data: 'data:image/webp;base64,aa', t: 'data:image/webp;base64,bb' }, false);
+console.log('— 📊 會員使用統計（2026-11-08）：staffseen、stats —');
+const stBase = Object.assign({}, base, { stats: { summary: { at: 1 } }, staffseen: { 'tea@school,edu,tw': { seat: '2026-11-01' } } });
+expect('老師記下自己的最後使用日', stBase, TEA, W, '/staffseen/tea@school,edu,tw/seat', '2026-11-08', true);
+expect('不能幫別人記', stBase, TEA, W, '/staffseen/bad@evil,com/seat', '2026-11-08', false);
+expect('日期格式要對', stBase, TEA, W, '/staffseen/tea@school,edu,tw/seat', 'yesterday', false);
+expect('系統代號要對', stBase, TEA, W, '/staffseen/tea@school,edu,tw/hack', '2026-11-08', false);
+expect('沒登入不能記', stBase, null, W, '/staffseen/tea@school,edu,tw/seat', '2026-11-08', false);
+expect('老師不能讀最後使用日', stBase, TEA, R, '/staffseen', null, false);
+expect('管理員讀最後使用日', stBase, MAIN, R, '/staffseen', null, true);
+expect('管理員讀統計', stBase, MAIN, R, '/stats/summary', null, true);
+expect('冒名的管理員不能讀統計', stBase, MAIN_UNVERIFIED, R, '/stats/summary', null, false);
+expect('老師不能讀統計', stBase, TEA, R, '/stats', null, false);
+expect('管理員也不能從網頁改統計（只有伺服器能寫）', stBase, MAIN, W, '/stats/summary', { at: 2 }, false);
 console.log(`\n${fail ? '❌' : '✅'} 通過 ${pass} 項，失敗 ${fail} 項`);
 process.exit(fail ? 1 : 0);

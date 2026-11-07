@@ -136,7 +136,7 @@ function studentOptions(selected, opts = {}) {
 async function enterCloud(user) {
   if (Store.mode === 'cloud' && Store.uid === user.uid) return;
   // 2026-10-13 會員制：雲端模式要在會員中心核准、開通「座位大作戰」（巫魚子的 +seat 帳號不用申請；本機模式不受影響）
-  const res = window.WuStaff ? await WuStaff.check(FB.get, user, 'seat') : { ok: true };
+  const res = window.WuStaff ? await WuStaff.check(FB.get, user, 'seat', FB.set) : { ok: true };
   if (!res.ok) {
     $('#app').innerHTML = WuStaff.blockedHTML(res, 'seat', '../../', user.email) + '<p style="text-align:center"><button class="btn sm" data-act="useLocal">💾 先用本機模式</button></p>';
     $('[data-staff-logout]').onclick = async () => { await FB.logout(); renderLogin(); };
