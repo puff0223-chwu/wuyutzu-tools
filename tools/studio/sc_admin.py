@@ -1,5 +1,5 @@
 # 🏛️ 展覽館管理頁 v2 自動測試（2026-11-08 全面檢修）
-# 用「線上真的資料快照」（showcase/share/pub.json，v1 舊格式）開始：
+# 用「線上真的資料快照」（fixtures/showcase-pub-v1.json，檢修前的 v1 舊格式）開始：
 #   自動升級 → 📬 待處理（建議建立課堂小鎮、首頁改名、新工具）→ 建立套組卡 → 展覽館／說明頁 → 逐一切換開放
 #   → 首頁改了功能清單也抓得到 → 編輯存檔讀回確認 → 斷線擋存檔 → 別的分頁改過自動更新 → 首頁工具（不放／加入）→ 刪除 → 手機
 import os, sys, json, re
@@ -12,7 +12,7 @@ errs = []
 def ok(c, m):
     print(('✅ ' if c else '❌ ') + m)
     if not c: errs.append(m)
-LIVE = json.load(open(os.path.join(ROOT, 'showcase/share/pub.json'), encoding='utf-8'))
+LIVE = json.load(open(os.path.join(os.path.dirname(__file__), 'fixtures/showcase-pub-v1.json'), encoding='utf-8'))   # 2026-11-08 檢修前的線上資料（v1）
 db('PUT', 'showcase', None)
 db('PUT', 'showcase/pub', LIVE)
 MOTHER = open(os.path.join(ROOT, 'index.html'), encoding='utf-8').read()
@@ -48,6 +48,19 @@ with sync_playwright() as p:
     ok(L['exam'].get('solo') is True and not L['grade'].get('solo'), '線上檢定所「也單獨展出」、成績調閱室只在套組裡')
     ok(L['cc']['mode'] == 'apply' and L['cc']['app'] == 'cc' and L['valor']['mode'] == 'show', '謎案課堂開放申請、英勇學院只展示')
     pg.screenshot(path=OUT + 'b2_editor_suite.png', full_page=True)
+    # 套組裡的系統：按「✏️ 設定」就地展開（不跳頁）
+    ok(pg.evaluate('document.querySelector("#s-suite").getBoundingClientRect().top < document.querySelector("#s-card").getBoundingClientRect().top'), '套組卡的編輯頁：「套組裡的系統」放在最上面')
+    pg.click('[data-mopen="grade"]'); pg.wait_for_selector('.mitem.open .mpanel')
+    ok('#edit/town' in pg.url, '按「✏️ 設定」不跳頁，在那一行下面展開')
+    pg.click('.mpanel label:has([name=m-mode][value=show])'); pg.wait_for_timeout(200)
+    pg.screenshot(path=OUT + 'b2b_member_panel.png', full_page=True)
+    pg.click('#mSave'); wait_saved()
+    ok(db('GET', 'showcase/pub/list/grade/mode') == 'show', '展開的面板直接存成績調閱室（只存這個系統）')
+    pg.click('.mpanel label:has([name=m-mode][value=apply])'); pg.click('#mSave'); wait_saved()
+    ok(db('GET', 'showcase/pub/list/grade/mode') == 'apply', '改回開放申請')
+    pg.click('#mClose'); pg.wait_for_timeout(200)
+    ok(not pg.query_selector('.mpanel'), '收起面板')
+    pg.goto(ORIGIN + '/showcase/admin.html#help'); pg.wait_for_selector('.hgrid'); pg.screenshot(path=OUT + 'b2c_help.png', full_page=True)
     # 展覽館與說明頁
     pv = ctx.new_page(); pv.goto(ORIGIN + '/showcase/'); pv.wait_for_selector('.card.suite', timeout=8000); pv.wait_for_timeout(800)
     cards = pv.eval_on_selector_all('a.card', 'e => e.map(a => a.getAttribute("href").split("=")[1])')

@@ -488,22 +488,21 @@ function renderDrawers() {
    ❓ 使用說明
    ========================================================= */
 function renderHelp() {
+  const card = (ic, title, body) => `<div class="hcard"><h3><span>${ic}</span>${title}</h3>${body}</div>`;
+  const li = (a) => `<ul class="hl-list">${a.map((x) => `<li>${x}</li>`).join('')}</ul>`;
   $('#view').innerHTML = `<div class="panel"><h2>🔧 怎麼管理展覽館</h2>
-    <div class="howto3"><div class="step"><span class="n">1</span><div><b>🧰 從首頁加入</b><span>「首頁工具」按 ➕，帶入 Claude 寫的說明初版</span></div></div>
-      <div class="step"><span class="n">2</span><div><b>✏️ 檢查內容</b><span>右邊「健檢」全部 ✅ 最好；⛔ 一定要修才能讓人看見</span></div></div>
-      <div class="step"><span class="n">3</span><div><b>👁️ 打開看得見</b><span>展覽館馬上更新；分享頁約 30 分鐘</span></div></div></div>
-    <ul class="clues">
-      <li><b>👁️ 看得見／🙈 看不見</b>：展覽館上有沒有這張卡片。看不見的內容會保留，隨時可以再打開。</li>
-      <li><b>其他老師可以…</b>：👀 只展示（只能看說明）／🔐 開放申請（會員中心申請、你核准）／🚀 免申請直接用（免登入小工具）。</li>
-      <li><b>🏘️ 套組卡</b>（例：WYTClass 課堂小鎮）：整個套組一個開關；裡面每個系統也有自己的開關和「其他老師可以…」。其他老師可以在說明頁<b>一個一個申請</b>，也可以按「📝 一次申請」。</li>
-      <li><b>📌 也單獨展出</b>：套組裡的系統（例：線上檢定所）也想放在自己的分類，就在編輯頁打開「也單獨展出」。</li>
-      <li><b>🔗 跟首頁同步</b>：卡片的名稱、圖示跟著事務所首頁走，首頁改了展覽館馬上跟著改。首頁的一句話、網址改了，會列在「📬 需要你看一下」。</li>
-      <li><b>📬 需要你看一下</b>：首頁改過的工具、首頁新的工具、看得見但有問題的卡片，都會列在卡片清單最上面。</li>
-      <li><b>上方燈號</b>：🟢 已連線才能存檔。每次存檔都會「寫進去再讀回來確認」，畫面上看到的就是資料庫裡真正的內容。</li>
-      <li><b>⚠️ 免申請的工具</b>頁面不能有「回事務所首頁」的按鈕，系統會自動檢查。</li>
-      <li><b>截圖</b>：上傳時自動壓縮（幾十～一百多 KB）。畫面裡的學生姓名請用假名。</li>
-      <li><b>新的「要帳號」系統</b>：要先請 Claude 接上會員中心（多一個系統代號），這裡才選得到「🔐 開放申請」。</li>
-    </ul></div>`;
+    <div class="howto3"><div class="step"><span class="n">1</span><div><b>🧰 從首頁加入</b><span>「首頁工具」按 ➕，自動帶入說明初版</span></div></div>
+      <div class="step"><span class="n">2</span><div><b>✏️ 檢查內容</b><span>右邊「健檢」：⛔ 一定要修，⚠️ 建議補</span></div></div>
+      <div class="step"><span class="n">3</span><div><b>👁️ 打開看得見</b><span>展覽館馬上更新，分享頁約 30 分鐘</span></div></div></div></div>
+    <div class="hgrid">
+      ${card('🎛️', '每張卡片的兩個設定', `<table class="htab"><tr><th>👁️ 看得見<br>🙈 看不見</th><td>展覽館上有沒有這張卡片。看不見的內容會保留，隨時可以再打開。</td></tr>
+        <tr><th>其他老師<br>可以…</th><td><span class="st hid">👀 只展示</span> 只能看說明<br><span class="st ok">🔐 開放申請</span> 會員中心申請、你核准<br><span class="st ok">🚀 免申請直接用</span> 免登入小工具</td></tr></table>`)}
+      ${card('🏘️', '套組卡（例：WYTClass 課堂小鎮）', li(['整個套組一個「看得見」開關', '裡面每個系統按「✏️ 設定」就地展開，分開決定看不看得見、能不能申請', '其他老師可以<b>一個一個申請</b>，也可以按「📝 一次申請」', '「📌 也單獨放一張卡片」通常不用勾（例外：線上檢定所也放在遊戲研究室）']))}
+      ${card('🔗', '跟事務所首頁連動', li(['卡片記得首頁「上次的樣子」，首頁改了哪一欄都會比對出來', '打開「跟首頁同步」：名稱、圖示自動跟著首頁', '一句話、說明不會自動改，改了會提醒你看一下']))}
+      ${card('📬', '需要你看一下', li(['首頁改過的工具、首頁的新工具', '會員中心有、展覽館卻沒有的系統', '看得見但有 ⛔ 問題的卡片', '每一項都有按鈕，按了就處理好']))}
+      ${card('🛡️', '安全與連線', li(['右上燈號 🟢 才能存檔；🔴 離線時會擋住', '每次存檔都會「寫進去再讀回來確認」', '免申請的工具頁面不能有「回事務所首頁」按鈕（自動檢查）']))}
+      ${card('📸', '截圖與新系統', li(['上傳時自動壓縮；學生姓名請用假名', '第一張截圖也是社群分享預覽圖', '新的「要帳號」系統：先請 Claude 接上會員中心，才選得到「🔐 開放申請」']))}
+    </div>`;
 }
 
 /* =========================================================
@@ -518,11 +517,9 @@ function renderEditor(id) {
   if (!S.ed || S.ed.id !== id) {
     if (!L[id]) return go('cards');
     S.ed = { id, isNew: false, l: copy(L[id]), it: copy(S.pub.items[id] || {}), dirty: false };
-    S.ed.memberSolo = {}; L[id].parts.forEach((c) => { S.ed.memberSolo[c] = L[c].solo; });
   }
   const E = S.ed, l = E.l, it = E.it;
   it.shots = SC.rows(it.shots);
-  if (!E.memberSolo) { E.memberSolo = {}; (l.parts || []).forEach((c) => { if (L[c]) E.memberSolo[c] = L[c].solo; }); }
   const isSuite = (l.parts || []).length > 0 || l._suite, suiteId = !isSuite && !E.isNew ? SC.suiteOf(E.id) : '';
   const MO = SC.MOTHER, mt = l.from.length === 1 && MO ? MO.tools[l.from[0]] : null;
   const shown = { icon: l.sync && mt ? mt.icon : l.icon, name: l.sync && mt ? mt.name : l.name };
@@ -531,7 +528,7 @@ function renderEditor(id) {
   const field = (k, label, help, rows) => `<label class="f">${label}${help ? tip(help) : ''}</label><textarea data-it="${k}" rows="${rows || 4}">${esc(it[k] == null ? '' : it[k])}</textarea>`;
   const lineField = (k, n, label, help, rows) => `<label class="f">${label}${tip(help)}</label><textarea data-lines="${k}" data-n="${n}" rows="${rows || 5}">${esc(LINES(it[k], n))}</textarea>`;
   const oneField = (k, label, help) => `<label class="f">${label}${tip(help)}</label><textarea data-one="${k}" rows="4">${esc(ONE(it[k]))}</textarea>`;
-  const secs = [['s-card', '🪪 卡片'], ['s-show', '👁️ 展出'], ...(isSuite || suiteId ? [['s-suite', '🏘️ 套組']] : []), ['s-intro', '📄 簡介'], ['s-flow', '🗺️ 流程與功能'], ['s-sides', '👥 學生／老師'], ['s-faq', '❓ 常見問題'], ['s-shots', '📸 截圖']];
+  const secs = [...(isSuite ? [['s-suite', '🏘️ 套組裡的系統']] : []), ['s-card', '🪪 卡片'], ['s-show', '👁️ 展出'], ...(suiteId ? [['s-suite', '🏘️ 套組']] : []), ['s-intro', '📄 簡介'], ['s-flow', '🗺️ 流程與功能'], ['s-sides', '👥 學生／老師'], ['s-faq', '❓ 常見問題'], ['s-shots', '📸 截圖']];
   const motherOpts = MO ? MO.order.map((tid) => { const t = MO.tools[tid]; return `<option value="${esc(tid)}" ${l.from[0] === tid ? 'selected' : ''}>${esc(t.icon + ' ' + t.name)}</option>`; }).join('') : '';
   const extraFrom = l.from.length > 1 ? `<div class="hint">這張卡片對應首頁的 ${l.from.length} 個工具（${esc(l.from.map((t) => (MO && MO.tools[t] ? MO.tools[t].name : t)).join('、'))}），所以不跟首頁同步名稱。</div>` : '';
 
@@ -559,14 +556,18 @@ function renderEditor(id) {
   let suiteSec = '';
   if (isSuite) {
     const cands = Object.keys(L).filter((k) => k !== E.id && !L[k].parts.length && !(l.parts || []).includes(k) && (!SC.suiteOf(k) || SC.suiteOf(k) === E.id));
+    // 每個系統一行；按「✏️ 設定」就在那一行下面展開，直接改這個系統（存檔只存這一個系統，不影響上面套組的其他修改）
+    const M = E.m && l.parts.includes(E.m.id) ? E.m : null;
+    const chip = (cl, c) => `<span class="st ${cl.on ? 'on' : 'hid'}">${cl.on ? '👁️ 看得見' : '🙈 看不見'}</span> <span class="st ${cl.mode === 'show' ? 'hid' : 'ok'}">${esc(MODE_TXT[cl.mode][0])}</span>${cl.solo ? ` <span class="st solo">📌 也單獨展出</span>` : ''}${SC.check(c).some((h) => h.lv === 'err') ? ' <span class="st bad">⛔ 有問題</span>' : ''}`;
     suiteSec = `<section class="panel sec" id="s-suite"><h3>🏘️ 套組裡的系統</h3>
-      <p class="hint">每個系統都是一張自己的卡片（有自己的說明頁、開關和「其他老師可以…」）。這裡決定順序、要不要也單獨放在展覽館上。</p>
-      <div class="mlist">${(l.parts || []).map((c, i) => { const cl = L[c]; if (!cl) return ''; const cf = SC.face(c); return `<div class="mrow"><span class="mv"><button type="button" data-pm="${i}" data-d="-1">▲</button></span>
-        <div><b>${esc(cf.icon + ' ' + cf.name)}</b> <span class="st ${cl.on ? 'on' : 'hid'}">${cl.on ? '看得見' : '看不見'}</span> <span class="muted small">${esc(MODE_TXT[cl.mode][0])}</span>
-          <div class="row" style="margin-top:4px"><button type="button" class="sw ${E.memberSolo[c] ? 'on' : ''}" data-solo="${esc(c)}"><i></i>📌 也單獨放在「${esc(SC.drawerOf(cl).name)}」</button></div></div>
-        <span class="row"><a class="btn xs ghost" href="#edit/${esc(c)}">✏️ 編輯</a><button type="button" class="btn xs ghost" data-prm="${esc(c)}">移出</button></span></div>`; }).join('') || '<p class="muted small">還沒有系統。</p>'}</div>
+      <p class="hint">其他老師在說明頁看到的就是這幾個系統。每個系統可以分開決定「看不看得見」「其他老師可以怎麼用」——按右邊的「✏️ 設定」。</p>
+      <div class="mlist">${(l.parts || []).map((c, i) => { const cl = L[c]; if (!cl) return ''; const cf = SC.face(c), open = M && M.id === c; return `<div class="mitem ${open ? 'open' : ''}">
+        <div class="mrow"><span class="mv"><button type="button" data-pm="${i}" data-d="-1" title="往前">▲</button><button type="button" data-pm="${i}" data-d="1" title="往後">▼</button></span>
+          <div class="mnm"><b>${esc(cf.icon + ' ' + cf.name)}</b><div class="mchips">${chip(cl, c)}</div></div>
+          <span class="row mops"><button type="button" class="btn xs ${open ? 'ghost' : ''}" data-mopen="${esc(c)}">${open ? '收起 ▴' : '✏️ 設定 ▾'}</button><button type="button" class="btn xs ghost" data-prm="${esc(c)}">移出</button></span></div>
+        ${open ? memberPanel(M, cl) : ''}</div>`; }).join('') || '<p class="muted small">還沒有系統。</p>'}</div>
       <div class="row" style="margin-top:10px"><select id="pAdd" style="max-width:280px"><option value="">＋ 加入一張現有的卡片…</option>${cands.map((k) => `<option value="${esc(k)}">${esc(SC.face(k).icon + ' ' + SC.face(k).name)}</option>`).join('')}</select></div>
-      <p class="hint">新系統：先用「＋ 空白卡片」或「首頁工具」建立卡片，再回來這裡加入。移出的卡片不會被刪掉，會變成單獨的卡片。</p></section>`;
+      <p class="hint">新系統：先用「＋ 空白卡片」或「首頁工具」建立卡片，再回來這裡加入。「移出」不會刪掉卡片，會變成單獨的卡片（按上面「💾 儲存」才生效）。</p></section>`;
   } else if (suiteId) {
     suiteSec = `<section class="panel sec" id="s-suite"><h3>🏘️ 套組</h3>
       <p>這個系統在套組「<b>${esc(SC.face(suiteId).icon + ' ' + SC.face(suiteId).name)}</b>」裡。${L[suiteId].on ? '' : '<span class="st hid">套組目前看不見</span>'}</p>
@@ -575,16 +576,30 @@ function renderEditor(id) {
       <a class="btn xs ghost" href="#edit/${esc(suiteId)}">✏️ 編輯整個套組</a></section>`;
   }
 
+  function memberPanel(M, cl) {
+    const m = M.l, d = SC.drawerOf(cl);
+    return `<div class="mpanel">
+      <label class="f">展覽館上看得見嗎？</label>
+      <div class="choice"><label class="${m.on ? '' : 'on'}"><input type="radio" name="m-see" value="0" ${m.on ? '' : 'checked'}><b>🙈 看不見</b>說明頁不會列出這個系統。</label><label class="${m.on ? 'on' : ''}"><input type="radio" name="m-see" value="1" ${m.on ? 'checked' : ''}><b>👁️ 看得見</b>列在套組的說明頁裡。</label></div>
+      <label class="f">其他老師可以怎麼用？</label>
+      <div class="choice three">${Object.entries(MODE_TXT).map(([k, [n, t]]) => `<label class="${m.mode === k ? 'on' : ''}"><input type="radio" name="m-mode" value="${k}" ${m.mode === k ? 'checked' : ''}><b>${n}</b>${t}</label>`).join('')}</div>
+      ${m.mode === 'apply' ? `<div class="sub-choice"><label class="f">會員中心的系統代號</label><select data-ml="app"><option value="">（請選擇）</option>${Object.entries(W.APPS).map(([k, a]) => `<option value="${esc(k)}" ${m.app === k ? 'selected' : ''}>${esc(a.name)}（${esc(k)}）</option>`).join('')}</select></div>` : ''}
+      ${m.mode === 'open' ? `<div class="sub-choice"><label class="f">工具網址</label><input type="text" data-ml="url" value="${esc(m.url || '')}"></div>` : ''}
+      <label class="f">一句話介紹</label><input type="text" data-ml="brief" value="${esc(m.brief || '')}" maxlength="60">
+      <label class="chk"><input type="checkbox" id="mSolo" ${m.solo ? 'checked' : ''}><span><b>📌 也單獨放一張卡片</b>（通常不用勾）<br><span class="hint">勾了：除了在套組裡，展覽館的「${esc(d.name)}」也會另外出現一張「${esc(SC.face(M.id).name)}」的卡片。例：線上檢定所同時放在遊戲研究室。</span></span></label>
+      <div id="mErr"></div>
+      <div class="row" style="margin-top:12px"><button type="button" class="btn small" id="mSave" data-needconn>💾 存這個系統</button><button type="button" class="btn small ghost" id="mClose">收起</button><span class="grow"></span><a class="btn small ghost" href="#edit/${esc(M.id)}">📄 完整說明與截圖 →</a></div></div>`;
+  }
   const shotsSec = `<section class="panel sec" id="s-shots"><h3>📸 截圖</h3>
     <div class="info small">可以一次選好幾張，會自動壓縮；寬度小於 600 的（手機截圖）會放在「📱 學生端」那一區。<b>畫面裡的學生姓名請用假名。</b>第一張也是社群分享預覽圖的底圖。</div>
     <div class="row"><label class="btn small"><input type="file" id="upl" accept="image/*" multiple hidden>⬆️ 上傳截圖</label><span id="uplMsg" class="muted small"></span></div>
     <div id="shotList">${it.shots.length ? it.shots.map((s, i) => `<div class="shotrow"><img data-src="${esc(s[0])}" alt=""><div><input type="text" data-cap="${i}" value="${esc(s[1] || '')}" placeholder="圖說"><div class="muted small">${s[2] && s[2] < 600 ? '📱 手機畫面' : '💻 電腦畫面'}・${s[2] || '?'}×${s[3] || '?'}${String(s[0]).startsWith('f:') ? '・你上傳的' : '・Claude 拍的'}</div></div>
       <div class="ops"><button type="button" data-smv="${i}" data-d="-1">▲</button> <button type="button" data-smv="${i}" data-d="1">▼</button> <button type="button" data-sdel="${i}">🗑</button></div></div>`).join('') : '<p class="muted" style="padding:12px 0">還沒有截圖。</p>'}</div></section>`;
 
-  $('#view').innerHTML = `<div class="ed-head"><a class="btn small ghost" href="#cards">← 回卡片清單</a><h2>${esc(shown.icon)} ${esc(shown.name)}</h2>${E.isNew ? '<span class="st solo">新卡片・還沒存</span>' : ''}${isSuite ? '<span class="st suite">🏘️ 套組卡</span>' : ''}</div>
+  $('#view').innerHTML = `<div class="ed-head">${suiteId ? `<a class="btn small ghost" href="#edit/${esc(suiteId)}">← 回套組「${esc(SC.face(suiteId).name)}」</a>` : ''}<a class="btn small ghost" href="#cards">← 回卡片清單</a><h2>${esc(shown.icon)} ${esc(shown.name)}</h2>${E.isNew ? '<span class="st solo">新卡片・還沒存</span>' : ''}${isSuite ? '<span class="st suite">🏘️ 套組卡</span>' : ''}</div>
     <div class="jump">${secs.map(([k, t]) => `<a href="javascript:void 0" data-jump="${k}">${t}</a>`).join('')}</div>
     <div class="ed"><div class="ed-main">
-      ${cardSec}${showSec}${suiteSec}
+      ${isSuite ? suiteSec + cardSec + showSec : cardSec + showSec + suiteSec}
       <section class="panel sec" id="s-intro"><h3>📄 簡介</h3>
         <label class="f">副標題${tip('說明頁大標題下面的一行')}</label><input type="text" data-it="sub" value="${esc(it.sub || '')}" maxlength="80">
         ${field('intro', '簡介', '說明頁最上面的一段介紹，3～5 句最好。' + BOLD, 5)}
@@ -610,19 +625,39 @@ function renderEditor(id) {
   const V = $('#view');
   const dirty = () => { E.dirty = true; const d = $('#eDirty'); if (d) d.textContent = '● 有還沒儲存的修改'; };
   const repaint = () => { collect(); const y = window.scrollY; renderEditor(E.id); window.scrollTo(0, y); };
-  $$('input, textarea, select', V).forEach((x) => { x.addEventListener('input', () => { dirty(); refreshHealth(); }); if (x.tagName === 'SELECT') x.addEventListener('change', () => refreshHealth()); });
+  $$('input, textarea, select', V).filter((x) => !x.closest('.mpanel')).forEach((x) => { x.addEventListener('input', () => { dirty(); refreshHealth(); }); if (x.tagName === 'SELECT') x.addEventListener('change', () => refreshHealth()); });
   $$('[data-jump]', V).forEach((a) => { a.onclick = () => { const el = document.getElementById(a.dataset.jump); if (el) el.scrollIntoView({ behavior: 'smooth' }); }; });
   $$('[name=see]', V).forEach((r) => { r.onchange = () => { l.on = r.value === '1'; dirty(); repaint(); }; });
-  $$('[name=mode]', V).forEach((r) => { r.onchange = () => { l.mode = r.value; dirty(); repaint(); }; });
+  $$('[name=mode]', V).forEach((r) => { r.onchange = () => { l.mode = r.value; if (l.mode === 'apply' && !l.app && W.APPS[E.id]) l.app = E.id; dirty(); repaint(); }; });
   const fs = $('[data-l="from0"]', V); if (fs) fs.onchange = () => { collect(); l.from = fs.value ? [fs.value] : []; const t = fs.value && MO.tools[fs.value]; l.sync = !!t; l.mref = SC.snapMref(l.from); if (t && !l.url && l.mode === 'open') l.url = t.href; dirty(); repaint(); };
   const sy = $('#eSync', V); if (sy) sy.onclick = () => { collect(); l.sync = !l.sync; if (!l.sync && mt) { l.icon = mt.icon; l.name = mt.name; } dirty(); repaint(); };
   const mb = $('#useMB', V); if (mb) mb.onclick = () => { collect(); l.brief = mt.brief; dirty(); repaint(); };
   const ds = $('[data-l="drawer"]', V); if (ds) ds.onchange = () => { dirty(); repaint(); };
   const so = $('#eSolo', V); if (so) so.onclick = () => { collect(); l.solo = !l.solo; dirty(); repaint(); };
-  $$('[data-solo]', V).forEach((b) => { b.onclick = () => { collect(); E.memberSolo[b.dataset.solo] = !E.memberSolo[b.dataset.solo]; dirty(); repaint(); }; });
-  $$('[data-pm]', V).forEach((b) => { b.onclick = () => { collect(); const i = +b.dataset.pm, j = i - 1; if (j < 0) return; [l.parts[i], l.parts[j]] = [l.parts[j], l.parts[i]]; dirty(); repaint(); }; });
-  $$('[data-prm]', V).forEach((b) => { b.onclick = () => { collect(); l.parts = l.parts.filter((x) => x !== b.dataset.prm); E.memberSolo[b.dataset.prm] = false; dirty(); repaint(); }; });
-  const pa = $('#pAdd', V); if (pa) pa.onchange = () => { if (!pa.value) return; collect(); l.parts = (l.parts || []).concat(pa.value); E.memberSolo[pa.value] = L[pa.value].drawer !== l.drawer; dirty(); repaint(); };
+  $$('[data-pm]', V).forEach((b) => { b.onclick = () => { collect(); const i = +b.dataset.pm, j = i + +b.dataset.d; if (j < 0 || j >= l.parts.length) return; [l.parts[i], l.parts[j]] = [l.parts[j], l.parts[i]]; dirty(); repaint(); }; });
+  $$('[data-prm]', V).forEach((b) => { b.onclick = () => { collect(); l.parts = l.parts.filter((x) => x !== b.dataset.prm); if (E.m && E.m.id === b.dataset.prm) E.m = null; dirty(); repaint(); }; });
+  const pa = $('#pAdd', V); if (pa) pa.onchange = () => { if (!pa.value) return; collect(); l.parts = (l.parts || []).concat(pa.value); dirty(); repaint(); };
+  // 套組成員的「✏️ 設定」：在那一行下面展開
+  $$('[data-mopen]', V).forEach((b) => { b.onclick = () => { collect(); const c = b.dataset.mopen; E.m = E.m && E.m.id === c ? null : { id: c, l: copy(L[c]) }; repaint(); }; });
+  if (E.m && $('.mpanel', V)) {
+    const P = $('.mpanel', V), m = E.m.l;
+    const mcollect = () => { $$('[data-ml]', P).forEach((x) => { m[x.dataset.ml] = x.value.trim(); }); m.solo = $('#mSolo', P).checked; };
+    $$('[name=m-see]', P).forEach((r) => { r.onchange = () => { mcollect(); m.on = r.value === '1'; repaint(); }; });
+    $$('[name=m-mode]', P).forEach((r) => { r.onchange = () => { mcollect(); m.mode = r.value; if (m.mode === 'apply' && !m.app && W.APPS[E.m.id]) m.app = E.m.id; repaint(); }; });
+    $('#mClose', P).onclick = () => { E.m = null; repaint(); };
+    $('#mSave', P).onclick = async () => {
+      mcollect();
+      const id = E.m.id, old = S.pub.list[id];
+      S.pub.list[id] = Object.assign({}, old, m);
+      let hs; try { hs = await health(id); } finally { S.pub.list[id] = old; }
+      const errs = blocking(hs);
+      if (m.on && errs.length) { $('#mErr', P).innerHTML = `<div class="warn">⛔ ${esc(errs.map((h) => h.msg).join('；'))}</div>`; return; }
+      const paths = {};
+      ['on', 'mode', 'app', 'url', 'brief', 'solo'].forEach((k) => { paths[`list/${id}/${k}`] = m[k]; });   // 系統代號留著（改回開放申請不用重選）
+      try { collect(); await commit(paths, `💾 已儲存「${SC.face(id).name}」`); E.m = { id, l: copy(S.pub.list[id]) }; repaint(); }
+      catch (e) { toast('儲存失敗：' + errText(e), true); }
+    };
+  }
   $('#eSave').onclick = () => saveEditor(false);
   $('#eSaveX').onclick = () => saveEditor(true);
   $('#eX').onclick = (e) => { e.preventDefault(); S.ed = null; go('cards'); };   // 取消返回：不存、不再問
@@ -675,10 +710,9 @@ function renderEditor(id) {
   // 用「還沒存的內容」做健檢：暫時放進 PUB 算完再放回去
   async function draftHealth() {
     const P = S.pub, oldL = P.list[E.id], oldI = P.items[E.id];
-    const kids = {}; Object.keys(E.memberSolo || {}).forEach((c) => { if (P.list[c]) { kids[c] = P.list[c].solo; P.list[c].solo = E.memberSolo[c]; } });
     P.list[E.id] = SC.normalize({ list: { [E.id]: l } }).list[E.id] || copy(l); P.list[E.id].parts = (l.parts || []).filter((c) => P.list[c]); P.items[E.id] = it;
     try { return await health(E.id); }
-    finally { if (oldL) P.list[E.id] = oldL; else delete P.list[E.id]; if (oldI) P.items[E.id] = oldI; else delete P.items[E.id]; Object.keys(kids).forEach((c) => { P.list[c].solo = kids[c]; }); }
+    finally { if (oldL) P.list[E.id] = oldL; else delete P.list[E.id]; if (oldI) P.items[E.id] = oldI; else delete P.items[E.id]; }
   }
   function collect() {
     $$('[data-l]', V).forEach((x) => { if (x.disabled) return; if (x.dataset.l === 'from0') return; l[x.dataset.l] = x.value.trim(); });
@@ -695,12 +729,10 @@ function renderEditor(id) {
     const lst = {}; ['on', 'drawer', 'shelf', 'order', 'icon', 'name', 'brief', 'mode', 'app', 'url', 'from', 'sync', 'mref', 'parts', 'solo'].forEach((k) => { lst[k] = l[k] == null ? null : l[k]; });
     if (l.sync && mt) { lst.icon = mt.icon; lst.name = mt.name; }   // 同步中也存一份，首頁讀不到時用
     lst.mref = SC.snapMref(l.from);   // 存檔＝看過首頁現在的樣子（下次首頁再改才提醒）
-    if (lst.mode !== 'apply') lst.app = '';
     lst.parts = (l.parts || []).filter((c) => L[c]);
     const paths = { [`list/${E.id}`]: lst, [`items/${E.id}`]: item };
     // 套組：移出的系統、也單獨展出
     if (isSuite) {
-      Object.keys(E.memberSolo || {}).forEach((c) => { if (L[c] && L[c].solo !== !!E.memberSolo[c]) paths[`list/${c}/solo`] = !!E.memberSolo[c]; });
       (L[E.id] ? L[E.id].parts : []).filter((c) => !lst.parts.includes(c) && L[c]).forEach((c) => { paths[`list/${c}/solo`] = false; if (!S.pub.drawers[L[c].drawer]) paths[`list/${c}/drawer`] = lst.drawer; });
       // 從別的套組搬過來的卡片：從舊套組移除
       lst.parts.forEach((c) => { const o = SC.suiteOf(c); if (o && o !== E.id) paths[`list/${o}/parts`] = L[o].parts.filter((x) => x !== c); });
