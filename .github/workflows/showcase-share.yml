@@ -37,6 +37,10 @@ jobs:
           elif [ "$NEW" = "$OLD" ] && [ "${{ github.event_name }}" != "workflow_dispatch" ]; then echo "沒有改，結束"; echo "go=0" >> $GITHUB_OUTPUT
           else echo "go=1" >> $GITHUB_OUTPUT; fi
 
+      - name: 💾 存一份展覽館資料快照（Firebase 連不上時，展覽館改讀這份）
+        if: steps.rev.outputs.go == '1'
+        run: python3 -c "import json;p=json.load(open('/tmp/pub.json'));json.dump(p,open('showcase/share/pub.json','w'),ensure_ascii=False,separators=(',',':'),sort_keys=True)"
+
       - uses: actions/setup-node@v5
         if: steps.rev.outputs.go == '1'
         with:
