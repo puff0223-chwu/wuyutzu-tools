@@ -196,6 +196,17 @@
     for (var k in L) if (L[k].parts.indexOf(id) >= 0) return k;
     return '';
   }
+  // 這張卡片是會員中心的哪個系統？自動判斷：卡片記的代號 → 卡片代號本身 → 對應的首頁工具網址和會員中心網址一樣
+  var normU = function (u) { return String(u || '').replace(/[?#].*$/, '').replace(/index\.html$/, '').replace(/\/+$/, '').toLowerCase(); };
+  function appOf(l, id) {
+    var A = (W && W.APPS) || {};
+    if (!l || arr(l.parts).length) return '';   // 套組卡本身不是一個系統
+    if (l.app && A[l.app]) return l.app;
+    if (id && A[id]) return id;
+    var urls = arr(l.from).map(function (tid) { var m = motherTool(tid); return m && normU(m.href); }).concat([normU(l.url)]).filter(Boolean);
+    for (var k in A) { var au = normU(A[k].url); if (au && urls.some(function (u) { return u === au || u.indexOf(au + '/') === 0; })) return k; }
+    return '';
+  }
   // 卡片外觀：勾了「跟母頁同步」而且母頁有這個工具 → 用母頁的圖示、名稱（免申請的網址也跟母頁）
   function face(id) {
     var l = PUB && PUB.list[id];
@@ -223,6 +234,9 @@
     var l = PUB.list[id], f = face(id);
     var t = Object.assign({ code: id }, PUB.items[id] || {}, l, { icon: f.icon, name: f.name, brief: f.brief, url: f.url, synced: f.synced });
     LIST_KEYS.forEach(function (k) { t[k] = rows(t[k]); if (!t[k].length) delete t[k]; });
+    // 會員中心的系統：自動對應（不用老師選代號）；「開放使用」但沒有接會員中心的工具 → 當成免申請直接用
+    t.app = appOf(l, id);
+    if (t.mode === 'apply' && !t.app) t.mode = openURL(t) ? 'open' : 'show';
     t.appInfo = t.mode === 'apply' && W && W.APPS ? W.APPS[t.app] || null : null;
     t.external = /^https?:\/\//.test((t.appInfo && t.appInfo.url) || t.url || '');
     t.ready = !!(t.intro || t.feats || t.flow);
@@ -283,9 +297,8 @@
     if (!String(f.name || '').trim()) p('err', '還沒有系統名稱', 'name');
     if (l.parts.length) {
       if (!l.parts.some(function (c) { return L[c] && L[c].on; })) p('err', '套組裡沒有任何「看得見」的系統，套組不會出現在展覽館', 'parts');
-    } else if (l.mode === 'apply') {
-      if (!l.app) p('err', '「🔐 開放申請」要選會員中心的系統代號', 'app');
-      else if (W && W.APPS && !W.APPS[l.app]) p('err', '會員中心已經沒有「' + l.app + '」這個系統代號', 'app');
+    } else if (l.mode === 'apply' && !appOf(l, id)) {
+      p('err', '這個工具沒有接上會員中心（沒有帳號系統），不能「要申請」；請改成「✅ 開放使用」（免申請直接用）', 'app');
     } else if (l.mode === 'open') {
       if (!f.url) p('err', '「🚀 免申請直接用」要填工具網址', 'url');
       else if (!isSiteURL(f.url) && !safeURL(f.url)) p('err', '工具網址的格式不對（站內網址從網站根目錄寫起，或完整的 https:// 網址）', 'url');
@@ -519,7 +532,7 @@
     esc: esc, rich: rich, plain: plain, arr: arr, rows: rows, safeURL: safeURL, isSiteURL: isSiteURL,
     parseMother: parseMother, setMother: setMother, loadMother: loadMother, motherTool: motherTool, motherFace: motherFace, sameFace: sameFace, faceDiff: faceDiff, MLABEL: MLABEL,
     seedPub: seedPub, setPub: setPub, normalize: normalize, load: load, fetchJSON: fetchJSON, timed: timed,
-    drawers: drawers, drawerOf: drawerOf, suiteOf: suiteOf, motherChanged: motherChanged, motherChanges: motherChanges, snapMref: snapMref, mrefOf: mrefOf, face: face, visible: visible, get: get, list: list, searchText: searchText, check: check,
+    drawers: drawers, drawerOf: drawerOf, suiteOf: suiteOf, appOf: appOf, motherChanged: motherChanged, motherChanges: motherChanges, snapMref: snapMref, mrefOf: mrefOf, face: face, visible: visible, get: get, list: list, searchText: searchText, check: check,
     appURL: appURL, openURL: openURL, applyURL: applyURL, shareURL: shareURL, thumb: thumb,
     sections: sections, pageHTML: pageHTML, backOf: backOf, enhance: enhance, loadImages: loadImages, fimg: fimg
   });
