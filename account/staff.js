@@ -23,6 +23,8 @@
   function href(url, base) { return /^https?:\/\//.test(url) ? url : (base || '') + url; }
   var STATUS = { pending: '⏳ 等待核准', approved: '✅ 已核准', rejected: '❌ 未通過', disabled: '⏸ 已停用' };
   function lower(s) { return String(s || '').trim().toLowerCase(); }
+  // 套組（2026-11-08）：申請時可以「整套申請」，也可以只勾需要的
+  var SUITES = { town: { name: '🏘️ WYTClass 課堂小鎮', desc: '四個系統一個大廳，申請過的系統之間會自動連動', apps: ['grade', 'cc', 'game', 'exam'] } };
   function isAdmin(user) { return !!user && lower(user.email) === ADMIN && user.emailVerified === true; }
   // 舊的系統專用帳號已經全部移除（保留函式名稱，舊程式呼叫不會壞）
   function isOwner() { return false; }
@@ -75,5 +77,5 @@
       '<a href="' + url + '" style="display:inline-block;background:#f2b134;border:2px solid #1f2a44;border-radius:10px;padding:8px 16px;font-weight:900;color:#1f2a44;text-decoration:none">' + (res.reason === 'pre' ? '🎫 到會員中心啟用' : '👥 前往會員中心') + '</a> ' +
       '<button data-staff-logout style="background:#fff;border:2px solid #1f2a44;border-radius:10px;padding:8px 14px;font-weight:700;cursor:pointer;margin-left:6px">登出</button></div>';
   }
-  root.WuStaff = { ADMIN: ADMIN, APPS: APPS, href: href, STATUS: STATUS, isAdmin: isAdmin, isOwner: isOwner, legacyApp: legacyApp, ekey: ekey, check: check, centerURL: centerURL, blockedHTML: blockedHTML };
+  root.WuStaff = { ADMIN: ADMIN, APPS: APPS, SUITES: SUITES, href: href, STATUS: STATUS, isAdmin: isAdmin, isOwner: isOwner, legacyApp: legacyApp, ekey: ekey, check: check, centerURL: centerURL, blockedHTML: blockedHTML };
 })(this);

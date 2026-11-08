@@ -19,6 +19,9 @@ const MODE_TXT = { show: ['👀 只展示', '其他老師只看得到說明和�
 // 「開放使用」實際是哪一種：會員中心有這個系統（自動對應）→ 要申請；沒有帳號系統的工具 → 免申請直接用
 const useMode = (l, id) => (SC.appOf(l, id) ? 'apply' : 'open');
 const useLabel = (l, id) => (SC.appOf(l, id) ? '🔐 開放使用（要申請）' : '🚀 開放使用（免申請）');
+// 首頁工具是不是會員中心的系統、展覽館已經有那個系統的卡片（例：首頁新加的「成績調閱室」卡＝展覽館的 grade 卡）
+const linkable = (tid) => { const a = SC.appOf({ from: [tid], url: '' }, ''); if (!a) return ''; return Object.keys(S.pub.list).find((id) => S.pub.list[id].app === a && !S.pub.list[id].from.length && !S.pub.list[id].parts.length) || ''; };
+const isSoon = (tid) => !!(SC.MOTHER && SC.MOTHER.tools[tid] && SC.MOTHER.tools[tid].soon);
 const S = { user: null, pub: null, conn: null, ownRevs: new Set(), filter: 'all', q: '', safety: {}, ed: null, stale: false };
 let FB, M;
 
@@ -196,8 +199,16 @@ function inbox() {
         else items.push({ ic: '🏠', html: `「<b>${esc(l.name)}</b>」包含的首頁工具「${nm}」改過了。<br>${diffs}`, ops: [['✏️ 去調整', () => go('edit/' + id)], ['✔ 不用改', () => ackMother(id)]] });
       });
     });
-    // ③ 首頁的新工具還沒決定要不要放展覽館
-    const fresh = MO.order.filter((tid) => !used.has(tid) && !S.pub.skip[tid] && !suggested.has(tid));
+    // ③ 首頁新加的卡片就是展覽館已經有的系統 → 對應起來（之後名稱、位置跟著首頁）
+    MO.order.forEach((tid) => {
+      if (used.has(tid) || isSoon(tid)) return;
+      const cid = linkable(tid); if (!cid) return;
+      suggested.add(tid);
+      const t = MO.tools[tid];
+      items.push({ ic: '🔗', html: `首頁新加的「<b>${esc(t.icon + ' ' + t.name)}</b>」就是展覽館的「${esc(L[cid].name)}」卡片。<small>對應起來之後，名稱、圖示、放在哪個分類都會跟著首頁。</small>`, ops: [['🔗 對應起來', () => linkTool(cid, tid), 'btn']] });
+    });
+    // ④ 首頁的新工具還沒決定要不要放展覽館（🚧 籌備中的不算）
+    const fresh = MO.order.filter((tid) => !used.has(tid) && !S.pub.skip[tid] && !suggested.has(tid) && !isSoon(tid));
     if (fresh.length) items.push({ ic: '🆕', html: `事務所首頁有 <b>${fresh.length}</b> 個工具還沒決定要不要放展覽館：${fresh.map((t) => esc(MO.tools[t].icon + ' ' + MO.tools[t].name)).join('、')}`, ops: [['🧰 去決定', () => go('tools')]] });
   }
   // ④ 會員中心有這個系統可以申請，展覽館卻沒有卡片（例：新接上會員中心的系統）
@@ -229,6 +240,7 @@ function diffHTML(k, a, b) {
   return `<span class="diff">${lab}：<del>${esc(cut(a) || '（空）')}</del> → <ins>${esc(cut(b) || '（空）')}</ins></span>`;
 }
 // 「看過了」＝把首頁現在的樣子記成新的快照
+async function linkTool(id, tid) { try { await commit({ [`list/${id}/from`]: [tid], [`list/${id}/sync`]: true, [`list/${id}/mref`]: SC.snapMref([tid]) }, '🔗 已對應，之後跟著首頁'); route(); } catch (e) { toast('儲存失敗：' + errText(e), true); } }
 async function ackMother(id) { try { await commit({ [`list/${id}/mref`]: SC.snapMref(S.pub.list[id].from) }, '✔ 已記下，之後首頁再改才會提醒'); route(); } catch (e) { toast('儲存失敗：' + errText(e), true); } }
 async function syncMother(id) { try { await commit({ [`list/${id}/sync`]: true, [`list/${id}/mref`]: SC.snapMref(S.pub.list[id].from) }, '🔗 已改成跟首頁同步'); route(); } catch (e) { toast('儲存失敗：' + errText(e), true); } }
 async function unlinkMother(id, tid) { const f = S.pub.list[id].from.filter((x) => x !== tid); try { await commit({ [`list/${id}/from`]: f, [`list/${id}/sync`]: f.length === 1 && S.pub.list[id].sync, [`list/${id}/mref`]: SC.snapMref(f) }, '已解除對應'); route(); } catch (e) { toast('儲存失敗：' + errText(e), true); } }
@@ -277,7 +289,7 @@ function route() {
   if (!h.startsWith('edit/')) S.ed = null;
   const [view, arg] = h.split('/');
   const n = inbox().length, MO = SC.MOTHER;
-  const fresh = MO ? MO.order.filter((t) => !Object.values(S.pub.list).some((l) => l.from.includes(t)) && !S.pub.skip[t]).length : 0;
+  const fresh = MO ? MO.order.filter((t) => !Object.values(S.pub.list).some((l) => l.from.includes(t)) && !S.pub.skip[t] && !isSoon(t)).length : 0;
   const nav = [['cards', `🖼️ 展覽館卡片${n ? `<span class="n">${n}</span>` : ''}`], ['tools', `🧰 首頁工具${fresh ? `<span class="n">${fresh}</span>` : ''}`], ['drawers', '🗂️ 分類'], ['help', '❓ 使用說明']];
   $('#app').innerHTML = `<div id="banner" class="banner"></div><div class="nav">${nav.map(([k, t]) => `<a href="#${k}" class="${(view === k || (view === 'edit' && k === 'cards')) ? 'on' : ''}">${t}</a>`).join('')}<span class="grow"></span>
     <span class="muted small" style="align-self:center">最後更新：${new Date(S.pub.rev).toLocaleString('zh-TW')}</span></div><div id="view"></div>`;
@@ -310,7 +322,7 @@ function renderCards() {
   const groups = SC.drawers().concat([Object.assign({}, SC.NO_DRAWER, { id: '__none', name: '未分類' })]);
   let any = false;
   groups.forEach((d) => {
-    const ids = top.filter((id) => (d.id === '__none' ? !S.pub.drawers[L[id].drawer] : L[id].drawer === d.id) && pass(id)).sort((a, b) => L[a].order - L[b].order);
+    const ids = top.filter((id) => { const dr = SC.face(id).drawer; return (d.id === '__none' ? !S.pub.drawers[dr] : dr === d.id) && pass(id); }).sort((a, b) => SC.face(a).order - SC.face(b).order);   // 跟首頁同步的卡片：分類、順序用首頁的
     if (!ids.length) return; any = true;
     html += `<div class="dsec" style="--soft:${esc(d.soft)}"><h3><span class="tag" style="background:${esc(d.color)}">${esc(d.tag || '')}</span>${esc(d.name)}</h3>
       <div class="rh"><span>順序</span><span>卡片</span><span>展覽館</span><span>其他老師可以</span><span>健檢</span><span></span></div><div class="rows">` +
@@ -344,7 +356,7 @@ function rowHTML(id, child) {
   const mode = l.parts.length ? '<span class="muted small">看下面每個系統</span>'
     : `<select data-mode="${esc(id)}" aria-label="其他老師可以怎麼用" data-needconn><option value="show" ${l.mode === 'show' ? 'selected' : ''}>👀 只展示</option><option value="use" ${l.mode !== 'show' ? 'selected' : ''}>${useLabel(l, id)}</option></select>`;
   return `<div class="r ${l.on ? '' : 'off'} ${child ? 'child' : ''}" style="--soft:${esc(d.soft)}">
-    <div class="mv"><button data-mv="${esc(id)}" data-d="-1" title="往前" data-needconn>▲</button><button data-mv="${esc(id)}" data-d="1" title="往後" data-needconn>▼</button></div>
+    ${!child && f.placed ? '<div class="mv" title="跟首頁同步：分類和順序跟著首頁"><span class="muted small" style="text-align:center">🔗</span></div>' : `<div class="mv"><button data-mv="${esc(id)}" data-d="-1" title="往前" data-needconn>▲</button><button data-mv="${esc(id)}" data-d="1" title="往後" data-needconn>▼</button></div>`}
     <div class="main" data-edit="${esc(id)}" role="button" tabindex="0"><span class="ico">${child ? '' : ''}${esc(f.icon)}</span><span class="nm"><b>${child ? '└ ' : ''}${esc(f.name)}</b><span class="br">${esc(SC.plain(l.brief))}</span>${tags.length ? `<span class="tags">${tags.join('')}</span>` : ''}</span></div>
     <div class="c-sw"><button class="sw ${l.on ? 'on' : ''}" data-tog="${esc(id)}" title="展覽館上看不看得見" data-needconn><i></i>${l.on ? '👁️ 看得見' : '🙈 看不見'}</button></div>
     <div class="c-mode">${mode}</div>
@@ -376,7 +388,8 @@ async function move(id, dir) {
     if (j < 0 || j >= p.length) return;
     [p[i], p[j]] = [p[j], p[i]]; paths[`list/${s}/parts`] = p;
   } else {
-    const sib = Object.keys(L).filter((k) => !SC.suiteOf(k) && L[k].drawer === L[id].drawer).sort((a, b) => L[a].order - L[b].order);
+    if (!s && SC.face(id).placed) { toast('這張卡片跟首頁同步：順序跟著首頁（要改順序請改首頁）', true); return; }
+    const sib = Object.keys(L).filter((k) => !SC.suiteOf(k) && !SC.face(k).placed && SC.face(k).drawer === SC.face(id).drawer).sort((a, b) => L[a].order - L[b].order);
     const i = sib.indexOf(id), j = i + dir;
     if (j < 0 || j >= sib.length) return;
     [sib[i], sib[j]] = [sib[j], sib[i]];
@@ -422,6 +435,7 @@ function renderTools() {
   Object.keys(groups).sort((a, b) => a - b).forEach((di) => {
     html += `<div class="dsec"><h3>${esc(MO.drawers[di] || '其他')}</h3></div><table class="mt"><thead><tr><th>首頁工具</th><th>展覽館</th><th>免申請檢查</th><th></th></tr></thead><tbody>` +
       groups[di].map((t) => {
+        if (t.soon) return `<tr class="skip"><td>${esc(t.icon)} <b>${esc(t.name)}</b><div class="muted small">${esc(t.brief)}</div></td><td><span class="st no">🚧 籌備中</span></td><td></td><td></td></tr>`;
         const ins = byTool[t.id] || [], skip = S.pub.skip[t.id];
         const st = ins.length ? ins.map((id) => `<span class="st ${SC.visible(id) ? 'on' : 'hid'}">${SC.visible(id) ? '看得見' : '看不見'}・${esc(SC.face(id).name)}</span>`).join(' ') : skip ? '<span class="st no">🙅 不放展覽館</span>' : '<span class="st no">還沒決定</span>';
         const ops = ins.length ? `<button class="btn xs ghost" data-edit="${esc(ins[0])}">✏️ 編輯</button>`
@@ -542,12 +556,12 @@ function renderEditor(id) {
   const cardSec = `<section class="panel sec" id="s-card"><h3>🪪 卡片</h3>
     ${l.from.length <= 1 ? `<label class="f">對應事務所首頁的工具${tip('對應後，首頁改了這個工具，這裡會提醒你；也可以讓名稱、圖示自動跟著首頁。')}</label>
       <select data-l="from0"><option value="">（不對應）</option>${motherOpts}</select>` : extraFrom}
-    ${mt ? `<div style="margin-top:8px"><button type="button" class="sw ${l.sync ? 'on' : ''}" id="eSync"><i></i>🔗 名稱、圖示跟首頁同步</button><div class="hint">${l.sync ? `打開中：名稱、圖示用首頁的「${esc(mt.icon + ' ' + mt.name)}」，首頁改了展覽館馬上跟著改。` : '關閉中：名稱、圖示用下面自己填的。'}</div></div>` : ''}
+    ${mt ? `<div style="margin-top:8px"><button type="button" class="sw ${l.sync ? 'on' : ''}" id="eSync"><i></i>🔗 名稱、圖示、分類跟首頁同步</button><div class="hint">${l.sync ? `打開中：名稱、圖示、放在哪個分類都跟首頁的「${esc(mt.icon + ' ' + mt.name)}」，首頁改了展覽館馬上跟著改。` : '關閉中：名稱、圖示用下面自己填的。'}</div></div>` : ''}
     <div class="grid3"><div><label class="f">圖示</label><input type="text" data-l="icon" value="${esc(shown.icon)}" maxlength="4" ${l.sync && mt ? 'disabled' : ''}></div>
       <div><label class="f">名稱</label><input type="text" data-l="name" value="${esc(shown.name)}" maxlength="30" ${l.sync && mt ? 'disabled' : ''}></div></div>
     <label class="f">一句話介紹${tip('顯示在展覽館的卡片上，約 20～30 字。這一句不跟首頁同步（可以寫給外校老師看的版本）。')}</label><input type="text" data-l="brief" value="${esc(l.brief)}" maxlength="60">
     ${mt && mt.brief !== l.brief ? `<div class="hint">首頁的一句話：「${esc(mt.brief)}」 <button type="button" class="btn xs ghost" id="useMB">套用首頁的</button></div>` : ''}
-    ${suiteId && !l.solo ? `<div class="hint">📍 這個系統放在套組「${esc(SC.face(suiteId).name)}」裡，分類跟著套組。</div>` : `<div class="grid2"><div><label class="f">分類（抽屜）</label><select data-l="drawer">${DR.map((d) => `<option value="${esc(d.id)}" ${l.drawer === d.id ? 'selected' : ''}>${esc(d.name)}</option>`).join('')}</select></div>
+    ${suiteId && !l.solo ? `<div class="hint">📍 這個系統放在套組「${esc(SC.face(suiteId).name)}」裡，分類跟著套組。</div>` : l.sync && mt && SC.face(E.id) && SC.face(E.id).placed ? `<div class="hint">🔗 跟首頁同步中：分類、小分類、順序都跟首頁（現在在「${esc(SC.drawerOf({ drawer: SC.face(E.id).drawer }).name)}・${esc(SC.face(E.id).shelf)}」）。要搬家請改首頁。</div>` : `<div class="grid2"><div><label class="f">分類（抽屜）</label><select data-l="drawer">${DR.map((d) => `<option value="${esc(d.id)}" ${l.drawer === d.id ? 'selected' : ''}>${esc(d.name)}</option>`).join('')}</select></div>
       <div><label class="f">小分類${tip('同一個抽屜裡的分組標題，例如「課堂遊戲化」。可以留空。')}</label><input type="text" data-l="shelf" value="${esc(l.shelf || '')}" list="shelfL" maxlength="20"><datalist id="shelfL">${shelves.map((s) => `<option>${esc(s)}</option>`).join('')}</datalist></div></div>`}
     <p class="hint" style="margin-top:10px">網址代號：<b>${esc(E.id)}</b>（說明頁 guide.html?app=${esc(E.id)}、分享頁 share/${esc(E.id)}.html，建立後不能改）</p></section>`;
 

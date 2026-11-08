@@ -43,6 +43,9 @@ a.btn{text-decoration:none;color:var(--ink)}
 .app input{width:20px;height:20px;flex:none}
 .app b{display:block}.app span{font-size:.85em;color:var(--muted)}
 .app.on{border-color:var(--ink);background:var(--gold-soft)}
+.suite{border:2px dashed var(--ink);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px;background:#fffdf8}
+.suite-h{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.suite-h>div{flex:1;min-width:180px}.suite-h b{display:block}.suite-h span{font-size:.85em;color:var(--muted)}
+.suite-sep{font-size:.85em;font-weight:800;color:var(--muted);margin-top:6px}
 .chip{display:inline-block;border-radius:999px;padding:1px 10px;font-size:.82em;font-weight:700;background:#eee}
 .chip.ok{background:var(--teal);color:#fff}.chip.pre{background:#efe6ff;color:#5b3d99}.chip.wait{background:var(--gold-soft);color:#8a5a00}.chip.bad{background:var(--red);color:#fff}.chip.ink{background:var(--ink);color:var(--gold)}
 .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 4px}
@@ -83,7 +86,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92em;min-width:720px}
 <body>
 <div class="top"><div class="brand">👥 會員中心<small>WU YU-ZI TEACHING STUDIO</small></div><span class="sp"></span><span id="who" class="small" style="opacity:.8"></span><button id="out" style="display:none">登出</button><a id="back" href="#" style="display:none"></a><a id="home" href="../" style="display:none" title="只有管理員看得到">🏠 事務所首頁</a></div>
 <div class="wrap" id="app"><p class="muted" style="text-align:center;margin-top:20vh">載入中…</p></div>
-<script src="staff.js?v=20261108a"></script>
+<script src="staff.js?v=20261108b"></script>
 <script type="module">
 const W = window.WuStaff, $ = (s, el) => (el || document).querySelector(s), $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -108,8 +111,23 @@ try {
 } catch (e) { console.warn(e); FB = null; }
 
 function stop() { S.unsubs.forEach((u) => { try { u(); } catch (e) { } }); S.unsubs = []; }
-const appBoxes = (sel, name, only) => `<div class="apps">${Object.entries(W.APPS).filter(([k]) => !only || only.includes(k)).map(([k, a]) => `<label class="app ${sel[k] ? 'on' : ''}"><input type="checkbox" name="${name}" value="${k}" ${sel[k] ? 'checked' : ''}><div><b>${a.name}</b><span>${esc(a.desc)}</span></div></label>`).join('')}</div>`;
-const bindBoxes = (el) => $$('.app input', el).forEach((i) => { i.onchange = () => i.closest('.app').classList.toggle('on', i.checked); });
+const appBox = (sel, name) => ([k, a]) => `<label class="app ${sel[k] ? 'on' : ''}"><input type="checkbox" name="${name}" value="${k}" ${sel[k] ? 'checked' : ''}><div><b>${a.name}</b><span>${esc(a.desc)}</span></div></label>`;
+// 套組（課堂小鎮）的系統放在同一組，上面一顆「整套申請」；其他系統在下面（2026-11-08）
+const appBoxes = (sel, name, only) => {
+  const ok = ([k]) => !only || only.includes(k), inSuite = new Set();
+  const suites = Object.entries(W.SUITES || {}).map(([sk, su]) => {
+    const list = su.apps.filter((k) => W.APPS[k] && ok([k])); list.forEach((k) => inSuite.add(k));
+    if (!list.length) return '';
+    return `<div class="suite"><div class="suite-h"><div><b>${esc(su.name)}</b><span>${esc(su.desc)}</span></div>${list.length > 1 ? `<button type="button" class="btn sm ghost" data-allset="${list.join(',')}">☑ 整套申請</button>` : ''}</div>${list.map((k) => appBox(sel, name)([k, W.APPS[k]])).join('')}</div>`;
+  }).join('');
+  const rest = Object.entries(W.APPS).filter((e) => ok(e) && !inSuite.has(e[0]));
+  return `<div class="apps">${suites}${rest.length && suites ? '<div class="suite-sep">其他系統</div>' : ''}${rest.map(appBox(sel, name)).join('')}</div>`;
+};
+const bindBoxes = (el) => {
+  $$('.app input', el).forEach((i) => { i.onchange = () => i.closest('.app').classList.toggle('on', i.checked); });
+  // ☑ 整套申請：全部勾起來（已經全勾就全部取消）
+  $$('[data-allset]', el).forEach((b) => { b.onclick = () => { const box = b.closest('.suite'), ins = $$('.app input', box), all = ins.every((i) => i.checked); ins.forEach((i) => { i.checked = !all; i.closest('.app').classList.toggle('on', !all); }); b.textContent = all ? '☑ 整套申請' : '↩ 全部取消'; }; });
+};
 const picked = (el, name) => Object.fromEntries($$(`input[name="${name}"]:checked`, el).map((i) => [i.value, true]));
 
 // ---------- 登入 ----------
@@ -378,7 +396,7 @@ function modal(html) {
   document.body.appendChild(m); return m;
 }
 function closeModal() { const m = $('#modal'); if (m) m.remove(); }
-const appCks = (sel) => `<div class="apps">${Object.entries(W.APPS).map(([k, a]) => `<label class="app ${sel[k] ? 'on' : ''}"><input type="checkbox" name="mapp" value="${k}" ${sel[k] ? 'checked' : ''}><div><b>${a.name}</b><span>${esc(a.desc)}</span></div></label>`).join('')}</div>`;
+const appCks = (sel) => appBoxes(sel, 'mapp');   // 管理員開通也照套組分組（2026-11-08）
 async function saveMemo(id, text) { const t = String(text || '').trim().slice(0, 500); await FB.set('staffmemo/' + id, t || null); }
 // 編輯一位老師（已申請的）
 function openEdit(uid) {

@@ -55,18 +55,27 @@
     var tools = JSON.parse(html.slice(a + 'const TOOLS = '.length, b + 2)), out = { tools: {}, order: [], drawers: [] };
     tools.forEach(function (t) { if (t && t.id) { out.tools[t.id] = t; out.order.push(t.id); } });
     var d0 = html.indexOf('const DRAWERS = ['), d1 = html.indexOf('];', d0);
-    if (d0 >= 0) { var m, re = /name:\s*'([^']+)'/g, s = html.slice(d0, d1); while ((m = re.exec(s))) out.drawers.push(m[1]); }
+    out.dmeta = [];
+    if (d0 >= 0) {
+      html.slice(d0, d1).split('\n').forEach(function (line) {
+        var g = function (k) { var m = new RegExp(k + ":\\s*'([^']*)'").exec(line); return m ? m[1] : ''; };
+        if (g('name')) { out.drawers.push(g('name')); out.dmeta.push({ name: g('name'), tag: g('tag'), desc: g('desc'), color: g('color'), soft: g('soft') }); }
+      });
+    }
     return out;
   }
   function setMother(m) { MOTHER = m || null; SC.MOTHER = MOTHER; }
   function motherTool(id) { return MOTHER && MOTHER.tools[id] || null; }
   // 母頁工具的「快照」：存在卡片的 mref，下次和母頁比對就知道改了哪裡（連功能清單、說明都比）
-  var MKEYS = ['icon', 'name', 'brief', 'href', 'sub', 'title', 'features', 'note', 'btn', 'teacher'];
-  var MLABEL = { icon: '圖示', name: '名稱', brief: '一句話', href: '網址', sub: '副標題', title: '標題', features: '功能清單', note: '備註', btn: '按鈕文字', teacher: '老師專用標記' };
+  var MKEYS = ['icon', 'name', 'brief', 'href', 'sub', 'title', 'features', 'note', 'btn', 'teacher', 'use', 'place'];
+  var MLABEL = { icon: '圖示', name: '名稱', brief: '一句話', href: '網址', sub: '副標題', title: '標題', features: '功能清單', note: '備註', btn: '按鈕文字', teacher: '老師專用標記', use: '誰在用', place: '放在首頁哪裡' };
   function motherFace(t) {
     if (!t) return null;
     var f = {};
-    MKEYS.forEach(function (k) { var v = t[k]; f[k] = k === 'features' ? arr(v).map(String) : k === 'teacher' ? !!v : String(v == null ? '' : v); });
+    MKEYS.forEach(function (k) {
+      var v = k === 'place' ? ((MOTHER && MOTHER.drawers[t.drawer]) || '') + '・' + (t.shelf || '') : t[k];
+      f[k] = k === 'features' ? arr(v).map(String) : k === 'teacher' ? !!v : String(v == null ? '' : v);
+    });
     return f;
   }
   function fval(f, k) { var v = f ? f[k] : ''; return k === 'features' ? JSON.stringify(arr(v)) : k === 'teacher' ? String(!!v) : String(v == null ? '' : v); }
@@ -182,13 +191,15 @@
      ========================================================= */
   function drawers() {
     var D = (PUB || {}).drawers || {};
-    return Object.keys(D).map(function (id) { return Object.assign({ id: id }, D[id]); })
+    // 和首頁同名的分類：說明、顏色、標籤跟首頁一致
+    var M = {}; ((MOTHER && MOTHER.dmeta) || []).forEach(function (d) { M[d.name] = d; });
+    return Object.keys(D).map(function (id) { var m = M[D[id].name], o = Object.assign({ id: id }, D[id]); if (m) ['tag', 'desc', 'color', 'soft'].forEach(function (k) { if (m[k]) o[k] = m[k]; }); return o; })
       .sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
   }
   var NO_DRAWER = { id: '', name: '其他', tag: 'Drawer +', desc: '', color: '#6d6a75', soft: '#efedf2' };
   function drawerOf(t) {
-    var D = (PUB || {}).drawers || {}, d = D[t.drawer];
-    return d ? Object.assign({ id: t.drawer }, d) : NO_DRAWER;
+    var d = drawers().filter(function (x) { return x.id === t.drawer; })[0];
+    return d || NO_DRAWER;
   }
   function suiteOf(id) {
     if (!PUB) return '';
@@ -211,12 +222,16 @@
   function face(id) {
     var l = PUB && PUB.list[id];
     if (!l) return null;
-    var f = { icon: l.icon, name: l.name, brief: l.brief, url: l.url, synced: false };
+    var f = { icon: l.icon, name: l.name, brief: l.brief, url: l.url, synced: false, drawer: null };
     var m = l.sync && l.from[0] && motherTool(l.from[0]);
     if (m) {
       f.icon = m.icon || f.icon; f.name = m.name || f.name; f.synced = true;   // 一句話不跟（展覽館常會寫給外校老師看的版本），母頁改了管理頁會提醒
       if (l.mode === 'open' && m.href && (isSiteURL(m.href) || safeURL(m.href))) f.url = m.href;
+      // 抽屜、小分類、順序也跟首頁（2026-11-08）：首頁搬家，展覽館跟著搬（展覽館要有同名的分類）
+      var dn = MOTHER.drawers[m.drawer], D = (PUB || {}).drawers || {};
+      for (var k in D) if (D[k].name === dn) { f.drawer = k; f.shelf = m.shelf || ''; f.order = 1000 + MOTHER.order.indexOf(m.id); f.placed = true; break; }
     }
+    if (f.drawer == null) { f.drawer = l.drawer; f.shelf = l.shelf; f.order = l.order; }
     return f;
   }
   // 看得見嗎：自己的開關打開；套組成員（沒有單獨展出）還要套組也看得見
@@ -232,7 +247,7 @@
     if (!PUB || !PUB.list[id]) return null;
     if (!all && !visible(id)) return null;
     var l = PUB.list[id], f = face(id);
-    var t = Object.assign({ code: id }, PUB.items[id] || {}, l, { icon: f.icon, name: f.name, brief: f.brief, url: f.url, synced: f.synced });
+    var t = Object.assign({ code: id }, PUB.items[id] || {}, l, { icon: f.icon, name: f.name, brief: f.brief, url: f.url, synced: f.synced, drawer: f.drawer, shelf: f.shelf, order: f.order });
     LIST_KEYS.forEach(function (k) { t[k] = rows(t[k]); if (!t[k].length) delete t[k]; });
     // 會員中心的系統：自動對應（不用老師選代號）；「開放使用」但沒有接會員中心的工具 → 當成免申請直接用
     t.app = appOf(l, id);
@@ -254,7 +269,8 @@
     if (!PUB) return [];
     var all = opt && opt.all, order = {};
     drawers().forEach(function (d, i) { order[d.id] = i; });
-    return Object.keys(PUB.list).filter(function (id) { var s = suiteOf(id); return !s || PUB.list[id].solo || all; })
+    // 套組成員：沒有「也單獨展出」就不另外列；就算有，跟套組在同一個抽屜也不重複列
+    return Object.keys(PUB.list).filter(function (id) { var s = suiteOf(id); return !s || all || (PUB.list[id].solo && face(id).drawer !== face(s).drawer); })
       .map(function (id) { return get(id, opt); }).filter(Boolean)
       .sort(function (a, b) { return ((order[a.drawer] != null ? order[a.drawer] : 99) - (order[b.drawer] != null ? order[b.drawer] : 99)) || ((a.order || 0) - (b.order || 0)); });
   }
