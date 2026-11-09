@@ -110,6 +110,10 @@ try {
   FB = await M.openFirebase('account'); FB.idle(60000); authErr = M.authErr; gBtn = M.googleButtonHTML;
 } catch (e) { console.warn(e); FB = null; }
 
+// 📧 送出申請後按一下「門鈴」：課堂小鎮伺服器確認是新申請，就寄信提醒巫魚子老師（失敗也不影響申請，每天早上還會補寄）（2026-11-09）
+async function ring(user) {
+  try { const tok = await (user || FB.user()).getIdToken(); await fetch('https://grade-query-system-coral.vercel.app/api/teacher/notify', { method: 'POST', headers: { Authorization: 'Bearer ' + tok } }); } catch (e) { console.warn('notify', e); }
+}
 function stop() { S.unsubs.forEach((u) => { try { u(); } catch (e) { } }); S.unsubs = []; }
 const appBox = (sel, name) => ([k, a]) => `<label class="app ${sel[k] ? 'on' : ''}"><input type="checkbox" name="${name}" value="${k}" ${sel[k] ? 'checked' : ''}><div><b>${a.name}</b><span>${esc(a.desc)}</span></div></label>`;
 // 套組（課堂小鎮）的系統放在同一組，上面一顆「整套申請」；其他系統在下面（2026-11-08）
@@ -192,7 +196,7 @@ function renderRegister() {
     $('#rGo').disabled = true; S.registering = true;
     try {
       const cred = await FB.register(email, pw);
-      await FB.set('staff/' + cred.user.uid, { email, ...prof, at: Date.now(), status: 'pending' });
+      await FB.set('staff/' + cred.user.uid, { email, ...prof, at: Date.now(), status: 'pending' }); ring(cred.user);
       try { await FB.verify(cred.user); } catch (e) { }
       S.registering = false; S.rec = null; enter(cred.user);
       toast('✅ 申請已送出！請到信箱點驗證信');
@@ -232,7 +236,7 @@ function renderMe() {
   if (!rec && !ownerOf.length) {
     $('#app').innerHTML = `<div class="card narrow" style="max-width:560px"><h1>📝 補填申請資料</h1><p class="muted small">這個帳號（${esc(u.email)}）還沒有申請資料，填好送出就會進入審核。</p>${profileFields()}<button class="btn wide" id="pGo">📨 送出申請</button></div>`;
     bindBoxes($('#app'));
-    $('#pGo').onclick = async () => { const prof = readProfile($('#app')); if (!prof) return; try { await FB.set('staff/' + u.uid, { email: u.email, ...prof, at: Date.now(), status: 'pending' }); toast('✅ 申請已送出'); } catch (e) { toast(authErr(e), true); } };
+    $('#pGo').onclick = async () => { const prof = readProfile($('#app')); if (!prof) return; try { await FB.set('staff/' + u.uid, { email: u.email, ...prof, at: Date.now(), status: 'pending' }); ring(u); toast('✅ 申請已送出'); } catch (e) { toast(authErr(e), true); } };
     return;
   }
   const st = rec ? rec.status : 'approved', apps = Object.assign({}, rec && rec.apps), mine = Object.keys(W.APPS).filter((k) => apps[k] || ownerOf.includes(k));
@@ -261,7 +265,7 @@ function renderMe() {
   };
   if ($('#moreGo')) {
     FB.get('staffreq/' + u.uid).then((r) => { if (r && $('#moreMsg')) $('#moreMsg').textContent = '已送出：' + Object.keys(r.want || {}).map((k) => (W.APPS[k] || {}).name).join('、') + '，等待核准'; }).catch(() => {});
-    $('#moreGo').onclick = async () => { const want = picked($('#moreBox'), 'more'); if (!Object.keys(want).length) return toast('先勾選要加開的系統', true); try { await FB.set('staffreq/' + u.uid, { want, at: Date.now() }); $('#moreMsg').textContent = '✅ 已送出，等待核准'; } catch (e) { toast(authErr(e), true); } };
+    $('#moreGo').onclick = async () => { const want = picked($('#moreBox'), 'more'); if (!Object.keys(want).length) return toast('先勾選要加開的系統', true); try { await FB.set('staffreq/' + u.uid, { want, at: Date.now() }); ring(u); $('#moreMsg').textContent = '✅ 已送出，等待核准'; } catch (e) { toast(authErr(e), true); } };
   }
 }
 
