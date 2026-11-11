@@ -36,7 +36,7 @@ async function boot() {
     S.user = u;
     if (!u) return renderLogin();
     if (!W.isAdmin(u)) return renderNotAdmin();
-    FB.idle(60000);   // 分頁藏到背景 60 秒讓出連線，回來自動重連（手冊 6-D）
+    FB.idle(60000);   // 分頁藏到背景 60 秒讓出連線，回來自動重連（handbook/pitfalls.md 6-D）
     await loadAll(true);
     FB.listen('showcase/pub/rev', onRemoteRev);
   });

@@ -2,15 +2,15 @@
 
 開工前請依序讀：
 
-1. **`HANDBOOK.md`（開發手冊，2026-11-12 第二版）**：第 1 章「合作方式」、第 2 章「設計風格與品味」、第 3 章「新案件需求檢核表」一定要讀；動到哪個平台就讀第 5、6 章對應小節，改舊系統先讀第 8 章檔案卡。新系統第一版就照第 2、3 章做，交付時逐項對照。老師調整過的地方要補進第 2 章與 2-9 調整對照表。
+1. **`HANDBOOK.md`（開發手冊的「小抄」，2026-11-12）**：每次開工**整份讀完**（只放規則）。細節在 `handbook/` 的「字典」，依小抄 0-B 索引**只翻用得到的章節**；改舊系統先讀 `handbook/cases.md` 那張檔案卡。新系統第一版照小抄第 2、3 章做，交付時逐項對照。老師調整過的地方 → `handbook/style.md` 2-9 加一列，新通則濃縮進小抄第 2 章。
 2. `DEVELOPMENT.md`：資料夾結構、資料位置、Firebase 規則、第 7 節分段開發經驗。
 3. `CHANGELOG.md` 最上面幾筆：最近的老師決定。
 
-固定規則（細節見手冊 1-E、3-D、7-D）：
+固定規則（細節見小抄第 1、7 章與 `handbook/checklist.md` 3-D）：
 
 - 學生頁不連回事務所首頁；分享給其他老師的系統與會員中心也不連回首頁（改連會員中心）。
 - 首頁改版先放 `index-preview.html`，老師說「上線」才換 `index.html`。
 - Firebase 規則改 `firebase/rules.src.json` → `python3 firebase/build_rules.py` → `node firebase/rules.test.js`，不要手改 `firebase-rules.json`。
 - 金鑰、密碼不進 repo（這是公開 repo）。
-- 每次開發結束：更新 `CHANGELOG.md`、`DEVELOPMENT.md`，有新的通用經驗補進 `HANDBOOK.md`；**本機資料夾：每次開發或調整完成由 Claude 同步一次**（有連線老師電腦就直接做；雲端對話做不到時，請老師雙擊 `tools/local-sync/sync-now.bat`，不要用系統管理員執行；GitHub Desktop 等以後量體變大再用），目前不用定時自動化，見手冊 7-D。
+- 每次開發結束：更新 `CHANGELOG.md`、`DEVELOPMENT.md`，有新的通用經驗補進 `HANDBOOK.md`；**本機資料夾：每次開發或調整完成由 Claude 同步一次**（有連線老師電腦就直接做；雲端對話做不到時，請老師雙擊 `tools/local-sync/sync-now.bat`，不要用系統管理員執行；GitHub Desktop 等以後量體變大再用），目前不用定時自動化，見小抄第 7 章。
 - 和老師溝通用繁體中文、白話、親切；技術概念用小學生聽得懂的比喻。

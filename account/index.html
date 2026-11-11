@@ -209,7 +209,7 @@ async function enter(user) {
   if (S.user && S.user.uid === user.uid && S.entered) return; S.entered = true;
   stop(); S.user = user;
   $('#who').textContent = user.email; $('#out').style.display = '';
-  // 回事務所首頁：只有管理員（巫魚子）看得到，其他老師的會員中心不放（手冊 3-D）
+  // 回事務所首頁：只有管理員（巫魚子）看得到，其他老師的會員中心不放（handbook/checklist.md 3-D）
   $('#home').style.display = W.isAdmin(user) ? '' : 'none';
   if (W.isAdmin(user)) return renderAdmin();
   S.pre = null; try { S.pre = await FB.get('staffpre/' + W.ekey(user.email)); } catch (e) { }
