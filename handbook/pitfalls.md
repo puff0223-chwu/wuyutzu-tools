@@ -171,3 +171,6 @@
 - PowerShell 5.1 不能用 `-Headers` 設 Accept／User-Agent → 用 `-UserAgent`。
 - Claude Code 推 GitHub：在暫存資料夾 clone、推完刪掉，不在電腦上留憑證。
 - 本機資料夾是一般資料夾、不是 git：同步時只覆蓋不同的檔案、不刪除本機檔案；要刪的先移到 `_to_delete`。
+
+### 平板上動畫一閃就沒（2026-11-17，英勇學院拉霸）
+- 平板常開著「減少動態效果／移除動畫」或省電模式 → `prefers-reduced-motion: reduce` 成立。儀式感動畫（抽籤、揭曉）不要用這個設定縮短或關掉，否則結果照時間出來、畫面卻像卡住。只對裝飾性的閃爍、跳動套用。測試：Playwright `newContext({ reducedMotion: 'reduce' })`。
