@@ -6,6 +6,12 @@
 
 ---
 
+
+## 2026-11-17 英文名更正：Wu Yu-Zi → Wu Yu-Tzu
+- 首頁（index.html、index-preview.html）、會員中心、教師展覽館（首頁、說明頁、13 個分享頁）、分享頁產生器 build_share.js、預覽圖產生器 make_og.py：「The Casebook of Wu Yu-Zi」「WU YU-ZI TEACHING STUDIO」全部改成 Wu Yu-Tzu
+- 社群預覽圖 share/og/*.jpg（圖上印著英文名）用 share/pub.json 快照重做；之後 Action 自動更新也會用新的名字
+- grade-query-system、reading-quiz-system、chemistry-learning-system 檢查過，沒有用到
+
 ## 2026-11-12（週四）凌晨 — 📘 開發手冊拆成「小抄＋字典」
 
 - 🧩 另把小抄做成 Claude 技能 `wuyutzu-dev-handbook`（老師在提案卡按儲存後生效），以後在任何對話開發系統都會自動照這套規則；小抄改了要同步提議更新技能（小抄 0-A）。

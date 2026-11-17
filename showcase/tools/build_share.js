@@ -110,7 +110,7 @@ for (const t0 of items) {
 </head>
 <body class="share">
 <div class="gtop share-top">
-  <div class="brand"><small>WU YU-ZI TEACHING STUDIO · TEACHER GALLERY</small><span class="t">${esc(t.icon + ' ' + t.name)}・巫魚子教課事務所</span></div>
+  <div class="brand"><small>WU YU-TZU TEACHING STUDIO · TEACHER GALLERY</small><span class="t">${esc(t.icon + ' ' + t.name)}・巫魚子教課事務所</span></div>
 </div>
 ${SC.pageHTML(t, 'share')}
 <script src="../showcase.js?v=${VER}"></script>

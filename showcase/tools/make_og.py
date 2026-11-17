@@ -45,7 +45,7 @@ h1 .ic{{margin-right:14px}}
 </style></head><body>
 <div class="bar"></div>
 <div class="left">
-  <div class="eb">THE CASEBOOK OF WU YU-ZI</div>
+  <div class="eb">THE CASEBOOK OF WU YU-TZU</div>
   <div class="tag">{esc(it['drawer'])}</div>
   <h1><span class="ic">{esc(it['icon'])}</span>{esc(it['name'])}</h1>
   <div class="sub">{esc(it['sub'])}</div>
