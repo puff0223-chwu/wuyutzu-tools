@@ -185,7 +185,8 @@ function gateHTML(card) {
       <div class="xg-say"><img src="../../showcase/img/bld-exam.webp" alt="" width="240" height="360"><div>
         <p class="xg-kick">WYTCLASS 課堂小鎮</p><h1>線上檢定所<small>ExamHall</small></h1>
         <p class="xg-tag"><span>題庫、Word 考卷匯入、限時作答，</span><span>考完自動計分。</span></p>
-        <p class="xg-fit"><b>適合</b>所有科目的平時測驗、小考、課堂練習</p></div></div>
+        <p class="xg-fit"><b>適合</b>所有科目的平時測驗、小考、課堂練習</p>
+        <p class="xg-more"><a href="../../showcase/guide.html?app=exam" target="_blank" rel="noopener">📖 完整說明頁（特色、流程、常見問題）↗</a></p></div></div>
       <div class="xg-login">${card}</div>
     </section>
     <section class="xg-intro" id="xgIntro">
@@ -196,7 +197,7 @@ function gateHTML(card) {
     </section>
     <p class="xg-note">畫面都是用假資料拍的示範，學生名字不是真的。</p>
     <section class="xg-start"><h2>怎麼開始？</h2><ol><li><b>1</b>到會員中心申請「📝 線上檢定所」</li><li><b>2</b>巫魚子老師核准後，回到這裡登入</li><li><b>3</b>建題庫、開測驗，把 QR Code 給學生</li></ol>
-      <a class="btn" href="${W.centerURL('../../', 'exam')}" target="_blank" rel="noopener">👥 申請職員證（會員中心）</a>
+      <a class="btn" href="${W.centerURL('../../', 'exam')}" target="_blank" rel="noopener">👥 申請職員證（會員中心）</a> <a class="btn ghost" href="../../showcase/guide.html?app=exam" target="_blank" rel="noopener">📖 完整說明頁 ↗</a>
       <p class="small muted">課堂小鎮還有成績調閱室、謎案課堂、英勇學院，一起用時成績會自動傳過去。<a href="${TOWN}" target="_blank" rel="noopener">🏘️ 逛逛課堂小鎮大廳 →</a></p></section>
     <div class="xg-zoom hidden" id="xgZoom"><figure><img alt=""><figcaption></figcaption><button aria-label="關閉">✕</button></figure></div>
   </div>`;

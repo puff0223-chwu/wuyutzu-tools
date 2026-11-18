@@ -262,15 +262,30 @@
     }
     var s = suiteOf(id);
     if (s) { var sl = PUB.list[s], sf = face(s); t.parent = { code: s, icon: sf.icon, name: sf.name, on: sl.on }; }
+    if (s && SPREAD[s]) { var sf2 = face(s); t.drawer = sf2.drawer; t.shelf = sf2.shelf; t.order = (sf2.order || 0) + (PUB.list[s].parts.indexOf(id) + 1) / 100; }   // 排在套組卡後面，順序照套組
+    t.entry = entryOf(t);
     return t;
   }
-  // 展覽館首頁的卡片：套組成員（沒有單獨展出的）不另外列，放在套組卡裡
+  // 🏘️ 「攤開」的套組（2026-11-18，目前只有 WYTClass 課堂小鎮）：展覽館首頁跟事務所首頁一樣——
+  //   套組卡＋每個系統各一張卡片排在同一個小分類；點卡片直接到那個系統的門口（大廳、各系統先介紹再登入），不是說明頁
+  //   說明頁還在：各系統門口與裡面都有「📖 說明」按鈕連到 guide.html?app=…
+  var SPREAD = { town: 'https://grade-query-system-coral.vercel.app/' };
+  function spreadOf(id) { var s = suiteOf(id); return s && SPREAD[s] ? s : ''; }
+  // 點卡片要去哪裡（只有攤開的套組與成員才有；其他卡片點了是說明頁）
+  function entryOf(t) {
+    if (SPREAD[t.code]) { var m = PUB.list[t.code].from[0] && motherTool(PUB.list[t.code].from[0]); return (m && safeURL(m.href)) || SPREAD[t.code]; }
+    if (!spreadOf(t.code)) return '';
+    var a = W && W.APPS && W.APPS[t.app], u = a ? a.url : t.url;
+    return safeURL(u) || (isSiteURL(u || '') ? '../' + u : '');
+  }
+
+  // 展覽館首頁的卡片：套組成員（沒有單獨展出的）不另外列，放在套組卡裡（攤開的套組例外）
   function list(opt) {
     if (!PUB) return [];
     var all = opt && opt.all, order = {};
     drawers().forEach(function (d, i) { order[d.id] = i; });
     // 套組成員：沒有「也單獨展出」就不另外列；就算有，跟套組在同一個抽屜也不重複列
-    return Object.keys(PUB.list).filter(function (id) { var s = suiteOf(id); return !s || all || (PUB.list[id].solo && face(id).drawer !== face(s).drawer); })
+    return Object.keys(PUB.list).filter(function (id) { var s = suiteOf(id); return !s || all || !!SPREAD[s] || (PUB.list[id].solo && face(id).drawer !== face(s).drawer); })
       .map(function (id) { return get(id, opt); }).filter(Boolean)
       .sort(function (a, b) { return ((order[a.drawer] != null ? order[a.drawer] : 99) - (order[b.drawer] != null ? order[b.drawer] : 99)) || ((a.order || 0) - (b.order || 0)); });
   }

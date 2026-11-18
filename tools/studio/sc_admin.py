@@ -15,11 +15,11 @@ def ok(c, m):
 LIVE = json.load(open(os.path.join(os.path.dirname(__file__), 'fixtures/showcase-pub-v1.json'), encoding='utf-8'))   # 2026-11-08 檢修前的線上資料（v1）
 db('PUT', 'showcase', None)
 db('PUT', 'showcase/pub', LIVE)
-MOTHER = open(os.path.join(ROOT, 'index.html'), encoding='utf-8').read()
+# 這支測試寫在首頁改版前：用改版前的首頁（2026-11-08 上線前）當母頁，題目才對得上；新首頁的測試在 sc_mother.py
+MOTHER = open(os.path.join(os.path.dirname(__file__), 'fixtures/index-old-20261108.html'), encoding='utf-8').read()
 STATE = {'mother': MOTHER}
 with sync_playwright() as p:
     b = p.chromium.launch(); ctx = b.new_context(viewport={'width': 1280, 'height': 900}); setup(ctx)
-    # 事務所首頁可以在測試中「改內容」，看管理頁抓不抓得到
     ctx.route(re.compile(r'.*/wuyutzu-tools/index\.html.*'), lambda r: r.fulfill(body=STATE['mother'], content_type='text/html; charset=utf-8'))
     pg = ctx.new_page(); cons = []
     pg.on('console', lambda m: cons.append(m.text) if m.type == 'error' and 'ERR_FAILED' not in m.text and '404' not in m.text else None)
@@ -63,8 +63,10 @@ with sync_playwright() as p:
     pg.goto(ORIGIN + '/showcase/admin.html#help'); pg.wait_for_selector('.hgrid'); pg.screenshot(path=OUT + 'b2c_help.png', full_page=True)
     # 展覽館與說明頁
     pv = ctx.new_page(); pv.goto(ORIGIN + '/showcase/'); pv.wait_for_selector('.card.suite', timeout=8000); pv.wait_for_timeout(800)
-    cards = pv.eval_on_selector_all('a.card', 'e => e.map(a => a.getAttribute("href").split("=")[1])')
-    ok('town' in cards and 'grade' not in cards and 'exam' in cards, '展覽館：課堂小鎮一張卡、成績調閱室在裡面、線上檢定所也單獨展出 ' + str(cards))
+    cards = pv.eval_on_selector_all('a.card', 'e => e.map(a => [a.querySelector(".name").innerText, a.getAttribute("href")])')
+    # 2026-11-18 課堂小鎮「攤開」：套組卡＋每個系統一張，點了直接到系統門口（不是說明頁）
+    names = [c[0] for c in cards]; go = dict(cards)
+    ok('WYTClass 課堂小鎮' in names and '成績調閱室' in names and go['成績調閱室'].endswith('/grade') and go['WYTClass 課堂小鎮'].startswith('https://grade-query-system'), '展覽館：課堂小鎮套組卡＋成績調閱室各一張，點了直接到系統 ' + str(cards[:6]))
     pv.screenshot(path=OUT + 'b3_gallery.png', full_page=True)
     pv.goto(ORIGIN + '/showcase/guide.html?app=town'); pv.wait_for_selector('.member', timeout=8000)
     links = pv.eval_on_selector_all('a[href*="account/"]', 'e => e.map(a => a.getAttribute("href"))')

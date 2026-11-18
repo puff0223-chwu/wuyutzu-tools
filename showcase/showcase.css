@@ -94,6 +94,8 @@ h1 .hl { background: linear-gradient(transparent 62%, rgba(242,177,52,0.65) 62%)
 .shelves { display: flex; flex-wrap: wrap; gap: 0 14px; }
 .shelf-g { flex: var(--n, 1) 1 calc(var(--n, 1) * 244px - 14px); max-width: calc(var(--n, 1) * 330px); min-width: 0; }
 .shelf-g .grid { grid-template-columns: repeat(var(--n, 1), minmax(0, 1fr)); }
+.shelf-g.full { flex-basis: 100%; max-width: none; }
+.shelf-g.full .grid { grid-template-columns: repeat(auto-fill, minmax(205px, 1fr)); }
 .card {
   position: relative; display: flex; gap: 12px; align-items: flex-start; text-align: left; text-decoration: none;
   background: var(--card); color: var(--navy); font: inherit; cursor: pointer;
@@ -108,6 +110,7 @@ h1 .hl { background: linear-gradient(transparent 62%, rgba(242,177,52,0.65) 62%)
 .card .brief { color: var(--muted); font-size: 0.84em; line-height: 1.5; margin-top: 2px; }
 .pill { display: inline-block; font-size: 0.72em; font-weight: 700; border-radius: 999px; padding: 1px 8px; margin-top: 6px; }
 .pill.guide { background: #fff1d6; color: #8a5a00; border: 1px solid var(--mustard); }
+.pill.go { background: #e6f2ef; color: #1f5f53; border: 1px solid #2e7d6f; }
 .pill.mode-apply { background: #fde8e1; color: #a33a1d; border: 1px solid #f2b3a0; margin-left: 4px; }
 .pill.mode-open { background: #e3f4f1; color: #13675d; border: 1px solid #9fd6cd; margin-left: 4px; }
 .pill.mode-show { background: #efedf2; color: #55515f; border: 1px solid #d3cfdb; margin-left: 4px; }

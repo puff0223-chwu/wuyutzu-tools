@@ -35,8 +35,8 @@ with sync_playwright() as p:
     pg.goto(ORIGIN + '/showcase/admin.html#tools'); pg.wait_for_selector('.mt'); pg.wait_for_timeout(300)
     ok('🚧 籌備中' in pg.inner_text('#view'), '首頁工具：線上桌遊顯示籌備中')
     pv = ctx.new_page(); pv.goto(ORIGIN + '/showcase/'); pv.wait_for_selector('a.card', timeout=8000); pv.wait_for_timeout(1500)
-    cards = pv.eval_on_selector_all('a.card', 'e => e.map(a => a.getAttribute("href").split("=")[1])')
-    ok('town' in cards and not any(c in cards for c in ['grade', 'cc', 'valor', 'exam']), '展覽館：課堂小鎮一張卡（成員都在裡面，不重複） ' + str(cards))
+    names = pv.eval_on_selector_all('a.card', 'e => e.map(a => a.querySelector(".name").innerText)')
+    ok(names[:5] == ['WYTClass 課堂小鎮', '成績調閱室', '謎案課堂', '英勇學院', '線上檢定所'] and len(set(names)) == len(names), '展覽館：課堂小鎮跟首頁一樣攤開成 5 張、不重複 ' + str(names[:6]))
     ok('導師、任何課程都用得到' in pv.inner_text('body'), '展覽館的分類說明跟首頁一樣')
     pv.screenshot(path=OUT + 'c2_gallery.png', full_page=True)
     # 會員中心：整套申請
