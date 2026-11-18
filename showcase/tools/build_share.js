@@ -16,7 +16,7 @@
    ========================================================= */
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const ROOT = path.join(__dirname, '..'), SITE = path.join(ROOT, '..');
-const VER = '20261108e';
+const VER = '20261118a';
 const arg = (k) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : null; };
 
 const ctx = { console };
@@ -81,6 +81,7 @@ const keep = new Set();
 for (const t0 of items) {
   // 分享頁在 showcase/share/ 底下，圖片路徑要往上一層
   const t = Object.assign({}, t0, { shots: shareShots(t0) });
+  if (t.members) t.members = t.members.map((m) => Object.assign({}, m, { shots: shareShots(m) }));   // 套組頁每個系統的截圖（2026-11-18）
   const d = colorOf(t);
   const url = SC.shareURL(t.code), og = SC.SITE + 'share/og/' + t.code + '.jpg';
   const desc = SC.plain(t.intro || t.brief || '').replace(/\s+/g, ' ').slice(0, 150);

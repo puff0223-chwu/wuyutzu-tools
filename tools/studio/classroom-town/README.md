@@ -9,6 +9,8 @@
 
 ## 怎麼重拍
 
+> 容器裡 node 找不到 playwright 時：`export NODE_PATH=$(npm root -g)`（2026-11-18）
+
 ```bash
 # 1. 在 grade-query-system 開玩具模式
 VITE_MOCK=1 npx vite --port 5179 --strictPort &

@@ -313,3 +313,11 @@ dl.faq dd { margin: 3px 0 0 26px; color: var(--navy-2); line-height: 1.7; }
 .apply-all span { font-size: 0.88em; color: var(--muted); }
 .in-suite { margin-bottom: 10px; }
 .in-suite a { font-weight: 800; color: var(--navy); }
+
+/* 🏘️ 套組頁：封面街景、建築插畫、每個系統一組截圖（2026-11-18） */
+.hero-cover { display: block; width: 100%; height: auto; aspect-ratio: 3 / 1; object-fit: cover; object-position: bottom; background: #fbf6ea; border-bottom: 2px solid var(--navy); }
+.member .m-top .ic.art { width: 56px; height: 64px; background: var(--soft, #f3efe6); overflow: hidden; align-items: end; }
+.member .m-top .ic.art img { width: 48px; height: auto; display: block; }
+.suite-shots + .suite-shots { margin-top: 22px; padding-top: 14px; border-top: 1.5px dashed #d8cfbb; }
+.suite-shots .shot-h { display: flex; align-items: center; gap: 10px; }
+.shot-art { width: 34px; height: auto; }

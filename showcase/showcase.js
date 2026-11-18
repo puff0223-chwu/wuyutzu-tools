@@ -348,6 +348,10 @@
     if (src.indexOf('f:') === 0) return '<img src="' + BLANK + '" data-fimg="' + esc(src.slice(2)) + '" alt="' + esc(alt) + '">';
     return '<img src="' + esc(thumb(src)) + '" alt="' + esc(alt) + '" loading="lazy" onerror="if(!this.dataset.r){this.dataset.r=1;this.src=this.closest(\'[data-zoom]\').getAttribute(\'data-zoom\')}">';
   }
+  // 🏘️ 套組的封面圖與每個系統的建築插畫（2026-11-18，和課堂小鎮大廳同一套圖；圖放 showcase/img/）
+  var COVER = { town: ['img/town-banner.webp', 'WYTClass 課堂小鎮街景：四棟建築一個大廳'] };
+  var ART = { grade: 'img/bld-grade.webp', cc: 'img/bld-cc.webp', valor: 'img/bld-game.webp', exam: 'img/bld-exam.webp' };
+  var PRE = '';   // 分享頁在 share/ 底下，圖片路徑要多一層 ../（pageHTML 會設定）
   function shotsHTML(t) {
     var shots = t.shots || [];
     if (!shots.length) return '<div class="shot"><div class="ic">📸</div><b>畫面截圖整理中</b></div>';
@@ -360,6 +364,24 @@
     return (wide.length ? '<h3 class="shot-h">💻 老師端（電腦）</h3><div class="shot-wide">' + wide.map(fig).join('') + '</div>' : '') +
       (phone.length ? '<h3 class="shot-h">📱 學生端（手機）</h3><div class="shot-phone">' + phone.map(fig).join('') + '</div>' : '') +
       '<p class="act-note">畫面中的學生姓名、成績都是測試用的假資料。點圖片可以放大。</p>';
+  }
+
+  // 套組的畫面預覽：每個系統一組（電腦最多 3 張、手機最多 2 張），自動拿各系統自己的截圖
+  function suiteShotsHTML(t) {
+    var isPhone = function (s) { return s[2] && s[2] < 600; };
+    var ms = (t.members || []).filter(function (m) { return (m.shots || []).length; });
+    if (!ms.length) return shotsHTML(t);
+    var fig = function (s) {
+      return '<figure class="sfig"><button type="button" class="szoom" data-zoom="' + esc(s[0]) + '" data-cap="' + esc(s[1]) + '" aria-label="放大：' + esc(s[1]) + '">' +
+        imgTag(s[0], s[1]) + '</button><figcaption>' + esc(s[1]) + '</figcaption></figure>';
+    };
+    return ms.map(function (m) {
+      var wide = m.shots.filter(function (s) { return !isPhone(s); }).slice(0, 3), phone = m.shots.filter(isPhone).slice(0, 2);
+      return '<div class="suite-shots">' +
+        '<h3 class="shot-h">' + (ART[m.code] ? '<img class="shot-art" src="' + esc(PRE + ART[m.code]) + '" alt="" aria-hidden="true">' : esc(m.icon) + ' ') + esc(m.name) + '</h3>' +
+        (wide.length ? '<div class="shot-wide">' + wide.map(fig).join('') + '</div>' : '') +
+        (phone.length ? '<div class="shot-phone">' + phone.map(fig).join('') + '</div>' : '') + '</div>';
+    }).join('') + '<p class="act-note">畫面中的學生姓名、成績都是測試用的假資料。點圖片可以放大。</p>';
   }
 
   /* =========================================================
@@ -379,7 +401,8 @@
         if (m.mode === 'apply' && m.appInfo) btn += '<a class="btn small" href="' + esc(applyURL([m.app], t.code)) + '">📝 申請這一個</a>';
         if (m.mode === 'open' && openURL(m)) btn += '<a class="btn small" href="' + esc(openURL(m)) + '" target="_blank" rel="noopener">🚀 直接開啟 ↗</a>';
       }
-      return '<div class="member mode-' + esc(m.mode) + '"><div class="m-top"><span class="ic" aria-hidden="true">' + esc(m.icon) + '</span><div><b>' + esc(m.name) + '</b>' +
+      var ic = ART[m.code] ? '<span class="ic art" aria-hidden="true"><img src="' + esc(PRE + ART[m.code]) + '" alt=""></span>' : '<span class="ic" aria-hidden="true">' + esc(m.icon) + '</span>';
+      return '<div class="member mode-' + esc(m.mode) + '"><div class="m-top">' + ic + '<div><b>' + esc(m.icon + ' ' + m.name) + '</b>' +
         '<span class="pill mode-' + esc(m.mode) + '">' + esc(MODES[m.mode]) + '</span></div></div>' +
         '<p>' + rich(m.brief) + '</p>' + (btn ? '<div class="actions">' + btn + '</div>' : '') + '</div>';
     }).join('') + '</div>' +
@@ -396,7 +419,8 @@
       if (t.tools) sec.push(['tools', '🧪 包含哪些系統', t.tools.map(function (x) {
         return '<div class="sub-tool"><h3>' + esc(x[0]) + ' ' + esc(x[1]) + '</h3><p>' + rich(x[2]) + '</p></div>';
       }).join('')]);
-      if (t.shots) sec.push(['shots', '📸 畫面預覽', shotsHTML(t)]);
+      if (t.suite) sec.push(['shots', '📸 畫面預覽', suiteShotsHTML(t)]);
+      else if (t.shots) sec.push(['shots', '📸 畫面預覽', shotsHTML(t)]);
       if (t.flow) sec.push(['flow', t.suite ? '🔗 系統之間怎麼連' : '🗺️ 上課流程', '<div class="flow">' + t.flow.map(function (x, i) {
         return (i ? '<span class="arr" aria-hidden="true">→</span>' : '') +
           '<div class="node"><span class="ic" aria-hidden="true">' + esc(x[0]) + '</span><b>' + rich(x[1]) + '</b><span>' + rich(x[2] || '') + '</span>' +
@@ -463,6 +487,8 @@
   // 返回鍵：套組成員回套組那一頁，其他回展覽館
   function backOf(t) { return t.parent && t.parent.on ? { href: 'guide.html?app=' + encodeURIComponent(t.parent.code), text: '← 回' + t.parent.name } : { href: './', text: '← 回教師展覽館' }; }
   function pageHTML(t, page) {
+    PRE = page === 'share' ? '../' : '';
+    var cover = COVER[t.code];
     var share = page === 'share', d = drawerOf(t.parent && PUB.list[t.parent.code] && !t.solo ? PUB.list[t.parent.code] : t), sec = sections(t, page), bk = backOf(t);
     var facts = (t.facts || []).map(function (f) { return '<div class="fact"><b>' + esc(f[0]) + '</b>' + rich(f[1] || '') + '</div>'; }).join('');
     var inSuite = t.parent ? '<div class="callout blue in-suite">🏘️ 這是「' + esc(t.parent.icon + ' ' + t.parent.name) + '」裡的其中一個系統，可以單獨申請，也可以和其他系統一起用。' +
@@ -478,6 +504,7 @@
           '<div class="hero-top"><div class="no">' + esc(d.tag) + ' · ' + esc(d.name) + (t.shelf ? ' · ' + esc(t.shelf) : '') + '</div>' +
             '<h1><span aria-hidden="true">' + esc(t.icon) + '</span>' + esc(t.name) + '</h1>' +
             '<div class="sub">' + rich(t.sub || t.brief) + '</div></div>' +
+          (cover ? '<img class="hero-cover" src="' + esc(PRE + cover[0]) + '" alt="' + esc(cover[1]) + '" width="2000" height="667">' : '') +
           '<div class="hero-body">' + inSuite +
             (t.intro ? '<p class="intro">' + rich(t.intro) + '</p>' : '') +
             (facts ? '<div class="facts">' + facts + '</div>' : '') +

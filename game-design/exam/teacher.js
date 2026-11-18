@@ -173,16 +173,54 @@ async function insertFiles(q, range, files) {
 /* ---------- 登入 ---------- */
 const gate = $('#gate');
 const gbox = (inner) => `<div class="card" style="max-width:460px;margin:9vh auto">${inner}</div>`;
+// 🚪 先介紹、再登入（2026-11-18，和課堂小鎮其他三棟一樣）：還沒登入的老師先看到這個系統做什麼、長什麼樣子；登入卡片在右上
+const TOWN = 'https://grade-query-system-coral.vercel.app/';
+const SHOTS = [['exam-1', '監控清單：每位學生的狀態、違規、連線'], ['exam-6', '建立測驗 6 步驟精靈：最後一步確認所有設定'], ['exam-3', '統計：分數分布、單元分析、試題分析'], ['exam-4', '閱卷：一題看全班，常用評語一鍵帶入'], ['exam-2', '考場投影看板：不顯示姓名與分數']];
+const FEATS = [['📄', 'Word 考卷直接匯入', '題目、選項、答案、圖片，一次搬進題庫。'], ['⏱️', '時間、次數、打亂', '限時作答、可考幾次，題目選項依學號打亂。'], ['🛡️', '防作弊與監控', '全螢幕作答、切換畫面記違規，老師即時看到全班狀態。'], ['📊', '統計與試題分析', '分數分布、答對率、鑑別度，簡答題一題看全班。'], ['🔗', '成績帶進成績調閱室', '公布後的成績，一鍵帶進 WYTClass 成績調閱室。']];
+const XIMG = (n, small) => `../../showcase/img/${small ? 't/' : ''}${n}.webp`;
+function gateHTML(card) {
+  return `<div class="xgate">
+    <header class="xg-top"><a href="${TOWN}" target="_blank" rel="noopener">🏘️ WYTClass 課堂小鎮</a></header>
+    <section class="xg-hero">
+      <div class="xg-say"><img src="../../showcase/img/bld-exam.webp" alt="" width="240" height="360"><div>
+        <p class="xg-kick">WYTCLASS 課堂小鎮</p><h1>線上檢定所<small>ExamHall</small></h1>
+        <p class="xg-tag"><span>題庫、Word 考卷匯入、限時作答，</span><span>考完自動計分。</span></p>
+        <p class="xg-fit"><b>適合</b>所有科目的平時測驗、小考、課堂練習</p></div></div>
+      <div class="xg-login">${card}</div>
+    </section>
+    <section class="xg-intro" id="xgIntro">
+      <div class="xg-pics"><button class="xg-main" data-z="0"><img id="xgMain" src="${XIMG(SHOTS[0][0])}" alt="${SHOTS[0][1]}"></button><p class="xg-cap" id="xgCap">${SHOTS[0][1]}</p>
+        <div class="xg-thumbs">${SHOTS.map((x, i) => `<button data-i="${i}" class="${i ? '' : 'on'}" title="${x[1]}"><img src="${XIMG(x[0], 1)}" alt="" loading="lazy"></button>`).join('')}</div></div>
+      <div class="xg-text"><ul>${FEATS.map(([i, t, d]) => `<li><span>${i}</span><div><b>${t}</b>${d}</div></li>`).join('')}</ul>
+        <button class="xg-phone" data-z="p"><img src="${XIMG('exam-5', 1)}" alt="學生手機作答畫面" loading="lazy"><span>📱 學生手機：作答畫面</span></button></div>
+    </section>
+    <p class="xg-note">畫面都是用假資料拍的示範，學生名字不是真的。</p>
+    <section class="xg-start"><h2>怎麼開始？</h2><ol><li><b>1</b>到會員中心申請「📝 線上檢定所」</li><li><b>2</b>巫魚子老師核准後，回到這裡登入</li><li><b>3</b>建題庫、開測驗，把 QR Code 給學生</li></ol>
+      <a class="btn" href="${W.centerURL('../../', 'exam')}" target="_blank" rel="noopener">👥 申請職員證（會員中心）</a>
+      <p class="small muted">課堂小鎮還有成績調閱室、謎案課堂、英勇學院，一起用時成績會自動傳過去。<a href="${TOWN}" target="_blank" rel="noopener">🏘️ 逛逛課堂小鎮大廳 →</a></p></section>
+    <div class="xg-zoom hidden" id="xgZoom"><figure><img alt=""><figcaption></figcaption><button aria-label="關閉">✕</button></figure></div>
+  </div>`;
+}
+function bindGate() {
+  let cur = 0; const z = $('#xgZoom'); if (!z) return;
+  const open = (src, cap, phone) => { z.querySelector('img').src = src; z.querySelector('figcaption').textContent = cap; z.classList.toggle('phone', !!phone); z.classList.remove('hidden'); };
+  gate.querySelectorAll('.xg-thumbs button').forEach((b) => { b.onclick = () => { cur = +b.dataset.i; $('#xgMain').src = XIMG(SHOTS[cur][0]); $('#xgCap').textContent = SHOTS[cur][1]; gate.querySelectorAll('.xg-thumbs button').forEach((x) => x.classList.toggle('on', x === b)); }; });
+  gate.querySelector('.xg-main').onclick = () => open(XIMG(SHOTS[cur][0]), SHOTS[cur][1]);
+  gate.querySelector('.xg-phone').onclick = () => open(XIMG('exam-5'), '學生手機：作答畫面', true);
+  z.onclick = (e) => { if (e.target === z || e.target.tagName === 'BUTTON') z.classList.add('hidden'); };
+}
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('#xgZoom')?.classList.add('hidden'); });
 function renderLogin(msg) {
   $('#main').classList.add('hidden');
-  gate.innerHTML = gbox(`<h1 style="font-size:1.45rem">📝 線上檢定所｜老師登入</h1>
-    <p class="muted small">老師後台有題庫與學生成績，需要登入。各系統共用同一個老師帳號。</p>
+  gate.innerHTML = gateHTML(`<div class="card xg-card"><h1 style="font-size:1.35rem">📝 線上檢定所｜老師登入</h1>
+    <p class="muted small">各系統共用同一個老師帳號（會員中心）。</p>
     ${msg ? `<p class="small" style="color:var(--bad)">${esc(msg)}</p>` : ''}${!FB ? '<p class="small" style="color:var(--bad)">雲端服務載入失敗，請確認網路後重新整理。</p>' : ''}
     <div style="margin-top:14px">${gBtn('gG')}</div>
     <label class="f">Email</label><input type="email" id="gE" autocomplete="username">
     <label class="f">密碼</label><input type="password" id="gP" autocomplete="current-password">
     <div class="row" style="margin-top:14px"><button class="btn" id="gGo">🔓 登入</button><span class="sp"></span><button class="linkbtn" id="gReset">忘記密碼</button></div>
-    <p class="small muted" style="margin-top:14px">還沒有帳號？<a href="${W.centerURL('../../', 'exam')}" style="font-weight:800;color:var(--ink)">👥 到會員中心申請使用</a>（巫魚子老師核准後就能用）</p>`);
+    <p class="small muted" style="margin-top:14px">還沒有帳號？<a href="${W.centerURL('../../', 'exam')}" style="font-weight:800;color:var(--ink)">👥 到會員中心申請使用</a>（巫魚子老師核准後就能用）<br><a href="#xgIntro" style="color:var(--ink)">↓ 看看這個系統長什麼樣子</a></p></div>`);
+  bindGate();
   if (!FB) return;
   const go = async () => { const e = $('#gE').value.trim(), p = $('#gP').value; if (!e || !p) return; $('#gGo').disabled = true; try { await FB.login(e, p); } catch (err) { renderLogin(authErr(err)); } };
   const gg = $('#gG'); if (gg) gg.onclick = async () => { gg.disabled = true; try { await FB.google(); } catch (err) { renderLogin(authErr(err)); } };

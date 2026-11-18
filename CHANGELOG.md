@@ -7,7 +7,14 @@
 ---
 
 
-## 2026-11-17 英文名更正：Wu Yu-Zi → Wu Yu-Tzu
+## 2026-11-18 🚪 課堂小鎮四個系統「先介紹、再登入」＋🏘️ 課堂小鎮分享頁加強（老師選 A＋C）
+- **老師的問題**：謎案課堂、英勇學院沒有介紹頁？四個系統會不會先到介紹頁？課堂小鎮要一個純介紹的分享頁
+- **查證結果**：四個系統沒登入時都直接是登入卡片（只有小鎮大廳有介紹）；課堂小鎮、謎案課堂、英勇學院其實都已經有展覽館分享頁（`showcase/share/town.html` 等），只是小鎮那頁只有 4 張截圖
+- **線上檢定所**（`game-design/exam/teacher.js`）：沒登入時先看到建築插畫、一句話、適合誰，登入卡片在右；往下 5 張截圖（點縮圖切換、點大圖放大）＋5 個特色＋學生手機畫面＋怎麼開始；已登入照舊直接進後台。課堂小鎮另外三個系統在 grade-query-system 做同樣的門口
+- **🏘️ 套組分享頁／說明頁**（`showcase.js`，所有套組自動套用）：最上面放小鎮街景封面；「包含的系統」卡片換成建築插畫；「畫面預覽」改成每個系統一組（電腦最多 3 張、手機最多 2 張，直接拿各系統自己的截圖），從 4 張變 21 張。封面與插畫的對照表在 `showcase.js` 的 `COVER`、`ART`，圖在 `showcase/img/town-banner.webp`、`bld-*.webp`
+- **英勇學院重拍**：攝影棚 `classroom-town/valor_shots.cjs` 重拍，換掉 valor-1～4、6、7（拉霸道具箱、內建任務地圖等新畫面）
+- 版本號：showcase.js／css `20261118a`、線上檢定所 teacher.js `20261118a`；13 個分享頁重新產生
+：Wu Yu-Zi → Wu Yu-Tzu
 - 首頁（index.html、index-preview.html）、會員中心、教師展覽館（首頁、說明頁、13 個分享頁）、分享頁產生器 build_share.js、預覽圖產生器 make_og.py：「The Casebook of Wu Yu-Zi」「WU YU-ZI TEACHING STUDIO」全部改成 Wu Yu-Tzu
 - 社群預覽圖 share/og/*.jpg（圖上印著英文名）用 share/pub.json 快照重做；之後 Action 自動更新也會用新的名字
 - grade-query-system、reading-quiz-system、chemistry-learning-system 檢查過，沒有用到
