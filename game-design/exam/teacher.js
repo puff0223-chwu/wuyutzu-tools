@@ -220,7 +220,7 @@ function renderLogin(msg) {
     <label class="f">Email</label><input type="email" id="gE" autocomplete="username">
     <label class="f">密碼</label><input type="password" id="gP" autocomplete="current-password">
     <div class="row" style="margin-top:14px"><button class="btn" id="gGo">🔓 登入</button><span class="sp"></span><button class="linkbtn" id="gReset">忘記密碼</button></div>
-    <p class="small muted" style="margin-top:14px">還沒有帳號？<a href="${W.centerURL('../../', 'exam')}" style="font-weight:800;color:var(--ink)">👥 到會員中心申請使用</a>（巫魚子老師核准後就能用）<br><a href="#xgIntro" style="color:var(--ink)">↓ 看看這個系統長什麼樣子</a></p></div>`);
+    <p class="small muted" style="margin-top:14px">還沒有帳號？<a href="${W.centerURL('../../', 'exam')}" style="font-weight:800;color:var(--ink)">👥 到會員中心申請使用</a>（巫魚子老師核准後就能用）</p></div>`);
   bindGate();
   if (!FB) return;
   const go = async () => { const e = $('#gE').value.trim(), p = $('#gP').value; if (!e || !p) return; $('#gGo').disabled = true; try { await FB.login(e, p); } catch (err) { renderLogin(authErr(err)); } };
